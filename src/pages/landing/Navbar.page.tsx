@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import orion from "../../assets/Orion.png";
+import orion from "../../assets/ALogo.png";
 import "../../styles/Navbar.css";
 
 const Navbar = () => {

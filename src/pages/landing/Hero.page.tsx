@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import HeroBackground from "./HeroBackground";
 import cloudImage from "../../assets/cloud.png";
+import Logo from "../../assets/ALogo.png";
 import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
@@ -42,7 +43,9 @@ const HeroSection = () => {
       {/* Logo Section */}
       <div className="flex justify-center mb-8 relative z-10">
         <div className="w-16 h-16 bg-foreground rounded-xl flex items-center justify-center shadow-lg opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <div className="w-8 h-8 bg-background rounded-md"></div>
+          <div className="w-8 h-8 bg-background rounded-md">
+            <img src={Logo} alt="Openassets Logo" className="w-full h-full object-contain" />
+          </div>
         </div>
       </div>
 
