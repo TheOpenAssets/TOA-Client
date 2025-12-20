@@ -12,6 +12,8 @@
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-slot": "^1.2.4",
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@tanstack/react-query": "^5.90.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
@@ -20,6 +22,8 @@
     "react-router-dom": "^7.11.0",
     "shadcn": "^3.6.2",
     "tailwind-merge": "^3.4.0",
+    "viem": "^2.43.2",
+    "wagmi": "^2.19.5",
     "zustand": "^5.0.9"
   },
   "devDependencies": {

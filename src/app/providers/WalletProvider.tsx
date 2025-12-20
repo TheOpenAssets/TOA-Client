@@ -1,41 +1,29 @@
 // src/app/providers/WalletProvider.tsx
-import React, { createContext, useContext, useState } from 'react';
 
-interface WalletContextType {
-  account: string | null;
-  connectWallet: () => void;
-  disconnectWallet: () => void;
+import '@rainbow-me/rainbowkit/styles.css';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { rainbowKitConfig } from '../../lib/blockchain/rainbowkit.config';
+
+const queryClient = new QueryClient();
+
+interface WalletProviderProps {
+  children: React.ReactNode;
 }
 
-const WalletContext = createContext<WalletContextType | null>(null);
-
-export const useWallet = () => {
-  return useContext(WalletContext);
-};
-
-const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [account, setAccount] = useState<string | null>(null);
-
-  const connectWallet = () => {
-    // Logic to connect wallet
-    setAccount('0x123...'); // Placeholder
-  };
-
-  const disconnectWallet = () => {
-    setAccount(null);
-  };
-
-  const value = {
-    account,
-    connectWallet,
-    disconnectWallet,
-  };
-
+/**
+ * WalletProvider - Wraps app with RainbowKit and Wagmi
+ * Provides wallet connection functionality throughout the app
+ */
+export const WalletProvider = ({ children }: WalletProviderProps) => {
   return (
-    <WalletContext.Provider value={value}>
-      {children}
-    </WalletContext.Provider>
+    <WagmiProvider config={rainbowKitConfig}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          {children}
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 };
-
-export default WalletProvider;
