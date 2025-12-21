@@ -24,28 +24,28 @@ const AutoRepayingSection = () => {
 
   const features = [
     {
-      title: "Effortless Royalty Distribution",
-      description: "Story Protocol automates royalty payouts directly to all eligible rights holders, ensuring fair and transparent compensation without manual intervention."
+      title: "Canonical RWA Truth & Compliance",
+      description: "Ingests real-world asset data, performs KYC/compliance, cryptographic hashing, and ZK proof generation. Mantle is the root of trust."
     },
     {
-      title: "Seamless Derivative Tracking",
-      description: "Automatically link and track derivative works to their parent IPs, maintaining a clear chain of provenance and ensuring creators benefit from their original content."
+      title: "Mantle as RWA Execution Hub",
+      description: "Mantle is the only chain authorized to validate and execute economic actions on assets: minting, trading, yield accounting, and lending."
     },
     {
-      title: "On-Chain Licensing & Usage",
-      description: "Manage and enforce IP licenses directly on the blockchain, granting permissions and collecting fees with unparalleled transparency and security."
+      title: "Native Asset Minting on Mantle",
+      description: "Verified RWAs are minted as fractional, compliance-aware ERC-3643 style tokens, fully composable with Mantle DeFi."
     },
     {
-      title: "Real-Time Revenue Insights",
-      description: "Gain instant visibility into your IP's performance and royalty earnings through comprehensive, up-to-date dashboards and analytics."
+      title: "Primary & Secondary Marketplace",
+      description: "Fund new RWAs in the primary market and trade existing RWA tokens peer-to-peer in the secondary market with low-cost execution."
     },
     {
-      title: "Dispute Resolution Framework",
-      description: "Our integrated system provides tools and processes for efficiently resolving IP disputes, supported by transparent on-chain records."
+      title: "Yield Distribution Engine",
+      description: "As real-world cash flows settle, yield is distributed pro-rata to token holders with gas-efficient, index-based accounting."
     },
     {
-      title: "Global Reach & Accessibility",
-      description: "Expand the reach of your intellectual property to a global audience with a decentralized platform that operates 24/7, accessible to creators worldwide."
+      title: "RWA-Backed Lending",
+      description: "Use RWA tokens as collateral to borrow liquidity, with loans backed by deterministic cash-flow assets."
     }
   ];
 
@@ -63,13 +63,13 @@ const AutoRepayingSection = () => {
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
         <div className="text-center mb-16 opacity-0" data-scroll-reveal>
           <p className="font-inter text-sm font-medium text-primary mb-3 uppercase tracking-wider">
-            Automated Monetization
+            Core Capabilities
           </p>
           <h2 className="font-antic text-5xl md:text-[56px] font-italic text-foreground mb-4">
-            Automatic Royalty & Derivative Management
+            A Platform for Verifiable RWA Execution
           </h2>
-          <p className="font-inter text-base md:text-lg text-foreground/80 max-w-2xl mx-auto">
-            Orion streamlines your IP monetization, ensuring creators are fairly compensated and derivatives are tracked seamlessly.
+          <p className="font-inter text-base md:text-lg text-foreground/80 max-w-3xl mx-auto">
+            Our infrastructure platform turns real-world cash-flow assets into cryptographically verifiable, compliant, and yield-bearing on-chain assets, with Mantle as the canonical execution and trust layer.
           </p>
         </div>
 
@@ -96,13 +96,13 @@ const AutoRepayingSection = () => {
 
         <div className="mt-16 flex flex-wrap justify-center gap-6 opacity-0" data-scroll-reveal>
           <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Fair Compensation</div>
+            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Cryptographic Truth</div>
           </div>
           <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Transparent Transactions</div>
+            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">On-chain Execution</div>
           </div>
           <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Creator Empowerment</div>
+            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Native Yield</div>
           </div>
         </div>
       </div>

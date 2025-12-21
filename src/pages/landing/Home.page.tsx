@@ -7,6 +7,7 @@ import Footer from "./Footer.page";
 import AutoRepayingSection from "./AutoRepaying.page";
 import FAQSection from "./FAQ.page";
 import ReviewsSection from "./Reviews.page";
+import AssetTokenizationSection from "./AssetTokenization.page";
 import CTASection from "./CTA.page";
 
 const HomePage = () => {
@@ -21,6 +22,7 @@ const HomePage = () => {
         <AutoRepayingSection />
         <FAQSection />
         <ReviewsSection />
+        <AssetTokenizationSection />
         <CTASection />
       </main>
       <Footer />

@@ -5,14 +5,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAccount, useSignMessage } from 'wagmi';
 import { ConnectWallet } from '../../../components/wallet/ConnectWallet';
 import { WalletAddress } from '../../../components/wallet/WalletAddress';
-import { DigiLockerSimulation } from '../../../components/wallet/DigiLockerSimulation';
+import { DocumentUploadModal } from '../../../components/wallet/DocumentUploadModal';
 import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 import { authService } from '../../../lib/api/auth.service';
 import { kycService } from '../../../lib/api/kyc.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { WalletStatusResponse } from '../../../types/auth.types';
+import { Mail } from 'lucide-react';
 
-type AuthStep = 'connect' | 'checking' | 'existing_user' | 'new_user' | 'authenticating' | 'kyc_submit';
+type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' | 'authenticating' | 'kyc_submit';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -22,9 +24,10 @@ const AuthPage = () => {
 
   const [step, setStep] = useState<AuthStep>('connect');
   const [walletStatus, setWalletStatus] = useState<WalletStatusResponse | null>(null);
-  const [authChallenge, setAuthChallenge] = useState<{ message: string; nonce: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [kycDocuments, setKycDocuments] = useState<{ aadhaar: string; pan: string } | null>(null);
+  const [kycDocuments, setKycDocuments] = useState<{ aadhaar: File | null; pan: File | null } | null>(null);
+  const [email, setEmail] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // When wallet connects, check status
   useEffect(() => {
@@ -39,7 +42,6 @@ const AuthPage = () => {
    */
   const checkWalletStatus = async (walletAddress: string) => {
     try {
-      setStep('checking');
       setError(null);
       setLoading(true);
 
@@ -64,13 +66,24 @@ const AuthPage = () => {
   };
 
   /**
-   * Handle DigiLocker simulation completion
-   * STEP 6: DigiLocker Simulation (Frontend Only)
+   * Handle document upload modal completion
+   * STEP 6: Document Upload (Frontend Only)
    */
-  const handleDigiLockerComplete = (documents: { aadhaar: string; pan: string }) => {
+  const handleDocumentUpload = (documents: { aadhaar: File | null; pan: File | null }) => {
     setKycDocuments(documents);
-    // After DigiLocker, proceed to authentication
-    handleLogin();
+    setStep('documents_uploaded');
+  };
+
+  /**
+   * Open document upload modal
+   */
+  const handleOpenDocumentModal = () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+    setError(null);
+    setIsModalOpen(true);
   };
 
   /**
@@ -89,7 +102,6 @@ const AuthPage = () => {
 
       // Step 7.1: Get Challenge
       const challenge = await authService.getChallenge(address);
-      setAuthChallenge(challenge);
 
       // Step 7.2: Wallet Signs Message
       const signature = await signMessageAsync({
@@ -126,7 +138,7 @@ const AuthPage = () => {
 
   /**
    * STEP 10: KYC Completion API (Separate)
-   * Only for users who saw DigiLocker
+   * Only for users who uploaded documents
    */
   const submitKYC = async () => {
     if (!kycDocuments) {
@@ -137,9 +149,15 @@ const AuthPage = () => {
     try {
       setLoading(true);
 
+      // Convert files to document identifiers (in real app, upload files first)
+      const documentData = {
+        aadhaar: kycDocuments.aadhaar?.name || 'aadhaar_uploaded',
+        pan: kycDocuments.pan?.name || 'pan_uploaded',
+      };
+
       await kycService.submitKYC({
-        source: 'DIGILOCKER_SIMULATION',
-        documents: kycDocuments,
+        source: 'DOCUMENT_UPLOAD',
+        documents: documentData,
       });
 
       // After success: Redirect to dashboard
@@ -195,17 +213,7 @@ const AuthPage = () => {
           )}
 
           {/* Checking Status */}
-          {step === 'checking' && (
-            <div className="text-center space-y-4">
-              {address && <WalletAddress address={address} />}
-              <div className="flex items-center justify-center gap-3">
-                <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
-                <span className="text-sm text-muted-foreground">
-                  Checking wallet status...
-                </span>
-              </div>
-            </div>
-          )}
+          
 
           {/* CASE A: Existing User - Show Login */}
           {step === 'existing_user' && address && (
@@ -228,14 +236,82 @@ const AuthPage = () => {
             </div>
           )}
 
-          {/* CASE B: New User - Show DigiLocker */}
+          {/* CASE B: New User - Show Email Input and Document Upload */}
           {step === 'new_user' && address && (
             <div className="space-y-6">
               <div className="text-center">
                 <WalletAddress address={address} />
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Complete your verification to continue
+                </p>
               </div>
 
-              <DigiLockerSimulation onComplete={handleDigiLockerComplete} />
+              {/* Email Input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Connect DigiLocker Button */}
+              <Button
+                onClick={handleOpenDocumentModal}
+                className="w-full"
+                size="lg"
+              >
+                Connect DigiLocker
+              </Button>
+
+              {/* Document Upload Modal */}
+              <DocumentUploadModal
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                onComplete={handleDocumentUpload}
+              />
+            </div>
+          )}
+
+          {/* CASE C: Documents Uploaded - Show Complete Registration */}
+          {step === 'documents_uploaded' && address && (
+            <div className="space-y-6">
+              <div className="text-center space-y-2">
+                <WalletAddress address={address} />
+                <div className="flex items-center justify-center gap-2 text-green-500">
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium">Documents Uploaded</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Click below to complete your registration
+                </p>
+              </div>
+
+              <Button
+                onClick={handleLogin}
+                className="w-full"
+                size="lg"
+              >
+                Complete Registration
+              </Button>
             </div>
           )}
 

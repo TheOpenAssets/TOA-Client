@@ -36,7 +36,7 @@ export interface LoginPayload {
 }
 
 export interface KYCSubmitPayload {
-  source: 'DIGILOCKER_SIMULATION';
+  source: 'DIGILOCKER_SIMULATION' | 'DOCUMENT_UPLOAD';
   documents: {
     aadhaar: string;
     pan: string;

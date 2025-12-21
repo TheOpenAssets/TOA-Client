@@ -14,7 +14,6 @@ interface DigiLockerSimulationProps {
  */
 export const DigiLockerSimulation = ({ onComplete }: DigiLockerSimulationProps) => {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
   const [documents, setDocuments] = useState<{ aadhaar: string; pan: string } | null>(null);
   const [step, setStep] = useState<'connect' | 'fetching' | 'preview'>('connect');
 
@@ -26,7 +25,6 @@ export const DigiLockerSimulation = ({ onComplete }: DigiLockerSimulationProps) 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     setIsConnecting(false);
-    setIsFetching(true);
 
     // Simulate fetching Aadhaar
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -41,7 +39,6 @@ export const DigiLockerSimulation = ({ onComplete }: DigiLockerSimulationProps) 
     };
 
     setDocuments(maskedDocuments);
-    setIsFetching(false);
     setStep('preview');
   };
 
