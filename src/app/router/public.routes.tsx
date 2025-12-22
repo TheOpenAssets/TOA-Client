@@ -16,10 +16,17 @@ import SettlementViewPage from '../../pages/admin/settlements/SettlementView.pag
 // Component Showcase
 import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
 
+// Marketplace
+import MarketplacePage from '../../pages/marketplace/Marketplace.page';
+
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
     element: <HomePage />,
+  },
+  {
+    path: '/marketplace',
+    element: <MarketplacePage />,
   },
   {
     path: '/auth',
