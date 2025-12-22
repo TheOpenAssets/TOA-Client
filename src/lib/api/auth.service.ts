@@ -184,15 +184,21 @@ class AuthService {
    * {
    *   walletAddress: string,  // User's wallet address
    *   message: string,        // The challenge message that was signed
-   *   signature: string       // Wallet signature of the message
+   *   signature: string,      // Wallet signature of the message
+   *   onboardingToken?: string // Optional: Issuer onboarding token from email link
    * }
    *
    * BACKEND IMPLEMENTATION REQUIREMENTS:
    * 1. Verify the signature matches the wallet address
    * 2. Verify the nonce from the message is valid and not expired
    * 3. Check if user exists in database
-   * 4. Generate JWT access token (15min expiry) and refresh token (7 days)
-   * 5. Return user data and tokens
+   * 4. If onboardingToken is present:
+   *    - Validate the token and get pending issuer data
+   *    - Link wallet address to the pending issuer record
+   *    - Set user role to 'ISSUER'
+   *    - Mark issuer status as 'APPROVED'
+   * 5. Generate JWT access token (15min expiry) and refresh token (7 days)
+   * 6. Return user data and tokens
    *
    * EXPECTED BACKEND RESPONSE:
    * {
@@ -235,6 +241,13 @@ class AuthService {
       console.log('🔧 MOCK MODE: Simulating login with wallet signature');
       console.log('Payload:', { ...payload, signature: payload.signature.substring(0, 20) + '...' });
 
+      // Check if this is issuer onboarding
+      const isIssuerOnboarding = !!payload.onboardingToken;
+
+      if (isIssuerOnboarding) {
+        console.log('🔧 ISSUER ONBOARDING: Token detected -', payload.onboardingToken);
+      }
+
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -246,7 +259,7 @@ class AuthService {
         user: {
           id: 'mock_user_id_' + Math.random().toString(36).substring(2, 9),
           walletAddress: payload.walletAddress,
-          role: 'INVESTOR',  // Default role for new users
+          role: isIssuerOnboarding ? 'ISSUER' : 'INVESTOR',  // Set role based on onboarding token
           kyc: false,         // Set to true to skip KYC flow in testing
         },
         tokens: {

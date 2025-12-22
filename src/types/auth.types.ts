@@ -33,6 +33,7 @@ export interface LoginPayload {
   walletAddress: string;
   message: string;
   signature: string;
+  onboardingToken?: string;  // Optional: For issuer onboarding flow
 }
 
 export interface KYCSubmitPayload {
