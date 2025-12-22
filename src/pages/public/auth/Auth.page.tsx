@@ -1,6 +1,6 @@
 // src/pages/public/auth/Auth.page.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useSignMessage } from 'wagmi';
 import { ConnectWallet } from '../../../components/wallet/ConnectWallet';
@@ -18,7 +18,7 @@ type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' 
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { setUser, setLoading } = useAuthStore();
 
@@ -29,18 +29,12 @@ const AuthPage = () => {
   const [email, setEmail] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // When wallet connects, check status
-  useEffect(() => {
-    if (isConnected && address && step === 'connect') {
-      checkWalletStatus(address);
-    }
-  }, [isConnected, address, step]);
-
   /**
    * STEP 4: Wallet Status Pre-Check (CRITICAL)
    * GET /users/exists?walletAddress=0xUSER
+   * Memoized to prevent infinite re-render loops
    */
-  const checkWalletStatus = async (walletAddress: string) => {
+  const checkWalletStatus = useCallback(async (walletAddress: string) => {
     try {
       setError(null);
       setLoading(true);
@@ -63,7 +57,7 @@ const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading]);
 
   /**
    * Handle document upload modal completion
@@ -173,22 +167,23 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left Side: Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary/5 items-center justify-center p-12">
-        <div className="max-w-md">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+      <div className="hidden lg:flex lg:w-1/2 bg-cover bg-center items-center justify-center p-12" style={{backgroundImage: `url('https://images.unsplash.com/photo-1735660244565-9574ca46c57d?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`}}>
+        <div className="max-w-md bg-black/40 backdrop-blur-sm p-8 rounded-lg">
+          <h1 className="text-4xl font-antic font-bold text-foreground  text-white mb-4">
             Welcome to Open Assets
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-white/40 text-muted-foreground font-antic">
             Secure, transparent, and compliant real-world asset tokenization platform.
           </p>
         </div>
       </div>
 
       {/* Right Side: Authentication Panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8" style={{backgroundImage: `url('/src/assets/ALogo-removebg-preview.png')`, backgroundSize: 'cover', backgroundPosition: 'center'}} >
+        <div className='bg-white/50 w-full max-w-lg p-10 rounded-xl shadow-lg backdrop-blur-sm'>
         <div className="w-full max-w-md space-y-8">
           {/* Header */}
-          <div className="text-center">
+          <div className="text-center font-antic">
             <h2 className="text-3xl font-bold text-foreground">Get Started</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Connect your wallet to continue
@@ -205,8 +200,8 @@ const AuthPage = () => {
           {/* STEP 3: Wallet Connection (First Action) */}
           {step === 'connect' && (
             <div className="space-y-4">
-              <ConnectWallet onWalletConnected={(addr) => checkWalletStatus(addr)} />
-              <p className="text-xs text-center text-muted-foreground">
+              <ConnectWallet onWalletConnected={checkWalletStatus} />
+              <p className="text-xs text-center text-muted-foreground font-antic">
                 By connecting, you agree to our Terms of Service
               </p>
             </div>
@@ -218,7 +213,7 @@ const AuthPage = () => {
           {/* CASE A: Existing User - Show Login */}
           {step === 'existing_user' && address && (
             <div className="space-y-6">
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-2 font-antic">
                 <WalletAddress address={address} />
                 <p className="text-lg font-medium text-foreground">Welcome back</p>
                 <p className="text-sm text-muted-foreground">
@@ -239,7 +234,7 @@ const AuthPage = () => {
           {/* CASE B: New User - Show Email Input and Document Upload */}
           {step === 'new_user' && address && (
             <div className="space-y-6">
-              <div className="text-center">
+              <div className="text-center space-y-2 font-antic">
                 <WalletAddress address={address} />
                 <p className="mt-4 text-sm text-muted-foreground">
                   Complete your verification to continue
@@ -247,7 +242,7 @@ const AuthPage = () => {
               </div>
 
               {/* Email Input */}
-              <div className="space-y-2">
+              <div className="space-y-2 font-antic">
                 <label className="text-sm font-medium text-foreground">
                   Email Address
                 </label>
@@ -266,8 +261,9 @@ const AuthPage = () => {
               {/* Connect DigiLocker Button */}
               <Button
                 onClick={handleOpenDocumentModal}
-                className="w-full"
+                className="w-full font-antic"
                 size="lg"
+                variant="link"
               >
                 Connect DigiLocker
               </Button>
@@ -341,6 +337,7 @@ const AuthPage = () => {
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import FAQSection from "./FAQ.page";
 import ReviewsSection from "./Reviews.page";
 import AssetTokenizationSection from "./AssetTokenization.page";
 import CTASection from "./CTA.page";
+import IntegrationsSection from "./IntegrationsSection.page";
 
 const HomePage = () => {
   return (
@@ -18,7 +19,7 @@ const HomePage = () => {
       <main className="overflow-x-hidden">
 
         <HeroSection />
-
+        <IntegrationsSection />
         <AutoRepayingSection />
         <FAQSection />
         <ReviewsSection />

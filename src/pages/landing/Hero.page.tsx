@@ -1,6 +1,6 @@
 import { Button } from "../../components/ui/button";
 import HeroBackground from "./HeroBackground";
-import Logo from "../../assets/ALogo.png";
+import Logo from "../../assets/ALogo-removebg-preview.png";
 import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
@@ -16,7 +16,7 @@ const HeroSection = () => {
 
       <div className="flex justify-center mb-8 relative z-10">
         <div className="w-16 h-16 bg-foreground rounded-xl flex items-center justify-center shadow-lg">
-          <div className="w-8 h-8 bg-background rounded-md">
+          <div className="w-64 h-64 bg-background rounded-md">
             <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
           </div>
         </div>
@@ -25,7 +25,11 @@ const HeroSection = () => {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
-            A Cross-Chain RWA Truth, Execution, and Yield Platform Built Natively on Mantle
+            RWA Truth, 
+          </h1>
+          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Execution</h1>
+          <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
+            & Yield Distribution Layer
           </h1>
 
           <p className="font-inter text-base md:text-lg text-foreground/80 mb-12 max-w-2xl mx-auto">

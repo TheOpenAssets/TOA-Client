@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import IntegrationDiagram from "./IntegrationDiagram";
-import cloudImage from "../assets/cloud.png";
+import cloudImage from "../../assets/cloud.png";
 
 const IntegrationsSection = () => {
   const sectionRef = useRef<HTMLDivElement>(null);

@@ -47,10 +47,10 @@ export const DocumentUploadModal = ({
   const isSubmitDisabled = !aadhaar && !pan;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange} >
+      <DialogContent className="sm:max-w-[500px] font-antic">
         <DialogHeader>
-          <DialogTitle className="text-xl">Upload Identity Documents</DialogTitle>
+          <DialogTitle className="text-xl font-antic">Upload Identity Documents</DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Please upload your Aadhaar and PAN card for verification
           </DialogDescription>
@@ -166,8 +166,9 @@ export const DocumentUploadModal = ({
           <Button
             onClick={handleSubmit}
             disabled={isSubmitDisabled}
-            className="w-full"
+            className="w-full bg-blue-200 hover:bg-primary/90"
             size="lg"
+            variant="link"
           >
             <FileText className="w-4 h-4 mr-2" />
             Submit Documents
