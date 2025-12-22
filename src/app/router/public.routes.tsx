@@ -13,6 +13,9 @@ import ComplianceViewPage from '../../pages/admin/compliance/ComplianceView.page
 import OperationsViewPage from '../../pages/admin/operations/OperationsView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
 
+// Component Showcase
+import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
+
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
@@ -56,5 +59,10 @@ export const publicRoutes: RouteObject[] = [
         element: <SettlementViewPage />,
       },
     ],
+  },
+  // Component Showcase
+  {
+    path: '/showcase',
+    element: <ComponentShowcasePage />,
   },
 ];
