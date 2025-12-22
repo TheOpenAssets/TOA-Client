@@ -40,10 +40,10 @@ const HeroSection = () => {
             <Button
                   size="lg"
                   className="btn-gradient text-white rounded-[10px] font-inter font-medium px-8 py-6 text-sm"
-                   style={{ 
-                    background: 'linear-gradient(125deg, rgb(119, 75, 229) -4%, rgb(119, 75, 229) 100%)',
-                    boxShadow: 'rgb(192, 176, 232) 0px 1px 2px 0px inset, rgba(99, 69, 173, 0.35) 0px 0.706592px 0.706592px -0.583333px, rgba(99, 69, 173, 0.34) 0px 1.80656px 1.80656px -1.16667px, rgba(99, 69, 173, 0.33) 0px 3.62176px 3.62176px -1.75px, rgba(99, 69, 173, 0.3) 0px 6.8656px 6.8656px -2.33333px, rgba(99, 69, 173, 0.26) 0px 13.6468px 13.6468px -2.91667px, rgba(99, 69, 173, 0.15) 0px 30px 30px -3.5px'
-                  }}
+                    style={{
+                  background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(75, 167, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
+                }}
                   onClick={handleNavigate}
                 >
                   Get Started

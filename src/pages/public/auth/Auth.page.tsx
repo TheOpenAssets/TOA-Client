@@ -14,6 +14,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import type { WalletStatusResponse } from '../../../types/auth.types';
 import { Mail, Wallet, Shield, Lock } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
+import ALogo from '../../../assets/ALogo-removebg-preview.png'; // Import the logo image
 
 type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' | 'authenticating' | 'kyc_submit';
 
@@ -167,6 +168,12 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f6fbff] relative overflow-hidden">
+      {/* Logo */}
+      <img
+        src={ALogo}
+        alt="App Logo"
+        className="absolute top-6 left-6 w-32 h-auto z-20"
+      />
       {/* Hero Background */}
       <HeroBackground />
 
@@ -369,8 +376,8 @@ const AuthPage = () => {
                 onClick={handleOpenDocumentModal}
                 className="w-full font-inter font-medium rounded-xl"
                 style={{
-                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
+                  background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(75, 167, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
                 }}
                 size="lg"
               >
@@ -414,8 +421,8 @@ const AuthPage = () => {
                 onClick={handleLogin}
                 className="w-full font-inter font-medium rounded-xl"
                 style={{
-                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
+                  background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(75, 167, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
                 }}
                 size="lg"
               >

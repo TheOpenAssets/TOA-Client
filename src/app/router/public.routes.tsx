@@ -6,6 +6,13 @@ import IssuerOnboardingPage from '../../pages/public/onboarding/IssuerOnboarding
 import IssuerDashboardPage from '../../pages/issuer/dashboard/IssuerDashboard.page';
 import AssetDetailsWrapper from '../../pages/issuer/asset-details/AssetDetailsWrapper.page';
 
+// Admin Dashboard Imports
+import AdminLayout from '../../pages/admin/layout/AdminLayout.page';
+import AdminOverviewPage from '../../pages/admin/overview/AdminOverview.page';
+import ComplianceViewPage from '../../pages/admin/compliance/ComplianceView.page';
+import OperationsViewPage from '../../pages/admin/operations/OperationsView.page';
+import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
+
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
@@ -26,5 +33,28 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/issuer/asset/:assetId',
     element: <AssetDetailsWrapper />,
+  },
+  // Admin Dashboard Routes
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    children: [
+      {
+        index: true,
+        element: <AdminOverviewPage />,
+      },
+      {
+        path: 'compliance',
+        element: <ComplianceViewPage />,
+      },
+      {
+        path: 'operations',
+        element: <OperationsViewPage />,
+      },
+      {
+        path: 'settlements',
+        element: <SettlementViewPage />,
+      },
+    ],
   },
 ];
