@@ -1,64 +1,93 @@
 // src/pages/issuer/dashboard/IssuerDashboard.page.tsx
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Plus, TrendingUp, Package, Clock, CheckCircle } from 'lucide-react';
+import { mockAssets } from '../../../lib/data/mock-assets';
+import { type AssetStatus } from '../../../types/issuer.types';
+import { AssetHoverCard } from '../../../components/issuer/AssetHoverCard';
+import HeroBackground from '../../landing/HeroBackground';
 
-// Mock data for demonstration
-const mockStats = {
-  totalAssets: 12,
-  fundsRaised: 1200000, // $1.2M
-  assetsPending: 2,
-  settledAssets: 5,
+// Calculate stats from mock assets
+const calculateStats = () => {
+  const totalAssets = mockAssets.length;
+  const fundsRaised = mockAssets.reduce(
+    (acc, asset) => acc + asset.tokenDistribution.soldTokens * asset.tokenDistribution.tokenPrice,
+    0
+  );
+  const assetsPending = mockAssets.filter((a) => a.status === 'pending').length;
+  const settledAssets = mockAssets.filter((a) => a.status === 'settled').length;
+
+  return {
+    totalAssets,
+    fundsRaised,
+    assetsPending,
+    settledAssets,
+  };
 };
 
-const mockAssets = [
-  {
-    id: 1,
-    name: 'Downtown Mumbai Commercial Property',
-    userTokens: 200,
-    totalTokens: 1000,
-    status: 'listed',
-    tokenPrice: 100, // Price per token in USD
-  },
-  {
-    id: 2,
-    name: 'Green Energy Solar Farm',
-    userTokens: 500,
-    totalTokens: 2000,
-    status: 'partially_sold',
-    tokenPrice: 50,
-  },
-  {
-    id: 3,
-    name: 'Luxury Resort in Goa',
-    userTokens: 300,
-    totalTokens: 500,
-    status: 'settled',
-    tokenPrice: 200,
-  },
-  {
-    id: 4,
-    name: 'Tech Park Bangalore',
-    userTokens: 1000,
-    totalTokens: 1000,
-    status: 'pending',
-    tokenPrice: 75,
-  },
-  {
-    id: 5,
-    name: 'Residential Complex Delhi',
-    userTokens: 150,
-    totalTokens: 800,
-    status: 'registered',
-    tokenPrice: 120,
-  },
-];
-
-type AssetStatus = 'pending' | 'registered' | 'listed' | 'partially_sold' | 'settled';
-
 const IssuerDashboardPage = () => {
+  const navigate = useNavigate();
   const [assets] = useState(mockAssets);
+  const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
+  const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 });
+  const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const mockStats = calculateStats();
+
+  const handleMouseEnter = (
+    assetId: string,
+    event: React.MouseEvent<HTMLTableRowElement>
+  ) => {
+    if (hideTimeoutId) {
+      clearTimeout(hideTimeoutId);
+      setHideTimeoutId(null);
+    }
+
+    const cardWidth = 768; // Width of hover card
+    const cardHeight = 400; // Approximate height of hover card
+    const offset = 20; // Offset from cursor
+
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+
+    // Calculate position to the right of cursor
+    let left = mouseX + offset;
+    let top = mouseY - (cardHeight / 2); // Center vertically with cursor
+
+    // Ensure card stays within viewport horizontally
+    if (left + cardWidth > window.innerWidth) {
+      left = mouseX - cardWidth - offset; // Show on left if not enough space on right
+    }
+
+    // Ensure card stays within viewport vertically
+    if (top < 10) {
+      top = 10;
+    } else if (top + cardHeight > window.innerHeight - 10) {
+      top = window.innerHeight - cardHeight - 10;
+    }
+
+    setHoveredAssetId(assetId);
+    setHoverPosition({ top, left });
+  };
+
+  const handleMouseLeave = () => {
+    const timeoutId = setTimeout(() => {
+      setHoveredAssetId(null);
+    }, 200);
+    setHideTimeoutId(timeoutId);
+  };
+
+  const handleCardMouseEnter = () => {
+    if (hideTimeoutId) {
+      clearTimeout(hideTimeoutId);
+      setHideTimeoutId(null);
+    }
+  };
+
+  const handleCardMouseLeave = () => {
+    setHoveredAssetId(null);
+  };
 
   // Open asset onboarding typeform
   const openAssetOnboardingForm = () => {
@@ -90,230 +119,278 @@ const IssuerDashboardPage = () => {
     const badges = {
       pending: {
         label: 'Pending',
-        className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        className: 'bg-gray-100 text-foreground border-gray-200',
       },
       registered: {
         label: 'Registered',
-        className: 'bg-blue-100 text-blue-800 border-blue-200',
+        className: 'bg-gray-100 text-foreground border-gray-200',
       },
       listed: {
         label: 'Listed',
-        className: 'bg-purple-100 text-purple-800 border-purple-200',
+        className: 'bg-gray-100 text-foreground border-gray-200',
       },
       partially_sold: {
         label: 'Partially Sold',
-        className: 'bg-orange-100 text-orange-800 border-orange-200',
+        className: 'bg-gray-100 text-foreground border-gray-200',
       },
       settled: {
         label: 'Settled',
-        className: 'bg-green-100 text-green-800 border-green-200',
+        className: 'bg-gray-100 text-foreground border-gray-200',
       },
     };
 
     const badge = badges[status];
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${badge.className}`}>
+      <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${badge.className}`}>
         {badge.label}
       </span>
     );
   };
 
-  // Calculate unsold tokens
-  const calculateUnsoldTokens = (userTokens: number, totalTokens: number) => {
-    return userTokens;
-  };
-
-  // Calculate loan availability (simplified: 70% of unsold token value)
-  const calculateLoanAvailability = (unsoldTokens: number, tokenPrice: number) => {
-    return Math.floor(unsoldTokens * tokenPrice * 0.7);
+  // Navigate to asset details
+  const handleViewAssetDetails = (assetId: string) => {
+    navigate(`/issuer/asset/${assetId}`);
   };
 
   return (
-    <div className="min-h-screen bg-[#f6fbff]">
+    <div className="min-h-screen bg-white">
+            <HeroBackground />
+
       {/* Header */}
-      <header className="bg-white/10 border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className=" bg-transparent border-b border-gray-200 relative top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div className='w-48 h-16 rounded-xl p-7 bg-white'>
-              <h1 className="font-antic text-lg md:text-2xl font-bold text-foreground">
+            <div>
+              <h1 className="font-antic text-2xl md:text-3xl font-normal text-foreground">
                 Issuer Dashboard
               </h1>
-             
+              <p className="font-inter text-sm text-muted-foreground mt-1">
+                Manage your tokenized assets
+              </p>
             </div>
 
             {/* Create Asset Button */}
             <Button
               onClick={openAssetOnboardingForm}
-              className="bg-purple-500 hover:bg-purple-600 text-white rounded-full w-12 h-12 p-0 flex items-center justify-center shadow-lg"
+              className="bg-foreground hover:bg-foreground/90 text-black rounded-xl px-6 py-3 flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 font-inter font-medium"
               title="Create New Asset"
             >
-              <Plus className="w-6 h-6" />
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Add New Asset</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8 overflow-hidden relative">
         {/* Overview Section - Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 z-20 overflow-hidden">
           {/* Total Assets */}
-          <div className="bg-white/40 rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <Package className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="space-y-1 bg-white/50">
-              <p className="font-inter text-sm text-muted-foreground">Total Assets</p>
-              <p className="font-antic text-3xl font-bold text-foreground">
-                {mockStats.totalAssets}
-              </p>
-            </div>
+          <div
+        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-20"
+        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Package className="w-5 h-5 text-foreground/60" />
+            <p className="font-inter text-sm text-foreground/70 font-medium">Total Assets</p>
+          </div>
+          <p className="font-antic text-4xl font-normal text-foreground">
+            {mockStats.totalAssets}
+          </p>
+        </div>
           </div>
 
           {/* Funds Raised */}
-          <div className="bg-white/40 rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="font-inter text-sm text-muted-foreground">Funds Raised</p>
-              <p className="font-antic text-3xl font-bold text-foreground">
-                {formatCurrency(mockStats.fundsRaised)}
-              </p>
-            </div>
+          <div
+        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-20"
+        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="w-5 h-5 text-foreground/60" />
+            <p className="font-inter text-sm text-foreground/70 font-medium">Funds Raised</p>
+          </div>
+          <p className="font-antic text-4xl font-normal text-foreground">
+            {formatCurrency(mockStats.fundsRaised)}
+          </p>
+        </div>
           </div>
 
           {/* Assets Pending */}
-          <div className="bg-white/40 rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="font-inter text-sm text-muted-foreground">Assets Pending</p>
-              <p className="font-antic text-3xl font-bold text-foreground">
-                {mockStats.assetsPending}
-              </p>
-            </div>
+          <div
+        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-20"
+        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-foreground/60" />
+            <p className="font-inter text-sm text-foreground/70 font-medium">Assets Pending</p>
+          </div>
+          <p className="font-antic text-4xl font-normal text-foreground">
+            {mockStats.assetsPending}
+          </p>
+        </div>
           </div>
 
           {/* Settled Assets */}
-          <div className="bg-white/40 rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="font-inter text-sm text-muted-foreground">Settled Assets</p>
-              <p className="font-antic text-3xl font-bold text-foreground">
-                {mockStats.settledAssets}
-              </p>
-            </div>
+          <div
+        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-foreground/60" />
+            <p className="font-inter text-sm text-foreground/70 font-medium">Settled Assets</p>
+          </div>
+          <p className="font-antic text-4xl font-normal text-foreground">
+            {mockStats.settledAssets}
+          </p>
+        </div>
           </div>
         </div>
 
         {/* My Assets Section */}
-        <div className="bg-white/40 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-antic text-xl font-semibold text-foreground">My Assets</h2>
-            <p className="font-inter text-sm text-muted-foreground mt-1">
-              Track and manage your tokenized assets
-            </p>
+        <div className="bg-[#d8dfe5] rounded-2xl p-8 shadow-lg overflow-hidden z-20">
+          <div className="mb-8">
+        <h2 className="font-antic text-3xl font-normal text-foreground">My Assets</h2>
+        <p className="font-inter text-sm text-foreground/70 mt-2">
+          Track and manage your tokenized assets portfolio
+        </p>
           </div>
 
           {/* Assets Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-inter">
-                    Asset Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-inter">
-                    Token Info
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-inter">
-                    Unsold/Claimable
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-inter">
-                    Loan Availability
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-inter">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white/40 divide-y divide-gray-100">
-                {assets.map((asset) => {
-                  const unsoldTokens = calculateUnsoldTokens(asset.userTokens, asset.totalTokens);
-                  const loanAvailability = calculateLoanAvailability(unsoldTokens, asset.tokenPrice);
+          <div className="overflow-x-auto bg-white rounded-xl">
+        <table className="w-full">
+          <thead className="border-b border-gray-200">
+            <tr>
+          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+            Asset Name
+          </th>
+          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+            Token Distribution
+          </th>
+          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+            Unsold Tokens
+          </th>
+          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+            Invoice Amount
+          </th>
+          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+            Status
+          </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {assets.map((asset) => {
+          const soldPercentage =
+            (asset.tokenDistribution.soldTokens /
+              asset.tokenDistribution.totalTokens) *
+            100;
 
-                  return (
-                    <tr key={asset.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div>
-                            <div className="font-antic font-medium text-foreground">
-                              {asset.name}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-inter text-sm">
-                          <span className="font-semibold text-foreground">{asset.userTokens}</span>
-                          <span className="text-muted-foreground"> / {asset.totalTokens} Total</span>
-                        </div>
-                        <div className="font-inter text-xs text-muted-foreground mt-1">
-                          {formatCurrency(asset.tokenPrice)} per token
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-inter font-semibold text-foreground">
-                          {unsoldTokens} tokens
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-inter font-semibold text-green-600">
-                          {formatCurrency(loanAvailability)}
-                        </div>
-                        <div className="font-inter text-xs text-muted-foreground">
-                          70% of value
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(asset.status)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          return (
+            <tr
+              key={asset.id}
+              className="hover:bg-gray-50/50 transition-all duration-200 cursor-pointer relative group"
+              onMouseEnter={(e) => handleMouseEnter(asset.id, e)}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => handleViewAssetDetails(asset.id)}
+            >
+              <td className="px-6 py-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <Package className="w-5 h-5 text-foreground/60" />
+              </div>
+              <div>
+                <div className="font-antic font-normal text-foreground text-base">
+              {asset.name}
+                </div>
+                <div className="font-inter text-xs text-foreground/60 mt-0.5">
+              {asset.assetType}
+                </div>
+              </div>
+            </div>
+              </td>
+              <td className="px-6 py-5">
+            <div className="font-inter text-sm mb-2">
+              <span className="font-semibold text-foreground text-base">
+                {asset.tokenDistribution.soldTokens.toLocaleString()}
+              </span>
+              <span className="text-foreground/60">
+                {' '}
+                / {asset.tokenDistribution.totalTokens.toLocaleString()}
+              </span>
+            </div>
+            {/* Progress bar */}
+            <div className="w-32 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="bg-foreground h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${soldPercentage}%` }}
+              />
+            </div>
+            <div className="font-inter text-xs text-foreground/60 mt-1">
+              {soldPercentage.toFixed(1)}% Sold
+            </div>
+              </td>
+              <td className="px-6 py-5">
+            <div className="inline-flex flex-col items-start">
+              <div className="font-inter font-semibold text-foreground text-base">
+                {asset.tokenDistribution.unsoldTokens.toLocaleString()}
+              </div>
+              <div className="font-inter text-xs text-foreground/60 mt-0.5">
+                {formatCurrency(asset.tokenDistribution.tokenPrice)} per token
+              </div>
+            </div>
+              </td>
+              <td className="px-6 py-5">
+            <div className="font-antic font-normal text-foreground text-base">
+              {formatCurrency(asset.invoice.amount)}
+            </div>
+            <div className="font-inter text-xs text-foreground/60 mt-0.5">
+              Due: {new Date(asset.invoice.dueDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </div>
+              </td>
+              <td className="px-6 py-5">{getStatusBadge(asset.status)}</td>
+            </tr>
+          );
+            })}
+          </tbody>
+        </table>
           </div>
+
+          {/* Render Hover Card Outside Table */}
+          {hoveredAssetId && (
+        <AssetHoverCard
+          asset={assets.find((a) => a.id === hoveredAssetId)!}
+          onViewMore={() => handleViewAssetDetails(hoveredAssetId)}
+          position={hoverPosition}
+          onMouseEnter={handleCardMouseEnter}
+          onMouseLeave={handleCardMouseLeave}
+        />
+          )}
 
           {/* Empty State (if no assets) */}
           {assets.length === 0 && (
-            <div className="px-6 py-12 text-center">
-              <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
-                No assets yet
-              </h3>
-              <p className="font-inter text-sm text-muted-foreground mb-6">
-                Get started by creating your first tokenized asset
-              </p>
-              <Button
-                onClick={openAssetOnboardingForm}
-                className="bg-purple-500 hover:bg-purple-600 text-white font-inter"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Asset
-              </Button>
-            </div>
+        <div className="px-6 py-12 text-center">
+          <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+            No assets yet
+          </h3>
+          <p className="font-inter text-sm text-muted-foreground mb-6">
+            Get started by creating your first tokenized asset
+          </p>
+          <Button
+            onClick={openAssetOnboardingForm}
+            className="bg-purple-500 hover:bg-purple-600 text-white font-inter"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Asset
+          </Button>
+        </div>
           )}
         </div>
       </main>

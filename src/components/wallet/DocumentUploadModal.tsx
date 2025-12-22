@@ -72,7 +72,7 @@ export const DocumentUploadModal = ({
               />
               <label
                 htmlFor="aadhaar-upload"
-                className="flex items-center justify-center w-full h-32 px-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors bg-muted/30"
+                className="flex items-center justify-center w-full h-32 px-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
               >
                 {aadhaar ? (
                   <div className="flex items-center gap-3">
@@ -118,7 +118,7 @@ export const DocumentUploadModal = ({
               />
               <label
                 htmlFor="pan-upload"
-                className="flex items-center justify-center w-full h-32 px-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors bg-muted/30"
+                className="flex items-center justify-center w-full h-32 px-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
               >
                 {pan ? (
                   <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export const DocumentUploadModal = ({
           </div>
 
           {/* Info Box for Non-Indian Users */}
-          <div className="flex gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <div className="flex gap-3 p-4 border border-blue-500/20 rounded-lg">
             <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground">

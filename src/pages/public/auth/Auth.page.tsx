@@ -12,7 +12,8 @@ import { authService } from '../../../lib/api/auth.service';
 import { kycService } from '../../../lib/api/kyc.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { WalletStatusResponse } from '../../../types/auth.types';
-import { Mail } from 'lucide-react';
+import { Mail, Wallet, Shield, Lock } from 'lucide-react';
+import HeroBackground from '../../landing/HeroBackground';
 
 type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' | 'authenticating' | 'kyc_submit';
 
@@ -165,35 +166,136 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Side: Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-cover bg-center items-center justify-center p-12" style={{backgroundImage: `url('https://images.unsplash.com/photo-1735660244565-9574ca46c57d?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`}}>
-        <div className="max-w-md bg-black/40 backdrop-blur-sm p-8 rounded-lg">
-          <h1 className="text-4xl font-antic font-bold text-foreground  text-white mb-4">
-            Welcome to Open Assets
-          </h1>
-          <p className="text-lg text-white/40 text-muted-foreground font-antic">
-            Secure, transparent, and compliant real-world asset tokenization platform.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#f6fbff] relative overflow-hidden">
+      {/* Hero Background */}
+      <HeroBackground />
 
-      {/* Right Side: Authentication Panel */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{backgroundImage: `url('/src/assets/ALogo-removebg-preview.png')`, backgroundSize: 'cover', backgroundPosition: 'center'}} >
-        <div className='bg-white/50 w-full max-w-lg p-10 rounded-xl shadow-lg backdrop-blur-sm'>
-        <div className="w-full max-w-md space-y-8">
+      <div className="relative z-10 min-h-screen flex">
+        {/* Left Side: Features */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12">
+          <div className="max-w-md space-y-8">
+            <div>
+              <h1 className="text-4xl font-antic font-normal text-foreground mb-4 leading-tight">
+                Welcome to <span className="whitespace-nowrap">Open Assets</span>
+              </h1>
+              <p className="text-lg text-foreground/70 font-inter">
+                Secure, transparent, and compliant real-world asset tokenization platform.
+              </p>
+            </div>
+
+            {/* Feature Pills */}
+            <div className="space-y-4">
+              <div
+                className="rounded-2xl p-6 transition-all duration-300 hover-lift"
+                style={{
+                  background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
+                  boxShadow: `
+                    rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
+                    rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
+                    rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
+                    rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
+                    rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
+                    rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
+                    rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+                  `
+                }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-6 h-6 text-foreground/60" />
+                  </div>
+                  <div>
+                    <h3 className="font-antic text-lg font-normal text-foreground mb-1">Secure Authentication</h3>
+                    <p className="font-inter text-sm text-foreground/60">Connect your wallet and verify your identity with our secure authentication system.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className="rounded-2xl p-6 transition-all duration-300 hover-lift"
+                style={{
+                  background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
+                  boxShadow: `
+                    rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
+                    rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
+                    rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
+                    rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
+                    rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
+                    rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
+                    rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+                  `
+                }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                    <Lock className="w-6 h-6 text-foreground/60" />
+                  </div>
+                  <div>
+                    <h3 className="font-antic text-lg font-normal text-foreground mb-1">KYC Compliance</h3>
+                    <p className="font-inter text-sm text-foreground/60">Complete your KYC verification to access the full platform features.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className="rounded-2xl p-6 transition-all duration-300 hover-lift"
+                style={{
+                  background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
+                  boxShadow: `
+                    rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
+                    rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
+                    rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
+                    rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
+                    rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
+                    rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
+                    rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+                  `
+                }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                    <Wallet className="w-6 h-6 text-foreground/60" />
+                  </div>
+                  <div>
+                    <h3 className="font-antic text-lg font-normal text-foreground mb-1">Wallet Integration</h3>
+                    <p className="font-inter text-sm text-foreground/60">Seamlessly connect with popular Web3 wallets for easy access.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Authentication Panel */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div
+            className="w-full max-w-lg p-10 rounded-2xl transition-all duration-300"
+            style={{
+              background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
+              boxShadow: `
+                rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
+                rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
+                rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
+                rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
+                rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
+                rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
+                rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+              `
+            }}
+          >
+            <div className="w-full space-y-8">
           {/* Header */}
-          <div className="text-center font-antic">
-            <h2 className="text-3xl font-bold text-foreground">Get Started</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+          <div className="text-center">
+            <h2 className="text-3xl font-antic font-normal text-foreground">Get Started</h2>
+            <p className="mt-2 text-sm text-foreground/70 font-inter">
               Connect your wallet to continue
             </p>
           </div>
 
           {/* Error Display */}
           {error && (
-            <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="p-4 bg-destructive/10 border border-destructive rounded-xl">
+              <p className="text-sm text-destructive font-inter">{error}</p>
             </div>
           )}
 
@@ -201,7 +303,7 @@ const AuthPage = () => {
           {step === 'connect' && (
             <div className="space-y-4">
               <ConnectWallet onWalletConnected={checkWalletStatus} />
-              <p className="text-xs text-center text-muted-foreground font-antic">
+              <p className="text-xs text-center text-foreground/60 font-inter">
                 By connecting, you agree to our Terms of Service
               </p>
             </div>
@@ -213,17 +315,21 @@ const AuthPage = () => {
           {/* CASE A: Existing User - Show Login */}
           {step === 'existing_user' && address && (
             <div className="space-y-6">
-              <div className="text-center space-y-2 font-antic">
+              <div className="text-center space-y-2">
                 <WalletAddress address={address} />
-                <p className="text-lg font-medium text-foreground">Welcome back</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg font-antic font-normal text-foreground">Welcome back</p>
+                <p className="text-sm text-foreground/70 font-inter">
                   Click below to sign in with your wallet
                 </p>
               </div>
 
               <Button
                 onClick={handleLogin}
-                className="w-full"
+                className="w-full font-inter font-medium rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
+                }}
                 size="lg"
               >
                 Login
@@ -234,26 +340,26 @@ const AuthPage = () => {
           {/* CASE B: New User - Show Email Input and Document Upload */}
           {step === 'new_user' && address && (
             <div className="space-y-6">
-              <div className="text-center space-y-2 font-antic">
+              <div className="text-center space-y-2">
                 <WalletAddress address={address} />
-                <p className="mt-4 text-sm text-muted-foreground">
+                <p className="mt-4 text-sm text-foreground/70 font-inter">
                   Complete your verification to continue
                 </p>
               </div>
 
               {/* Email Input */}
-              <div className="space-y-2 font-antic">
-                <label className="text-sm font-medium text-foreground">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground font-inter">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/60" />
                   <Input
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 font-inter rounded-xl"
                   />
                 </div>
               </div>
@@ -261,9 +367,12 @@ const AuthPage = () => {
               {/* Connect DigiLocker Button */}
               <Button
                 onClick={handleOpenDocumentModal}
-                className="w-full font-antic"
+                className="w-full font-inter font-medium rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
+                }}
                 size="lg"
-                variant="link"
               >
                 Connect DigiLocker
               </Button>
@@ -294,16 +403,20 @@ const AuthPage = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-sm font-medium">Documents Uploaded</span>
+                  <span className="text-sm font-medium font-inter">Documents Uploaded</span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground/70 font-inter">
                   Click below to complete your registration
                 </p>
               </div>
 
               <Button
                 onClick={handleLogin}
-                className="w-full"
+                className="w-full font-inter font-medium rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
+                }}
                 size="lg"
               >
                 Complete Registration
@@ -316,11 +429,11 @@ const AuthPage = () => {
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center gap-3">
                 <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-foreground/70 font-inter">
                   Authenticating...
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground/60 font-inter">
                 Please sign the message in your wallet
               </p>
             </div>
@@ -331,13 +444,14 @@ const AuthPage = () => {
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center gap-3">
                 <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-foreground/70 font-inter">
                   Completing verification...
                 </span>
               </div>
             </div>
           )}
-        </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

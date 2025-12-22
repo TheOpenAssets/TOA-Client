@@ -34,3 +34,90 @@ export interface TokenValidationResponse {
 export interface TokenValidationPayload {
   token: string;          // The onboarding token from URL parameter
 }
+
+/**
+ * Asset status types
+ */
+export type AssetStatus = 'pending' | 'registered' | 'listed' | 'partially_sold' | 'settled';
+
+/**
+ * Invoice details for an asset
+ */
+export interface InvoiceDetails {
+  invoiceNumber: string;
+  amount: number;
+  dueDate: string;
+  description: string;
+  issueDate: string;
+  paymentTerms: string;
+}
+
+/**
+ * Risk assessment for an asset
+ */
+export interface RiskFactor {
+  level: 'low' | 'medium' | 'high';
+  category: string;
+  description: string;
+}
+
+/**
+ * Audit information for an asset
+ */
+export interface AuditInfo {
+  auditor: string;
+  auditDate: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  reportUrl?: string;
+  findings?: string;
+}
+
+/**
+ * Token distribution information
+ */
+export interface TokenDistribution {
+  totalTokens: number;
+  soldTokens: number;
+  unsoldTokens: number;
+  claimableTokens: number;
+  tokenPrice: number;
+}
+
+/**
+ * Complete asset data for issuer dashboard
+ */
+export interface IssuerAsset {
+  id: string;
+  name: string;
+  assetType: string;
+  status: AssetStatus;
+  tokenDistribution: TokenDistribution;
+  invoice: InvoiceDetails;
+  riskFactors: RiskFactor[];
+  audit?: AuditInfo;
+  createdAt: string;
+  updatedAt: string;
+  imageUrl?: string;
+  location?: string;
+  overview?: string;
+}
+
+/**
+ * Claim request payload
+ */
+export interface ClaimTokensPayload {
+  assetId: string;
+  amount: number;
+  walletAddress: string;
+}
+
+/**
+ * Claim response
+ */
+export interface ClaimTokensResponse {
+  success: boolean;
+  transactionHash?: string;
+  claimedAmount: number;
+  message?: string;
+  error?: string;
+}
