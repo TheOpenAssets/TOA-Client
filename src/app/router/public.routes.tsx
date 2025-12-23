@@ -19,6 +19,9 @@ import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
 // Marketplace
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
 
+// Portfolio
+import PortfolioPage from '../../pages/portfolio/Portfolio.page';
+
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
@@ -27,6 +30,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/marketplace',
     element: <MarketplacePage />,
+  },
+  {
+    path: '/portfolio',
+    element: <PortfolioPage />,
   },
   {
     path: '/auth',

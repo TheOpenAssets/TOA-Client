@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAccount } from 'wagmi';
 import {
   Search,
   TrendingUp,
@@ -25,6 +26,7 @@ import HeroBackground from '../landing/HeroBackground';
 
 const MarketplacePage = () => {
   const navigate = useNavigate();
+  const { address, isConnected } = useAccount();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [sortBy, setSortBy] = useState<SortOption>('most-popular');
@@ -33,6 +35,11 @@ const MarketplacePage = () => {
   const featuredAssets = getFeaturedAssets();
   const highYieldAssets = getHighYieldAssets();
   const recentlyVerifiedAssets = getRecentlyVerifiedAssets();
+
+  // Truncate wallet address for display
+  const truncateAddress = (address: string): string => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   // Filter assets based on active filter and search
   const filteredAssets = marketplaceAssets.filter((asset) => {
@@ -105,25 +112,37 @@ const MarketplacePage = () => {
 
             {/* Center: Navigation */}
             <nav className="flex items-center gap-8">
-              <button className="font-antic text-sm font-medium text-foreground hover:text-blue-600 transition-colors">
-                Explore
+              <button
+                onClick={() => navigate('/portfolio')}
+                className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
+              >
+                Portfolio
+              </button>
+              <button
+                onClick={() => navigate('/marketplace')}
+                className="font-antic text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
+              >
+                Trade
               </button>
               <button className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors">
-                Tools
-              </button>
-              <button className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors">
-                Learn
+                Borrow
               </button>
             </nav>
 
-            {/* Right: Auth Buttons */}
+            {/* Right: Auth / Wallet Display */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/auth')}
-                className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-antic text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
-              >
-                Sign Up / Log In
-              </button>
+              {isConnected && address ? (
+                <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
+                  {truncateAddress(address)}
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-antic text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                >
+                  Sign Up / Log In
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -203,7 +222,7 @@ const MarketplacePage = () => {
           {/* Section 1: Featured Issuances */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className=" text-2xl font-bold text-foreground font-antic">
+              <h2 className=" text-2xl  text-foreground font-antic">
                 Featured Issuances
               </h2>
             </div>
@@ -252,7 +271,7 @@ const MarketplacePage = () => {
           {/* Section 2: High-Yield Opportunities */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="font-antic text-2xl font-bold text-foreground">
+              <h2 className="font-antic text-2xl  text-foreground">
                 High-Yield Opportunities
               </h2>
             </div>
@@ -301,7 +320,7 @@ const MarketplacePage = () => {
           {/* Section 3: Recently Verified Assets */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="font-antic text-2xl font-bold text-foreground">
+              <h2 className="font-antic text-2xl  text-foreground">
                 Recently Verified
               </h2>
             </div>

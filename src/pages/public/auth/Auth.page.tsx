@@ -116,10 +116,10 @@ const AuthPage = () => {
 
       // STEP 9: Post-Login Handling
       if (loginResponse.user.kyc === true) {
-        // Redirect to dashboard
-        navigate('/dashboard');
+        // Existing user with KYC → redirect to portfolio
+        navigate('/portfolio');
       } else {
-        // Submit KYC completion
+        // New user → Submit KYC completion
         setStep('kyc_submit');
         await submitKYC();
       }
@@ -156,8 +156,8 @@ const AuthPage = () => {
         documents: documentData,
       });
 
-      // After success: Redirect to dashboard
-      navigate('/dashboard');
+      // After success: First-time user → Redirect to marketplace
+      navigate('/marketplace');
     } catch (err: any) {
       console.error('Error submitting KYC:', err);
       setError(err.message || 'KYC submission failed');
