@@ -8,6 +8,7 @@ import { mockAssets } from '../../../lib/data/mock-assets';
 import { type AssetStatus } from '../../../types/issuer.types';
 import { AssetHoverCard } from '../../../components/issuer/AssetHoverCard';
 import HeroBackground from '../../landing/HeroBackground';
+import { NotificationInboxPopover } from '../../../components/ui/notification-inbox-popover';
 
 // Calculate stats from mock assets
 const calculateStats = () => {
@@ -169,15 +170,21 @@ const IssuerDashboardPage = () => {
               </p>
             </div>
 
-            {/* Create Asset Button */}
-            <Button
-              onClick={openAssetOnboardingForm}
-              className="bg-foreground hover:bg-foreground/90 text-black rounded-xl px-6 py-3 flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 font-inter font-medium"
-              title="Create New Asset"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Add New Asset</span>
-            </Button>
+            {/* Right side actions */}
+            <div className="flex items-center gap-3">
+              {/* Notification Bell */}
+              <NotificationInboxPopover />
+
+              {/* Create Asset Button */}
+              <Button
+                onClick={openAssetOnboardingForm}
+                className="bg-foreground hover:bg-foreground/90 text-black rounded-xl px-6 py-3 flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 font-inter font-medium"
+                title="Create New Asset"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Add New Asset</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
