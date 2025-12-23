@@ -230,7 +230,10 @@ const IssuerOnboardingPage = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-cover bg-center items-center justify-center p-12" style={{backgroundImage: `url('https://images.unsplash.com/photo-1735660244565-9574ca46c57d?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`}}>
         <div className="max-w-md bg-black/40 backdrop-blur-sm p-8 rounded-lg">
           <h1 className="text-4xl font-antic font-bold text-white mb-4">
-            Welcome to Open Assets
+            Welcome to 
+          </h1>
+          <h1 className="text-4xl font-beau font-bold text-white mb-6">
+            Open Assets
           </h1>
           <p className="text-lg text-white/80 font-antic">
             Complete your issuer onboarding to start tokenizing real-world assets.

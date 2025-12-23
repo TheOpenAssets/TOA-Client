@@ -7,14 +7,14 @@ import type {
   LoginResponse,
 } from '../../types/auth.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
 // ============================================================================
 // Set to true to use mock data (no backend required)
 // Set to false when backend is ready
-const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'true' || true;
+const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
 
 /**
  * Auth Service - Handles all authentication-related API calls
@@ -59,7 +59,7 @@ class AuthService {
    */
   async checkWalletStatus(walletAddress: string): Promise<WalletStatusResponse> {
     // MOCK MODE: Simulate backend response
-    if (USE_MOCK_MODE) {
+    if (true) {
       console.log('🔧 MOCK MODE: Simulating wallet status check');
 
       // Simulate network delay
