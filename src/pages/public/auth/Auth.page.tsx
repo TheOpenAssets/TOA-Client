@@ -1,7 +1,7 @@
 // src/pages/public/auth/Auth.page.tsx
 
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useSignMessage } from 'wagmi';
 import { ConnectWallet } from '../../../components/wallet/ConnectWallet';
 import { WalletAddress } from '../../../components/wallet/WalletAddress';
@@ -20,9 +20,10 @@ type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' 
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { setUser, setLoading } = useAuthStore();
+  const { setUser, setLoading, user } = useAuthStore();
 
   const [step, setStep] = useState<AuthStep>('connect');
   const [walletStatus, setWalletStatus] = useState<WalletStatusResponse | null>(null);
@@ -30,6 +31,18 @@ const AuthPage = () => {
   const [kycDocuments, setKycDocuments] = useState<{ aadhaar: File | null; pan: File | null } | null>(null);
   const [email, setEmail] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  /**
+   * Check if user is coming from Hero section after authentication
+   * If yes, show KYC form directly
+   */
+  useEffect(() => {
+    const state = location.state as { showKycForm?: boolean } | null;
+    if (state?.showKycForm && address && user && !user.kyc) {
+      // User is authenticated but needs to complete KYC
+      setStep('new_user');
+    }
+  }, [location.state, address, user]);
 
   /**
    * STEP 4: Wallet Status Pre-Check (CRITICAL)
@@ -119,9 +132,9 @@ const AuthPage = () => {
         // Existing user with KYC → redirect to portfolio
         navigate('/portfolio');
       } else {
-        // New user → Submit KYC completion
-        setStep('kyc_submit');
-        await submitKYC();
+        // New user → Stay on auth page, wait for user to submit KYC
+        setError('Please complete KYC verification to continue');
+        setStep('new_user');
       }
     } catch (err: any) {
       console.error('Error during authentication:', err);
@@ -143,6 +156,7 @@ const AuthPage = () => {
     }
 
     try {
+      setStep('kyc_submit');
       setLoading(true);
 
       // Convert files to document identifiers (in real app, upload files first)
@@ -161,9 +175,18 @@ const AuthPage = () => {
     } catch (err: any) {
       console.error('Error submitting KYC:', err);
       setError(err.message || 'KYC submission failed');
+      setStep('documents_uploaded');
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Handle Complete Registration button click
+   * This is called when user has uploaded documents and is ready to submit KYC
+   */
+  const handleCompleteRegistration = async () => {
+    await submitKYC();
   };
 
   return (
@@ -342,7 +365,7 @@ const AuthPage = () => {
               </div>
 
               <Button
-                onClick={handleLogin}
+                onClick={handleCompleteRegistration}
                 className="w-full font-inter font-medium rounded-xl"
                 style={{
                   background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',
