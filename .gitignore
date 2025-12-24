@@ -22,3 +22,28 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+
+# dependencies
+/node_modules
+
+
+# production
+/build
+/dist
+.DS_Store
+
+# misc
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
+# IDE
+.idea
+.vscode
+
+package-lock.json
