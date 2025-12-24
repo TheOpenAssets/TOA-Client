@@ -12,7 +12,7 @@ import { Upload, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 interface DocumentUploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onComplete: (documents: { aadhaar: File | null; pan: File | null }) => void;
+  onComplete: (documents: { aadhaar: File | null }) => void;
 }
 
 export const DocumentUploadModal = ({
@@ -21,7 +21,6 @@ export const DocumentUploadModal = ({
   onComplete,
 }: DocumentUploadModalProps) => {
   const [aadhaar, setAadhaar] = useState<File | null>(null);
-  const [pan, setPan] = useState<File | null>(null);
 
   const handleAadhaarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -30,21 +29,14 @@ export const DocumentUploadModal = ({
     }
   };
 
-  const handlePanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPan(file);
-    }
-  };
-
   const handleSubmit = () => {
-    if (aadhaar || pan) {
-      onComplete({ aadhaar, pan });
+    if (aadhaar) {
+      onComplete({ aadhaar });
       onOpenChange(false);
     }
   };
 
-  const isSubmitDisabled = !aadhaar && !pan;
+  const isSubmitDisabled = !aadhaar;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} >
@@ -52,7 +44,7 @@ export const DocumentUploadModal = ({
         <DialogHeader>
           <DialogTitle className="text-xl font-antic">Upload Identity Documents</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Please upload your Aadhaar and PAN card for verification
+            Please upload your Aadhaar card for verification
           </DialogDescription>
         </DialogHeader>
 
@@ -92,52 +84,6 @@ export const DocumentUploadModal = ({
                     <div className="text-center">
                       <p className="text-sm font-medium text-foreground">
                         Click to upload Aadhaar
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        PNG, JPG or PDF (max. 5MB)
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </label>
-            </div>
-          </div>
-
-          {/* PAN Upload */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              PAN Card
-            </label>
-            <div className="relative">
-              <input
-                type="file"
-                id="pan-upload"
-                accept="image/*,.pdf"
-                onChange={handlePanUpload}
-                className="hidden"
-              />
-              <label
-                htmlFor="pan-upload"
-                className="flex items-center justify-center w-full h-32 px-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
-              >
-                {pan ? (
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-foreground">
-                        {pan.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(pan.size / 1024).toFixed(2)} KB
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2">
-                    <Upload className="w-8 h-8 text-muted-foreground" />
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-foreground">
-                        Click to upload PAN
                       </p>
                       <p className="text-xs text-muted-foreground">
                         PNG, JPG or PDF (max. 5MB)
