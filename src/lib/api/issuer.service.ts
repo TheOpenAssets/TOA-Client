@@ -3,16 +3,22 @@
 import type {
   TokenValidationResponse,
   IssuerData,
+  ChallengeResponse,
+  LoginResponse,
+  LoginPayload
 } from '../../types/issuer.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
 // ============================================================================
 // Set to true to use mock data (no backend required)
 // Set to false when backend is ready
-const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'true' || true;
+const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
 
 /**
  * Issuer Service - Handles issuer onboarding-related API calls
@@ -30,6 +36,124 @@ class IssuerService {
   constructor(baseURL: string) {
     this.baseURL = baseURL;
   }
+
+
+
+  // Challenge
+  async getChallenge(walletAddress: string): Promise<ChallengeResponse> {
+      // MOCK MODE: Generate mock challenge
+      if (USE_MOCK_MODE) {
+        console.log('🔧 MOCK MODE: Generating mock authentication challenge');
+  
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+  
+        // Generate mock nonce (in real backend, use crypto.randomBytes)
+        const mockNonce = Math.random().toString(36).substring(2, 15);
+        const timestamp = new Date().toISOString();
+  
+        const mockResponse: ChallengeResponse = {
+          message: `Sign this message to authenticate with TOA Platform\n\nWallet: ${walletAddress}\nNonce: ${mockNonce}\nTimestamp: ${timestamp}`,
+          nonce: mockNonce,
+        };
+  
+        return mockResponse;
+      }
+  
+      // REAL MODE: Get challenge from backend
+      try {
+        const response = await fetch(
+          `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}&role=ORIGINATOR`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+  
+        if (!response.ok) {
+          throw new Error('Failed to get authentication challenge');
+        }
+  
+        return await response.json();
+      } catch (error) {
+        console.error('Error getting challenge:', error);
+        throw error;
+      }
+    }
+
+    // login
+
+     async login(payload: LoginPayload): Promise<LoginResponse> {
+        // MOCK MODE: Simulate successful login
+        if (USE_MOCK_MODE) {
+          console.log('🔧 MOCK MODE: Simulating login with wallet signature');
+          console.log('Payload:', { ...payload, signature: payload.signature.substring(0, 20) + '...' });
+    
+          // Check if this is issuer onboarding
+          const isIssuerOnboarding = !!payload.onboardingToken;
+    
+          if (isIssuerOnboarding) {
+            console.log('🔧 ISSUER ONBOARDING: Token detected -', payload.onboardingToken);
+          }
+    
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+    
+          // Mock tokens (in real backend, generate JWTs)
+          const mockAccessToken = 'mock_access_token_' + Math.random().toString(36);
+          const mockRefreshToken = 'mock_refresh_token_' + Math.random().toString(36);
+    
+          const mockResponse: LoginResponse = {
+            user: {
+              id: 'mock_user_id_' + Math.random().toString(36).substring(2, 9),
+              walletAddress: payload.walletAddress,
+              role: isIssuerOnboarding ? 'ISSUER' : 'INVESTOR',  // Set role based on onboarding token
+              kyc: false,         // Set to true to skip KYC flow in testing
+            },
+            tokens: {
+              access: mockAccessToken,
+              refresh: mockRefreshToken,
+            },
+          };
+    
+          // Store tokens in localStorage (same as real flow)
+          localStorage.setItem('access_token', mockResponse.tokens.access);
+          localStorage.setItem('refresh_token', mockResponse.tokens.refresh);
+    
+          return mockResponse;
+        }
+    
+        // REAL MODE: Call backend login
+        try {
+          const response = await fetch(`${this.baseURL}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+    
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Login failed');
+          }
+    
+          const data: LoginResponse = await response.json();
+    
+          // Store tokens in localStorage
+          if (data.tokens) {
+            localStorage.setItem('access_token', data.tokens.access);
+            localStorage.setItem('refresh_token', data.tokens.refresh);
+          }
+    
+          return data;
+        } catch (error) {
+          console.error('Error during login:', error);
+          throw error;
+        }
+      }
 
   /**
    * Validate onboarding token from email link

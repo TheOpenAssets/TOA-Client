@@ -155,7 +155,7 @@ class AuthService {
     // REAL MODE: Get challenge from backend
     try {
       const response = await fetch(
-        `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}`,
+        `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}&role=INVESTOR`,
         {
           method: 'GET',
           headers: {

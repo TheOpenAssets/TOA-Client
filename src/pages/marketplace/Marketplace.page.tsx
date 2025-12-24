@@ -1,15 +1,15 @@
 // src/pages/marketplace/Marketplace.page.tsx
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import {  useNavigate } from 'react-router-dom';
+import { useAccount, useDisconnect } from 'wagmi';
 import {
   Search,
   TrendingUp,
-  TrendingDown,
+ 
   Grid3x3,
   List,
-  ChevronDown,
+
 } from 'lucide-react';
 import {
   platformMetrics,
@@ -23,10 +23,12 @@ import {
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
 import Hero from '../../components/landing/Hero';
 import HeroBackground from '../landing/HeroBackground';
+import { authService } from '../../lib/api/auth.service';
 
 const MarketplacePage = () => {
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [sortBy, setSortBy] = useState<SortOption>('most-popular');
@@ -39,6 +41,13 @@ const MarketplacePage = () => {
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Logout handler
+  const handlelogout = () => {
+   authService.logout();
+   disconnect();
+    navigate('/'); // Redirect to home or login page after logout
   };
 
   // Filter assets based on active filter and search
@@ -455,6 +464,9 @@ const MarketplacePage = () => {
                   <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Funding Progress
                   </th>
+                  <th className="px-6 py-3 text-center font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -527,6 +539,21 @@ const MarketplacePage = () => {
                         </div>
                       </div>
                     </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button> |
+                      <button
+                        onClick={() => navigate(`/marketplace/invest/${asset.id}`)}
+                        className="ml-2 px-4 py-2 bg-red-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-red-700 transition-colors"
+                      >
+                        Buy Now
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -534,8 +561,18 @@ const MarketplacePage = () => {
           </div>
         </div>
       </div>
+      <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-40">
+        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
+        
+          Logout
+        </button>
+      </div>
     </div>
   );
 };
 
 export default MarketplacePage;
+function logout() {
+  throw new Error('Function not implemented.');
+}
+

@@ -1,5 +1,7 @@
 // src/types/issuer.types.ts
 
+import type { AuthTokens, User } from "./auth.types";
+
 // Example Issuer types
 export interface Issuer {
   id: string;
@@ -28,11 +30,29 @@ export interface TokenValidationResponse {
   error?: string;         // Error message if token is invalid
 }
 
+export interface LoginPayload {
+  walletAddress: string;
+  message: string;
+  signature: string;
+  onboardingToken?: string;  // Optional: For issuer onboarding flow
+}
+
+
 /**
  * Request payload for validating an onboarding token
  */
 export interface TokenValidationPayload {
   token: string;          // The onboarding token from URL parameter
+}
+
+export interface ChallengeResponse {
+  message: string;
+  nonce: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  tokens: AuthTokens;
 }
 
 /**

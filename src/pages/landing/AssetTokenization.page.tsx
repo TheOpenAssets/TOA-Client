@@ -1,24 +1,77 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog";
 import cloudImage from "../../assets/cloud.png";
+import { issuerService } from "../../lib/api/issuer.service";
+import { useIssuerStore } from "../../stores/issuer.store";
 
 const AssetTokenizationSection = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
+  const { setLoading, setUser, setError } = useIssuerStore();
+  const { signMessageAsync } = useSignMessage();
   const [isCheckingIssuer, setIsCheckingIssuer] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
 
   // Mock list of approved issuer wallet addresses
   // In production, this would be checked against the backend
-  const approvedIssuers = [
-    // Add some mock addresses for testing
-    // You can add your test wallet address here
-  ];
+
+   const handleGetStarted = async () => {
+      try {
+        setError(null);
+  
+        // If wallet is not connected, navigate to auth page for wallet connection
+        if (!isConnected || !address) {
+          navigate('/auth');
+          return;
+        }
+  
+        // Wallet is connected, proceed with authentication
+        setIsAuthenticating(true);
+        setLoading(true);
+  
+        // Step 1: Get authentication challenge
+        const challenge = await issuerService.getChallenge(address);
+  
+        // Step 2: Sign the message
+        const signature = await signMessageAsync({
+          message: challenge.message,
+        });
+  
+        // Step 3: Login with signature
+        const loginResponse = await issuerService.login({
+          walletAddress: address,
+          message: challenge.message,
+          signature: signature,
+        });
+  
+        // Step 4: Store user data
+        setUser(loginResponse.user);
+  
+        // Step 5: Navigate based on KYC status
+        if (loginResponse.user.kyc === true) {
+          // User has completed KYC → navigate to portfolio
+          navigate('/issuer/dashboard');
+        } else {
+          // User needs to complete KYC → navigate to auth page for KYC form
+          navigate('/auth', { state: { showKycForm: true } });
+        }
+      } catch (err: any) {
+        console.error('Error during authentication:', err);
+        setError(err.message || 'Authentication failed');
+        // On error, navigate to auth page
+        navigate('/auth');
+      } finally {
+        setIsAuthenticating(false);
+        setLoading(false);
+      }
+    };
+  
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -51,15 +104,8 @@ const AssetTokenizationSection = () => {
     // Simulate checking backend (in real app, call API)
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const isApprovedIssuer = approvedIssuers.includes(walletAddress.toLowerCase());
-
-    if (isApprovedIssuer) {
-      // Wallet is recognized - redirect to issuer dashboard
-      navigate('/issuer-dashboard');
-    } else {
-      // Wallet not recognized - redirect to auth/onboarding
-      navigate('/auth');
-    }
+   
+   
 
     setIsCheckingIssuer(false);
     setShowConnectModal(false);
@@ -174,7 +220,7 @@ const AssetTokenizationSection = () => {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
-                    onClick={openIssuerApplicationForm}
+                    onClick={handleGetStarted}
                     className="bg-white text-[#0e1c29] hover:bg-white/90 rounded-[10px] font-inter font-medium px-8 py-6 text-sm opacity-0 inline-flex items-center gap-2"
                     data-scroll-reveal
                     style={{
@@ -187,29 +233,14 @@ const AssetTokenizationSection = () => {
                       <path d="M221.66,133.66l-72,72A8,8,0,0,1,136,200V136H40a8,8,0,0,1,0-16h96V56a8,8,0,0,1,13.66-5.66l72,72A8,8,0,0,1,221.66,133.66Z"/>
                     </svg>
                   </Button>
-                  <Button
-                    size="lg"
-                    onClick={openAssetOnboardingForm}
-                    variant="outline"
-                    className="bg-transparent border-2 border-white text-white hover:bg-white/10 rounded-[10px] font-inter font-medium px-8 py-6 text-sm opacity-0 inline-flex items-center gap-2"
-                    data-scroll-reveal
-                    style={{
-                      animationDelay: '0.8s',
-                      boxShadow: '0 10px 40px rgba(255, 255, 255, 0.1)'
-                    }}
-                  >
-                    List an Asset
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 256 256">
-                      <path d="M221.66,133.66l-72,72A8,8,0,0,1,136,200V136H40a8,8,0,0,1,0-16h96V56a8,8,0,0,1,13.66-5.66l72,72A8,8,0,0,1,221.66,133.66Z"/>
-                    </svg>
-                  </Button>
+                 
                 </div>
 
                 {/* Already an Issuer Button */}
                 <div className="text-center opacity-0" data-scroll-reveal style={{ animationDelay: '0.9s' }}>
                   <Button
                     size="sm"
-                    onClick={handleAlreadyIssuerClick}
+                    onClick={handleGetStarted}
                     disabled={isCheckingIssuer}
                     variant="ghost"
                     className="text-white/80 hover:text-white hover:bg-white/10 font-inter text-sm"
