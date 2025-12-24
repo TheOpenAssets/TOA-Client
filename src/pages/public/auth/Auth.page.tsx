@@ -28,7 +28,7 @@ const AuthPage = () => {
   const [step, setStep] = useState<AuthStep>('connect');
   const [walletStatus, setWalletStatus] = useState<WalletStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [kycDocuments, setKycDocuments] = useState<{ aadhaar: File | null; pan: File | null } | null>(null);
+  const [kycDocuments, setKycDocuments] = useState<{ aadhaar: File | null }>({ aadhaar: null });
   const [email, setEmail] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -78,7 +78,7 @@ const AuthPage = () => {
    * Handle document upload modal completion
    * STEP 6: Document Upload (Frontend Only)
    */
-  const handleDocumentUpload = (documents: { aadhaar: File | null; pan: File | null }) => {
+  const handleDocumentUpload = (documents: { aadhaar: File | null }) => {
     setKycDocuments(documents);
     setStep('documents_uploaded');
   };
@@ -150,8 +150,8 @@ const AuthPage = () => {
    * Only for users who uploaded documents
    */
   const submitKYC = async () => {
-    if (!kycDocuments) {
-      setError('KYC documents not available');
+    if (!kycDocuments?.aadhaar) {
+      setError('Aadhaar document not available');
       return;
     }
 
@@ -159,16 +159,10 @@ const AuthPage = () => {
       setStep('kyc_submit');
       setLoading(true);
 
-      // Convert files to document identifiers (in real app, upload files first)
-      const documentData = {
-        aadhaar: kycDocuments.aadhaar?.name || 'aadhaar_uploaded',
-        pan: kycDocuments.pan?.name || 'pan_uploaded',
-      };
+      const formData = new FormData();
+      formData.append('document', kycDocuments.aadhaar);
 
-      await kycService.submitKYC({
-        source: 'DOCUMENT_UPLOAD',
-        documents: documentData,
-      });
+      await kycService.submitKYC(formData);
 
       // After success: First-time user → Redirect to marketplace
       navigate('/marketplace');
@@ -404,6 +398,16 @@ const AuthPage = () => {
               </div>
             </div>
           )}
+
+          <div className="mt-6 text-center">
+            <Button
+              variant="link"
+              className="text-xs text-foreground/60 font-inter underline-offset-4 hover:underline"
+              onClick={() => navigate('/marketplace')}
+            >
+            skip to marketplace 
+              </Button>
+          </div>
             </div>
           </div>
         </div>

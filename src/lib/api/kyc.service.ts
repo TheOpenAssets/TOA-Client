@@ -2,14 +2,14 @@
 
 import type { KYCSubmitPayload, KYCSubmitResponse } from '../../types/auth.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
 // ============================================================================
 // Set to true to use mock data (no backend required)
 // Set to false when backend is ready
-const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'true' || true;
+const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
 
 /**
  * KYC Service - Handles KYC-related API calls
@@ -118,7 +118,7 @@ class KYCService {
    * - Store sensitive documents securely (encrypt at rest)
    * - Implement rate limiting to prevent abuse
    */
-  async submitKYC(payload: KYCSubmitPayload): Promise<KYCSubmitResponse> {
+  async submitKYC(payload: FormData): Promise<KYCSubmitResponse> {
     // MOCK MODE: Simulate KYC submission
     if (USE_MOCK_MODE) {
       console.log('🔧 MOCK MODE: Simulating KYC submission');
@@ -150,13 +150,12 @@ class KYCService {
         throw new Error('No access token found. Please login first.');
       }
 
-      const response = await fetch(`${this.baseURL}/kyc/submit`, {
+      const response = await fetch(`${this.baseURL}/kyc/upload`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       if (!response.ok) {
