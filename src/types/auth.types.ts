@@ -1,6 +1,6 @@
 // src/types/auth.types.ts
 
-export type UserRole = 'INVESTOR' | 'ISSUER' | 'ADMIN';
+export type UserRole = 'INVESTOR' | 'ORIGINATOR' | 'ADMIN';
 
 export interface User {
   id: string;
@@ -8,6 +8,8 @@ export interface User {
   role: UserRole;
   kyc: boolean;
 }
+
+
 
 export interface AuthTokens {
   access: string;

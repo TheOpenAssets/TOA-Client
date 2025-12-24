@@ -21,7 +21,7 @@ const AssetTokenizationSection = () => {
   // Mock list of approved issuer wallet addresses
   // In production, this would be checked against the backend
 
-   const handleGetStarted = async () => {
+   const handleGetStarted =  async () => {
       try {
         setError(null);
   
@@ -36,15 +36,15 @@ const AssetTokenizationSection = () => {
         setLoading(true);
   
         // Step 1: Get authentication challenge
-        const challenge = await issuerService.getChallenge(address);
+        const challenge =  await issuerService.getChallenge(address);
   
         // Step 2: Sign the message
-        const signature = await signMessageAsync({
+        const signature =  await signMessageAsync({
           message: challenge.message,
         });
   
         // Step 3: Login with signature
-        const loginResponse = await issuerService.login({
+        const loginResponse =  await issuerService.login({
           walletAddress: address,
           message: challenge.message,
           signature: signature,

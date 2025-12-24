@@ -2,6 +2,14 @@
 
 import type { AuthTokens, User } from "./auth.types";
 
+
+
+export const UserRole = {
+  INVESTOR : 'INVESTOR',
+  ORIGINATOR : 'ORIGINATOR',
+  ADMIN : 'ADMIN'
+} as const;
+
 // Example Issuer types
 export interface Issuer {
   id: string;

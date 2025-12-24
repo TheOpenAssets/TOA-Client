@@ -1,15 +1,13 @@
 // src/pages/marketplace/Marketplace.page.tsx
 
-import { useState } from 'react';
-import {  useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect } from 'wagmi';
 import {
   Search,
   TrendingUp,
- 
   Grid3x3,
   List,
-
 } from 'lucide-react';
 import {
   platformMetrics,
@@ -21,9 +19,9 @@ import {
   getCategoryIcon,
 } from '../../lib/data/marketplace-mock-data';
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
-import Hero from '../../components/landing/Hero';
 import HeroBackground from '../landing/HeroBackground';
 import { authService } from '../../lib/api/auth.service';
+import { useMarketplaceStore } from '../../stores/marketplace.store';
 
 const MarketplacePage = () => {
   const navigate = useNavigate();
@@ -34,9 +32,47 @@ const MarketplacePage = () => {
   const [sortBy, setSortBy] = useState<SortOption>('most-popular');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
+  // Fetch real marketplace data
+  const { listings, isLoading, error, fetchListings } = useMarketplaceStore();
+
+  // Fetch listings on mount
+  useEffect(() => {
+    console.log('🚀 Marketplace: Fetching listings from API...');
+    fetchListings();
+  }, [fetchListings]);
+
+  // Use mock data as fallback for featured sections (until backend provides these endpoints)
   const featuredAssets = getFeaturedAssets();
   const highYieldAssets = getHighYieldAssets();
   const recentlyVerifiedAssets = getRecentlyVerifiedAssets();
+
+  // Convert backend listings to frontend format for display
+  // NOTE: This is a temporary adapter until backend provides all required fields
+  const displayAssets: MarketplaceAsset[] = listings.length > 0
+    ? (() => {
+        console.log('✅ Marketplace: Using REAL data from API', { count: listings.length });
+        return listings.map((listing, index) => ({
+        id: listing.assetId,
+        assetId: listing.metadata.invoiceNumber,
+        name: listing.metadata.buyerName,
+        description: `${listing.metadata.industry} · Invoice`,
+        category: 'invoice' as const,
+        icon: '📄',
+        tokenPrice: parseFloat(listing.tokenParams.pricePerToken),
+        yieldAPY: 0, // TODO: Backend needs to provide this
+        maturityDays: 90, // TODO: Calculate from dueDate
+        totalRaised: 0, // TODO: Backend needs to provide this
+        targetAmount: parseFloat(listing.tokenParams.totalSupply) * parseFloat(listing.tokenParams.pricePerToken),
+        fundingProgress: 0, // TODO: Backend needs to provide this
+        status: listing.status,
+        verified: true, // TODO: Backend needs to provide this
+        listedDate: new Date().toISOString(), // TODO: Backend needs to provide this
+      }));
+    })()
+    : (() => {
+        console.log('⚠️ Marketplace: Using MOCK data (API returned empty or failed)');
+        return marketplaceAssets;
+      })(); // Fallback to mock data if API returns empty
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -45,13 +81,13 @@ const MarketplacePage = () => {
 
   // Logout handler
   const handlelogout = () => {
-   authService.logout();
-   disconnect();
+    authService.logout();
+    disconnect();
     navigate('/'); // Redirect to home or login page after logout
   };
 
   // Filter assets based on active filter and search
-  const filteredAssets = marketplaceAssets.filter((asset) => {
+  const filteredAssets = displayAssets.filter((asset) => {
     // Search filter
     const matchesSearch =
       asset.assetId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -90,9 +126,28 @@ const MarketplacePage = () => {
     return `${Math.floor(days / 365)} years`;
   };
 
+  // Show loading state
+  if (isLoading && listings.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-antic text-foreground">Loading marketplace...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f6fbff]">
       <HeroBackground />
+
+      {/* Show error message if API fails but still render with mock data */}
+      {error && listings.length === 0 && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mx-6 mt-4">
+          <p className="font-medium">Unable to load live data</p>
+          <p className="text-sm">Displaying demo data. Error: {error}</p>
+        </div>
+      )}
       {/* Top Navigation Bar */}
       <header className="bg-transparent border-b border-gray-200 z-40 relative">
         <div className="max-w-[1400px] mx-auto px-6 py-4">
@@ -572,7 +627,4 @@ const MarketplacePage = () => {
 };
 
 export default MarketplacePage;
-function logout() {
-  throw new Error('Function not implemented.');
-}
 

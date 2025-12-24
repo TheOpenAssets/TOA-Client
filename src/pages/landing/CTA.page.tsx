@@ -64,7 +64,7 @@ const CTASection = () => {
 
               {/* Description */}
               <p className="font-inter text-base md:text-lg text-[#0e1c29]/80 leading-relaxed max-w-lg">
-                Join the next generation of creators leveraging Story Protocol for transparent IP registration, automated royalties, and seamless derivative management.
+                Join the next generation of creators leveraging Mantle Protocol for transparent IP registration, automated royalties, and seamless derivative management.
               </p>
 
               {/* CTA Buttons */}

@@ -165,7 +165,10 @@ const AuthPage = () => {
       await kycService.submitKYC(formData);
 
       // After success: First-time user → Redirect to marketplace
+      if (role=='INVESTOR')
       navigate('/marketplace');
+     else
+      navigate('/issuer/dashboard');
     } catch (err: any) {
       console.error('Error submitting KYC:', err);
       setError(err.message || 'KYC submission failed');

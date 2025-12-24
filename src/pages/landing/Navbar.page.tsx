@@ -22,7 +22,7 @@ const Navbar = () => {
         <div className="navbar-logo">
           <div className="logo-placeholder">
             <div className="logo-icon">
-              <img src={orion} alt="Orion" />
+              <img src={orion} alt="Openassets" />
             </div>
           </div>
         </div>
@@ -55,7 +55,7 @@ const Navbar = () => {
         <div className="navbar-logo">
           <div className="logo-placeholder">
             <div className="logo-icon">
-              <img src={orion} alt="Orion" />
+              <img src={orion} alt="Openassets" />
             </div>
           </div>
         </div>

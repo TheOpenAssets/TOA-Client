@@ -1,11 +1,12 @@
 // src/lib/api/issuer.service.ts
 
-import type {
-  TokenValidationResponse,
-  IssuerData,
-  ChallengeResponse,
-  LoginResponse,
-  LoginPayload
+import {
+  type TokenValidationResponse,
+  type IssuerData,
+  type ChallengeResponse,
+  type LoginResponse,
+  type LoginPayload,
+  UserRole
 } from '../../types/issuer.types';
 
 
@@ -63,7 +64,7 @@ class IssuerService {
       // REAL MODE: Get challenge from backend
       try {
         const response = await fetch(
-          `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}&role=ORIGINATOR`,
+          `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}&role=${UserRole.ORIGINATOR}`,
           {
             method: 'GET',
             headers: {
@@ -109,7 +110,7 @@ class IssuerService {
             user: {
               id: 'mock_user_id_' + Math.random().toString(36).substring(2, 9),
               walletAddress: payload.walletAddress,
-              role: isIssuerOnboarding ? 'ISSUER' : 'INVESTOR',  // Set role based on onboarding token
+              UserRole: isIssuerOnboarding ? 'ISSUER' : 'INVESTOR',  // Set role based on onboarding token
               kyc: false,         // Set to true to skip KYC flow in testing
             },
             tokens: {

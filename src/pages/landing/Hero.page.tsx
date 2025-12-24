@@ -3,63 +3,63 @@ import HeroBackground from "./HeroBackground";
 import Logo from "../../assets/ALogo-removebg-preview.png";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useSignMessage } from 'wagmi';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { authService } from '../../lib/api/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { issuerService } from "../../lib/api/issuer.service";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { setUser, setLoading } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'investor' | 'issuer' | null>(null);
 
-  const handleGetStarted = async () => {
-    try {
-      setError(null);
-
-      // If wallet is not connected, navigate to auth page for wallet connection
-      if (!isConnected || !address) {
-        navigate('/auth');
-        return;
+  // Watch for wallet connection and execute pending action
+  useEffect(() => {
+    if (isConnected && address && pendingAction) {
+      if (pendingAction === 'investor') {
+        authenticateInvestor();
+      } else if (pendingAction === 'issuer') {
+        authenticateIssuer();
       }
+      setPendingAction(null);
+    }
+  }, [isConnected, address, pendingAction]);
 
-      // Wallet is connected, proceed with authentication
+  const authenticateInvestor = async () => {
+    if (!isConnected || !address) return;
+
+    try {
       setIsAuthenticating(true);
       setLoading(true);
+      setError(null);
 
-      // Step 1: Get authentication challenge
       const challenge = await authService.getChallenge(address);
-
-      // Step 2: Sign the message
       const signature = await signMessageAsync({
         message: challenge.message,
       });
 
-      // Step 3: Login with signature
       const loginResponse = await authService.login({
         walletAddress: address,
         message: challenge.message,
         signature: signature,
       });
 
-      // Step 4: Store user data
       setUser(loginResponse.user);
 
-      // Step 5: Navigate based on KYC status
       if (loginResponse.user.kyc === true) {
-        // User has completed KYC → navigate to portfolio
         navigate('/portfolio');
       } else {
-        // User needs to complete KYC → navigate to auth page for KYC form
         navigate('/auth', { state: { showKycForm: true } });
       }
     } catch (err: any) {
       console.error('Error during authentication:', err);
       setError(err.message || 'Authentication failed');
-      // On error, navigate to auth page
       navigate('/auth');
     } finally {
       setIsAuthenticating(false);
@@ -67,57 +67,87 @@ const HeroSection = () => {
     }
   };
 
-  const handleIssuerGetStarted = async () => {
-        try {
-          setError(null);
-    
-          // If wallet is not connected, navigate to auth page for wallet connection
-          if (!isConnected || !address) {
-            navigate('/auth');
-            return;
-          }
-    
-          // Wallet is connected, proceed with authentication
-          setIsAuthenticating(true);
-          setLoading(true);
-    
-          // Step 1: Get authentication challenge
-          const challenge = await issuerService.getChallenge(address);
-    
-          // Step 2: Sign the message
-          const signature = await signMessageAsync({
-            message: challenge.message,
-          });
-    
-          // Step 3: Login with signature
-          const loginResponse = await issuerService.login({
-            walletAddress: address,
-            message: challenge.message,
-            signature: signature,
-          });
-    
-          // Step 4: Store user data
-          setUser(loginResponse.user);
-    
-          // Step 5: Navigate based on KYC status
-          if (loginResponse.user.kyc === true) {
-            // User has completed KYC → navigate to portfolio
-            navigate('/issuer/dashboard');
-          } else {
-            // User needs to complete KYC → navigate to auth page for KYC form
-            navigate('/auth', { state: { showKycForm: true } });
-          }
-        } catch (err: any) {
-          console.error('Error during authentication:', err);
-          setError(err.message || 'Authentication failed');
-          // On error, navigate to auth page
-          navigate('/auth');
-        } finally {
-          setIsAuthenticating(false);
-          setLoading(false);
+  const authenticateIssuer = async () => {
+    if (!isConnected || !address) return;
+
+    try {
+      setIsAuthenticating(true);
+      setLoading(true);
+      setError(null);
+
+      const challenge = await issuerService.getChallenge(address);
+      const signature = await signMessageAsync({
+        message: challenge.message,
+      });
+
+      const loginResponse = await issuerService.login({
+        walletAddress: address,
+        message: challenge.message,
+        signature: signature,
+      });
+
+      setUser(loginResponse.user);
+
+      if (loginResponse.user.kyc === true) {
+        navigate('/issuer/dashboard');
+      } else {
+        navigate('/auth', { state: { showKycForm: true } });
+      }
+    } catch (err: any) {
+      console.error('Error during authentication:', err);
+      setError(err.message || 'Authentication failed');
+      navigate('/auth');
+    } finally {
+      setIsAuthenticating(false);
+      setLoading(false);
+    }
+  };
+
+  const handleGetStarted = async () => {
+    try {
+      setError(null);
+
+      if (!isConnected || !address) {
+        // Open RainbowKit modal and set pending action
+        setPendingAction('investor');
+        if (openConnectModal) {
+          openConnectModal();
+        } else {
+          setError("Wallet connection not available");
         }
-      };
-    
+        return;
+      }
+
+      // Wallet is already connected, proceed with authentication
+      await authenticateInvestor();
+    } catch (err: any) {
+      console.error('Error during get started:', err);
+      setError(err.message || 'Operation failed');
+    }
+  };
+
+  const handleIssuerGetStarted = async () => {
+    try {
+      setError(null);
+
+      if (!isConnected || !address) {
+        // Open RainbowKit modal and set pending action
+        setPendingAction('issuer');
+        if (openConnectModal) {
+          openConnectModal();
+        } else {
+          setError("Wallet connection not available");
+        }
+        return;
+      }
+
+      // Wallet is already connected, proceed with authentication
+      await authenticateIssuer();
+    } catch (err: any) {
+      console.error('Error during issuer get started:', err);
+      setError(err.message || 'Operation failed');
+    }
+  };
 
   return (
     <section id="hero" className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20 pb-24 bg-[#f0f8ffe6]">
@@ -162,18 +192,12 @@ const HeroSection = () => {
               onClick={handleGetStarted}
               disabled={isAuthenticating}
             >
-              {isAuthenticating ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                  Authenticating...
-                </span>
-              ) : (
-                'Get Started'
-              )}
+              Get Started
             </Button>
              <Button
                     size="lg"
                     onClick={handleIssuerGetStarted}
+                    disabled={isAuthenticating}
                     className="btn-gradient text-white rounded-[10px] font-inter font-medium px-8 py-6 text-sm"
               style={{
                 background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',

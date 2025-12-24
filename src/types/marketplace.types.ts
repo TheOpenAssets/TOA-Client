@@ -1,26 +1,96 @@
 // src/types/marketplace.types.ts
 
 export type AssetCategory = 'invoice' | 'real-estate' | 'trade-finance' | 'equipment-lease';
+export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED';
 
-export type AssetStatus = 'funding' | 'fully-funded' | 'active' | 'settled';
+interface Token {
+  address: string;
+  compliance: string;
+  deployedAt: string;
+  supply: string;
+  transactionHash: string;
+}
 
+interface Registry {
+  blockNumber: number;
+  registeredAt: string;
+  transactionHash: string;
+}
+
+interface Cryptography {
+  documentHash: string;
+  merkleRoot: string;
+}
+
+interface Attestation {
+  hash: string;
+  attestor: string;
+  timestamp: string;
+}
+
+export interface AssetMetadata {
+  invoiceNumber: string;
+  faceValue: string;
+  currency: string;
+  issueDate: string;
+  dueDate: string;
+  buyerName: string;
+  industry: string;
+  riskTier: string;
+}
+
+export interface TokenParams {
+  totalSupply: string;
+  pricePerToken: string;
+  minInvestment: string;
+}
+
+export interface MarketplaceListing {
+  assetId: string;
+  status: AssetStatus;
+  metadata: AssetMetadata;
+  tokenParams: TokenParams;
+}
+
+export interface AssetDetails {
+  assetId: string;
+  status: AssetStatus;
+  metadata: AssetMetadata;
+  tokenParams: TokenParams;
+  token: Token;
+  registry: Registry;
+  cryptography: Cryptography;
+  attestation: Attestation;
+}
+
+export interface ListingResponse {
+  success: boolean;
+  count: number;
+  listings: MarketplaceListing[];
+}
+
+export interface AssetDetailsResponse {
+  success: boolean;
+  asset: AssetDetails;
+}
+
+// MarketplaceAsset - Extended interface for UI display (used by mock data)
 export interface MarketplaceAsset {
   id: string;
-  assetId: string; // e.g., "INV-2401"
+  assetId: string;
   name: string;
   description: string;
   category: AssetCategory;
   icon: string;
-  tokenPrice: number; // Price per token in USDC
-  yieldAPY: number; // Annual percentage yield
-  maturityDays: number; // Days to maturity
-  totalRaised: number; // Amount raised so far
-  targetAmount: number; // Funding target
-  fundingProgress: number; // 0-100%
-  status: AssetStatus;
+  tokenPrice: number;
+  yieldAPY: number;
+  maturityDays: number;
+  totalRaised: number;
+  targetAmount: number;
+  fundingProgress: number;
+  status: string;
   verified: boolean;
-  listedDate: string; // ISO date
-  settlementDate?: string; // ISO date
+  listedDate: string;
 }
 
 export interface PlatformMetrics {

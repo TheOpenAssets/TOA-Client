@@ -18,6 +18,7 @@ import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
 
 // Marketplace
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
+import AssetDetailsPage from '../../pages/marketplace/asset/AssetDetails.page';
 
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
@@ -27,9 +28,14 @@ export const publicRoutes: RouteObject[] = [
     path: '/',
     element: <HomePage />,
   },
+  
   {
     path: '/marketplace',
     element: <MarketplacePage />,
+  },
+  {
+    path: '/marketplace/asset/:assetId',
+    element: <AssetDetailsPage />,
   },
   {
     path: '/portfolio',

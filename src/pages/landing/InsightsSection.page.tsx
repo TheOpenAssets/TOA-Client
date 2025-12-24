@@ -51,10 +51,10 @@ const InsightsSection = () => {
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
         <div className="text-center mb-16 opacity-0" data-scroll-reveal>
           <h2 className="font-jakarta text-5xl md:text-[56px] font-italic text-foreground mb-4">
-            Unveiling Orion Insights
+            Unveiling Openassets Insights
           </h2>
           <p className="font-inter text-base md:text-lg text-foreground/80 max-w-2xl mx-auto">
-            Gain unparalleled clarity into your intellectual property, from creation to monetization, all powered by Story Protocol.
+            Gain unparalleled clarity into your intellectual property, from creation to monetization, all powered by Mantle Protocol.
           </p>
         </div>
 

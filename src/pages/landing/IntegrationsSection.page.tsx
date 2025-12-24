@@ -53,10 +53,10 @@ const IntegrationsSection = () => {
           {/* Header */}
           <div className="text-center mb-16">
             <div className="inline-block bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-gray-700 mb-6">
-              Story Protocol Integration
+              Mantle Protocol Integration
             </div>
            <h2 className="font-['Plus_Jakarta_Sans'] mb-2  text-[#0e1c29] text-[44px] not-italic font-normal h-[52.8px] tracking-[-0.44px] leading-[52.8px]">
-  Deeply Integrated with Story Protocol
+  Deeply Integrated with Mantle Protocol
 </h2>
           </div>
 
