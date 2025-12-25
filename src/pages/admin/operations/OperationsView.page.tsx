@@ -13,22 +13,27 @@ import {
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
 import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 
 const OperationsViewPage = () => {
-  const { 
-    assetsForOperations: approvedAssets, 
-    fetchAdminDashboardData, 
-    isLoading, 
-    error 
+  const {
+    assetsForOperations,
+    fetchAdminDashboardData,
+    isLoading,
+    error
   } = useAdminStore();
-  
-  const [registeredAssets, setRegisteredAssets] = useState<AdminAsset[]>([]);
-  const [tokenizedAssets, setTokenizedAssets] = useState<AdminAsset[]>([]);
 
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showTokenizeModal, setShowTokenizeModal] = useState(false);
+  const [showListingModal, setShowListingModal] = useState(false);
   const [processing, setProcessing] = useState(false);
+
+  // Listing form data
+  const [listingType, setListingType] = useState('STATIC');
+  const [price, setPrice] = useState('1000000'); // 1 USDC in 6 decimals
+  const [minInvestment, setMinInvestment] = useState('1000000000000000000000'); // 1000 tokens in 18 decimals
+  const [duration, setDuration] = useState('0');
 
   // Mock on-chain data
   const [mockBlobId, setMockBlobId] = useState('');
@@ -38,6 +43,17 @@ const OperationsViewPage = () => {
   useEffect(() => {
     fetchAdminDashboardData();
   }, [fetchAdminDashboardData]);
+
+  // Split assets based on checkpoints
+  const attestedAssets = assetsForOperations.filter(
+    (asset) => asset.checkpoints.attested && !asset.checkpoints.registered
+  );
+  const registeredAssets = assetsForOperations.filter(
+    (asset) => asset.checkpoints.registered && !asset.checkpoints.tokenized
+  );
+  const tokenizedAssets = assetsForOperations.filter(
+    (asset) => asset.checkpoints.tokenized
+  );
 
   // Format currency with null safety
   const formatCurrency = (amount: number | undefined | null): string => {
@@ -63,15 +79,29 @@ const OperationsViewPage = () => {
   };
 
   const confirmRegister = async () => {
-    if (!selectedAsset) return;
+    if (!selectedAsset) {
+      console.error('No asset selected');
+      return;
+    }
+    
+    console.log('Registering asset:', selectedAsset.assetId);
     setProcessing(true);
+    
     try {
-      await adminService.registerAsset(selectedAsset.id);
-      fetchAdminDashboardData();
+      const result = await adminService.registerAsset(selectedAsset.assetId);
+      console.log('✅ Asset registered successfully:', result);
+      
+      // Refresh dashboard data
+      await fetchAdminDashboardData();
+      
+      // Close modal
       setShowRegisterModal(false);
       setSelectedAsset(null);
-    } catch (error) {
-      console.error('Failed to register asset', error);
+      
+      alert('Asset registered successfully on Mantle!');
+    } catch (error: any) {
+      console.error('❌ Failed to register asset:', error);
+      alert(`Failed to register asset: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
     }
@@ -88,12 +118,44 @@ const OperationsViewPage = () => {
     if (!selectedAsset) return;
     setProcessing(true);
     try {
-      await adminService.deployToken(selectedAsset.id, selectedAsset.name, selectedAsset.name.split(' ').map(w => w[0]).join('').toUpperCase());
+      const tokenName = `Invoice ${selectedAsset.metadata.invoiceNumber} RWA Token`;
+      const tokenSymbol = selectedAsset.metadata.invoiceNumber.replace(/[^A-Z0-9]/g, '').slice(0, 6);
+      await adminService.deployToken(selectedAsset.assetId, tokenName, tokenSymbol);
       fetchAdminDashboardData();
       setShowTokenizeModal(false);
       setSelectedAsset(null);
     } catch (error) {
       console.error('Failed to deploy token', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle List on Marketplace
+  const handleListOnMarketplace = (asset: AdminAsset) => {
+    setSelectedAsset(asset);
+    setShowListingModal(true);
+  };
+
+  const confirmListing = async () => {
+    if (!selectedAsset) return;
+    setProcessing(true);
+    try {
+      await adminService.listOnMarketplace(
+        selectedAsset.assetId,
+        listingType,
+        price,
+        minInvestment,
+        duration
+      );
+      console.log('✅ Asset listed on marketplace successfully');
+      fetchAdminDashboardData();
+      setShowListingModal(false);
+      setSelectedAsset(null);
+      alert('Asset listed on marketplace successfully!');
+    } catch (error: any) {
+      console.error('❌ Failed to list asset:', error);
+      alert(`Failed to list asset: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
     }
@@ -132,7 +194,7 @@ const OperationsViewPage = () => {
             <div>
               <p className="font-inter text-xs text-foreground/60">Ready for Registry</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {approvedAssets.length}
+                {attestedAssets.length}
               </p>
             </div>
           </div>
@@ -147,7 +209,7 @@ const OperationsViewPage = () => {
           <div className="flex items-center gap-3">
             <Network className="w-5 h-5 text-orange-500" />
             <div>
-              <p className="font-inter text-xs text-foreground/60">Registered on Mantle</p>
+              <p className="font-inter text-xs text-foreground/60">Ready for Tokenization</p>
               <p className="font-antic text-2xl font-normal text-foreground">
                 {registeredAssets.length}
               </p>
@@ -174,7 +236,7 @@ const OperationsViewPage = () => {
       </div>
 
       {/* Phase 1: Assets Ready for Registry */}
-      {approvedAssets.length > 0 && (
+      {attestedAssets.length > 0 && (
         <div
           className="rounded-2xl p-8 shadow-lg"
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
@@ -194,9 +256,9 @@ const OperationsViewPage = () => {
           </div>
 
           <div className="space-y-4">
-            {approvedAssets.map((asset) => (
+            {attestedAssets.map((asset) => (
               <div
-                key={asset.id}
+                key={asset.assetId}
                 className="bg-white rounded-xl p-6 hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -207,10 +269,10 @@ const OperationsViewPage = () => {
                       </div>
                       <div>
                         <h4 className="font-antic text-lg font-normal text-foreground">
-                          {asset.name}
+                          Invoice #{asset.metadata.invoiceNumber}
                         </h4>
                         <p className="font-inter text-xs text-foreground/60">
-                          {asset.assetType}
+                          {asset.metadata.industry}
                         </p>
                       </div>
                     </div>
@@ -219,19 +281,19 @@ const OperationsViewPage = () => {
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Value</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          {formatCurrency(asset.totalValue)}
+                          {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Tokens</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          {asset.totalTokens?.toLocaleString() ?? '0'}
+                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="font-inter text-xs text-foreground/60 mb-1">Originator</p>
+                        <p className="font-inter text-xs text-foreground/60 mb-1">Buyer</p>
                         <p className="font-inter text-sm font-medium text-foreground">
-                          {asset.originator?.name ?? 'N/A'}
+                          {asset.metadata.buyerName}
                         </p>
                       </div>
                     </div>
@@ -278,7 +340,7 @@ const OperationsViewPage = () => {
           <div className="space-y-4">
             {registeredAssets.map((asset) => (
               <div
-                key={asset.id}
+                key={asset.assetId}
                 className="bg-white rounded-xl p-6 hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -289,10 +351,10 @@ const OperationsViewPage = () => {
                       </div>
                       <div>
                         <h4 className="font-antic text-lg font-normal text-foreground">
-                          {asset.name}
+                          Invoice #{asset.metadata.invoiceNumber}
                         </h4>
                         <p className="font-inter text-xs text-foreground/60">
-                          {asset.assetType}
+                          {asset.metadata.industry}
                         </p>
                       </div>
                     </div>
@@ -301,16 +363,16 @@ const OperationsViewPage = () => {
                     <div className="bg-gray-50 rounded-lg p-4 mt-4 space-y-2">
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-foreground/50" />
-                        <span className="font-inter text-xs text-foreground/60">BlobID:</span>
+                        <span className="font-inter text-xs text-foreground/60">Transaction Hash:</span>
                         <span className="font-mono text-xs text-foreground">
-                          {asset.registry?.blobId || 'N/A'}
+                          {asset.registry?.transactionHash ? `${asset.registry.transactionHash.slice(0, 10)}...${asset.registry.transactionHash.slice(-8)}` : 'N/A'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-foreground/50" />
-                        <span className="font-inter text-xs text-foreground/60">Attestation:</span>
+                        <span className="font-inter text-xs text-foreground/60">Block Number:</span>
                         <span className="font-mono text-xs text-foreground">
-                          {asset.registry?.attestationHash || 'N/A'}
+                          {asset.registry?.blockNumber || 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -319,13 +381,13 @@ const OperationsViewPage = () => {
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          {asset.totalTokens?.toLocaleString() ?? '0'}
+                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Token Price</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          ${asset.tokenPrice ?? '0'}
+                          ${parseFloat(asset.tokenParams.pricePerToken).toFixed(6)}
                         </p>
                       </div>
                       <div>
@@ -367,18 +429,18 @@ const OperationsViewPage = () => {
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
               </div>
               <h3 className="font-antic text-2xl font-normal text-foreground">
-                Tokenized Assets
+                Step 3: List on Marketplace
               </h3>
             </div>
             <p className="font-inter text-sm text-foreground/70">
-              Successfully deployed ERC-3643 tokens
+              Tokenized assets ready for marketplace listing
             </p>
           </div>
 
           <div className="space-y-4">
             {tokenizedAssets.map((asset) => (
               <div
-                key={asset.id}
+                key={asset.assetId}
                 className="bg-white rounded-xl p-6"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -389,46 +451,72 @@ const OperationsViewPage = () => {
                       </div>
                       <div>
                         <h4 className="font-antic text-lg font-normal text-foreground">
-                          {asset.name}
+                          Invoice #{asset.metadata.invoiceNumber}
                         </h4>
                         <p className="font-inter text-xs text-foreground/60">
-                          {asset.assetType}
+                          {asset.metadata.industry}
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2 mb-4">
                       <div className="flex items-center justify-between">
                         <span className="font-inter text-xs text-foreground/60">Token Address:</span>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs text-foreground">
-                            {asset.tokenization?.tokenAddress?.slice(0, 10)}...
-                            {asset.tokenization?.tokenAddress?.slice(-8)}
+                            {asset.token?.address ? `${asset.token.address.slice(0, 10)}...${asset.token.address.slice(-8)}` : 'N/A'}
                           </span>
-                          <a
-                            href={asset.tokenization?.tokenExplorerUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:text-blue-600"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
+                          {asset.token?.address && (
+                            <a
+                              href={`https://explorer.sepolia.mantle.xyz/address/${asset.token.address}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:text-blue-600"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="font-inter text-xs text-foreground/60">Symbol:</span>
                         <span className="font-inter text-xs font-medium text-foreground">
-                          {asset.tokenization?.tokenSymbol}
+                          {asset.token?.symbol || 'N/A'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="font-inter text-xs text-foreground/60">Total Supply:</span>
                         <span className="font-inter text-xs font-medium text-foreground">
-                          {asset.tokenization?.totalSupply?.toLocaleString()}
+                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-inter text-xs text-foreground/60">Listing Status:</span>
+                        <span className={`font-inter text-xs font-medium ${asset.listing?.active ? 'text-green-600' : 'text-orange-600'}`}>
+                          {asset.listing?.active ? '✓ Listed' : 'Not Listed'}
                         </span>
                       </div>
                     </div>
                   </div>
+
+                  {!asset.listing?.active && (
+                    <Button
+                      onClick={() => handleListOnMarketplace(asset)}
+                      className="font-inter font-medium rounded-xl whitespace-nowrap"
+                      style={{
+                        background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
+                        boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
+                      }}
+                    >
+                      List on Marketplace
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  )}
+                  {asset.listing?.active && (
+                    <div className="px-4 py-2 bg-green-100 text-green-700 rounded-xl font-inter text-sm font-medium">
+                      ✓ Active on Marketplace
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -437,7 +525,7 @@ const OperationsViewPage = () => {
       )}
 
       {/* Empty State */}
-      {approvedAssets.length === 0 && registeredAssets.length === 0 && (
+      {attestedAssets.length === 0 && registeredAssets.length === 0 && tokenizedAssets.length === 0 && (
         <div
           className="rounded-2xl p-12 text-center"
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
@@ -477,20 +565,20 @@ const OperationsViewPage = () => {
               <h4 className="font-inter text-sm font-semibold text-foreground mb-3">Asset Details</h4>
               <div className="grid grid-cols-2 gap-4 font-inter text-sm">
                 <div>
-                  <span className="text-foreground/60">Asset Name:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.name}</p>
+                  <span className="text-foreground/60">Invoice Number:</span>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.metadata.invoiceNumber}</p>
                 </div>
                 <div>
-                  <span className="text-foreground/60">Asset Type:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.assetType}</p>
+                  <span className="text-foreground/60">Industry:</span>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.metadata.industry}</p>
                 </div>
                 <div>
                   <span className="text-foreground/60">Total Value:</span>
-                  <p className="text-foreground font-medium mt-1">{formatCurrency(selectedAsset.totalValue)}</p>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.metadata.currency} {parseFloat(selectedAsset.metadata.faceValue).toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-foreground/60">Originator:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.originator?.name ?? 'N/A'}</p>
+                  <span className="text-foreground/60">Buyer:</span>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.metadata.buyerName}</p>
                 </div>
               </div>
             </div>
@@ -578,17 +666,17 @@ const OperationsViewPage = () => {
               <div className="grid grid-cols-2 gap-4 font-inter text-sm">
                 <div>
                   <span className="text-foreground/60">Token Name:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.name}</p>
+                  <p className="text-foreground font-medium mt-1">Invoice {selectedAsset.metadata.invoiceNumber} RWA Token</p>
                 </div>
                 <div>
                   <span className="text-foreground/60">Token Symbol:</span>
                   <p className="text-foreground font-medium mt-1">
-                    {selectedAsset.name.split(' ').map(w => w[0]).join('').toUpperCase()}
+                    {selectedAsset.metadata.invoiceNumber.replace(/[^A-Z0-9]/g, '').slice(0, 6)}
                   </p>
                 </div>
                 <div>
                   <span className="text-foreground/60">Total Supply:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.totalTokens?.toLocaleString() ?? '0'}</p>
+                  <p className="text-foreground font-medium mt-1">{(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()}</p>
                 </div>
                 <div>
                   <span className="text-foreground/60">Token Standard:</span>
@@ -642,6 +730,149 @@ const OperationsViewPage = () => {
               <Button
                 onClick={() => {
                   setShowTokenizeModal(false);
+                  setSelectedAsset(null);
+                }}
+                disabled={processing}
+                className="flex-1 font-inter font-medium rounded-xl bg-gray-200 hover:bg-gray-300 text-foreground"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* List on Marketplace Modal */}
+      {showListingModal && selectedAsset && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className="rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                <Layers className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="font-antic text-2xl font-normal text-foreground">
+                List Asset on Marketplace
+              </h3>
+            </div>
+
+            <p className="font-inter text-sm text-foreground/70 mb-6">
+              Configure listing parameters to make this asset available for investors on the primary marketplace.
+            </p>
+
+            {/* Asset Details */}
+            <div className="bg-white rounded-xl p-6 mb-6 space-y-4">
+              <h4 className="font-inter text-sm font-semibold text-foreground mb-3">Asset Details</h4>
+              <div className="grid grid-cols-2 gap-4 font-inter text-sm">
+                <div>
+                  <span className="text-foreground/60">Invoice Number:</span>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.metadata.invoiceNumber}</p>
+                </div>
+                <div>
+                  <span className="text-foreground/60">Token Address:</span>
+                  <p className="font-mono text-xs text-foreground mt-1">
+                    {selectedAsset.token?.address ? `${selectedAsset.token.address.slice(0, 10)}...${selectedAsset.token.address.slice(-8)}` : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-foreground/60">Total Supply:</span>
+                  <p className="text-foreground font-medium mt-1">
+                    {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                  </p>
+                </div>
+                <div>
+                  <span className="text-foreground/60">Token Symbol:</span>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.token?.symbol || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Listing Configuration */}
+            <div className="bg-white rounded-xl p-6 mb-6 space-y-4">
+              <h4 className="font-inter text-sm font-semibold text-foreground mb-3">
+                Listing Configuration
+              </h4>
+
+              <div>
+                <label className="block font-inter text-sm font-medium text-foreground mb-2">
+                  Listing Type
+                </label>
+                <select
+                  value={listingType}
+                  onChange={(e) => setListingType(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-inter text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="STATIC">Static Price (Fixed)</option>
+                  <option value="DUTCH">Dutch Auction (Declining Price)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-inter text-sm font-medium text-foreground mb-2">
+                  Price per Token (USDC, 6 decimals)
+                </label>
+                <input
+                  type="text"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="1000000"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="font-inter text-xs text-foreground/60 mt-1">
+                  Default: 1000000 = 1 USDC per token
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-inter text-sm font-medium text-foreground mb-2">
+                  Minimum Investment (Wei, 18 decimals)
+                </label>
+                <input
+                  type="text"
+                  value={minInvestment}
+                  onChange={(e) => setMinInvestment(e.target.value)}
+                  placeholder="1000000000000000000000"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="font-inter text-xs text-foreground/60 mt-1">
+                  Default: 1000000000000000000000 = 1000 tokens
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-inter text-sm font-medium text-foreground mb-2">
+                  Duration (seconds, 0 = unlimited)
+                </label>
+                <input
+                  type="text"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="0"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="font-inter text-xs text-foreground/60 mt-1">
+                  0 = No expiration, or specify seconds (e.g., 86400 = 1 day)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={confirmListing}
+                disabled={processing}
+                className="flex-1 font-inter font-medium rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
+                }}
+              >
+                {processing ? 'Listing on Marketplace...' : 'Confirm Listing'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowListingModal(false);
                   setSelectedAsset(null);
                 }}
                 disabled={processing}

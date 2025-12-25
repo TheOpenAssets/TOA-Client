@@ -69,7 +69,8 @@ const AssetDetailsPage = () => {
 
   const timeFilters = ['1D', '1W', '1M', '1Y', 'ALL'];
 
-  const totalPrice = tokensToBuy
+  // Calculate estimated total price (actual price will be fetched from contract during purchase)
+  const estimatedTotalPrice = tokensToBuy
     ? (parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken)).toFixed(2)
     : '0.00';
 
@@ -95,32 +96,73 @@ const AssetDetailsPage = () => {
     setIsPurchasing(true);
     setPurchaseStatus('Initiating purchase...');
 
+    console.log('\n🛒 ===== STARTING PURCHASE FLOW =====');
+    console.log('Asset ID:', asset.assetId);
+    console.log('Invoice Number:', asset.metadata.invoiceNumber);
+    console.log('Token Address:', asset.token.address);
+    console.log('Token Amount:', tokensToBuy);
+    console.log('Buyer Address:', address);
+    console.log('=====================================\n');
+
     try {
-      const result = await contractService.completePurchase({
-        assetId: asset.assetId,
-        tokenAmount: tokensToBuy,
-        pricePerToken: asset.tokenParams.pricePerToken,
-      });
+      const result = await contractService.completePurchase(
+        {
+          assetId: asset.assetId,
+          tokenAmount: tokensToBuy,
+        },
+        asset.token.address // Pass token address for debugging
+      );
 
       if (result.success) {
+        console.log('\n✅ Purchase transaction successful!');
+        console.log('Transaction Hash:', result.purchaseTxHash);
+        console.log('Block Number:', result.blockNumber);
+
         setPurchaseStatus('Purchase successful! 🎉 Notifying backend...');
-        await marketplaceService.notifyPurchase({
-          txHash: result.txHash,
-          assetId: asset.assetId,
-          amount: (parseFloat(tokensToBuy) * 1e18).toString(), // Assuming amount is in wei
-          blockNumber: result.blockNumber.toString(),
-        });
-        setPurchaseStatus('Purchase and notification successful! 🎉');
+
+        // Notify backend about the purchase (matching script output format)
+        try {
+          const notifyPayload = {
+            txHash: result.purchaseTxHash!,
+            assetId: asset.assetId,
+            amount: (parseFloat(tokensToBuy) * 1e18).toString(),
+            blockNumber: result.blockNumber!.toString(),
+          };
+
+          console.log('\n📝 Transaction details for backend notification:');
+          console.log(JSON.stringify({
+            txHash: result.purchaseTxHash,
+            assetId: asset.assetId,
+            buyer: address,
+            amount: tokensToBuy,
+            blockNumber: result.blockNumber
+          }, null, 2));
+
+          console.log('\n📤 Notifying backend at POST /marketplace/purchases/notify...');
+          const backendResponse = await marketplaceService.notifyPurchase(notifyPayload);
+
+          console.log('✅ Backend notification successful!');
+          console.log('Backend response:', backendResponse);
+
+          setPurchaseStatus('Purchase and notification successful! 🎉');
+        } catch (notifyError: any) {
+          console.error('❌ Failed to notify backend:', notifyError);
+          setPurchaseStatus('Purchase successful! (Backend notification failed)');
+        }
+
         setTokensToBuy('');
         // Reload wallet data
         await loadWalletData();
       } else {
+        console.error('❌ Purchase failed:', result.error);
         setPurchaseStatus(`Purchase failed: ${result.error}`);
       }
     } catch (error: any) {
+      console.error('❌ Purchase error:', error);
       setPurchaseStatus(`Error: ${error.message}`);
     } finally {
       setIsPurchasing(false);
+      console.log('\n===== PURCHASE FLOW COMPLETED =====\n');
     }
   };
 
@@ -270,10 +312,13 @@ const AssetDetailsPage = () => {
                   </div>
                   <div className="bg-[#F3F4F6] rounded-2xl p-4">
                     <label htmlFor="total-price" className="text-xs text-[#6B7280]">
-                      Total Price
+                      Estimated Total Price
                     </label>
                     <p id="total-price" className="text-2xl font-medium text-[#111111]">
-                      ${totalPrice}
+                      ${estimatedTotalPrice} USDC
+                    </p>
+                    <p className="text-xs text-[#6B7280] mt-1">
+                      (Final price fetched from contract)
                     </p>
                   </div>
                   <div className="text-xs text-[#6B7280] space-y-1">

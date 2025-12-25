@@ -2,12 +2,78 @@
 import { create } from 'zustand';
 import { adminService } from '../lib/api/admin.service';
 
+export interface AssetMetadata {
+  invoiceNumber: string;
+  faceValue: string;
+  buyerName: string;
+  issueDate: string;
+  dueDate: string;
+  currency: string;
+  industry: string;
+  riskTier: string;
+}
+
+export interface TokenParams {
+  totalSupply: string;
+  pricePerToken: string;
+  minInvestment: string;
+}
+
+export interface AssetCheckpoints {
+  uploaded: boolean;
+  attested: boolean;
+  registered: boolean;
+  tokenized: boolean;
+  listed: boolean;
+}
+
+export interface AssetCryptography {
+  merkleRoot?: string;
+  assetIdBytes32?: string;
+}
+
+export interface AssetAttestation {
+  hash?: string;
+  timestamp?: string;
+  blockNumber?: number;
+}
+
+export interface AssetRegistry {
+  transactionHash?: string;
+  blockNumber?: number;
+}
+
+export interface AssetToken {
+  address?: string;
+  name?: string;
+  symbol?: string;
+  complianceAddress?: string;
+}
+
+export interface AssetListing {
+  listingId?: string;
+  type?: string;
+  price?: string;
+  minInvestment?: string;
+  transactionHash?: string;
+}
+
 export interface AdminAsset {
-  id: string;
-  name: string;
+  _id: string;
+  assetId: string;
+  originator: string;
   status: string;
-  submittedDate: string;
-  [key: string]: any;
+  metadata: AssetMetadata;
+  tokenParams: TokenParams;
+  files?: any[];
+  checkpoints: AssetCheckpoints;
+  cryptography: AssetCryptography;
+  attestation: AssetAttestation;
+  registry: AssetRegistry;
+  token: AssetToken;
+  listing?: AssetListing;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AdminStats {

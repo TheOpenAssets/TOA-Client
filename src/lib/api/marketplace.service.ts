@@ -1,5 +1,4 @@
 // src/lib/api/marketplace.service.ts
-
 import type {
   ListingResponse,
   AssetDetailsResponse,
@@ -7,8 +6,9 @@ import type {
   AssetDetails,
   NotifyPurchasePayload,
 } from '@/types/marketplace.types';
+import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
 /**
  * Marketplace Service - Handles marketplace-related API calls
@@ -17,11 +17,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
  * - GET /marketplace/listings - Get all asset listings
  * - GET /marketplace/listings/:assetId - Get specific asset details
  */
-class MarketplaceService {
-  private baseURL: string;
+class MarketplaceService extends BaseService {
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    super(API_BASE_URL);
   }
 
   /**
@@ -38,18 +37,9 @@ class MarketplaceService {
    */
   async getListings(): Promise<MarketplaceListing[]> {
     try {
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
-      }
-
       const response = await fetch(`${this.baseURL}/marketplace/listings`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -78,18 +68,9 @@ class MarketplaceService {
    */
   async getListingById(assetId: string): Promise<AssetDetails> {
     try {
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
-      }
-
       const response = await fetch(`${this.baseURL}/marketplace/listings/${assetId}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -107,16 +88,9 @@ class MarketplaceService {
 
   async notifyPurchase(payload: NotifyPurchasePayload): Promise<any> {
     try {
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
-      }
       const response = await fetch(`${this.baseURL}/marketplace/purchases/notify`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -133,4 +107,4 @@ class MarketplaceService {
   }
 }
 
-export const marketplaceService = new MarketplaceService(API_BASE_URL);
+export const marketplaceService = new MarketplaceService();

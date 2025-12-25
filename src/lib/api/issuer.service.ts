@@ -1,5 +1,4 @@
 // src/lib/api/issuer.service.ts
-
 import {
   type TokenValidationResponse,
   type IssuerData,
@@ -8,11 +7,9 @@ import {
   type LoginPayload,
   UserRole
 } from '../../types/issuer.types';
+import BaseService from './base.service';
 
-
-
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
@@ -31,14 +28,11 @@ const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
  * 2. Ensure backend is running at API_BASE_URL
  * 3. No other code changes needed - all endpoints are already configured
  */
-class IssuerService {
-  private baseURL: string;
+class IssuerService extends BaseService {
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    super(API_BASE_URL);
   }
-
-
 
   // Challenge
   async getChallenge(walletAddress: string): Promise<ChallengeResponse> {
@@ -67,9 +61,7 @@ class IssuerService {
           `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}&role=${UserRole.ORIGINATOR}`,
           {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: this.getHeaders(),
           }
         );
   
@@ -130,9 +122,7 @@ class IssuerService {
         try {
           const response = await fetch(`${this.baseURL}/auth/login`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: this.getHeaders(),
             body: JSON.stringify(payload),
           });
     
@@ -236,9 +226,7 @@ class IssuerService {
         `${this.baseURL}/issuer/validate-token?token=${encodeURIComponent(token)}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: this.getHeaders(),
         }
       );
 
@@ -265,4 +253,4 @@ class IssuerService {
 }
 
 // Factory instance
-export const issuerService = new IssuerService(API_BASE_URL);
+export const issuerService = new IssuerService();

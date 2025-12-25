@@ -67,7 +67,9 @@ const ComplianceViewPage = () => {
       },
     };
 
-    const badge = badges[level];
+    // Normalize the level to uppercase and handle invalid values
+    const normalizedLevel = level?.toUpperCase() as keyof typeof badges;
+    const badge = badges[normalizedLevel] || badges.MEDIUM; // Default to MEDIUM if invalid
     const Icon = badge.icon;
 
     return (
@@ -124,13 +126,13 @@ const ComplianceViewPage = () => {
     }
 
     console.log('Approving asset:', {
-      assetId: selectedAsset.id,
+      assetId: selectedAsset.assetId,
       adminWallet: adminWallet,
     });
 
     setProcessing(true);
     try {
-      const result = await adminService.approveAsset(selectedAsset.id, adminWallet);
+      const result = await adminService.approveAsset(selectedAsset.assetId, adminWallet);
       console.log('✅ Asset approved successfully:', result);
       
       // Refresh the dashboard data
@@ -165,7 +167,7 @@ const ComplianceViewPage = () => {
     setProcessing(true);
     // Simulate API call
     setTimeout(() => {
-      console.log('Asset rejected:', selectedAsset?.id, 'Reason:', rejectionReason);
+      console.log('Asset rejected:', selectedAsset?.assetId, 'Reason:', rejectionReason);
       fetchAdminDashboardData();
       setProcessing(false);
       setShowRejectModal(false);
@@ -223,7 +225,7 @@ const ComplianceViewPage = () => {
             <div>
               <p className="font-inter text-xs text-foreground/60">Low Risk Assets</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {assetsForCompliance.filter((a) => a.riskScore?.level === 'LOW').length}
+                {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'a').length}
               </p>
             </div>
           </div>
@@ -240,7 +242,7 @@ const ComplianceViewPage = () => {
             <div>
               <p className="font-inter text-xs text-foreground/60">High Risk Assets</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {assetsForCompliance.filter((a) => a.riskScore?.level === 'HIGH').length}
+                {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'c').length}
               </p>
             </div>
           </div>
@@ -278,28 +280,28 @@ const ComplianceViewPage = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {assetsForCompliance.map((asset) => {
-                const uploadDate = new Date(asset.submittedDate);
+                const uploadDate = new Date(asset.createdAt);
                 const daysAgo = Math.floor(
                   (Date.now() - uploadDate.getTime()) / (1000 * 60 * 60 * 24)
                 );
 
                 return (
                   <tr
-                    key={asset.id}
+                    key={asset.assetId}
                     className="hover:bg-gray-50/50 transition-all duration-200"
                   >
                     <td className="px-6 py-5">
                       <div>
                         <div className="font-antic font-normal text-foreground text-base">
-                          {asset.name}
+                          Invoice #{asset.metadata.invoiceNumber}
                         </div>
                         <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                          {asset.assetType}
+                          {asset.metadata.industry}
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           <FileText className="w-3 h-3 text-foreground/50" />
                           <span className="font-inter text-xs text-foreground/50">
-                            {asset.documents?.length ?? 0} documents
+                            {asset.files?.length ?? 0} documents
                           </span>
                         </div>
                       </div>
@@ -307,26 +309,26 @@ const ComplianceViewPage = () => {
                     <td className="px-6 py-5">
                       <div>
                         <div className="font-inter font-medium text-foreground text-sm">
-                          {asset.originator?.name}
+                          {asset.metadata.buyerName}
                         </div>
-                        <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                          {asset.originator?.jurisdiction}
+                        <div className="font-inter text-xs text-foreground/60 mt-0.5 font-mono">
+                          {asset.originator.slice(0, 6)}...{asset.originator.slice(-4)}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-5">
                       <div className="font-antic font-normal text-foreground text-base">
-                        {formatCurrency(asset.totalValue)}
+                        {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                       </div>
                       <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                        {asset.totalTokens?.toLocaleString()} tokens
+                        {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
                       </div>
                     </td>
                     <td className="px-6 py-5">
                       <div className="space-y-2">
-                        {asset.riskScore?.level && getRiskBadge(asset.riskScore.level)}
+                        {getRiskBadge(asset.metadata.riskTier as RiskLevel)}
                         <div className="font-inter text-xs text-foreground/60">
-                          Score: {asset.riskScore?.score ?? 'N/A'}/100
+                          Risk: {asset.metadata.riskTier}
                         </div>
                       </div>
                     </td>
@@ -398,11 +400,11 @@ const ComplianceViewPage = () => {
               <div className="space-y-2 font-inter text-sm">
                 <div className="flex justify-between">
                   <span className="text-foreground/60">Asset:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.name}</span>
+                  <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-foreground/60">Originator:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.originator.name}</span>
+                  <span className="text-foreground/60">Buyer:</span>
+                  <span className="text-foreground font-medium">{selectedAsset.metadata.buyerName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-foreground/60">KYC Provider:</span>
@@ -462,20 +464,20 @@ const ComplianceViewPage = () => {
               <div className="space-y-2 font-inter text-sm">
                 <div className="flex justify-between">
                   <span className="text-foreground/60">Asset:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.name}</span>
+                  <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-foreground/60">Value:</span>
-                  <span className="text-foreground font-medium">{formatCurrency(selectedAsset.totalValue)}</span>
+                  <span className="text-foreground font-medium">{selectedAsset.metadata.currency} {parseFloat(selectedAsset.metadata.faceValue).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-foreground/60">Risk Score:</span>
-                  <span className={`font-medium ${
-                    selectedAsset.riskScore?.level === 'LOW' ? 'text-green-600' :
-                    selectedAsset.riskScore?.level === 'MEDIUM' ? 'text-yellow-600' :
+                  <span className="text-foreground/60">Risk Tier:</span>
+                  <span className={`font-medium capitalize ${
+                    selectedAsset.metadata.riskTier.toLowerCase() === 'low' ? 'text-green-600' :
+                    selectedAsset.metadata.riskTier.toLowerCase() === 'medium' ? 'text-yellow-600' :
                     'text-red-600'
                   }`}>
-                    {selectedAsset.riskScore?.score ?? 'N/A'}/100 ({selectedAsset.riskScore?.level ?? 'N/A'})
+                    {selectedAsset.metadata.riskTier}
                   </span>
                 </div>
               </div>
@@ -528,11 +530,11 @@ const ComplianceViewPage = () => {
               <div className="space-y-2 font-inter text-sm">
                 <div className="flex justify-between">
                   <span className="text-foreground/60">Asset:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.name}</span>
+                  <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-foreground/60">Originator:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.originator.name}</span>
+                  <span className="text-foreground/60">Buyer:</span>
+                  <span className="text-foreground font-medium">{selectedAsset.metadata.buyerName}</span>
                 </div>
               </div>
             </div>

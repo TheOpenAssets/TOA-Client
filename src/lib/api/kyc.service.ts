@@ -1,8 +1,8 @@
 // src/lib/api/kyc.service.ts
-
 import type { KYCSubmitPayload, KYCSubmitResponse } from '../../types/auth.types';
+import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
@@ -22,11 +22,10 @@ const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
  * 2. Ensure backend is running at API_BASE_URL
  * 3. No other code changes needed - all endpoints are already configured
  */
-class KYCService {
-  private baseURL: string;
+class KYCService extends BaseService {
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    super(API_BASE_URL);
   }
 
   /**
@@ -144,17 +143,9 @@ class KYCService {
 
     // REAL MODE: Submit to backend
     try {
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
-      }
-
       const response = await fetch(`${this.baseURL}/kyc/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: this.getAuthHeaders(),
         body: payload,
       });
 
@@ -222,4 +213,4 @@ class KYCService {
 }
 
 // Factory instance
-export const kycService = new KYCService(API_BASE_URL);
+export const kycService = new KYCService();

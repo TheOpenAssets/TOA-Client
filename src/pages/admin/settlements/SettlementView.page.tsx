@@ -54,7 +54,7 @@ const SettlementViewPage = () => {
   const handleRecordSettlement = (asset: AdminAsset) => {
     setSelectedAsset(asset);
     setFormData({
-      assetId: asset.id,
+      assetId: asset.assetId,
       fiatAmount: 0,
       currency: 'USD',
       settlementDate: new Date().toISOString().split('T')[0],
@@ -82,11 +82,8 @@ const SettlementViewPage = () => {
     }
   };
 
-  // Calculate total yield distributed with null safety
-  const totalYieldDistributed = yieldingAssets?.reduce(
-    (sum, asset) => sum + (asset?.yield?.totalDistributed || 0),
-    0
-  ) || 0;
+  // Calculate total tokenized assets
+  const totalTokenizedAssets = yieldingAssets?.length || 0;
   
   if (isLoading) {
     return (
@@ -168,9 +165,9 @@ const SettlementViewPage = () => {
           <div className="flex items-center gap-3">
             <TrendingUp className="w-5 h-5 text-green-500" />
             <div>
-              <p className="font-inter text-xs text-foreground/60">Total Yield Distributed</p>
+              <p className="font-inter text-xs text-foreground/60">Listed on Marketplace</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {formatCurrency(totalYieldDistributed)}
+                {yieldingAssets.filter(a => a.listing?.active).length}
               </p>
             </div>
           </div>
@@ -185,9 +182,9 @@ const SettlementViewPage = () => {
           <div className="flex items-center gap-3">
             <DollarSign className="w-5 h-5 text-purple-500" />
             <div>
-              <p className="font-inter text-xs text-foreground/60">Total Settlements</p>
+              <p className="font-inter text-xs text-foreground/60">Total Value Tokenized</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {yieldingAssets.reduce((sum, a) => sum + (a.yield?.settlements?.length || 0), 0)}
+                {formatCurrency(yieldingAssets.reduce((sum, a) => sum + parseFloat(a.metadata.faceValue), 0))}
               </p>
             </div>
           </div>
@@ -211,7 +208,7 @@ const SettlementViewPage = () => {
         <div className="space-y-6">
           {yieldingAssets.map((asset) => (
             <div
-              key={asset.id}
+              key={asset.assetId}
               className="bg-white rounded-xl p-6"
             >
               <div className="flex items-start justify-between gap-4 mb-6">
@@ -222,10 +219,10 @@ const SettlementViewPage = () => {
                     </div>
                     <div>
                       <h4 className="font-antic text-lg font-normal text-foreground">
-                        {asset.name}
+                        Invoice #{asset.metadata.invoiceNumber}
                       </h4>
                       <p className="font-inter text-xs text-foreground/60">
-                        {asset.assetType}
+                        {asset.metadata.industry} - {asset.metadata.buyerName}
                       </p>
                     </div>
                   </div>
@@ -234,48 +231,48 @@ const SettlementViewPage = () => {
                     <div>
                       <p className="font-inter text-xs text-foreground/60 mb-1">Total Value</p>
                       <p className="font-antic text-base font-normal text-foreground">
-                        {formatCurrency(asset.totalValue)}
+                        {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
                       <p className="font-antic text-base font-normal text-foreground">
-                        {asset.totalTokens?.toLocaleString() ?? '0'}
+                        {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                       </p>
                     </div>
                     <div>
-                      <p className="font-inter text-xs text-foreground/60 mb-1">Yield Distributed</p>
-                      <p className="font-antic text-base font-normal text-green-600">
-                        {formatCurrency(asset.yield?.totalDistributed || 0)}
+                      <p className="font-inter text-xs text-foreground/60 mb-1">Token Address</p>
+                      <p className="font-mono text-xs font-normal text-foreground">
+                        {asset.token?.address ? `${asset.token.address.slice(0, 6)}...${asset.token.address.slice(-4)}` : 'N/A'}
                       </p>
                     </div>
                     <div>
-                      <p className="font-inter text-xs text-foreground/60 mb-1">Frequency</p>
+                      <p className="font-inter text-xs text-foreground/60 mb-1">Listing Status</p>
                       <p className="font-inter text-sm font-medium text-foreground">
-                        {asset.yield?.distributionFrequency || 'MONTHLY'}
+                        {asset.listing?.active ? '✓ Active' : 'Not Listed'}
                       </p>
                     </div>
                   </div>
 
                   {/* Token Info */}
-                  {asset.tokenization && (
+                  {asset.token?.address && (
                     <div className="bg-gray-50 rounded-lg p-4 mt-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-inter text-xs text-foreground/60">Token:</span>
                           <span className="font-mono text-xs text-foreground">
-                            {asset.tokenization.tokenAddress?.slice(0, 10)}...
-                            {asset.tokenization.tokenAddress?.slice(-8)}
+                            {asset.token.address.slice(0, 10)}...
+                            {asset.token.address.slice(-8)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-inter text-xs text-foreground/60">Symbol:</span>
                           <span className="font-inter text-xs font-medium text-foreground">
-                            {asset.tokenization.tokenSymbol}
+                            {asset.token.symbol || 'N/A'}
                           </span>
                         </div>
                         <a
-                          href={asset.tokenization.tokenExplorerUrl}
+                          href={`https://explorer.sepolia.mantle.xyz/address/${asset.token.address}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 text-blue-500 hover:text-blue-600 font-inter text-xs"
@@ -301,58 +298,26 @@ const SettlementViewPage = () => {
                 </Button>
               </div>
 
-              {/* Settlement History */}
-              {asset.yield && asset.yield.settlements.length > 0 && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h5 className="font-inter text-sm font-semibold text-foreground mb-3">
-                    Settlement History
-                  </h5>
-                  <div className="space-y-2">
-                    {asset.yield.settlements.map((settlement) => (
-                      <div
-                        key={settlement.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-inter text-sm font-medium text-foreground">
-                              {formatCurrency(settlement.fiatAmount)} {settlement.currency} → {formatCurrency(settlement.usdcAmount)} USDC
-                            </p>
-                            <p className="font-inter text-xs text-foreground/60">
-                              {new Date(settlement.settlementDate).toLocaleDateString()} • By {settlement.recordedBy}
-                            </p>
-                          </div>
-                        </div>
-                        {settlement.transactionHash && (
-                          <a
-                            href={`https://explorer.mantle.xyz/tx/${settlement.transactionHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:text-blue-600"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    ))}
+              {/* Blockchain Info */}
+              <div className="border-t border-gray-200 mt-4 pt-4">
+                <h5 className="font-inter text-sm font-semibold text-foreground mb-3">
+                  Blockchain Details
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-inter text-xs text-foreground/60 mb-1">Registry TX</p>
+                    <p className="font-mono text-xs text-foreground">
+                      {asset.registry?.transactionHash ? `${asset.registry.transactionHash.slice(0, 10)}...${asset.registry.transactionHash.slice(-8)}` : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-inter text-xs text-foreground/60 mb-1">Token Deployment TX</p>
+                    <p className="font-mono text-xs text-foreground">
+                      {asset.token?.transactionHash ? `${asset.token.transactionHash.slice(0, 10)}...${asset.token.transactionHash.slice(-8)}` : 'N/A'}
+                    </p>
                   </div>
                 </div>
-              )}
-
-              {/* Next Distribution */}
-              {asset.yield?.nextDistributionDate && (
-                <div className="border-t border-gray-200 mt-4 pt-4">
-                  <div className="flex items-center gap-2 text-foreground/60">
-                    <Calendar className="w-4 h-4" />
-                    <span className="font-inter text-xs">
-                      Next Distribution: {new Date(asset.yield.nextDistributionDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           ))}
         </div>

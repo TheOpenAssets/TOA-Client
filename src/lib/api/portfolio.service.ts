@@ -1,6 +1,7 @@
 // src/lib/api/portfolio.service.ts
+import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
 export interface PortfolioAsset {
   assetId: string;
@@ -25,11 +26,10 @@ export interface PortfolioResponse {
   portfolio: PortfolioAsset[];
 }
 
-class PortfolioService {
-  private baseURL: string;
+class PortfolioService extends BaseService {
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    super(API_BASE_URL);
   }
 
   /**
@@ -50,18 +50,9 @@ class PortfolioService {
     try {
       console.log('📊 Fetching portfolio from API...');
       
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
-      }
-
       const response = await fetch(`${this.baseURL}/marketplace/portfolio`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -109,18 +100,9 @@ class PortfolioService {
     try {
       console.log('📝 Notifying backend of purchase:', data);
       
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
-      }
-
       const response = await fetch(`${this.baseURL}/marketplace/purchases/notify`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(data),
       });
 
@@ -139,4 +121,4 @@ class PortfolioService {
   }
 }
 
-export const portfolioService = new PortfolioService(API_BASE_URL);
+export const portfolioService = new PortfolioService();

@@ -1,25 +1,95 @@
 // src/lib/api/asset.service.ts
 import type { IssuerAsset } from '@/types/issuer.types';
-import { mockAssetDetails } from '../data/asset-details-mock';
+import BaseService from './base.service';
 
-const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'true' || true;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
-class AssetService {
-  async getAssetById(assetId: string): Promise<IssuerAsset | undefined> {
-    if (USE_MOCK_MODE) {
-      console.log('🔧 MOCK MODE: Fetching asset by ID', assetId);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // In a real scenario, you would use assetId to fetch the correct asset.
-      // For this mock, we return the same detailed asset regardless of ID.
-      return mockAssetDetails;
-    }
+/**
+ * Response type for paginated assets
+ */
+export interface AssetsResponse {
+  assets: IssuerAsset[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
-    // REAL MODE: Fetch from backend
+/**
+ * Parameters for getting assets
+ */
+export interface GetAssetsParams {
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+class AssetService extends BaseService {
+
+  constructor() {
+    super(API_BASE_URL);
+  }
+
+  /**
+   * Get all assets for the current originator (issuer)
+   * 
+   * Endpoint: GET /assets
+   * Supports filters: status (e.g., TOKENIZED)
+   * Supports pagination: page, limit
+   * 
+   * @param params - Optional filters and pagination
+   * @returns Promise with assets and pagination info
+   */
+  async getAllAssets(params: GetAssetsParams = {}): Promise<AssetsResponse> {
     try {
-      const response = await fetch(`/api/assets/${assetId}`);
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (params.status) queryParams.append('status', params.status);
+      if (params.page !== undefined) queryParams.append('page', params.page.toString());
+      if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
+
+      const queryString = queryParams.toString();
+      const url = `${this.baseURL}/assets${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to fetch asset');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch assets: ${response.status}`);
       }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching assets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single asset by ID
+   * 
+   * Endpoint: GET /assets/:id
+   * 
+   * @param assetId - The asset ID
+   * @returns Promise with asset data
+   */
+  async getAssetById(assetId: string): Promise<IssuerAsset | undefined> {
+    try {
+      const response = await fetch(`${this.baseURL}/assets/${assetId}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch asset: ${response.status}`);
+      }
+
       return await response.json();
     } catch (error) {
       console.error('Error fetching asset:', error);
@@ -29,3 +99,4 @@ class AssetService {
 }
 
 export const assetService = new AssetService();
+

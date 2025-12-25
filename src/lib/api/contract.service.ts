@@ -21,23 +21,17 @@ const USDC_ABI = [
   'function balanceOf(address account) public view returns (uint256)',
 ];
 
-// PrimaryMarketplace ABI - Add more functions for debugging
+// PrimaryMarketplace ABI - Must match the actual deployed contract
 const MARKETPLACE_ABI = [
-  'function buyTokens(bytes32 assetId, uint256 amount) public',
-  'function getListingDetails(bytes32 assetId) public view returns (address tokenAddress, uint256 pricePerToken, uint256 availableSupply, bool isActive)',
-  'function listings(bytes32) public view returns (address tokenAddress, uint256 pricePerToken, uint256 totalSupply, uint256 availableSupply, uint256 minInvestment, bool isActive)',
+  'function buyTokens(bytes32 assetId, uint256 amount) external',
+  'function getCurrentPrice(bytes32 assetId) view returns (uint256)',
+  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 startPrice, uint256 endPrice, uint256 duration, uint256 startTime, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
-  // Common custom errors
-  'error InsufficientSupply(uint256 requested, uint256 available)',
-  'error ListingNotActive()',
-  'error InsufficientPayment(uint256 required, uint256 provided)',
-  'error InvalidAmount()',
 ];
 
 export interface PurchaseParams {
   assetId: string;
   tokenAmount: string;
-  pricePerToken: string;
 }
 
 export interface PurchaseResult {
@@ -61,14 +55,14 @@ class ContractService {
 
   /**
    * Calculate total payment needed in USDC (6 decimals)
-   * Formula: (pricePerToken * tokenAmount) / 10^18 * 10^6
+   * Formula from contract: payment = currentPrice * amount / 1e18
+   * where currentPrice is returned from getCurrentPrice() in wei
    */
-  private calculatePayment(tokenAmount: string, pricePerToken: string): bigint {
+  private calculatePayment(tokenAmount: string, currentPrice: bigint): bigint {
     const tokenAmountWei = ethers.parseUnits(tokenAmount, 18);
-    const pricePerTokenUSDC = BigInt(pricePerToken); // Already in USDC units (6 decimals)
 
-    // Calculate: (tokenAmount * pricePerToken) / 10^18
-    const payment = (tokenAmountWei * pricePerTokenUSDC) / BigInt(10 ** 18);
+    // Contract formula: payment = price * amount / 1e18
+    const payment = (currentPrice * tokenAmountWei) / BigInt(10 ** 18);
 
     return payment;
   }
@@ -115,9 +109,9 @@ class ContractService {
 
   /**
    * Approve USDC spending for marketplace
-   * Step 1 of purchase flow
+   * Step 1 of purchase flow - Matches buy-tokens.js script exactly
    */
-  async approveUSDC(params: PurchaseParams): Promise<PurchaseResult> {
+  async approveUSDC(params: PurchaseParams, assetIdBytes32?: string): Promise<PurchaseResult> {
     try {
       if (!window.ethereum) {
         throw new Error('No wallet found. Please install MetaMask or another Web3 wallet.');
@@ -125,31 +119,48 @@ class ContractService {
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
       const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+      const marketplaceContract = new ethers.Contract(PRIMARY_MARKETPLACE_ADDRESS, MARKETPLACE_ABI, provider);
 
-      // Calculate payment needed
-      const payment = this.calculatePayment(params.tokenAmount, params.pricePerToken);
+      // Get current price from contract
+      const assetId = assetIdBytes32 || this.assetIdToBytes32(params.assetId);
+      const currentPrice = await marketplaceContract.getCurrentPrice(assetId);
 
-      console.log('Approving USDC spending:', {
-        marketplace: PRIMARY_MARKETPLACE_ADDRESS,
-        amount: ethers.formatUnits(payment, 6),
-      });
+      // Calculate payment needed (matching script formula)
+      const tokenAmountWei = ethers.parseUnits(params.tokenAmount, 18);
+      const payment = (currentPrice * tokenAmountWei) / BigInt(10 ** 18);
 
-      // Approve USDC
-      const tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment);
-      console.log('Approval transaction sent:', tx.hash);
+      console.log('\n✅ Step 1: Approving USDC...');
+      console.log('Payment to approve:', ethers.formatUnits(payment, 6), 'USDC');
 
-      // Wait for confirmation
-      const receipt = await tx.wait();
-      console.log('Approval confirmed:', receipt.hash);
+      // Check current allowance (matching script)
+      const allowance = await usdcContract.allowance(userAddress, PRIMARY_MARKETPLACE_ADDRESS);
+      console.log('Current allowance:', ethers.formatUnits(allowance, 6), 'USDC');
 
-      return {
-        success: true,
-        transactionHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-      };
+      if (allowance < payment) {
+        // Approve USDC
+        const tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment);
+        console.log('Approve TX:', tx.hash);
+
+        const receipt = await tx.wait();
+        console.log('✅ USDC approved');
+
+        return {
+          success: true,
+          transactionHash: receipt.hash,
+          blockNumber: receipt.blockNumber,
+        };
+      } else {
+        console.log('✅ USDC already approved');
+        return {
+          success: true,
+          transactionHash: '0x0', // No transaction needed
+          blockNumber: 0,
+        };
+      }
     } catch (error: any) {
-      console.error('Error approving USDC:', error);
+      console.error('❌ Error approving USDC:', error);
       return {
         success: false,
         error: error.message || 'Failed to approve USDC',
@@ -181,14 +192,14 @@ class ContractService {
       const format1 = this.assetIdToBytes32(assetId);
       console.log('\n1. UUID padded:', format1);
       try {
-        const details1 = await marketplaceContract.listings(format1);
+        const listing1 = await marketplaceContract.listings(format1);
         console.log('✅ Format 1 FOUND:', {
-          tokenAddress: details1[0],
-          pricePerToken: details1[1].toString(),
-          totalSupply: details1[2].toString(),
-          availableSupply: details1[3].toString(),
-          minInvestment: details1[4].toString(),
-          isActive: details1[5],
+          tokenAddress: listing1[0],
+          totalSupply: listing1[8].toString(),
+          sold: listing1[9].toString(),
+          availableSupply: (listing1[8] - listing1[9]).toString(),
+          minInvestment: listing1[11].toString(),
+          isActive: listing1[10],
         });
       } catch (e) {
         console.log('❌ Format 1 not found');
@@ -198,14 +209,14 @@ class ContractService {
       const format2 = ethers.keccak256(ethers.toUtf8Bytes(assetId));
       console.log('\n2. Keccak256(UUID):', format2);
       try {
-        const details2 = await marketplaceContract.listings(format2);
+        const listing2 = await marketplaceContract.listings(format2);
         console.log('✅ Format 2 FOUND:', {
-          tokenAddress: details2[0],
-          pricePerToken: details2[1].toString(),
-          totalSupply: details2[2].toString(),
-          availableSupply: details2[3].toString(),
-          minInvestment: details2[4].toString(),
-          isActive: details2[5],
+          tokenAddress: listing2[0],
+          totalSupply: listing2[8].toString(),
+          sold: listing2[9].toString(),
+          availableSupply: (listing2[8] - listing2[9]).toString(),
+          minInvestment: listing2[11].toString(),
+          isActive: listing2[10],
         });
       } catch (e) {
         console.log('❌ Format 2 not found');
@@ -215,14 +226,14 @@ class ContractService {
       const format3 = ethers.keccak256(ethers.getBytes(tokenAddress));
       console.log('\n3. Keccak256(tokenAddress):', format3);
       try {
-        const details3 = await marketplaceContract.listings(format3);
+        const listing3 = await marketplaceContract.listings(format3);
         console.log('✅ Format 3 FOUND:', {
-          tokenAddress: details3[0],
-          pricePerToken: details3[1].toString(),
-          totalSupply: details3[2].toString(),
-          availableSupply: details3[3].toString(),
-          minInvestment: details3[4].toString(),
-          isActive: details3[5],
+          tokenAddress: listing3[0],
+          totalSupply: listing3[8].toString(),
+          sold: listing3[9].toString(),
+          availableSupply: (listing3[8] - listing3[9]).toString(),
+          minInvestment: listing3[11].toString(),
+          isActive: listing3[10],
         });
       } catch (e) {
         console.log('❌ Format 3 not found');
@@ -232,14 +243,14 @@ class ContractService {
       const format4 = ethers.zeroPadValue(tokenAddress, 32);
       console.log('\n4. Token address as bytes32:', format4);
       try {
-        const details4 = await marketplaceContract.listings(format4);
+        const listing4 = await marketplaceContract.listings(format4);
         console.log('✅ Format 4 FOUND:', {
-          tokenAddress: details4[0],
-          pricePerToken: details4[1].toString(),
-          totalSupply: details4[2].toString(),
-          availableSupply: details4[3].toString(),
-          minInvestment: details4[4].toString(),
-          isActive: details4[5],
+          tokenAddress: listing4[0],
+          totalSupply: listing4[8].toString(),
+          sold: listing4[9].toString(),
+          availableSupply: (listing4[8] - listing4[9]).toString(),
+          minInvestment: listing4[11].toString(),
+          isActive: listing4[10],
         });
       } catch (e) {
         console.log('❌ Format 4 not found');
@@ -279,76 +290,100 @@ class ContractService {
 
       // Try UUID format first
       const assetIdBytes32 = this.assetIdToBytes32(assetId);
-      
+
       try {
-        const details = await marketplaceContract.listings(assetIdBytes32);
-        
+        const listing = await marketplaceContract.listings(assetIdBytes32);
+
+        // Correct field mapping from actual contract:
+        // [0] tokenAddress, [1] assetId, [2] listingType, [3] staticPrice,
+        // [4] startPrice, [5] endPrice, [6] duration, [7] startTime,
+        // [8] totalSupply, [9] sold, [10] active, [11] minInvestment
+
+        const tokenAddress = listing[0];
+        const totalSupply = listing[8];
+        const sold = listing[9];
+        const active = listing[10];
+        const minInvestment = listing[11];
+
         console.log('Listing details (UUID format):', {
-          tokenAddress: details[0],
-          pricePerToken: details[1].toString(),
-          totalSupply: details[2].toString(),
-          availableSupply: details[3].toString(),
-          minInvestment: details[4].toString(),
-          isActive: details[5],
+          tokenAddress,
+          totalSupply: totalSupply.toString(),
+          sold: sold.toString(),
+          availableSupply: (totalSupply - sold).toString(),
+          minInvestment: minInvestment.toString(),
+          isActive: active,
         });
 
         // Check if listing exists (tokenAddress should not be zero address)
-        if (details[0] === ethers.ZeroAddress) {
+        if (tokenAddress === ethers.ZeroAddress) {
           // Try alternative format: keccak256 of UUID
           const altAssetId = ethers.keccak256(ethers.toUtf8Bytes(assetId));
           console.log('Trying alternative format:', altAssetId);
           
           try {
-            const altDetails = await marketplaceContract.listings(altAssetId);
-            
-            if (altDetails[0] !== ethers.ZeroAddress) {
+            const altListing = await marketplaceContract.listings(altAssetId);
+            const altTokenAddress = altListing[0];
+            const altTotalSupply = altListing[8];
+            const altSold = altListing[9];
+            const altActive = altListing[10];
+
+            if (altTokenAddress !== ethers.ZeroAddress) {
               console.log('✅ Found listing with keccak256 format!');
-              
-              if (!altDetails[5]) {
+
+              if (!altActive) {
                 return { isValid: false, error: 'Listing is not active' };
               }
-              
-              if (altDetails[3] === 0n) {
+
+              const availableSupply = altTotalSupply - altSold;
+              if (availableSupply === 0n) {
                 return { isValid: false, error: 'No tokens available for purchase' };
               }
-              
+
+              // Get current price
+              const currentPrice = await marketplaceContract.getCurrentPrice(altAssetId);
+
               return {
                 isValid: true,
                 correctAssetId: altAssetId,
                 details: {
-                  tokenAddress: altDetails[0],
-                  pricePerToken: altDetails[1].toString(),
-                  availableSupply: ethers.formatUnits(altDetails[3], 18),
-                  isActive: altDetails[5],
+                  tokenAddress: altTokenAddress,
+                  currentPrice: currentPrice.toString(),
+                  availableSupply: ethers.formatUnits(availableSupply, 18),
+                  isActive: altActive,
                 },
               };
             }
           } catch (e) {
             console.error('Alternative format also failed:', e);
           }
-          
+
           return {
             isValid: false,
             error: 'Listing not found in contract. The asset may not be listed yet.',
           };
         }
 
-        if (!details[5]) {
+        if (!active) {
           return { isValid: false, error: 'Listing is not active' };
         }
 
-        if (details[3] === 0n) {
+        const availableSupply = totalSupply - sold;
+        if (availableSupply === 0n) {
           return { isValid: false, error: 'No tokens available for purchase' };
         }
+
+        // Get current price using getCurrentPrice()
+        const currentPrice = await marketplaceContract.getCurrentPrice(assetIdBytes32);
+        console.log('Current price:', ethers.formatUnits(currentPrice, 18), 'USDC per token');
 
         return {
           isValid: true,
           correctAssetId: assetIdBytes32,
           details: {
-            tokenAddress: details[0],
-            pricePerToken: details[1].toString(),
-            availableSupply: ethers.formatUnits(details[3], 18),
-            isActive: details[5],
+            tokenAddress,
+            currentPrice: currentPrice.toString(),
+            availableSupply: ethers.formatUnits(availableSupply, 18),
+            isActive: active,
           },
         };
       } catch (error: any) {
@@ -369,7 +404,7 @@ class ContractService {
 
   /**
    * Buy tokens from marketplace
-   * Step 2 of purchase flow
+   * Step 2 of purchase flow - Matches buy-tokens.js script exactly
    */
   async buyTokens(params: PurchaseParams, correctAssetId?: string): Promise<PurchaseResult> {
     try {
@@ -379,32 +414,75 @@ class ContractService {
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
       const marketplaceContract = new ethers.Contract(
         PRIMARY_MARKETPLACE_ADDRESS,
         MARKETPLACE_ABI,
         signer
       );
+      const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
 
       // Use correctAssetId if provided from verification, otherwise convert UUID
       const assetIdBytes32 = correctAssetId || this.assetIdToBytes32(params.assetId);
       const tokenAmountWei = ethers.parseUnits(params.tokenAmount, 18);
 
-      console.log('Buying tokens:', {
-        assetId: params.assetId,
-        assetIdBytes32,
-        tokenAmount: params.tokenAmount,
-        tokenAmountWei: tokenAmountWei.toString(),
-      });
+      console.log('🛒 Buying RWA Tokens from Marketplace');
+      console.log('━'.repeat(50));
+      console.log('Asset ID:', params.assetId);
+      console.log('Asset ID (bytes32):', assetIdBytes32);
+      console.log('Buyer:', userAddress);
+      console.log('Marketplace:', PRIMARY_MARKETPLACE_ADDRESS);
+      console.log('USDC:', USDC_ADDRESS);
+      console.log('Token Amount:', params.tokenAmount, 'tokens');
+      console.log('Token Amount (wei):', tokenAmountWei.toString());
 
-      // Try to estimate gas first to catch errors before sending transaction
-      
+      // Get listing info (matching script)
+      console.log('\n📋 Fetching listing info...');
+      const listing = await marketplaceContract.listings(assetIdBytes32);
+      const tokenAddress = listing[0];
+      const currentPrice = await marketplaceContract.getCurrentPrice(assetIdBytes32);
+      const totalSupply = listing[8];
+      const sold = listing[9];
+      const minInvestment = listing[11];
+
+      console.log('Token Address:', tokenAddress);
+      console.log('Current Price:', ethers.formatUnits(currentPrice, 18), 'USDC per token');
+      console.log('Min Investment:', ethers.formatUnits(minInvestment, 18), 'tokens');
+      console.log('Sold:', ethers.formatUnits(sold, 18), '/', ethers.formatUnits(totalSupply, 18), 'tokens');
+
+      // Calculate payment needed (matching script formula)
+      const payment = (currentPrice * tokenAmountWei) / BigInt(10 ** 18);
+      console.log('\n💰 Payment Required (raw):', payment.toString());
+      console.log('💰 Payment Required:', ethers.formatUnits(payment, 6), 'USDC');
+
+      // Check USDC balance
+      const usdcBalance = await usdcContract.balanceOf(userAddress);
+      console.log('USDC Balance:', ethers.formatUnits(usdcBalance, 6), 'USDC');
+
+      if (usdcBalance < payment) {
+        throw new Error(`Insufficient USDC balance! Need ${ethers.formatUnits(payment, 6)} USDC but have ${ethers.formatUnits(usdcBalance, 6)} USDC`);
+      }
+
+      // Check current allowance
+      const currentAllowance = await usdcContract.allowance(userAddress, PRIMARY_MARKETPLACE_ADDRESS);
+      console.log('Current USDC Allowance:', ethers.formatUnits(currentAllowance, 6), 'USDC');
+
+      if (currentAllowance < payment) {
+        throw new Error(`Insufficient USDC allowance! Please approve USDC first. Need ${ethers.formatUnits(payment, 6)} USDC allowance but have ${ethers.formatUnits(currentAllowance, 6)} USDC`);
+      }
+
       // Buy tokens
+      console.log('\n✅ Step 2: Buying tokens...');
       const tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei);
-      console.log('Purchase transaction sent:', tx.hash);
+      console.log('Buy TX:', tx.hash);
+      console.log('⏳ Waiting for confirmation...');
 
       // Wait for confirmation
       const receipt = await tx.wait();
-      console.log('Purchase confirmed:', receipt.hash);
+      console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
+      console.log('\n✅ Purchase Complete!');
+      console.log('━'.repeat(50));
+      console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
 
       return {
         success: true,
@@ -412,7 +490,10 @@ class ContractService {
         blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
-      console.error('Error buying tokens:', error);
+      console.error('\n❌ Error buying tokens:', error);
+      if (error.data) {
+        console.error('Error data:', error.data);
+      }
       return {
         success: false,
         error: error.message || 'Failed to buy tokens',
@@ -445,9 +526,9 @@ class ContractService {
 
       console.log('Listing verified:', verification.details);
 
-      // Step 1: Approve USDC
+      // Step 1: Approve USDC with correct assetId
       console.log('Step 1: Approving USDC...');
-      const approvalResult = await this.approveUSDC(params);
+      const approvalResult = await this.approveUSDC(params, verification.correctAssetId);
 
       if (!approvalResult.success) {
         return {

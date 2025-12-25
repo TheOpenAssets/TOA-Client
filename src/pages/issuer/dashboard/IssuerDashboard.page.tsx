@@ -1,24 +1,24 @@
 // src/pages/issuer/dashboard/IssuerDashboard.page.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
-import { Plus, TrendingUp, Package, Clock, CheckCircle } from 'lucide-react';
-import { mockAssets } from '../../../lib/data/mock-assets';
-import { type AssetStatus } from '../../../types/issuer.types';
+import { Plus, TrendingUp, Package, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { type AssetStatus, type IssuerAsset } from '../../../types/issuer.types';
 import { AssetHoverCard } from '../../../components/issuer/AssetHoverCard';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationInboxPopover } from '../../../components/ui/notification-inbox-popover';
+import { assetService } from '../../../lib/api/asset.service';
 
-// Calculate stats from mock assets
-const calculateStats = () => {
-  const totalAssets = mockAssets.length;
-  const fundsRaised = mockAssets.reduce(
+// Calculate stats from assets
+const calculateStats = (assets: IssuerAsset[]) => {
+  const totalAssets = assets.length;
+  const fundsRaised = assets.reduce(
     (acc, asset) => acc + asset.tokenDistribution.soldTokens * asset.tokenDistribution.tokenPrice,
     0
   );
-  const assetsPending = mockAssets.filter((a) => a.status === 'pending').length;
-  const settledAssets = mockAssets.filter((a) => a.status === 'settled').length;
+  const assetsPending = assets.filter((a) => a.status === 'pending').length;
+  const settledAssets = assets.filter((a) => a.status === 'settled').length;
 
   return {
     totalAssets,
@@ -30,11 +30,33 @@ const calculateStats = () => {
 
 const IssuerDashboardPage = () => {
   const navigate = useNavigate();
-  const [assets] = useState(mockAssets);
+  const [assets, setAssets] = useState<IssuerAsset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 });
   const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
-  const mockStats = calculateStats();
+
+  // Fetch assets on component mount
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await assetService.getAllAssets({ limit: 100 });
+        setAssets(response.assets);
+      } catch (err) {
+        console.error('Failed to fetch assets:', err);
+        setError('Failed to load assets. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssets();
+  }, []);
+
+  const stats = calculateStats(assets);
 
   const handleMouseEnter = (
     assetId: string,
@@ -203,7 +225,7 @@ const IssuerDashboardPage = () => {
             <p className="font-inter text-sm text-foreground/70 font-medium">Total Assets</p>
           </div>
           <p className="font-antic text-4xl font-normal text-foreground">
-            {mockStats.totalAssets}
+            {loading ? '...' : stats.totalAssets}
           </p>
         </div>
           </div>
@@ -219,7 +241,7 @@ const IssuerDashboardPage = () => {
             <p className="font-inter text-sm text-foreground/70 font-medium">Funds Raised</p>
           </div>
           <p className="font-antic text-4xl font-normal text-foreground">
-            {formatCurrency(mockStats.fundsRaised)}
+            {loading ? '...' : formatCurrency(stats.fundsRaised)}
           </p>
         </div>
           </div>
@@ -235,7 +257,7 @@ const IssuerDashboardPage = () => {
             <p className="font-inter text-sm text-foreground/70 font-medium">Assets Pending</p>
           </div>
           <p className="font-antic text-4xl font-normal text-foreground">
-            {mockStats.assetsPending}
+            {loading ? '...' : stats.assetsPending}
           </p>
         </div>
           </div>
@@ -251,7 +273,7 @@ const IssuerDashboardPage = () => {
             <p className="font-inter text-sm text-foreground/70 font-medium">Settled Assets</p>
           </div>
           <p className="font-antic text-4xl font-normal text-foreground">
-            {mockStats.settledAssets}
+            {loading ? '...' : stats.settledAssets}
           </p>
         </div>
           </div>
@@ -266,30 +288,54 @@ const IssuerDashboardPage = () => {
         </p>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-foreground/60" />
+          <p className="ml-3 font-inter text-foreground/70">Loading assets...</p>
+        </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <p className="font-inter text-red-600 text-center">{error}</p>
+          <div className="mt-4 text-center">
+            <Button
+          onClick={() => window.location.reload()}
+          className="bg-foreground hover:bg-foreground/90 text-black font-inter"
+            >
+          Try Again
+            </Button>
+          </div>
+        </div>
+          )}
+
           {/* Assets Table */}
-          <div className="overflow-x-auto bg-white rounded-xl">
-        <table className="w-full">
-          <thead className="border-b border-gray-200">
-            <tr>
-          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-            Asset Name
-          </th>
-          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-            Token Distribution
-          </th>
-          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-            Unsold Tokens
-          </th>
-          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-            Invoice Amount
-          </th>
-          <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-            Status
-          </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {assets.map((asset) => {
+          {!loading && !error && (
+        <div className="overflow-x-auto bg-white rounded-xl">
+          <table className="w-full">
+            <thead className="border-b border-gray-200">
+          <tr>
+            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+              Asset Name
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+              Token Distribution
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+              Unsold Tokens
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+              Invoice Amount
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
+              Status
+            </th>
+          </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+          {assets.map((asset) => {
           const soldPercentage =
             (asset.tokenDistribution.soldTokens /
               asset.tokenDistribution.totalTokens) *
@@ -365,24 +411,26 @@ const IssuerDashboardPage = () => {
             </tr>
           );
             })}
-          </tbody>
-        </table>
-          </div>
+            </tbody>
+          </table>
 
           {/* Render Hover Card Outside Table */}
           {hoveredAssetId && (
-        <AssetHoverCard
-          asset={assets.find((a) => a.id === hoveredAssetId)!}
-          onViewMore={() => handleViewAssetDetails(hoveredAssetId)}
-          position={hoverPosition}
+            <div
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
-        />
+            >
+          <AssetHoverCard
+            asset={assets.find((a) => a.id === hoveredAssetId)!}
+            onViewMore={() => handleViewAssetDetails(hoveredAssetId)}
+            position={hoverPosition}
+          />
+            </div>
           )}
 
           {/* Empty State (if no assets) */}
           {assets.length === 0 && (
-        <div className="px-6 py-12 text-center">
+            <div className="px-6 py-12 text-center">
           <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
             No assets yet
@@ -397,6 +445,8 @@ const IssuerDashboardPage = () => {
             <Plus className="w-4 h-4 mr-2" />
             Create Asset
           </Button>
+            </div>
+          )}
         </div>
           )}
         </div>

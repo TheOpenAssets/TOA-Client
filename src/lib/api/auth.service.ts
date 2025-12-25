@@ -6,8 +6,10 @@ import type {
   LoginPayload,
   LoginResponse,
 } from '../../types/auth.types';
+import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
@@ -26,11 +28,10 @@ const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
  * 2. Ensure backend is running at API_BASE_URL
  * 3. No other code changes needed - all endpoints are already configured
  */
-class AuthService {
-  private baseURL: string;
+class AuthService extends BaseService {
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    super(API_BASE_URL);
   }
 
   /**
@@ -85,9 +86,7 @@ class AuthService {
         `${this.baseURL}/users/exists?walletAddress=${walletAddress}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: this.getHeaders(),
         }
       );
 
@@ -158,9 +157,7 @@ class AuthService {
         `${this.baseURL}/auth/challenge?walletAddress=${walletAddress}&role=INVESTOR`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: this.getHeaders(),
         }
       );
 
@@ -279,9 +276,7 @@ class AuthService {
     try {
       const response = await fetch(`${this.baseURL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -340,4 +335,5 @@ class AuthService {
 }
 
 // Factory instance
-export const authService = new AuthService(API_BASE_URL);
+export const authService = new AuthService();
+
