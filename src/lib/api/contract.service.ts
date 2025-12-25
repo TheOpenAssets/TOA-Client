@@ -21,10 +21,17 @@ const USDC_ABI = [
   'function balanceOf(address account) public view returns (uint256)',
 ];
 
-// PrimaryMarketplace ABI - Only the functions we need
+// PrimaryMarketplace ABI - Add more functions for debugging
 const MARKETPLACE_ABI = [
   'function buyTokens(bytes32 assetId, uint256 amount) public',
+  'function getListingDetails(bytes32 assetId) public view returns (address tokenAddress, uint256 pricePerToken, uint256 availableSupply, bool isActive)',
+  'function listings(bytes32) public view returns (address tokenAddress, uint256 pricePerToken, uint256 totalSupply, uint256 availableSupply, uint256 minInvestment, bool isActive)',
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
+  // Common custom errors
+  'error InsufficientSupply(uint256 requested, uint256 available)',
+  'error ListingNotActive()',
+  'error InsufficientPayment(uint256 required, uint256 provided)',
+  'error InvalidAmount()',
 ];
 
 export interface PurchaseParams {
@@ -149,10 +156,220 @@ class ContractService {
   }
 
   /**
+   * Debug: Check multiple assetId formats to find the correct one
+   */
+  async debugAssetId(assetId: string, tokenAddress: string): Promise<void> {
+    try {
+      if (!window.ethereum) {
+        throw new Error('No wallet found');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const marketplaceContract = new ethers.Contract(
+        PRIMARY_MARKETPLACE_ADDRESS,
+        MARKETPLACE_ABI,
+        provider
+      );
+
+      console.log('=== DEBUGGING ASSET ID FORMATS ===');
+      console.log('Original assetId:', assetId);
+      console.log('Token Address:', tokenAddress);
+
+      // Format 1: UUID padded with zeros
+      const format1 = this.assetIdToBytes32(assetId);
+      console.log('\n1. UUID padded:', format1);
+      try {
+        const details1 = await marketplaceContract.listings(format1);
+        console.log('✅ Format 1 FOUND:', {
+          tokenAddress: details1[0],
+          pricePerToken: details1[1].toString(),
+          totalSupply: details1[2].toString(),
+          availableSupply: details1[3].toString(),
+          minInvestment: details1[4].toString(),
+          isActive: details1[5],
+        });
+      } catch (e) {
+        console.log('❌ Format 1 not found');
+      }
+
+      // Format 2: Keccak256 hash of UUID
+      const format2 = ethers.keccak256(ethers.toUtf8Bytes(assetId));
+      console.log('\n2. Keccak256(UUID):', format2);
+      try {
+        const details2 = await marketplaceContract.listings(format2);
+        console.log('✅ Format 2 FOUND:', {
+          tokenAddress: details2[0],
+          pricePerToken: details2[1].toString(),
+          totalSupply: details2[2].toString(),
+          availableSupply: details2[3].toString(),
+          minInvestment: details2[4].toString(),
+          isActive: details2[5],
+        });
+      } catch (e) {
+        console.log('❌ Format 2 not found');
+      }
+
+      // Format 3: Keccak256 hash of token address
+      const format3 = ethers.keccak256(ethers.getBytes(tokenAddress));
+      console.log('\n3. Keccak256(tokenAddress):', format3);
+      try {
+        const details3 = await marketplaceContract.listings(format3);
+        console.log('✅ Format 3 FOUND:', {
+          tokenAddress: details3[0],
+          pricePerToken: details3[1].toString(),
+          totalSupply: details3[2].toString(),
+          availableSupply: details3[3].toString(),
+          minInvestment: details3[4].toString(),
+          isActive: details3[5],
+        });
+      } catch (e) {
+        console.log('❌ Format 3 not found');
+      }
+
+      // Format 4: Just the token address as bytes32
+      const format4 = ethers.zeroPadValue(tokenAddress, 32);
+      console.log('\n4. Token address as bytes32:', format4);
+      try {
+        const details4 = await marketplaceContract.listings(format4);
+        console.log('✅ Format 4 FOUND:', {
+          tokenAddress: details4[0],
+          pricePerToken: details4[1].toString(),
+          totalSupply: details4[2].toString(),
+          availableSupply: details4[3].toString(),
+          minInvestment: details4[4].toString(),
+          isActive: details4[5],
+        });
+      } catch (e) {
+        console.log('❌ Format 4 not found');
+      }
+
+      console.log('=== END DEBUG ===\n');
+    } catch (error) {
+      console.error('Debug failed:', error);
+    }
+  }
+
+  /**
+   * Verify listing is available before purchase
+   */
+  async verifyListing(assetId: string, tokenAddress?: string): Promise<{
+    isValid: boolean;
+    error?: string;
+    details?: any;
+    correctAssetId?: string;
+  }> {
+    try {
+      if (!window.ethereum) {
+        throw new Error('No wallet found');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const marketplaceContract = new ethers.Contract(
+        PRIMARY_MARKETPLACE_ADDRESS,
+        MARKETPLACE_ABI,
+        provider
+      );
+
+      // If tokenAddress provided, run debug to find correct format
+      if (tokenAddress) {
+        await this.debugAssetId(assetId, tokenAddress);
+      }
+
+      // Try UUID format first
+      const assetIdBytes32 = this.assetIdToBytes32(assetId);
+      
+      try {
+        const details = await marketplaceContract.listings(assetIdBytes32);
+        
+        console.log('Listing details (UUID format):', {
+          tokenAddress: details[0],
+          pricePerToken: details[1].toString(),
+          totalSupply: details[2].toString(),
+          availableSupply: details[3].toString(),
+          minInvestment: details[4].toString(),
+          isActive: details[5],
+        });
+
+        // Check if listing exists (tokenAddress should not be zero address)
+        if (details[0] === ethers.ZeroAddress) {
+          // Try alternative format: keccak256 of UUID
+          const altAssetId = ethers.keccak256(ethers.toUtf8Bytes(assetId));
+          console.log('Trying alternative format:', altAssetId);
+          
+          try {
+            const altDetails = await marketplaceContract.listings(altAssetId);
+            
+            if (altDetails[0] !== ethers.ZeroAddress) {
+              console.log('✅ Found listing with keccak256 format!');
+              
+              if (!altDetails[5]) {
+                return { isValid: false, error: 'Listing is not active' };
+              }
+              
+              if (altDetails[3] === 0n) {
+                return { isValid: false, error: 'No tokens available for purchase' };
+              }
+              
+              return {
+                isValid: true,
+                correctAssetId: altAssetId,
+                details: {
+                  tokenAddress: altDetails[0],
+                  pricePerToken: altDetails[1].toString(),
+                  availableSupply: ethers.formatUnits(altDetails[3], 18),
+                  isActive: altDetails[5],
+                },
+              };
+            }
+          } catch (e) {
+            console.error('Alternative format also failed:', e);
+          }
+          
+          return {
+            isValid: false,
+            error: 'Listing not found in contract. The asset may not be listed yet.',
+          };
+        }
+
+        if (!details[5]) {
+          return { isValid: false, error: 'Listing is not active' };
+        }
+
+        if (details[3] === 0n) {
+          return { isValid: false, error: 'No tokens available for purchase' };
+        }
+
+        return {
+          isValid: true,
+          correctAssetId: assetIdBytes32,
+          details: {
+            tokenAddress: details[0],
+            pricePerToken: details[1].toString(),
+            availableSupply: ethers.formatUnits(details[3], 18),
+            isActive: details[5],
+          },
+        };
+      } catch (error: any) {
+        console.warn('Could not verify listing:', error);
+        return {
+          isValid: false,
+          error: 'Failed to query listing from contract',
+        };
+      }
+    } catch (error: any) {
+      console.error('Error verifying listing:', error);
+      return {
+        isValid: false,
+        error: error.message || 'Failed to verify listing',
+      };
+    }
+  }
+
+  /**
    * Buy tokens from marketplace
    * Step 2 of purchase flow
    */
-  async buyTokens(params: PurchaseParams): Promise<PurchaseResult> {
+  async buyTokens(params: PurchaseParams, correctAssetId?: string): Promise<PurchaseResult> {
     try {
       if (!window.ethereum) {
         throw new Error('No wallet found. Please install MetaMask or another Web3 wallet.');
@@ -166,8 +383,8 @@ class ContractService {
         signer
       );
 
-      // Convert asset ID to bytes32
-      const assetIdBytes32 = this.assetIdToBytes32(params.assetId);
+      // Use correctAssetId if provided from verification, otherwise convert UUID
+      const assetIdBytes32 = correctAssetId || this.assetIdToBytes32(params.assetId);
       const tokenAmountWei = ethers.parseUnits(params.tokenAmount, 18);
 
       console.log('Buying tokens:', {
@@ -176,6 +393,34 @@ class ContractService {
         tokenAmount: params.tokenAmount,
         tokenAmountWei: tokenAmountWei.toString(),
       });
+
+      // Try to estimate gas first to catch errors before sending transaction
+      try {
+        const gasEstimate = await marketplaceContract.buyTokens.estimateGas(
+          assetIdBytes32,
+          tokenAmountWei
+        );
+        console.log('Gas estimate:', gasEstimate.toString());
+      } catch (estimateError: any) {
+        console.error('Gas estimation failed:', estimateError);
+        
+        // Parse custom error from contract
+        if (estimateError.data) {
+          const errorData = estimateError.data;
+          console.log('Error data:', errorData);
+          
+          // Check for common error signatures
+          if (errorData.startsWith('0xfb8f41b2')) {
+            throw new Error('Listing not active or not found. Please verify the asset is available for purchase.');
+          } else if (errorData.startsWith('0x356680b7')) {
+            throw new Error('Insufficient supply available for this purchase amount.');
+          } else if (errorData.startsWith('0x17a07d00')) {
+            throw new Error('Insufficient payment. Please check the token price.');
+          }
+        }
+        
+        throw new Error(`Transaction will fail: ${estimateError.reason || estimateError.message}`);
+      }
 
       // Buy tokens
       const tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei);
@@ -199,16 +444,29 @@ class ContractService {
   }
 
   /**
-   * Complete purchase flow: Approve USDC + Buy Tokens
-   * Combines both steps into a single function
+   * Complete purchase flow: Verify + Approve USDC + Buy Tokens
+   * Combines all steps into a single function
    */
-  async completePurchase(params: PurchaseParams): Promise<{
+  async completePurchase(params: PurchaseParams, tokenAddress?: string): Promise<{
     success: boolean;
     approvalTxHash?: string;
     purchaseTxHash?: string;
     error?: string;
   }> {
     try {
+      // Step 0: Verify listing is available
+      console.log('Step 0: Verifying listing...');
+      const verification = await this.verifyListing(params.assetId, tokenAddress);
+      
+      if (!verification.isValid) {
+        return {
+          success: false,
+          error: verification.error || 'Listing verification failed',
+        };
+      }
+
+      console.log('Listing verified:', verification.details);
+
       // Step 1: Approve USDC
       console.log('Step 1: Approving USDC...');
       const approvalResult = await this.approveUSDC(params);
@@ -220,9 +478,9 @@ class ContractService {
         };
       }
 
-      // Step 2: Buy tokens
+      // Step 2: Buy tokens with correct assetId
       console.log('Step 2: Buying tokens...');
-      const purchaseResult = await this.buyTokens(params);
+      const purchaseResult = await this.buyTokens(params, verification.correctAssetId);
 
       if (!purchaseResult.success) {
         return {

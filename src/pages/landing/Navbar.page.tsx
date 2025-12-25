@@ -44,9 +44,14 @@ const Navbar = () => {
         </nav>
 
         {/* CTA Button */}
-        <a href="/dashboard" className="cta-button">
-          Launch App
-        </a>
+        <div className="flex items-center gap-4">
+          <a href="/adminAuth" className="cta-button">
+            Admin Login
+          </a>
+          <a href="/dashboard" className="cta-button">
+            Launch App
+          </a>
+        </div>
       </div>
 
       {/* Mobile Version */}
