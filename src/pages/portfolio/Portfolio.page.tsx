@@ -51,7 +51,7 @@ const PortfolioPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+      <div className="flex items-center justify-center h-screen  text-black">
         <div className="text-center">
           <div className="text-lg">Loading Portfolio...</div>
         </div>
@@ -61,7 +61,7 @@ const PortfolioPage = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+      <div className="flex items-center justify-center h-screen  text-black">
         <div className="text-center">
           <div className="text-lg text-red-400 mb-4">Error: {error}</div>
           <Button onClick={() => fetchPortfolio()}>Retry</Button>
@@ -72,7 +72,7 @@ const PortfolioPage = () => {
 
   if (!portfolio || !portfolio.portfolio || portfolio.portfolio.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+      <div className="flex items-center justify-center h-screen  text-black">
         <div className="text-center">
           <div className="text-lg mb-4">No assets in your portfolio yet.</div>
           <Button onClick={() => navigate('/marketplace')}>Explore Marketplace</Button>
@@ -88,7 +88,7 @@ const PortfolioPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8 font-sans">
+    <div className="min-h-screen text-black p-8 font-sans">
       <div className="max-w-screen-2xl mx-auto">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
@@ -108,7 +108,7 @@ const PortfolioPage = () => {
             >
               Trade
             </Button>
-            <Button variant="ghost" className="bg-gray-800 text-white rounded-full">
+            <Button variant="ghost" className="text-black rounded-full">
               Portfolio
             </Button>
           </nav>

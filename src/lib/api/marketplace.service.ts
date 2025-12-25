@@ -4,7 +4,8 @@ import type {
   ListingResponse,
   AssetDetailsResponse,
   MarketplaceListing,
-  AssetDetails
+  AssetDetails,
+  NotifyPurchasePayload,
 } from '@/types/marketplace.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -100,6 +101,33 @@ class MarketplaceService {
       return data.asset;
     } catch (error) {
       console.error(`Error fetching asset with ID ${assetId}:`, error);
+      throw error;
+    }
+  }
+
+  async notifyPurchase(payload: NotifyPurchasePayload): Promise<any> {
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        throw new Error('No access token found. Please login first.');
+      }
+      const response = await fetch(`${this.baseURL}/marketplace/purchases/notify`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify purchase');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error notifying purchase:', error);
       throw error;
     }
   }

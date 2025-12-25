@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
+import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
@@ -102,7 +103,14 @@ const AssetDetailsPage = () => {
       });
 
       if (result.success) {
-        setPurchaseStatus('Purchase successful! 🎉');
+        setPurchaseStatus('Purchase successful! 🎉 Notifying backend...');
+        await marketplaceService.notifyPurchase({
+          txHash: result.txHash,
+          assetId: asset.assetId,
+          amount: (parseFloat(tokensToBuy) * 1e18).toString(), // Assuming amount is in wei
+          blockNumber: result.blockNumber.toString(),
+        });
+        setPurchaseStatus('Purchase and notification successful! 🎉');
         setTokensToBuy('');
         // Reload wallet data
         await loadWalletData();

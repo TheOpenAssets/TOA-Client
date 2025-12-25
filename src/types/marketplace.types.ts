@@ -74,6 +74,13 @@ export interface AssetDetailsResponse {
   asset: AssetDetails;
 }
 
+export interface NotifyPurchasePayload {
+  txHash: string;
+  assetId: string;
+  amount: string;
+  blockNumber: string;
+}
+
 // MarketplaceAsset - Extended interface for UI display (used by mock data)
 export interface MarketplaceAsset {
   id: string;

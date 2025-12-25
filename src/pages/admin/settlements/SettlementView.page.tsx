@@ -240,7 +240,7 @@ const SettlementViewPage = () => {
                     <div>
                       <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
                       <p className="font-antic text-base font-normal text-foreground">
-                        {asset.totalTokens.toLocaleString()}
+                        {asset.totalTokens?.toLocaleString() ?? '0'}
                       </p>
                     </div>
                     <div>
@@ -407,7 +407,7 @@ const SettlementViewPage = () => {
                 </div>
                 <div>
                   <span className="text-foreground/60">Total Holders:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.totalTokens.toLocaleString()} tokens</p>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.totalTokens?.toLocaleString() ?? '0'} tokens</p>
                 </div>
                 <div>
                   <span className="text-foreground/60">Previous Distribution:</span>

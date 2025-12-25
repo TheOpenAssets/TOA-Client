@@ -43,6 +43,7 @@ export interface PurchaseParams {
 export interface PurchaseResult {
   success: boolean;
   transactionHash?: string;
+  blockNumber?: number;
   error?: string;
 }
 
@@ -145,6 +146,7 @@ class ContractService {
       return {
         success: true,
         transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
       console.error('Error approving USDC:', error);
@@ -395,33 +397,7 @@ class ContractService {
       });
 
       // Try to estimate gas first to catch errors before sending transaction
-      try {
-        const gasEstimate = await marketplaceContract.buyTokens.estimateGas(
-          assetIdBytes32,
-          tokenAmountWei
-        );
-        console.log('Gas estimate:', gasEstimate.toString());
-      } catch (estimateError: any) {
-        console.error('Gas estimation failed:', estimateError);
-        
-        // Parse custom error from contract
-        if (estimateError.data) {
-          const errorData = estimateError.data;
-          console.log('Error data:', errorData);
-          
-          // Check for common error signatures
-          if (errorData.startsWith('0xfb8f41b2')) {
-            throw new Error('Listing not active or not found. Please verify the asset is available for purchase.');
-          } else if (errorData.startsWith('0x356680b7')) {
-            throw new Error('Insufficient supply available for this purchase amount.');
-          } else if (errorData.startsWith('0x17a07d00')) {
-            throw new Error('Insufficient payment. Please check the token price.');
-          }
-        }
-        
-        throw new Error(`Transaction will fail: ${estimateError.reason || estimateError.message}`);
-      }
-
+      
       // Buy tokens
       const tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei);
       console.log('Purchase transaction sent:', tx.hash);
@@ -433,6 +409,7 @@ class ContractService {
       return {
         success: true,
         transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
       console.error('Error buying tokens:', error);
@@ -451,6 +428,7 @@ class ContractService {
     success: boolean;
     approvalTxHash?: string;
     purchaseTxHash?: string;
+    blockNumber?: number;
     error?: string;
   }> {
     try {
@@ -494,6 +472,7 @@ class ContractService {
         success: true,
         approvalTxHash: approvalResult.transactionHash,
         purchaseTxHash: purchaseResult.transactionHash,
+        blockNumber: purchaseResult.blockNumber,
       };
     } catch (error: any) {
       console.error('Error completing purchase:', error);
