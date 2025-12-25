@@ -1,6 +1,6 @@
 // src/pages/admin/operations/OperationsView.page.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Network,
   Layers,
@@ -10,20 +10,20 @@ import {
   Hash,
   ChevronRight,
 } from 'lucide-react';
-import { mockAdminAssets } from '../../../lib/data/admin-mock-data';
-import type { AdminAsset } from '../../../types/admin.types';
+import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
+import { adminService } from '../../../lib/api/admin.service';
 import { Button } from '../../../components/ui/button';
 
 const OperationsViewPage = () => {
-  const [approvedAssets, setApprovedAssets] = useState(
-    mockAdminAssets.filter((a) => a.status === 'COMPLIANCE_APPROVED')
-  );
-  const [registeredAssets, setRegisteredAssets] = useState(
-    mockAdminAssets.filter((a) => a.status === 'REGISTERED')
-  );
-  const [tokenizedAssets] = useState(
-    mockAdminAssets.filter((a) => a.status === 'TOKENIZED' || a.status === 'YIELDING')
-  );
+  const { 
+    assetsForOperations: approvedAssets, 
+    fetchAdminDashboardData, 
+    isLoading, 
+    error 
+  } = useAdminStore();
+  
+  const [registeredAssets, setRegisteredAssets] = useState<AdminAsset[]>([]);
+  const [tokenizedAssets, setTokenizedAssets] = useState<AdminAsset[]>([]);
 
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -35,8 +35,15 @@ const OperationsViewPage = () => {
   const [mockAttestationHash, setMockAttestationHash] = useState('');
   const [mockTokenAddress, setMockTokenAddress] = useState('');
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
+  useEffect(() => {
+    fetchAdminDashboardData();
+  }, [fetchAdminDashboardData]);
+
+  // Format currency with null safety
+  const formatCurrency = (amount: number | undefined | null): string => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return '$0';
+    }
     if (amount >= 1000000) {
       return `$${(amount / 1000000).toFixed(1)}M`;
     }
@@ -55,56 +62,50 @@ const OperationsViewPage = () => {
     setShowRegisterModal(true);
   };
 
-  const confirmRegister = () => {
+  const confirmRegister = async () => {
+    if (!selectedAsset) return;
     setProcessing(true);
-    // Simulate blockchain transaction
-    setTimeout(() => {
-      console.log('Asset registered on Mantle:', {
-        assetId: selectedAsset?.id,
-        blobId: mockBlobId,
-        attestationHash: mockAttestationHash,
-      });
-
-      // Move from approved to registered
-      setApprovedAssets(approvedAssets.filter((a) => a.id !== selectedAsset?.id));
-      if (selectedAsset) {
-        setRegisteredAssets([...registeredAssets, selectedAsset]);
-      }
-
-      setProcessing(false);
+    try {
+      await adminService.registerAsset(selectedAsset.id);
+      fetchAdminDashboardData();
       setShowRegisterModal(false);
       setSelectedAsset(null);
-      // In real app: Call smart contract to register asset
-    }, 3000);
+    } catch (error) {
+      console.error('Failed to register asset', error);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Handle Tokenize
   const handleTokenize = (asset: AdminAsset) => {
     setSelectedAsset(asset);
-    // Generate mock token address
     setMockTokenAddress(`0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`);
     setShowTokenizeModal(true);
   };
 
-  const confirmTokenize = () => {
+  const confirmTokenize = async () => {
+    if (!selectedAsset) return;
     setProcessing(true);
-    // Simulate smart contract deployment
-    setTimeout(() => {
-      console.log('ERC-3643 Token deployed:', {
-        assetId: selectedAsset?.id,
-        tokenAddress: mockTokenAddress,
-        totalSupply: selectedAsset?.totalTokens,
-      });
-
-      // Move from registered to tokenized
-      setRegisteredAssets(registeredAssets.filter((a) => a.id !== selectedAsset?.id));
-
-      setProcessing(false);
+    try {
+      await adminService.deployToken(selectedAsset.id, selectedAsset.name, selectedAsset.name.split(' ').map(w => w[0]).join('').toUpperCase());
+      fetchAdminDashboardData();
       setShowTokenizeModal(false);
       setSelectedAsset(null);
-      // In real app: Deploy ERC-3643 token contract
-    }, 3500);
+    } catch (error) {
+      console.error('Failed to deploy token', error);
+    } finally {
+      setProcessing(false);
+    }
   };
+
+  if (isLoading) {
+    return <div>Loading operations...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
+  }
 
   return (
     <div className="space-y-8">
@@ -224,13 +225,13 @@ const OperationsViewPage = () => {
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Tokens</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          {asset.totalTokens.toLocaleString()}
+                          {asset.totalTokens?.toLocaleString() ?? '0'}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Originator</p>
                         <p className="font-inter text-sm font-medium text-foreground">
-                          {asset.originator.name}
+                          {asset.originator?.name ?? 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -318,13 +319,13 @@ const OperationsViewPage = () => {
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          {asset.totalTokens.toLocaleString()}
+                          {asset.totalTokens?.toLocaleString() ?? '0'}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Token Price</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          ${asset.tokenPrice}
+                          ${asset.tokenPrice ?? '0'}
                         </p>
                       </div>
                       <div>
@@ -489,7 +490,7 @@ const OperationsViewPage = () => {
                 </div>
                 <div>
                   <span className="text-foreground/60">Originator:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.originator.name}</p>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.originator?.name ?? 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -587,7 +588,7 @@ const OperationsViewPage = () => {
                 </div>
                 <div>
                   <span className="text-foreground/60">Total Supply:</span>
-                  <p className="text-foreground font-medium mt-1">{selectedAsset.totalTokens.toLocaleString()}</p>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.totalTokens?.toLocaleString() ?? '0'}</p>
                 </div>
                 <div>
                   <span className="text-foreground/60">Token Standard:</span>

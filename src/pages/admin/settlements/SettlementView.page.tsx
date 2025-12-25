@@ -1,6 +1,6 @@
 // src/pages/admin/settlements/SettlementView.page.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Coins,
   TrendingUp,
@@ -10,15 +10,14 @@ import {
   ExternalLink,
   Plus,
 } from 'lucide-react';
-import { mockAdminAssets } from '../../../lib/data/admin-mock-data';
-import type { AdminAsset, SettlementFormData } from '../../../types/admin.types';
+import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
+import { adminService } from '../../../lib/api/admin.service';
+import type { SettlementFormData } from '../../../types/admin.types';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 
 const SettlementViewPage = () => {
-  const [yieldingAssets] = useState(
-    mockAdminAssets.filter((a) => a.status === 'YIELDING' || a.status === 'TOKENIZED')
-  );
+  const { assetsForSettlement: yieldingAssets, isLoading, error, fetchAdminDashboardData } = useAdminStore();
 
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
   const [showSettlementModal, setShowSettlementModal] = useState(false);
@@ -33,8 +32,15 @@ const SettlementViewPage = () => {
     notes: '',
   });
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
+  useEffect(() => {
+    fetchAdminDashboardData();
+  }, [fetchAdminDashboardData]);
+
+  // Format currency with null safety
+  const formatCurrency = (amount: number | undefined | null): string => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return '$0';
+    }
     if (amount >= 1000000) {
       return `$${(amount / 1000000).toFixed(1)}M`;
     }
@@ -57,43 +63,70 @@ const SettlementViewPage = () => {
     setShowSettlementModal(true);
   };
 
-  const confirmSettlement = () => {
+  const confirmSettlement = async () => {
     if (formData.fiatAmount <= 0) {
       alert('Please enter a valid settlement amount');
       return;
     }
 
     setProcessing(true);
-    // Simulate API call and blockchain transaction
-    setTimeout(() => {
-      console.log('Settlement recorded:', {
-        assetId: selectedAsset?.id,
-        fiatAmount: formData.fiatAmount,
-        currency: formData.currency,
-        usdcAmount: formData.fiatAmount, // In real app: convert via oracle
-        settlementDate: formData.settlementDate,
-        notes: formData.notes,
-      });
-
-      setProcessing(false);
+    try {
+      await adminService.recordSettlement(formData);
+      fetchAdminDashboardData();
       setShowSettlementModal(false);
       setSelectedAsset(null);
-      setFormData({
-        assetId: '',
-        fiatAmount: 0,
-        currency: 'USD',
-        settlementDate: new Date().toISOString().split('T')[0],
-        notes: '',
-      });
-      // In real app: Call smart contract to distribute USDC to token holders
-    }, 3000);
+    } catch (error) {
+      console.error('Failed to record settlement', error);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  // Calculate total yield distributed
-  const totalYieldDistributed = yieldingAssets.reduce(
-    (sum, asset) => sum + (asset.yield?.totalDistributed || 0),
+  // Calculate total yield distributed with null safety
+  const totalYieldDistributed = yieldingAssets?.reduce(
+    (sum, asset) => sum + (asset?.yield?.totalDistributed || 0),
     0
-  );
+  ) || 0;
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#f0f8ffe6]">
+        <div className="text-lg font-antic text-foreground">Loading settlements...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#f0f8ffe6]">
+        <div className="text-lg text-red-600 font-antic">Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (!yieldingAssets || yieldingAssets.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f0f8ffe6] p-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="font-antic text-3xl font-normal text-foreground mb-6">
+            Settlements & Yield Manager
+          </h2>
+          <div
+            className="rounded-2xl p-12 text-center"
+            style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+            <Coins className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+              No Active Assets
+            </h3>
+            <p className="font-inter text-sm text-foreground/60">
+              Assets must be tokenized before they can receive yield distributions
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -154,7 +187,7 @@ const SettlementViewPage = () => {
             <div>
               <p className="font-inter text-xs text-foreground/60">Total Settlements</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {yieldingAssets.reduce((sum, a) => sum + (a.yield?.settlements.length || 0), 0)}
+                {yieldingAssets.reduce((sum, a) => sum + (a.yield?.settlements?.length || 0), 0)}
               </p>
             </div>
           </div>

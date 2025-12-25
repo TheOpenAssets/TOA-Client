@@ -1,6 +1,6 @@
 // src/pages/admin/compliance/ComplianceView.page.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -13,14 +13,15 @@ import {
   TrendingUp,
   Minus,
 } from 'lucide-react';
-import { mockAdminAssets } from '../../../lib/data/admin-mock-data';
-import type { AdminAsset, RiskLevel } from '../../../types/admin.types';
+import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
+import { adminService } from '../../../lib/api/admin.service';
+import type { RiskLevel } from '../../../types/admin.types';
 import { Button } from '../../../components/ui/button';
+import { useAuthStore } from '../../../stores/auth.store';
 
 const ComplianceViewPage = () => {
-  const [assets, setAssets] = useState(
-    mockAdminAssets.filter((a) => a.status === 'PENDING_COMPLIANCE')
-  );
+  const { assetsForCompliance, isLoading, error, fetchAdminDashboardData } = useAdminStore();
+  const { user } = useAuthStore();
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -28,8 +29,15 @@ const ComplianceViewPage = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
+  useEffect(() => {
+    fetchAdminDashboardData();
+  }, [fetchAdminDashboardData]);
+
+  // Format currency with null safety
+  const formatCurrency = (amount: number | undefined | null): string => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return '$0';
+    }
     if (amount >= 1000000) {
       return `$${(amount / 1000000).toFixed(1)}M`;
     }
@@ -94,18 +102,52 @@ const ComplianceViewPage = () => {
     setShowApproveModal(true);
   };
 
-  const confirmApprove = () => {
+  const confirmApprove = async () => {
+    if (!selectedAsset) {
+      console.error('No asset selected');
+      return;
+    }
+
+    if (!user) {
+      console.error('No user found in auth store');
+      alert('User not authenticated. Please login again.');
+      return;
+    }
+
+    // Get wallet address - check both possible property names
+    const adminWallet = user.walletAddress || user.wallet || address;
+    
+    if (!adminWallet) {
+      console.error('No wallet address found. User object:', user);
+      alert('Wallet address not found. Please reconnect your wallet.');
+      return;
+    }
+
+    console.log('Approving asset:', {
+      assetId: selectedAsset.id,
+      adminWallet: adminWallet,
+    });
+
     setProcessing(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Asset approved:', selectedAsset?.id);
-      // Remove from pending list
-      setAssets(assets.filter((a) => a.id !== selectedAsset?.id));
-      setProcessing(false);
+    try {
+      const result = await adminService.approveAsset(selectedAsset.id, adminWallet);
+      console.log('✅ Asset approved successfully:', result);
+      
+      // Refresh the dashboard data
+      await fetchAdminDashboardData();
+      
+      // Close modal and reset
       setShowApproveModal(false);
       setSelectedAsset(null);
-      // In real app: Update backend status to COMPLIANCE_APPROVED
-    }, 1500);
+      
+      // Show success message
+      alert('Asset approved successfully!');
+    } catch (error: any) {
+      console.error('❌ Failed to approve asset:', error);
+      alert(`Failed to approve asset: ${error.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Handle Reject
@@ -124,8 +166,7 @@ const ComplianceViewPage = () => {
     // Simulate API call
     setTimeout(() => {
       console.log('Asset rejected:', selectedAsset?.id, 'Reason:', rejectionReason);
-      // Remove from pending list
-      setAssets(assets.filter((a) => a.id !== selectedAsset?.id));
+      fetchAdminDashboardData();
       setProcessing(false);
       setShowRejectModal(false);
       setRejectionReason('');
@@ -133,6 +174,14 @@ const ComplianceViewPage = () => {
       // In real app: Update backend status to COMPLIANCE_REJECTED
     }, 1500);
   };
+
+  if (isLoading) {
+    return <div>Loading compliance queue...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
+  }
 
   return (
     <div className="space-y-8">
@@ -158,7 +207,7 @@ const ComplianceViewPage = () => {
             <AlertCircle className="w-5 h-5 text-orange-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Pending Review</p>
-              <p className="font-antic text-2xl font-normal text-foreground">{assets.length}</p>
+              <p className="font-antic text-2xl font-normal text-foreground">{assetsForCompliance.length}</p>
             </div>
           </div>
         </div>
@@ -174,7 +223,7 @@ const ComplianceViewPage = () => {
             <div>
               <p className="font-inter text-xs text-foreground/60">Low Risk Assets</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {assets.filter((a) => a.riskScore.level === 'LOW').length}
+                {assetsForCompliance.filter((a) => a.riskScore?.level === 'LOW').length}
               </p>
             </div>
           </div>
@@ -191,7 +240,7 @@ const ComplianceViewPage = () => {
             <div>
               <p className="font-inter text-xs text-foreground/60">High Risk Assets</p>
               <p className="font-antic text-2xl font-normal text-foreground">
-                {assets.filter((a) => a.riskScore.level === 'HIGH').length}
+                {assetsForCompliance.filter((a) => a.riskScore?.level === 'HIGH').length}
               </p>
             </div>
           </div>
@@ -228,8 +277,8 @@ const ComplianceViewPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {assets.map((asset) => {
-                const uploadDate = new Date(asset.uploadedAt);
+              {assetsForCompliance.map((asset) => {
+                const uploadDate = new Date(asset.submittedDate);
                 const daysAgo = Math.floor(
                   (Date.now() - uploadDate.getTime()) / (1000 * 60 * 60 * 24)
                 );
@@ -250,7 +299,7 @@ const ComplianceViewPage = () => {
                         <div className="flex items-center gap-1 mt-1">
                           <FileText className="w-3 h-3 text-foreground/50" />
                           <span className="font-inter text-xs text-foreground/50">
-                            {asset.documents.length} documents
+                            {asset.documents?.length ?? 0} documents
                           </span>
                         </div>
                       </div>
@@ -258,10 +307,10 @@ const ComplianceViewPage = () => {
                     <td className="px-6 py-5">
                       <div>
                         <div className="font-inter font-medium text-foreground text-sm">
-                          {asset.originator.name}
+                          {asset.originator?.name}
                         </div>
                         <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                          {asset.originator.jurisdiction}
+                          {asset.originator?.jurisdiction}
                         </div>
                       </div>
                     </td>
@@ -270,14 +319,14 @@ const ComplianceViewPage = () => {
                         {formatCurrency(asset.totalValue)}
                       </div>
                       <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                        {asset.totalTokens.toLocaleString()} tokens
+                        {asset.totalTokens?.toLocaleString()} tokens
                       </div>
                     </td>
                     <td className="px-6 py-5">
                       <div className="space-y-2">
-                        {getRiskBadge(asset.riskScore.level)}
+                        {asset.riskScore?.level && getRiskBadge(asset.riskScore.level)}
                         <div className="font-inter text-xs text-foreground/60">
-                          Score: {asset.riskScore.score}/100
+                          Score: {asset.riskScore?.score ?? 'N/A'}/100
                         </div>
                       </div>
                     </td>
@@ -317,7 +366,7 @@ const ComplianceViewPage = () => {
             </tbody>
           </table>
 
-          {assets.length === 0 && (
+          {assetsForCompliance.length === 0 && (
             <div className="px-6 py-12 text-center">
               <CheckCircle2 className="w-16 h-16 mx-auto text-green-300 mb-4" />
               <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
@@ -422,11 +471,11 @@ const ComplianceViewPage = () => {
                 <div className="flex justify-between">
                   <span className="text-foreground/60">Risk Score:</span>
                   <span className={`font-medium ${
-                    selectedAsset.riskScore.level === 'LOW' ? 'text-green-600' :
-                    selectedAsset.riskScore.level === 'MEDIUM' ? 'text-yellow-600' :
+                    selectedAsset.riskScore?.level === 'LOW' ? 'text-green-600' :
+                    selectedAsset.riskScore?.level === 'MEDIUM' ? 'text-yellow-600' :
                     'text-red-600'
                   }`}>
-                    {selectedAsset.riskScore.score}/100 ({selectedAsset.riskScore.level})
+                    {selectedAsset.riskScore?.score ?? 'N/A'}/100 ({selectedAsset.riskScore?.level ?? 'N/A'})
                   </span>
                 </div>
               </div>

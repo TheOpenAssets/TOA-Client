@@ -1,10 +1,15 @@
 // src/pages/admin/overview/AdminOverview.page.tsx
 
+import { useEffect } from 'react';
 import { TrendingUp, Package, ShieldCheck, Network, Clock } from 'lucide-react';
-import { calculateAdminStats, mockAdminActivities } from '../../../lib/data/admin-mock-data';
+import { useAdminStore } from '../../../stores/admin.store';
 
 const AdminOverviewPage = () => {
-  const stats = calculateAdminStats();
+  const { stats, activities, isLoading, error, fetchAdminDashboardData } = useAdminStore();
+
+  useEffect(() => {
+    fetchAdminDashboardData();
+  }, [fetchAdminDashboardData]);
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -47,6 +52,14 @@ const AdminOverviewPage = () => {
     }
   };
 
+  if (isLoading) {
+    return <div>Loading admin overview...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -74,7 +87,7 @@ const AdminOverviewPage = () => {
               </p>
             </div>
             <p className="font-antic text-4xl font-normal text-foreground">
-              {stats.pendingCompliance}
+              {stats?.pendingCompliance ?? 0}
             </p>
             <p className="font-inter text-xs text-foreground/60">
               Assets awaiting review
@@ -95,7 +108,7 @@ const AdminOverviewPage = () => {
               </p>
             </div>
             <p className="font-antic text-4xl font-normal text-foreground">
-              {stats.complianceApproved}
+              {stats?.complianceApproved ?? 0}
             </p>
             <p className="font-inter text-xs text-foreground/60">
               Assets approved for on-chain
@@ -116,7 +129,7 @@ const AdminOverviewPage = () => {
               </p>
             </div>
             <p className="font-antic text-4xl font-normal text-foreground">
-              {stats.onChainAssets}
+              {stats?.onChainAssets ?? 0}
             </p>
             <p className="font-inter text-xs text-foreground/60">
               Registered & tokenized
@@ -137,7 +150,7 @@ const AdminOverviewPage = () => {
               </p>
             </div>
             <p className="font-antic text-4xl font-normal text-foreground">
-              {formatCurrency(stats.totalYieldDistributed)}
+              {formatCurrency(stats?.totalYieldDistributed ?? 0)}
             </p>
             <p className="font-inter text-xs text-foreground/60">
               Total USDC distributed
@@ -159,7 +172,7 @@ const AdminOverviewPage = () => {
         </div>
 
         <div className="space-y-4">
-          {mockAdminActivities.map((activity) => {
+          {activities.map((activity) => {
             const { icon: Icon, color, bg } = getActivityStyle(activity.type);
 
             return (
