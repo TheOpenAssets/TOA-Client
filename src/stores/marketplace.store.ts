@@ -25,10 +25,34 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
   fetchListings: async () => {
     set({ isLoading: true, error: null });
     try {
-      const listings = await marketplaceService.getListings();
+      const response = await marketplaceService.getListings();
+      
+      // Log the actual response structure for debugging
+      console.log('Marketplace: API Response', response);
+      
+      // Handle the API response structure: { count: number, listings: array }
+      let listings: MarketplaceListing[] = [];
+      
+      if (response && typeof response === 'object') {
+        // Check if response has listings property (expected structure)
+        if (Array.isArray(response.listings)) {
+          listings = response.listings;
+        } 
+        // Fallback: if response itself is an array
+        else if (Array.isArray(response)) {
+          listings = response;
+        }
+        // Fallback: if response has a data property
+        else if (Array.isArray(response.data)) {
+          listings = response.data;
+        }
+      }
+      
+      console.log('Processed listings count:', listings.length, listings);
       set({ listings, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      console.error('Error fetching listings:', error);
+      set({ error: error.message, isLoading: false, listings: [] });
     }
   },
 

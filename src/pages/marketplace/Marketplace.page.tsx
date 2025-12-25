@@ -51,24 +51,31 @@ const MarketplacePage = () => {
   const displayAssets: MarketplaceAsset[] = listings.length > 0
     ? (() => {
         console.log('✅ Marketplace: Using REAL data from API', { count: listings.length });
-        return listings.map((listing, index) => ({
-        id: listing.assetId,
-        assetId: listing.metadata.invoiceNumber,
-        name: listing.metadata.buyerName,
-        description: `${listing.metadata.industry} · Invoice`,
-        category: 'invoice' as const,
-        icon: '📄',
-        tokenPrice: parseFloat(listing.tokenParams.pricePerToken),
-        yieldAPY: 0, // TODO: Backend needs to provide this
-        maturityDays: 90, // TODO: Calculate from dueDate
-        totalRaised: 0, // TODO: Backend needs to provide this
-        targetAmount: parseFloat(listing.tokenParams.totalSupply) * parseFloat(listing.tokenParams.pricePerToken),
-        fundingProgress: 0, // TODO: Backend needs to provide this
-        status: listing.status,
-        verified: true, // TODO: Backend needs to provide this
-        listedDate: new Date().toISOString(), // TODO: Backend needs to provide this
-      }));
-    })()
+        return listings.map((listing) => {
+          // Calculate maturity days from dueDate
+          const dueDate = new Date(listing.dueDate);
+          const today = new Date();
+          const maturityDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          
+          return {
+            id: listing.assetId,
+            assetId: listing.name, // Use name as display ID (e.g., "INV-2025-637514 - Tech Solutions Inc")
+            name: listing.industry || 'Invoice', // Use industry as category name
+            description: `${listing.industry} · Invoice · ${listing.riskTier} Risk`,
+            category: 'invoice' as const,
+            icon: '📄',
+            tokenPrice: parseFloat(listing.pricePerToken) / 1e18, // Convert from wei to token
+            yieldAPY: 8, // TODO: Backend needs to provide this - using default
+            maturityDays: maturityDays > 0 ? maturityDays : 90,
+            totalRaised: 0, // TODO: Backend needs to provide this
+            targetAmount: parseFloat(listing.faceValue),
+            fundingProgress: 0, // TODO: Backend needs to provide this
+            status: listing.status,
+            verified: listing.status === 'TOKENIZED',
+            listedDate: listing.listedAt,
+          };
+        });
+      })()
     : (() => {
         console.log('⚠️ Marketplace: Using MOCK data (API returned empty or failed)');
         return marketplaceAssets;
