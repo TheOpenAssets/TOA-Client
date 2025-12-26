@@ -1,18 +1,27 @@
 // src/pages/portfolio/Portfolio.page.tsx
 import { useEffect } from 'react';
 import { usePortfolioStore } from '../../stores/portfolio.store';
+import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { Button } from '../../components/ui/button';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAccount } from 'wagmi';
+import type { BidStatus } from '../../types/marketplace.types';
 
 const PortfolioPage = () => {
   const navigate = useNavigate();
+  const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
+  const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
 
   useEffect(() => {
     fetchPortfolio();
-  }, [fetchPortfolio]);
+    // Fetch user's bids if wallet is connected
+    if (address) {
+      fetchUserBids(address);
+    }
+  }, [fetchPortfolio, fetchUserBids, address]);
 
   // Helper function to format currency
   const formatCurrency = (value: string | number): string => {
@@ -47,6 +56,21 @@ const PortfolioPage = () => {
   // Generate mock sparkline data (TODO: Replace with real data when available)
   const generateSparkline = () => {
     return Array.from({ length: 7 }, () => Math.random() * 100 + 50);
+  };
+
+  // Get bid status badge styling
+  const getBidStatusStyle = (status: BidStatus) => {
+    switch (status) {
+      case 'SUCCESSFUL':
+        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Successful' };
+      case 'FAILED':
+        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed' };
+      case 'PARTIALLY_FILLED':
+        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Partial' };
+      case 'PENDING':
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Pending' };
+    }
   };
 
   if (isLoading) {
@@ -138,7 +162,8 @@ const PortfolioPage = () => {
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-3">
+          <main className="lg:col-span-3 space-y-6">
+            {/* Owned Assets Section */}
             <div className="bg-gray-800 p-6 rounded-2xl">
               <h2 className="text-xl font-semibold mb-6">Owned Assets</h2>
               <div className="space-y-4">
@@ -243,6 +268,91 @@ const PortfolioPage = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* My Bids Section (NEW) */}
+            <div className="bg-gray-800 p-6 rounded-2xl">
+              <h2 className="text-xl font-semibold mb-6">My Auction Bids</h2>
+              {isLoadingBids ? (
+                <div className="text-center text-gray-400 py-8">Loading bids...</div>
+              ) : userBids.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  <p>No auction bids yet</p>
+                  <Button
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => navigate('/marketplace')}
+                  >
+                    Browse Auctions
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {userBids.map((bid) => {
+                    const statusStyle = getBidStatusStyle(bid.status);
+                    return (
+                      <div
+                        key={bid.bidId}
+                        className="bg-gray-900 rounded-2xl p-4 hover:bg-gray-700/50 transition-colors duration-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          {/* Bid Info */}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <p className="font-semibold text-white">
+                                Auction: {bid.auctionId}
+                              </p>
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}
+                              >
+                                {statusStyle.label}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-400">Tokens Requested</p>
+                                <p className="font-medium">{bid.tokensRequested.toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">Max Price</p>
+                                <p className="font-medium">${bid.maxPrice.toFixed(2)}</p>
+                              </div>
+                              {bid.tokensWon !== undefined && (
+                                <div>
+                                  <p className="text-gray-400">Tokens Won</p>
+                                  <p className="font-medium text-green-400">
+                                    {bid.tokensWon.toLocaleString()}
+                                  </p>
+                                </div>
+                              )}
+                              {bid.actualPrice !== undefined && (
+                                <div>
+                                  <p className="text-gray-400">Actual Price</p>
+                                  <p className="font-medium">${bid.actualPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Button */}
+                          {bid.status === 'SUCCESSFUL' && !bid.settledAt && (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 ml-4"
+                              onClick={() => {
+                                // TODO: Implement claim tokens functionality
+                                console.log('Claim tokens for bid:', bid.bidId);
+                              }}
+                            >
+                              Claim Tokens
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </main>
         </div>

@@ -1,7 +1,7 @@
 // src/pages/admin/overview/AdminOverview.page.tsx
 
 import { useEffect } from 'react';
-import { TrendingUp, Package, ShieldCheck, Network, Clock } from 'lucide-react';
+import { TrendingUp, Package, ShieldCheck, Network, Clock, Gavel } from 'lucide-react';
 import { useAdminStore } from '../../../stores/admin.store';
 
 const AdminOverviewPage = () => {
@@ -208,7 +208,7 @@ const AdminOverviewPage = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <a
           href="/admin/compliance"
           className="block rounded-2xl p-6 transition-all duration-300 hover-lift"
@@ -281,6 +281,31 @@ const AdminOverviewPage = () => {
           </h4>
           <p className="font-inter text-sm text-foreground/60">
             Manage yield distribution
+          </p>
+        </a>
+
+        <a
+          href="/admin/auctions"
+          className="block rounded-2xl p-6 transition-all duration-300 hover-lift"
+          style={{
+            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
+            boxShadow: `
+              rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
+              rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
+              rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
+              rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
+              rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
+              rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
+              rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+            `,
+          }}
+        >
+          <Gavel className="w-8 h-8 text-foreground/60 mb-3" />
+          <h4 className="font-antic text-lg font-normal text-foreground mb-1">
+            Manage Auctions
+          </h4>
+          <p className="font-inter text-sm text-foreground/60">
+            Create and manage token auctions
           </p>
         </a>
       </div>

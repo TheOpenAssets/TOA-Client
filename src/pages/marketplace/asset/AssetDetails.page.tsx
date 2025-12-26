@@ -70,8 +70,9 @@ const AssetDetailsPage = () => {
 
   // Calculate estimated total price (actual price will be fetched from contract during purchase)
   const estimatedTotalPrice = tokensToBuy
-    ? (parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken)).toFixed(2)
+    ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken))/1e18).toFixed(2)
     : '0.00';
+    
 
   const handleBuyTokens = async () => {
     if (!address) {
@@ -84,7 +85,7 @@ const AssetDetailsPage = () => {
       return;
     }
 
-    const minInvestment = parseFloat(asset.tokenParams.minInvestment);
+    const minInvestment = parseFloat(asset.tokenParams.minInvestment)/1e18;
     const requestedAmount = parseFloat(tokensToBuy);
 
     if (requestedAmount < minInvestment) {
@@ -190,7 +191,7 @@ const AssetDetailsPage = () => {
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <p className="text-5xl font-semibold text-[#111111]">
-                          ${parseFloat(asset.tokenParams.pricePerToken).toFixed(2)}
+                          ${(parseFloat(asset.tokenParams.pricePerToken) / 1e18).toFixed(2)}
                         </p>
                         <p className="text-green-600 text-sm mt-1">Token Price</p>
                     </div>
@@ -246,13 +247,13 @@ const AssetDetailsPage = () => {
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Total Supply</p>
                   <p className="font-medium text-[#111111]">
-                    {parseFloat(asset.tokenParams.totalSupply).toLocaleString()} tokens
+                    {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Minimum Investment</p>
                   <p className="font-medium text-[#111111]">
-                    {parseFloat(asset.tokenParams.minInvestment).toLocaleString()} tokens
+                    {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -336,7 +337,7 @@ const AssetDetailsPage = () => {
                     <div className="flex justify-between">
                       <span>Min Investment</span>
                       <span className="font-medium text-[#111111]">
-                        {parseFloat(asset.tokenParams.minInvestment).toLocaleString()} tokens
+                        {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
                       </span>
                     </div>
                   </div>
