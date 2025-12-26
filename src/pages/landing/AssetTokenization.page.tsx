@@ -15,7 +15,6 @@ const AssetTokenizationSection = () => {
   const { setLoading, setUser, setError } = useIssuerStore();
   const { signMessageAsync } = useSignMessage();
   const [isCheckingIssuer, setIsCheckingIssuer] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
 
   // Mock list of approved issuer wallet addresses
@@ -32,7 +31,6 @@ const AssetTokenizationSection = () => {
         }
   
         // Wallet is connected, proceed with authentication
-        setIsAuthenticating(true);
         setLoading(true);
   
         // Step 1: Get authentication challenge
@@ -67,7 +65,6 @@ const AssetTokenizationSection = () => {
         // On error, navigate to auth page
         navigate('/auth');
       } finally {
-        setIsAuthenticating(false);
         setLoading(false);
       }
     };
@@ -94,11 +91,11 @@ const AssetTokenizationSection = () => {
   // Check if connected wallet is an approved issuer
   useEffect(() => {
     if (isConnected && address && showConnectModal) {
-      checkIssuerStatus(address);
+      checkIssuerStatus();
     }
   }, [isConnected, address, showConnectModal]);
 
-  const checkIssuerStatus = async (walletAddress: string) => {
+  const checkIssuerStatus = async () => {
     setIsCheckingIssuer(true);
 
     // Simulate checking backend (in real app, call API)
@@ -109,44 +106,6 @@ const AssetTokenizationSection = () => {
 
     setIsCheckingIssuer(false);
     setShowConnectModal(false);
-  };
-
-  const handleAlreadyIssuerClick = () => {
-    if (isConnected && address) {
-      // Already connected, check status
-      checkIssuerStatus(address);
-    } else {
-      // Not connected, show connect modal
-      setShowConnectModal(true);
-    }
-  };
-
-  // First typeform: Issuer Application (for new issuers)
-  const openIssuerApplicationForm = () => {
-    const width = 800;
-    const height = 600;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-
-    window.open(
-      'https://form.typeform.com/to/Y3ZrQIm2',
-      'IssuerApplicationForm',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
-  };
-
-  // Second typeform: Asset Onboarding (for existing issuers to list assets)
-  const openAssetOnboardingForm = () => {
-    const width = 800;
-    const height = 600;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-
-    window.open(
-      'https://form.typeform.com/to/y0BQnYxs',
-      'AssetOnboardingForm',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
   };
 
   return (

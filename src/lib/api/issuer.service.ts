@@ -102,7 +102,7 @@ class IssuerService extends BaseService {
             user: {
               id: 'mock_user_id_' + Math.random().toString(36).substring(2, 9),
               walletAddress: payload.walletAddress,
-              UserRole: isIssuerOnboarding ? 'ISSUER' : 'INVESTOR',  // Set role based on onboarding token
+              role: isIssuerOnboarding ? UserRole.ORIGINATOR : UserRole.INVESTOR,  // Set role based on onboarding token
               kyc: false,         // Set to true to skip KYC flow in testing
             },
             tokens: {

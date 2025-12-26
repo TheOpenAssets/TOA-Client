@@ -6,9 +6,8 @@ import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from 'recharts';
+import { LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();

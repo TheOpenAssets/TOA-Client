@@ -54,20 +54,6 @@ class ContractService {
   }
 
   /**
-   * Calculate total payment needed in USDC (6 decimals)
-   * Formula from contract: payment = currentPrice * amount / 1e18
-   * where currentPrice is returned from getCurrentPrice() in wei
-   */
-  private calculatePayment(tokenAmount: string, currentPrice: bigint): bigint {
-    const tokenAmountWei = ethers.parseUnits(tokenAmount, 18);
-
-    // Contract formula: payment = price * amount / 1e18
-    const payment = (currentPrice * tokenAmountWei) / BigInt(10 ** 18);
-
-    return payment;
-  }
-
-  /**
    * Check USDC balance of user
    */
   async checkUSDCBalance(userAddress: string): Promise<string> {
@@ -335,7 +321,7 @@ class ContractService {
               }
 
               const availableSupply = altTotalSupply - altSold;
-              if (availableSupply === 0n) {
+              if (Number(availableSupply) === 0) {
                 return { isValid: false, error: 'No tokens available for purchase' };
               }
 
@@ -368,7 +354,7 @@ class ContractService {
         }
 
         const availableSupply = totalSupply - sold;
-        if (availableSupply === 0n) {
+        if (Number(availableSupply) === 0) {
           return { isValid: false, error: 'No tokens available for purchase' };
         }
 

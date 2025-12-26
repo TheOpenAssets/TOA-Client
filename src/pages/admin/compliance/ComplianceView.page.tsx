@@ -8,7 +8,6 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  ExternalLink,
   TrendingDown,
   TrendingUp,
   Minus,
@@ -32,20 +31,6 @@ const ComplianceViewPage = () => {
   useEffect(() => {
     fetchAdminDashboardData();
   }, [fetchAdminDashboardData]);
-
-  // Format currency with null safety
-  const formatCurrency = (amount: number | undefined | null): string => {
-    if (amount === undefined || amount === null || isNaN(amount)) {
-      return '$0';
-    }
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
-    }
-    return `$${amount.toLocaleString()}`;
-  };
 
   // Get risk badge
   const getRiskBadge = (level: RiskLevel) => {
@@ -90,6 +75,7 @@ const ComplianceViewPage = () => {
     setProcessing(true);
     // Simulate API call
     setTimeout(() => {
+      // @ts-ignore
       console.log('KYC triggered for:', selectedAsset?.name);
       setProcessing(false);
       setShowKycModal(false);
@@ -117,7 +103,7 @@ const ComplianceViewPage = () => {
     }
 
     // Get wallet address - check both possible property names
-    const adminWallet = user.walletAddress || user.wallet || address;
+    const adminWallet = user.walletAddress;
     
     if (!adminWallet) {
       console.error('No wallet address found. User object:', user);

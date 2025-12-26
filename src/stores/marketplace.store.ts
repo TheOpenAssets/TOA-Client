@@ -35,16 +35,16 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
       
       if (response && typeof response === 'object') {
         // Check if response has listings property (expected structure)
-        if (Array.isArray(response.listings)) {
-          listings = response.listings;
+        if (Array.isArray(response)) {
+          listings = response;
         } 
         // Fallback: if response itself is an array
         else if (Array.isArray(response)) {
           listings = response;
         }
         // Fallback: if response has a data property
-        else if (Array.isArray(response.data)) {
-          listings = response.data;
+        else if (Array.isArray(response)) {
+          listings = response;
         }
       }
       

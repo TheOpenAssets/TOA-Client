@@ -177,15 +177,15 @@ const IssuerOnboardingPage = () => {
     try {
       setLoading(true);
 
-      const documentData = {
-        aadhaar: kycDocuments.aadhaar?.name || 'aadhaar_uploaded',
-        pan: kycDocuments.pan?.name || 'pan_uploaded',
-      };
+      const formData = new FormData();
+      if (kycDocuments.aadhaar) {
+        formData.append('document', kycDocuments.aadhaar);
+      }
+      if (kycDocuments.pan) {
+        formData.append('document', kycDocuments.pan);
+      }
 
-      await kycService.submitKYC({
-        source: 'DOCUMENT_UPLOAD',
-        documents: documentData,
-      });
+      await kycService.submitKYC(formData);
 
       // Success
       setStep('success');
@@ -390,7 +390,7 @@ const IssuerOnboardingPage = () => {
                 <DocumentUploadModal
                   open={isModalOpen}
                   onOpenChange={setIsModalOpen}
-                  onComplete={handleDocumentUpload}
+                  onComplete={handleDocumentUpload as any}
                 />
               </div>
             )}

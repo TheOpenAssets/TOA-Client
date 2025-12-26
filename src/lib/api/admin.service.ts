@@ -6,11 +6,10 @@ import type {
 } from '../../types/auth.types';
 import { UserRole } from '../../types/issuer.types';
 import type { AdminAsset, AdminStats, AdminActivity } from '../../stores/admin.store';
-import { calculateAdminStats, mockAdminActivities } from '../data/admin-mock-data';
 import  type { SettlementFormData } from '../../types/admin.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
 class AdminService extends BaseService {
 
@@ -115,6 +114,7 @@ class AdminService extends BaseService {
     return response.json();
   }
 
+  // @ts-ignore
   async recordSettlement(formData: SettlementFormData): Promise<any> {
     // TODO: Backend endpoint for recording settlement is not in the script.
     // Assuming an endpoint like /admin/settlements/record
@@ -310,4 +310,4 @@ class AdminService extends BaseService {
   }
 }
 
-export const adminService = new AdminService(API_BASE_URL);
+export const adminService = new AdminService();

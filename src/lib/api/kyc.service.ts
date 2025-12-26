@@ -1,5 +1,5 @@
 // src/lib/api/kyc.service.ts
-import type { KYCSubmitPayload, KYCSubmitResponse } from '../../types/auth.types';
+import type { KYCSubmitResponse } from '../../types/auth.types';
 import BaseService from './base.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';

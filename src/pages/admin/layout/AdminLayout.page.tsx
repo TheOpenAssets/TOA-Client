@@ -1,16 +1,12 @@
 // src/pages/admin/layout/AdminLayout.page.tsx
 
-import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShieldCheck,
   Network,
   Coins,
-  TrendingUp,
   Package,
-  Users,
-  DollarSign,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import { calculateAdminStats } from '../../../lib/data/admin-mock-data';

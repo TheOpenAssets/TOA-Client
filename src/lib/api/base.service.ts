@@ -1,7 +1,5 @@
 
 // src/lib/api/base.service.ts
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app';
-
 class BaseService {
   protected baseURL: string;
 
@@ -12,11 +10,8 @@ class BaseService {
   protected getHeaders = () => {
     const headers: { [key: string]: string } = {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
     };
-
-    if (this.baseURL.includes('ngrok-free.app')) {
-      headers['ngrok-skip-browser-warning'] = 'true';
-    }
 
     return headers;
   }
@@ -34,3 +29,4 @@ class BaseService {
 }
 
 export default BaseService;
+

@@ -6,10 +6,11 @@ import type {
   LoginPayload,
   LoginResponse,
 } from '../../types/auth.types';
+import { UserRole } from '../../types/issuer.types';
 import BaseService from './base.service';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
@@ -256,7 +257,7 @@ class AuthService extends BaseService {
         user: {
           id: 'mock_user_id_' + Math.random().toString(36).substring(2, 9),
           walletAddress: payload.walletAddress,
-          role: isIssuerOnboarding ? 'ISSUER' : 'INVESTOR',  // Set role based on onboarding token
+          role: isIssuerOnboarding ? UserRole.ORIGINATOR : UserRole.INVESTOR,  // Set role based on onboarding token
           kyc: false,         // Set to true to skip KYC flow in testing
         },
         tokens: {

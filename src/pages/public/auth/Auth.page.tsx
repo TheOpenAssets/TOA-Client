@@ -12,7 +12,7 @@ import { authService } from '../../../lib/api/auth.service';
 import { kycService } from '../../../lib/api/kyc.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { WalletStatusResponse } from '../../../types/auth.types';
-import { Mail, Wallet, Shield, Lock } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import ALogo from '../../../assets/ALogo-removebg-preview.png'; // Import the logo image
 
@@ -165,7 +165,7 @@ const AuthPage = () => {
       await kycService.submitKYC(formData);
 
       // After success: First-time user → Redirect to marketplace
-      if (role=='INVESTOR')
+      if (user?.role === 'INVESTOR')
       navigate('/marketplace');
      else
       navigate('/issuer/dashboard');
