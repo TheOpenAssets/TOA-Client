@@ -129,3 +129,87 @@ export type SortOption =
   | 'newest'
   | 'lowest-price'
   | 'ending-soon';
+
+// ============================================================================
+// AUCTION TYPES (Based on AUTION.md specification)
+// ============================================================================
+
+export type AuctionStatus = 'BIDDING' | 'ENDED' | 'SETTLED' | 'CANCELLED';
+export type BidStatus = 'PENDING' | 'SUCCESSFUL' | 'FAILED' | 'PARTIALLY_FILLED';
+
+/**
+ * Auction - Represents an RWA token auction
+ * Ref: AUTION.md Phase 0, 1, 2
+ */
+export interface Auction {
+  auctionId: string;
+  assetId: string;
+  totalSupply: number;
+  reservePrice: number;
+  clearingPrice?: number;
+  status: AuctionStatus;
+  startTime: string;
+  endTime: string;
+  totalBids: number;
+  totalDemand: number;
+  metadata?: AssetMetadata;
+}
+
+/**
+ * Bid - Represents a user's bid in an auction
+ * Ref: AUTION.md Phase 1, 3
+ */
+export interface Bid {
+  bidId: string;
+  auctionId: string;
+  bidder: string;
+  tokensRequested: number;
+  maxPrice: number;
+  tokensWon?: number;
+  actualPrice?: number;
+  refundAmount?: number;
+  status: BidStatus;
+  submittedAt: string;
+  settledAt?: string;
+}
+
+/**
+ * API Response types for auction endpoints
+ */
+export interface AuctionListResponse {
+  success: boolean;
+  count: number;
+  auctions: Auction[];
+}
+
+export interface AuctionDetailsResponse {
+  success: boolean;
+  auction: Auction;
+}
+
+export interface UserBidsResponse {
+  success: boolean;
+  count: number;
+  bids: Bid[];
+}
+
+/**
+ * API Payload types for auction operations
+ */
+export interface CreateAuctionPayload {
+  assetId: string;
+  totalSupply: number;
+  reservePrice: number;
+  duration: number;
+}
+
+export interface SubmitBidPayload {
+  auctionId: string;
+  tokensRequested: number;
+  maxPrice: number;
+}
+
+export interface EndAuctionPayload {
+  auctionId: string;
+  clearingPrice: number;
+}

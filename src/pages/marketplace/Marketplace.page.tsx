@@ -33,13 +33,23 @@ const MarketplacePage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   // Fetch real marketplace data
-  const { listings, isLoading, error, fetchListings } = useMarketplaceStore();
+  const {
+    listings,
+    isLoading,
+    error,
+    fetchListings,
+    auctions,
+    isLoadingAuctions,
+    fetchAuctions,
+  } = useMarketplaceStore();
 
-  // Fetch listings on mount
+  // Fetch listings and auctions on mount
   useEffect(() => {
     console.log('🚀 Marketplace: Fetching listings from API...');
     fetchListings();
-  }, [fetchListings]);
+    console.log('🚀 Marketplace: Fetching active auctions...');
+    fetchAuctions('BIDDING'); // Fetch only active auctions
+  }, [fetchListings, fetchAuctions]);
 
   // Use mock data as fallback for featured sections (until backend provides these endpoints)
   const featuredAssets = getFeaturedAssets();
@@ -138,6 +148,21 @@ const MarketplacePage = () => {
     if (days < 30) return `${days} days`;
     if (days < 365) return `${Math.floor(days / 30)} months`;
     return `${Math.floor(days / 365)} years`;
+  };
+
+  // Calculate time remaining for auction
+  const getAuctionTimeRemaining = (endTime: string): string => {
+    const now = new Date().getTime();
+    const end = new Date(endTime).getTime();
+    const diff = end - now;
+
+    if (diff <= 0) return 'Ended';
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days}d ${hours % 24}h`;
+    return `${hours}h`;
   };
 
   // Show loading state
@@ -293,56 +318,103 @@ const MarketplacePage = () => {
         </div>
       </div>
 
+      {/* Auction/Bids Advertising Strip (NEW) */}
+      <div className="bg-transparent relative border-b border-gray-200 z-40">
+        <div className="max-w-[1400px] mx-auto px-6 py-2">
+          <div className="flex items-center gap-6 overflow-x-auto animate-scroll">
+            {auctions.length > 0 ? (
+              auctions.map((auction) => (
+                <div
+                  key={auction.auctionId}
+                  className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                >
+                  <span className="font-antic text-xs text-blue-600 font-semibold">
+                    🔨 AUCTION
+                  </span>
+                  <span className="font-antic text-xs text-foreground">
+                    {auction.assetId}
+                  </span>
+                  <span className="font-antic text-xs text-gray-500">
+                    {auction.totalSupply.toLocaleString()} tokens @ ${auction.reservePrice}
+                  </span>
+                  <span className="font-antic text-xs text-blue-600">
+                    {getAuctionTimeRemaining(auction.endTime)} left
+                  </span>
+                  <span className="text-gray-300">•</span>
+                </div>
+              ))
+            ) : (
+              <span className="font-antic text-xs text-gray-400">
+                No active auctions at the moment
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="max-w-[1400px] mx-auto px-6 py-8 z-40 bg-transparent relative" >
         {/* Three Feature Sections */}
         <div className="grid grid-cols-3 gap-12 mb-12 p-7 rounded-2xl "  >
-          {/* Section 1: Featured Issuances */}
+          {/* Section 1: Active Auctions (Replaced Featured Issuances) */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
               <h2 className=" text-2xl  text-foreground font-antic">
-                Featured Issuances
+                Active Auctions
               </h2>
             </div>
             <div className="border-t border-gray-200">
-              {featuredAssets.map((asset, index) => (
-                <div key={asset.id}>
-                  <div className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors">
-                    <div className="flex items-center justify-between">
-                      {/* Left: Icon + Asset Info */}
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16  rounded-full flex items-center justify-center text-2xl flex-shrink-0">
-                          {getCategoryIcon(asset.category)}
-                        </div>
-                        <div>
-                          <div className="font-antic text-lg font-bold text-foreground mb-1">
-                            {asset.assetId}
+              {isLoadingAuctions ? (
+                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                  Loading auctions...
+                </div>
+              ) : auctions.length === 0 ? (
+                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                  No active auctions
+                </div>
+              ) : (
+                auctions.slice(0, 3).map((auction, index) => (
+                  <div key={auction.auctionId}>
+                    <div
+                      className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                    >
+                      <div className="flex items-center justify-between">
+                        {/* Left: Icon + Auction Info */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0">
+                            {auction.metadata ? getCategoryIcon('invoice') : '🔨'}
                           </div>
-                          <div className="font-antic text-sm text-gray-500">
-                            {asset.name}
+                          <div>
+                            <div className="font-antic text-lg font-bold text-foreground mb-1">
+                              {auction.assetId}
+                            </div>
+                            <div className="font-antic text-sm text-gray-500">
+                              {auction.totalSupply.toLocaleString()} tokens
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Right: Price + Yield */}
-                      <div className="text-right">
-                        <div className="font-antic text-lg font-bold text-foreground mb-1">
-                          ${asset.tokenPrice.toFixed(2)}
-                        </div>
-                        <div className="flex items-center justify-end gap-1 text-green-600">
-                          <TrendingUp className="w-4 h-4" />
-                          <span className="font-antic text-sm font-medium">
-                            {asset.yieldAPY}%
-                          </span>
+                        {/* Right: Price + Status */}
+                        <div className="text-right">
+                          <div className="font-antic text-lg font-bold text-foreground mb-1">
+                            ${auction.reservePrice.toFixed(2)}
+                          </div>
+                          <div className="flex items-center justify-end gap-1 text-blue-600">
+                            <span className="font-antic text-sm font-medium">
+                              {getAuctionTimeRemaining(auction.endTime)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    {index < Math.min(auctions.length, 3) - 1 && (
+                      <div className="border-t border-gray-200"></div>
+                    )}
                   </div>
-                  {index < featuredAssets.length - 1 && (
-                    <div className="border-t border-gray-200"></div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -630,12 +702,12 @@ const MarketplacePage = () => {
           </div>
         </div>
       </div>
-      <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-40">
+      {isConnected && <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-40">
         <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
         
           Logout
         </button>
-      </div>
+      </div>}
     </div>
   );
 };
