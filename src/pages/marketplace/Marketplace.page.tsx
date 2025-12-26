@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Grid3x3,
   List,
+  Clock,
 } from 'lucide-react';
 import {
   platformMetrics,
@@ -40,16 +41,18 @@ const MarketplacePage = () => {
     fetchListings,
     auctions,
     isLoadingAuctions,
-    fetchAuctions,
+    fetchActiveAuctions,
   } = useMarketplaceStore();
 
   // Fetch listings and auctions on mount
   useEffect(() => {
     console.log('🚀 Marketplace: Fetching listings from API...');
     fetchListings();
-    console.log('🚀 Marketplace: Fetching active auctions...');
-    fetchAuctions('BIDDING'); // Fetch only active auctions
-  }, [fetchListings, fetchAuctions]);
+    console.log('🚀 Marketplace: Fetching active auctions (SCRIPT-VERIFIED)...');
+    console.log('  → GET /announcements?type=AUCTION_LIVE&status=ACTIVE');
+    console.log('  → Then GET /assets/:assetId for each');
+    fetchActiveAuctions(); // Fetch using announcements + assets (100% script-verified)
+  }, [fetchListings, fetchActiveAuctions]);
 
   // Use mock data as fallback for featured sections (until backend provides these endpoints)
   const featuredAssets = getFeaturedAssets();
@@ -319,29 +322,34 @@ const MarketplacePage = () => {
       </div>
 
       {/* Auction/Bids Advertising Strip (NEW) */}
-      <div className="bg-transparent relative border-b border-gray-200 z-40">
-        <div className="max-w-[1400px] mx-auto px-6 py-2">
-          <div className="flex items-center gap-6 overflow-x-auto animate-scroll">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 relative border-b border-gray-200 z-40">
+        <div className="max-w-[1400px] mx-auto px-6 py-3">
+          <div className="flex items-center gap-6 overflow-x-auto">
             {auctions.length > 0 ? (
               auctions.map((auction) => (
                 <div
                   key={auction.auctionId}
-                  className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm"
                   onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                 >
                   <span className="font-antic text-xs text-blue-600 font-semibold">
-                    🔨 AUCTION
+                    🔨 LIVE
                   </span>
-                  <span className="font-antic text-xs text-foreground">
-                    {auction.assetId}
+                  <span className="font-antic text-xs font-bold text-foreground">
+                    {auction.metadata?.invoiceNumber || auction.assetId}
                   </span>
-                  <span className="font-antic text-xs text-gray-500">
-                    {auction.totalSupply.toLocaleString()} tokens @ ${auction.reservePrice}
+                  <span className="text-gray-300">|</span>
+                  <span className="font-antic text-xs text-gray-600">
+                    {auction.totalSupply.toLocaleString()} tokens
                   </span>
-                  <span className="font-antic text-xs text-blue-600">
-                    {getAuctionTimeRemaining(auction.endTime)} left
+                  <span className="text-gray-300">|</span>
+                  <span className="font-antic text-xs text-green-600 font-medium">
+                    ${auction.reservePrice.toFixed(2)} - ${((auction.reservePrice || 0) * 1.2).toFixed(2)}
                   </span>
-                  <span className="text-gray-300">•</span>
+                  <span className="text-gray-300">|</span>
+                  <span className="font-antic text-xs text-orange-600 font-medium">
+                    ⏱ {getAuctionTimeRemaining(auction.endTime)} left
+                  </span>
                 </div>
               ))
             ) : (
@@ -388,21 +396,25 @@ const MarketplacePage = () => {
                           </div>
                           <div>
                             <div className="font-antic text-lg font-bold text-foreground mb-1">
-                              {auction.assetId}
+                              {auction.metadata?.invoiceNumber || auction.assetId}
                             </div>
                             <div className="font-antic text-sm text-gray-500">
-                              {auction.totalSupply.toLocaleString()} tokens
+                              {auction.totalSupply.toLocaleString()} tokens · ${auction.reservePrice.toFixed(2)} min
                             </div>
                           </div>
                         </div>
 
-                        {/* Right: Price + Status */}
+                        {/* Right: Price Range + Time */}
                         <div className="text-right">
+                          <div className="font-antic text-sm text-gray-500 mb-1">
+                            Bid Range
+                          </div>
                           <div className="font-antic text-lg font-bold text-foreground mb-1">
-                            ${auction.reservePrice.toFixed(2)}
+                            ${auction.reservePrice.toFixed(2)} - ${((auction.reservePrice || 0) * 1.2).toFixed(2)}
                           </div>
                           <div className="flex items-center justify-end gap-1 text-blue-600">
-                            <span className="font-antic text-sm font-medium">
+                            <Clock className="w-3 h-3" />
+                            <span className="font-antic text-xs font-medium">
                               {getAuctionTimeRemaining(auction.endTime)}
                             </span>
                           </div>

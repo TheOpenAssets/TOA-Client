@@ -1,27 +1,52 @@
 // src/pages/portfolio/Portfolio.page.tsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePortfolioStore } from '../../stores/portfolio.store';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { Button } from '../../components/ui/button';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
 import type { BidStatus } from '../../types/marketplace.types';
+import { useSettleBid } from '../../hooks/useAuctionContracts';
 
 const PortfolioPage = () => {
   const navigate = useNavigate();
-  const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
 
+  // Contract interaction for settling bids (investor-settle.sh verified)
+  const { settleBid, notifyBackend, status: settleStatus, isLoading: isSettling, isSuccess, txHash } = useSettleBid();
+  const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchPortfolio();
-    // Fetch user's bids if wallet is connected
-    if (address) {
-      fetchUserBids(address);
+    // Fetch ALL user's bids (authenticated via JWT token)
+    // Backend endpoint: GET /marketplace/bids/my-bids (from investor-bidding.sh line 395)
+    // Note: Pass assetId to filter bids for specific auction, or omit to get all bids
+    fetchUserBids(); // Get all bids for authenticated user
+  }, [fetchPortfolio, fetchUserBids]);
+
+  // Handle successful settlement - notify backend (investor-settle.sh line 264)
+  useEffect(() => {
+    if (isSuccess && txHash && settlingBidId) {
+      const bid = userBids.find((b) => b.bidId === settlingBidId);
+      if (bid) {
+        // Notify backend about settlement
+        notifyBackend(
+          {
+            assetId: bid.auctionId,
+            bidIndex: 0, // TODO: Get actual bid index from bid object
+          },
+          txHash,
+          0 // TODO: Get block number from transaction receipt
+        ).then(() => {
+          // Refresh bids after settlement
+          fetchUserBids();
+          setSettlingBidId(null);
+        });
+      }
     }
-  }, [fetchPortfolio, fetchUserBids, address]);
+  }, [isSuccess, txHash, settlingBidId, userBids, notifyBackend, fetchUserBids]);
 
   // Helper function to format currency
   const formatCurrency = (value: string | number): string => {
@@ -334,18 +359,29 @@ const PortfolioPage = () => {
                             </div>
                           </div>
 
-                          {/* Action Button */}
+                          {/* Action Button - Claim Tokens (SCRIPT-VERIFIED: investor-settle.sh) */}
                           {bid.status === 'SUCCESSFUL' && !bid.settledAt && (
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 ml-4"
-                              onClick={() => {
-                                // TODO: Implement claim tokens functionality
-                                console.log('Claim tokens for bid:', bid.bidId);
-                              }}
-                            >
-                              Claim Tokens
-                            </Button>
+                            <div className="ml-4">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => {
+                                  setSettlingBidId(bid.bidId);
+                                  settleBid({
+                                    assetId: bid.auctionId,
+                                    bidIndex: 0, // TODO: Get actual bid index
+                                  });
+                                }}
+                                disabled={isSettling && settlingBidId === bid.bidId}
+                              >
+                                {isSettling && settlingBidId === bid.bidId
+                                  ? settleStatus
+                                  : 'Claim Tokens'}
+                              </Button>
+                              {isSettling && settlingBidId === bid.bidId && (
+                                <p className="text-xs text-gray-400 mt-1">{settleStatus}</p>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>

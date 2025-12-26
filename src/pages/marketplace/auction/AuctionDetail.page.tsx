@@ -1,50 +1,48 @@
 // src/pages/marketplace/auction/AuctionDetail.page.tsx
+// 100% Script-Verified Bid Submission Flow (investor-bidding.sh)
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
-import { contractService } from '../../../lib/api/contract.service';
-import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { TrendingUp, Clock, Users, DollarSign } from 'lucide-react';
+import { TrendingUp, Clock, Users, DollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { useSubmitBid, useCheckKYC } from '../../../hooks/useAuctionContracts';
 
 const AuctionDetailPage = () => {
   const { auctionId } = useParams<{ auctionId: string }>();
   const navigate = useNavigate();
   const { address } = useAccount();
-  const { currentAuction: auction, isLoadingAuctions, auctionError, fetchAuctionById } = useMarketplaceStore();
+  const { currentAuction: auction, isLoadingAuctions, auctionError, fetchAuctionByAssetId } = useMarketplaceStore();
+
+  // Contract hooks (SCRIPT-VERIFIED: investor-bidding.sh)
+  const { submitBid, notifyBackend, status, isLoading, isApproving, isSubmitting, isBidSuccess, bidHash } = useSubmitBid();
+  const { isVerified: isKYCVerified } = useCheckKYC();
 
   const [tokenAmount, setTokenAmount] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [usdcBalance, setUsdcBalance] = useState('0');
-  const [usdcAllowance, setUsdcAllowance] = useState('0');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bidStatus, setBidStatus] = useState<string | null>(null);
+  const [bidParams, setBidParams] = useState<{assetId: string; tokenAmount: string; pricePerToken: string} | null>(null);
 
+  // Fetch auction details
   useEffect(() => {
     if (auctionId) {
-      fetchAuctionById(auctionId);
+      fetchAuctionByAssetId(auctionId);
     }
-  }, [auctionId, fetchAuctionById]);
+  }, [auctionId, fetchAuctionByAssetId]);
 
+  // Handle successful bid submission - notify backend (investor-bidding.sh line 362)
   useEffect(() => {
-    if (address) {
-      loadWalletData();
+    if (isBidSuccess && bidHash && bidParams) {
+      notifyBackend(bidParams, bidHash, 0 /* TODO: Get block number from receipt */)
+        .then(() => {
+          // Redirect to portfolio after successful bid
+          setTimeout(() => {
+            navigate('/portfolio');
+          }, 2000);
+        });
     }
-  }, [address]);
-
-  const loadWalletData = async () => {
-    if (!address) return;
-    try {
-      const balance = await contractService.checkUSDCBalance(address);
-      const allowance = await contractService.checkUSDCAllowance(address);
-      setUsdcBalance(balance);
-      setUsdcAllowance(allowance);
-    } catch (error) {
-      console.error('Error loading wallet data:', error);
-    }
-  };
+  }, [isBidSuccess, bidHash, bidParams, notifyBackend, navigate]);
 
   // Calculate time remaining
   const getTimeRemaining = (endTime: string): string => {
@@ -68,81 +66,48 @@ const AuctionDetailPage = () => {
     ? (parseFloat(tokenAmount) * parseFloat(maxPrice)).toFixed(2)
     : '0.00';
 
-  // Handle bid submission
+  // Handle bid submission (SCRIPT-VERIFIED: investor-bidding.sh)
   const handleSubmitBid = async () => {
     if (!address) {
-      setBidStatus('Please connect your wallet first');
+      return;
+    }
+
+    if (!isKYCVerified) {
+      alert('You must complete KYC verification before bidding. Please register with an admin.');
       return;
     }
 
     if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
-      setBidStatus('Please enter a valid token amount');
       return;
     }
 
     if (!maxPrice || parseFloat(maxPrice) < (auction?.reservePrice || 0)) {
-      setBidStatus(`Max price must be at least $${auction?.reservePrice}`);
       return;
     }
 
-    const requiredApproval = parseFloat(estimatedTotal);
-    const currentAllowance = parseFloat(usdcAllowance);
+    if (!auctionId) return;
 
-    setIsSubmitting(true);
-    setBidStatus('Initiating bid...');
+    console.log('🔨 Submitting bid (investor-bidding.sh flow)');
+    console.log('  → Asset ID:', auctionId);
+    console.log('  → Token Amount:', tokenAmount);
+    console.log('  → Max Price:', maxPrice);
 
-    console.log('\n🔨 ===== STARTING BID SUBMISSION =====');
-    console.log('Auction ID:', auctionId);
-    console.log('Token Amount:', tokenAmount);
-    console.log('Max Price:', maxPrice);
-    console.log('Estimated Total:', estimatedTotal);
-    console.log('=====================================\n');
+    // Store bid params for backend notification after success
+    const params = {
+      assetId: auctionId,
+      tokenAmount,
+      pricePerToken: maxPrice,
+    };
+    setBidParams(params);
 
     try {
-      // Step 1: Check/Approve USDC allowance
-      if (currentAllowance < requiredApproval) {
-        setBidStatus('Approving USDC...');
-        console.log('💰 Requesting USDC approval for:', requiredApproval);
-
-        // TODO: Replace with actual contract call
-        // await contractService.approveUSDC(marketplaceContractAddress, requiredApproval);
-        console.log('[PLACEHOLDER] USDC approval would happen here');
-
-        setBidStatus('USDC approved! Submitting bid...');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate approval
-      }
-
-      // Step 2: Submit bid to contract
-      console.log('📝 Submitting bid to contract...');
-
-      // TODO: Replace with actual contract call
-      // const result = await contractService.submitBid(auctionId, tokenAmount, maxPrice);
-      const result = await marketplaceService.submitBid({
-        auctionId: auctionId!,
-        tokensRequested: parseFloat(tokenAmount),
-        maxPrice: parseFloat(maxPrice),
-      });
-
-      console.log('✅ Bid submitted successfully!');
-      setBidStatus('Bid submitted successfully! 🎉');
-
-      // Clear form
-      setTokenAmount('');
-      setMaxPrice('');
-
-      // Reload wallet data
-      await loadWalletData();
-
-      // Redirect to portfolio to see bids after 2 seconds
-      setTimeout(() => {
-        navigate('/portfolio');
-      }, 2000);
+      // This will:
+      // 1. Check USDC allowance
+      // 2. Approve USDC if needed (investor-bidding.sh line 288)
+      // 3. Submit bid to contract (investor-bidding.sh line 297)
+      await submitBid(params);
     } catch (error: any) {
       console.error('❌ Bid submission error:', error);
-      setBidStatus(`Error: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-      console.log('\n===== BID SUBMISSION COMPLETED =====\n');
     }
   };
 
@@ -438,49 +403,55 @@ const AuctionDetailPage = () => {
                       </p>
                     </div>
 
-                    {/* Wallet Info */}
-                    <div className="text-xs text-[#6B7280] font-antic space-y-1">
-                      <div className="flex justify-between">
-                        <span>Your USDC Balance</span>
-                        <span className="font-medium text-[#111111]">
-                          {parseFloat(usdcBalance).toFixed(2)} USDC
-                        </span>
+                    {/* KYC Status */}
+                    {address && (
+                      <div className="text-xs text-[#6B7280] font-antic">
+                        <div className="flex items-center gap-2">
+                          <span>KYC Status:</span>
+                          {isKYCVerified ? (
+                            <span className="flex items-center gap-1 text-green-600 font-medium">
+                              <CheckCircle className="w-4 h-4" />
+                              Verified
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-red-600 font-medium">
+                              <XCircle className="w-4 h-4" />
+                              Not Verified (Contact Admin)
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Allowance</span>
-                        <span className="font-medium text-green-600">
-                          {parseFloat(usdcAllowance) > 1000000
-                            ? 'Unlimited'
-                            : `${parseFloat(usdcAllowance).toFixed(2)} USDC`}
-                        </span>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Status Message */}
-                    {bidStatus && (
+                    {status && (
                       <div
                         className={`text-sm p-3 rounded-lg font-antic ${
-                          bidStatus.includes('successfully')
+                          status.includes('successfully')
                             ? 'bg-green-100 text-green-800'
-                            : bidStatus.includes('Error') || bidStatus.includes('failed')
+                            : status.includes('Error') || status.includes('failed')
                             ? 'bg-red-100 text-red-800'
                             : 'bg-blue-100 text-blue-800'
                         }`}
                       >
-                        {bidStatus}
+                        {status}
                       </div>
                     )}
 
                     {/* Submit Button */}
                     <Button
                       onClick={handleSubmitBid}
-                      disabled={isSubmitting || !address}
+                      disabled={isLoading || !address || !isKYCVerified}
                       className="w-full bg-black text-white rounded-xl h-14 text-base font-medium font-antic disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSubmitting
-                        ? 'Processing...'
+                      {isApproving
+                        ? 'Approving USDC...'
+                        : isSubmitting
+                        ? 'Submitting Bid...'
                         : !address
                         ? 'Connect Wallet'
+                        : !isKYCVerified
+                        ? 'KYC Required'
                         : 'Place Bid'}
                     </Button>
 

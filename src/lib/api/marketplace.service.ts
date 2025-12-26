@@ -115,94 +115,131 @@ class MarketplaceService extends BaseService {
   }
 
   // ============================================================================
-  // AUCTION ENDPOINTS (Based on AUTION.md API specification)
+  // AUCTION ENDPOINTS (100% Script-Verified from admin-approve.sh & investor-bidding.sh)
   // ============================================================================
 
   /**
-   * Get all auctions (with optional status filter)
+   * Get auction announcements (SCRIPT-VERIFIED)
    *
-   * ENDPOINT: GET /marketplace/auctions?status=BIDDING
-   * REF: AUTION.md Phase 1
+   * ENDPOINT: GET /announcements?type=X&status=Y
+   * VERIFIED: admin-approve.sh line 400
+   *
+   * Types:
+   * - AUCTION_LIVE: Active auctions currently accepting bids
+   * - AUCTION_ENDED: Auctions that have ended, awaiting settlement
+   * - AUCTION_FAILED: Auctions that failed to activate
+   *
+   * Status: ACTIVE, INACTIVE
+   *
+   * Returns announcements, then use GET /assets/:assetId for full details
    *
    * Used by:
    * - Marketplace page to display active auctions
    * - Admin dashboard to view all auctions
    */
-  async getAuctions(status?: string): Promise<Auction[]> {
+  async getAuctionAnnouncements(type: 'AUCTION_LIVE' | 'AUCTION_ENDED' | 'AUCTION_FAILED' = 'AUCTION_LIVE', status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE'): Promise<any[]> {
     try {
-      const queryParams = status ? `?status=${status}` : '';
-      const response = await fetch(`${this.baseURL}/marketplace/auctions${queryParams}`, {
+      const response = await fetch(`${this.baseURL}/announcements?type=${type}&status=${status}`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch auctions');
+        throw new Error(error.message || 'Failed to fetch auction announcements');
       }
 
-      const data: AuctionListResponse = await response.json();
-      return data.auctions;
+      const data = await response.json();
+
+      // ✅ FIXED: API returns { announcements: [...], pagination: {...} }
+      console.log('📡 Announcements API Response:', data);
+
+      if (data.announcements && Array.isArray(data.announcements)) {
+        return data.announcements;
+      }
+
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error('Error fetching auctions:', error);
+      console.error('Error fetching auction announcements:', error);
       throw error;
     }
   }
 
   /**
-   * Get auction details by ID
+   * Get announcements for a specific asset (SCRIPT-VERIFIED)
    *
-   * ENDPOINT: GET /marketplace/auctions/:auctionId
-   * REF: AUTION.md Phase 1
+   * ENDPOINT: GET /announcements/asset/:assetId
+   * VERIFIED: admin-approve.sh line 353
+   *
+   * Returns all announcements (AUCTION_LIVE, AUCTION_ENDED, etc.) for an asset
    *
    * Used by:
-   * - Auction detail page to show auction info and bid form
+   * - Auction detail page to show auction status
+   * - Admin to verify auction activation
    */
-  async getAuctionById(auctionId: string): Promise<Auction> {
+  async getAssetAnnouncements(assetId: string): Promise<any[]> {
     try {
-      const response = await fetch(`${this.baseURL}/marketplace/auctions/${auctionId}`, {
+      const response = await fetch(`${this.baseURL}/announcements/asset/${assetId}`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || `Failed to fetch auction: ${auctionId}`);
+        throw new Error(error.message || 'Failed to fetch asset announcements');
       }
 
-      const data: AuctionDetailsResponse = await response.json();
-      return data.auction;
+      const data = await response.json();
+
+      // ✅ FIXED: Handle both response formats
+      console.log('📡 Asset Announcements API Response:', data);
+
+      if (data.announcements && Array.isArray(data.announcements)) {
+        return data.announcements;
+      }
+
+      // Fallback for direct array response
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error(`Error fetching auction ${auctionId}:`, error);
+      console.error('Error fetching asset announcements:', error);
       throw error;
     }
   }
 
   /**
-   * Create a new auction (Admin only)
+   * Get asset details by ID (SCRIPT-VERIFIED)
    *
-   * ENDPOINT: POST /marketplace/create-auction
-   * REF: AUTION.md Phase 0
+   * ENDPOINT: GET /assets/:assetId
+   * VERIFIED: admin-approve.sh line 168
+   *
+   * Returns complete asset details including:
+   * - metadata (industry, riskTier, faceValue, etc.)
+   * - token (address, totalSupply)
+   * - listing information (reservePrice, endTime, clearingPrice, auctionPhase)
+   * - checkpoints (uploaded, attested, registered, tokenized)
+   *
+   * This is the PRIMARY endpoint for getting auction details
    *
    * Used by:
-   * - Admin dashboard to create new auctions
+   * - Auction detail page to show full auction info
+   * - After fetching announcements, to get complete auction data
    */
-  async createAuction(payload: CreateAuctionPayload): Promise<any> {
+  async getAssetById(assetId: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseURL}/marketplace/create-auction`, {
-        method: 'POST',
+      const response = await fetch(`${this.baseURL}/assets/${assetId}`, {
+        method: 'GET',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to create auction');
+        throw new Error(error.message || `Failed to fetch asset: ${assetId}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Error creating auction:', error);
+      console.error(`Error fetching asset ${assetId}:`, error);
       throw error;
     }
   }
@@ -210,18 +247,24 @@ class MarketplaceService extends BaseService {
   /**
    * End an auction (Admin only)
    *
-   * ENDPOINT: POST /marketplace/end-auction/:auctionId
-   * REF: AUTION.md Phase 2
+   * ENDPOINT: POST /admin/compliance/end-auction (VERIFIED from admin-endauction.sh line 260)
+   * REF: admin-endauction.sh Step 3
+   *
+   * Payload: { assetId, clearingPrice (in wei), transactionHash }
    *
    * Used by:
    * - Admin dashboard to end auctions and set clearing price
    */
-  async endAuction(auctionId: string, clearingPrice: number): Promise<any> {
+  async endAuction(assetId: string, clearingPrice: string, transactionHash: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseURL}/marketplace/end-auction/${auctionId}`, {
+      const response = await fetch(`${this.baseURL}/admin/compliance/end-auction`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ clearingPrice }),
+        body: JSON.stringify({
+          assetId,
+          clearingPrice, // in wei (6 decimals for USDC)
+          transactionHash,
+        }),
       });
 
       if (!response.ok) {
@@ -231,7 +274,7 @@ class MarketplaceService extends BaseService {
 
       return await response.json();
     } catch (error) {
-      console.error(`Error ending auction ${auctionId}:`, error);
+      console.error(`Error ending auction ${assetId}:`, error);
       throw error;
     }
   }
@@ -239,16 +282,16 @@ class MarketplaceService extends BaseService {
   /**
    * Get user's bids (optionally filtered by auction)
    *
-   * ENDPOINT: GET /users/:address/bids?auction=:auctionId
-   * REF: AUTION.md Phase 3
+   * ENDPOINT: GET /marketplace/bids/my-bids?assetId=:assetId (VERIFIED from investor-bidding.sh line 395)
+   * REF: investor-bidding.sh Step 5
    *
    * Used by:
    * - Portfolio page to show "My Bids" section
    */
-  async getUserBids(address: string, auctionId?: string): Promise<Bid[]> {
+  async getUserBids(assetId?: string): Promise<Bid[]> {
     try {
-      const queryParams = auctionId ? `?auction=${auctionId}` : '';
-      const response = await fetch(`${this.baseURL}/users/${address}/bids${queryParams}`, {
+      const queryParams = assetId ? `?assetId=${assetId}` : '';
+      const response = await fetch(`${this.baseURL}/marketplace/bids/my-bids${queryParams}`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -267,32 +310,149 @@ class MarketplaceService extends BaseService {
   }
 
   /**
-   * Submit a bid (User)
+   * Get all bids for an auction (Admin + Investor)
    *
-   * NOTE: This is a frontend-to-contract call placeholder
-   * Actual implementation will use blockchain contract service
-   * REF: AUTION.md Phase 1 - Step 5
+   * ENDPOINT: GET /marketplace/auctions/:assetId/bids (VERIFIED from investor-bidding.sh line 403)
+   * REF: investor-bidding.sh Step 5, admin-endauction.sh line 282
    *
-   * Contract call: MarketplaceContract.submitBid(auctionId, tokenAmount, maxPrice)
+   * Returns: { bids: Bid[], pricePoints: PricePoint[] }
+   *
+   * Used by:
+   * - Admin dashboard to view auction results
+   * - Investor to see auction bid distribution
+   */
+  async getAuctionBids(assetId: string): Promise<{ bids: Bid[]; pricePoints?: any[] }> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/auctions/${assetId}/bids`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch auction bids');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching bids for auction ${assetId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Notify backend after placing bid on-chain
+   *
+   * ENDPOINT: POST /marketplace/bids/notify (VERIFIED from investor-bidding.sh line 362)
+   * REF: investor-bidding.sh Step 4
+   *
+   * Payload: { txHash, assetId, tokenAmount (wei), price (wei), blockNumber }
+   *
+   * Called AFTER successful on-chain bid submission
+   */
+  async notifyBidPlaced(payload: {
+    txHash: string;
+    assetId: string;
+    tokenAmount: string;
+    price: string;
+    blockNumber: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/bids/notify`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify bid placement');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error notifying bid placement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Notify backend after settling bid on-chain
+   *
+   * ENDPOINT: POST /marketplace/bids/settle-notify (VERIFIED from investor-settle.sh line 264)
+   * REF: investor-settle.sh Step 3
+   *
+   * Payload: { assetId, bidIndex, txHash, blockNumber }
+   *
+   * Called AFTER successful on-chain bid settlement
+   */
+  async notifyBidSettled(payload: {
+    assetId: string;
+    bidIndex: number;
+    txHash: string;
+    blockNumber: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/bids/settle-notify`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify bid settlement');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error notifying bid settlement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Submit a bid on-chain (User)
+   *
+   * NOTE: This is a frontend-to-contract call - NOT a backend API
+   * Contract: PrimaryMarketplace.submitBid(assetIdBytes32, tokenAmountWei, priceWei)
+   * REF: investor-bidding.sh lines 297-302
+   *
+   * Steps:
+   * 1. Approve USDC (lines 288-293)
+   * 2. Call submitBid() on contract (line 297)
+   * 3. Wait for confirmation
+   * 4. Call notifyBidPlaced() to update backend
    */
   async submitBid(payload: SubmitBidPayload): Promise<any> {
-    // TODO: This will be replaced with actual contract call
-    // For now, this is a placeholder for the backend notification
+    // TODO: Implement actual contract call using blockchain service
+    // This is a placeholder - actual implementation should:
+    // 1. Convert assetId to bytes32
+    // 2. Approve USDC
+    // 3. Call contract.submitBid()
+    // 4. Call notifyBidPlaced()
     console.log('[PLACEHOLDER] Submit bid to contract:', payload);
     return Promise.resolve({ success: true, message: 'Bid submitted (placeholder)' });
   }
 
   /**
-   * Settle/Claim bid (User)
+   * Settle/Claim bid on-chain (User)
    *
-   * NOTE: This is a frontend-to-contract call placeholder
-   * Actual implementation will use blockchain contract service
-   * REF: AUTION.md Phase 3
+   * NOTE: This is a frontend-to-contract call - NOT a backend API
+   * Contract: PrimaryMarketplace.settleBid(assetIdBytes32, bidIndex)
+   * REF: investor-settle.sh lines 192
    *
-   * Contract call: MarketplaceContract.settleBid(auctionId, bidIndex)
+   * Steps:
+   * 1. Call settleBid() on contract (line 192)
+   * 2. Wait for confirmation
+   * 3. Call notifyBidSettled() to update backend
    */
   async settleBid(auctionId: string, bidIndex: number): Promise<any> {
-    // TODO: This will be replaced with actual contract call
+    // TODO: Implement actual contract call using blockchain service
+    // This is a placeholder - actual implementation should:
+    // 1. Convert assetId to bytes32
+    // 2. Call contract.settleBid()
+    // 3. Call notifyBidSettled()
     console.log('[PLACEHOLDER] Settle bid on contract:', { auctionId, bidIndex });
     return Promise.resolve({ success: true, message: 'Bid settled (placeholder)' });
   }

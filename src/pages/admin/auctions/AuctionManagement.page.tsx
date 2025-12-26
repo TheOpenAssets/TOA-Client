@@ -7,10 +7,11 @@ import { marketplaceService } from '../../../lib/api/marketplace.service';
 import type { CreateAuctionPayload } from '../../../types/marketplace.types';
 
 const AuctionManagementPage = () => {
-  const { auctions, isLoadingAuctions, fetchAuctions } = useMarketplaceStore();
+  const { auctions, isLoadingAuctions, fetchActiveAuctions, fetchEndedAuctions } = useMarketplaceStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
   const [selectedAuction, setSelectedAuction] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'active' | 'ended'>('active');
 
   // Create auction form state
   const [createForm, setCreateForm] = useState<CreateAuctionPayload>({
@@ -28,42 +29,31 @@ const AuctionManagementPage = () => {
   const [isEnding, setIsEnding] = useState(false);
 
   useEffect(() => {
-    // Fetch all auctions (not just BIDDING)
-    fetchAuctions();
-  }, [fetchAuctions]);
+    // Fetch auctions based on view mode (SCRIPT-VERIFIED)
+    console.log('🔍 Admin: Fetching auctions...');
+    console.log('  → GET /announcements?type=AUCTION_LIVE&status=ACTIVE');
+    console.log('  → Then GET /assets/:assetId for each');
+    if (viewMode === 'active') {
+      fetchActiveAuctions();
+    } else {
+      fetchEndedAuctions();
+    }
+  }, [fetchActiveAuctions, fetchEndedAuctions, viewMode]);
 
   const handleCreateAuction = async () => {
-    if (!createForm.assetId || createForm.totalSupply <= 0 || createForm.reservePrice <= 0) {
-      setCreateStatus('Please fill in all fields correctly');
-      return;
-    }
+    setCreateStatus('⚠️ AUCTION CREATION NOTE:');
+    setCreateStatus(
+      'Auctions are created via the admin-approve.sh workflow:\n' +
+      '1. POST /admin/compliance/approve\n' +
+      '2. POST /admin/assets/:assetId/register (on-chain)\n' +
+      '3. POST /admin/assets/deploy-token (on-chain)\n' +
+      '4. POST /admin/compliance/schedule-auction\n\n' +
+      'Use the Compliance tab to approve assets for auction.'
+    );
 
-    setIsCreating(true);
-    setCreateStatus('Creating auction...');
-
-    try {
-      await marketplaceService.createAuction(createForm);
-      setCreateStatus('Auction created successfully! 🎉');
-
-      // Reset form
-      setCreateForm({
-        assetId: '',
-        totalSupply: 0,
-        reservePrice: 0,
-        duration: 259200,
-      });
-
-      // Refresh auctions list
-      setTimeout(() => {
-        fetchAuctions();
-        setShowCreateModal(false);
-        setCreateStatus(null);
-      }, 2000);
-    } catch (error: any) {
-      setCreateStatus(`Error: ${error.message}`);
-    } finally {
-      setIsCreating(false);
-    }
+    // Note: createAuction() endpoint doesn't exist in scripts
+    // Real flow is: approve → register → deploy → schedule
+    return;
   };
 
   const handleEndAuction = async () => {
@@ -73,27 +63,28 @@ const AuctionManagementPage = () => {
     }
 
     setIsEnding(true);
-    setEndStatus('Ending auction...');
+    setEndStatus('⚠️ This requires on-chain transaction first!');
 
-    try {
-      await marketplaceService.endAuction(selectedAuction, parseFloat(clearingPrice));
-      setEndStatus('Auction ended successfully! 🎉');
+    // Note: According to admin-endauction.sh, the correct flow is:
+    // 1. Call PrimaryMarketplace.endAuction(assetIdBytes32, clearingPriceWei) on-chain
+    // 2. Then POST /admin/compliance/end-auction with { assetId, clearingPrice (wei), txHash }
 
-      // Reset form
-      setClearingPrice('');
-      setSelectedAuction(null);
+    setEndStatus(
+      'Ending auction requires:\n' +
+      '1. ON-CHAIN: PrimaryMarketplace.endAuction(assetId, clearingPrice)\n' +
+      '2. POST /admin/compliance/end-auction (with tx hash)\n\n' +
+      'Use admin-endauction.sh script or implement contract integration.'
+    );
 
-      // Refresh auctions list
-      setTimeout(() => {
-        fetchAuctions();
-        setShowEndModal(false);
-        setEndStatus(null);
-      }, 2000);
-    } catch (error: any) {
-      setEndStatus(`Error: ${error.message}`);
-    } finally {
-      setIsEnding(false);
-    }
+    setIsEnding(false);
+    return;
+
+    // TODO: Implement contract call integration
+    // const clearingPriceWei = parseFloat(clearingPrice) * 1e6; // USDC has 6 decimals
+    // 1. Call contract.endAuction()
+    // 2. Wait for tx
+    // 3. Call backend notification
+    // await marketplaceService.endAuction(selectedAuction, clearingPriceWei.toString(), txHash);
   };
 
   const getStatusStyle = (status: string) => {

@@ -28,6 +28,24 @@ interface Attestation {
   timestamp: string;
 }
 
+interface Listing {
+  type: 'DUTCH' | 'FIXED';
+  reservePrice: string; // USDC in wei (6 decimals)
+  priceRange?: {
+    min: string;
+    max: string;
+  };
+  duration?: number;
+  sold?: string;
+  active?: boolean;
+  listedAt?: string;
+  phase?: 'BIDDING' | 'ENDED' | 'SETTLED';
+  price?: string;
+  clearingPrice?: string; // USDC in wei (6 decimals)
+  startTime?: string;
+  endTime?: string;
+}
+
 export interface AssetMetadata {
   invoiceNumber: string;
   faceValue: string;
@@ -58,6 +76,7 @@ export interface AssetDetails {
   metadata: AssetMetadata;
   tokenParams: TokenParams;
   token: Token;
+  listing?: Listing; // ✅ ADDED: Matches actual API response
   registry: Registry;
   cryptography: Cryptography;
   attestation: Attestation;
