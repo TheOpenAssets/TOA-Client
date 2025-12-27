@@ -13,7 +13,6 @@ import AdminOverviewPage from '../../pages/admin/overview/AdminOverview.page';
 import ComplianceViewPage from '../../pages/admin/compliance/ComplianceView.page';
 import OperationsViewPage from '../../pages/admin/operations/OperationsView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
-import AuctionManagementPage from '../../pages/admin/auctions/AuctionManagement.page';
 
 // Component Showcase
 import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
@@ -21,7 +20,7 @@ import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
 // Marketplace
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
 import AssetDetailsPage from '../../pages/marketplace/asset/AssetDetails.page';
-import AuctionDetailPage from '../../pages/marketplace/auction/AuctionDetail.page';
+import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.page';
 
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
@@ -41,8 +40,8 @@ export const publicRoutes: RouteObject[] = [
     element: <AssetDetailsPage />,
   },
   {
-    path: '/marketplace/auction/:auctionId',
-    element: <AuctionDetailPage />,
+    path: '/marketplace/auction/:assetId',
+    element: <AuctionDetailsPage />,
   },
   {
     path: '/portfolio',
@@ -88,10 +87,6 @@ export const publicRoutes: RouteObject[] = [
       {
         path: 'settlements',
         element: <SettlementViewPage />,
-      },
-      {
-        path: 'auctions',
-        element: <AuctionManagementPage />,
       },
     ],
   },

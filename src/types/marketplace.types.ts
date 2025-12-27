@@ -100,6 +100,27 @@ export interface NotifyPurchasePayload {
   blockNumber: string;
 }
 
+export interface NotifyBidPlacedPayload {
+  txHash: string;
+  assetId: string;
+  tokenAmount: string;
+  price: string;
+  blockNumber: string;
+}
+
+export interface NotifyBidSettledPayload {
+  assetId: string;
+  bidIndex: number;
+  txHash: string;
+  blockNumber: string;
+}
+
+export interface EndAuctionPayload {
+  assetId: string;
+  clearingPrice: string;
+  txHash: string;
+}
+
 // MarketplaceAsset - Extended interface for UI display (used by mock data)
 export interface MarketplaceAsset {
   id: string;

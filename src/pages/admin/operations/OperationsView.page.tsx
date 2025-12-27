@@ -26,6 +26,7 @@ const OperationsViewPage = () => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showTokenizeModal, setShowTokenizeModal] = useState(false);
   const [showListingModal, setShowListingModal] = useState(false);
+  const [showAuctionSchedulingModal, setShowAuctionSchedulingModal] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   // Listing form data
@@ -33,6 +34,9 @@ const OperationsViewPage = () => {
   const [price, setPrice] = useState('1000000'); // 1 USDC in 6 decimals
   const [minInvestment, setMinInvestment] = useState('1000000000000000000000'); // 1000 tokens in 18 decimals
   const [duration, setDuration] = useState('0');
+
+  // Auction scheduling form data
+  const [startDelayMinutes, setStartDelayMinutes] = useState('5'); // 5 minutes default (matches script)
 
   // Mock on-chain data
   const [mockBlobId, setMockBlobId] = useState('');
@@ -43,15 +47,20 @@ const OperationsViewPage = () => {
     fetchAdminDashboardData();
   }, [fetchAdminDashboardData]);
 
-  // Split assets based on checkpoints
+  // Split assets based on STATUS (not checkpoints!)
+  // Step 1: Register on Mantle - show ATTESTED assets
   const attestedAssets = assetsForOperations.filter(
-    (asset) => asset.checkpoints.attested && !asset.checkpoints.registered
+    (asset) => asset.status === 'ATTESTED'
   );
+
+  // Step 2: Deploy Token - show REGISTERED assets
   const registeredAssets = assetsForOperations.filter(
-    (asset) => asset.checkpoints.registered && !asset.checkpoints.tokenized
+    (asset) => asset.status === 'REGISTERED'
   );
+
+  // Step 3: List on Marketplace - show TOKENIZED assets that are NOT already listed
   const tokenizedAssets = assetsForOperations.filter(
-    (asset) => asset.checkpoints.tokenized
+    (asset) => asset.status === 'TOKENIZED' && !asset.listing?.active
   );
 
   // Handle Register
@@ -68,22 +77,31 @@ const OperationsViewPage = () => {
       console.error('No asset selected');
       return;
     }
-    
-    console.log('Registering asset:', selectedAsset.assetId);
+
+    console.log('🔨 Registering asset:', selectedAsset.assetId);
     setProcessing(true);
-    
+
     try {
       const result = await adminService.registerAsset(selectedAsset.assetId);
-      console.log('✅ Asset registered successfully:', result);
-      
+      console.log('✅ Registration API response:', result);
+
       // Refresh dashboard data
       await fetchAdminDashboardData();
-      
+
       // Close modal
       setShowRegisterModal(false);
       setSelectedAsset(null);
-      
-      alert('Asset registered successfully on Mantle!');
+
+      // Show appropriate message
+      if (result.alreadyRegistered) {
+        alert(
+          'This asset was already registered on-chain.\n\n' +
+          'Note: If it\'s still showing in Step 1, there may be a backend data sync issue. ' +
+          'Please refresh the page. If the issue persists, contact the backend team to manually update the checkpoints.'
+        );
+      } else {
+        alert('Asset registered successfully on Mantle!');
+      }
     } catch (error: any) {
       console.error('❌ Failed to register asset:', error);
       alert(`Failed to register asset: ${error.message || 'Unknown error'}`);
@@ -105,12 +123,28 @@ const OperationsViewPage = () => {
     try {
       const tokenName = `Invoice ${selectedAsset.metadata.invoiceNumber} RWA Token`;
       const tokenSymbol = selectedAsset.metadata.invoiceNumber.replace(/[^A-Z0-9]/g, '').slice(0, 6);
-      await adminService.deployToken(selectedAsset.assetId, tokenName, tokenSymbol);
-      fetchAdminDashboardData();
+
+      console.log('🔨 Deploying token for:', selectedAsset.assetId);
+      const result = await adminService.deployToken(selectedAsset.assetId, tokenName, tokenSymbol);
+      console.log('✅ Token deployment response:', result);
+
+      await fetchAdminDashboardData();
       setShowTokenizeModal(false);
       setSelectedAsset(null);
-    } catch (error) {
-      console.error('Failed to deploy token', error);
+
+      // Show appropriate message
+      if (result.alreadyDeployed) {
+        alert(
+          'Token was already deployed for this asset.\n\n' +
+          'Note: If it\'s still showing in Step 2, there may be a backend data sync issue. ' +
+          'Please refresh the page. If the issue persists, contact the backend team to manually update the checkpoints.'
+        );
+      } else {
+        alert('Token deployed successfully!');
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to deploy token:', error);
+      alert(`Failed to deploy token: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
     }
@@ -119,7 +153,15 @@ const OperationsViewPage = () => {
   // Handle List on Marketplace
   const handleListOnMarketplace = (asset: AdminAsset) => {
     setSelectedAsset(asset);
-    setShowListingModal(true);
+
+    // Check if asset is AUCTION type
+    if (asset.assetType === 'AUCTION' || asset.listing?.type === 'AUCTION') {
+      console.log('🔨 Opening auction scheduling modal for:', asset.assetId);
+      setShowAuctionSchedulingModal(true);
+    } else {
+      console.log('📋 Opening static listing modal for:', asset.assetId);
+      setShowListingModal(true);
+    }
   };
 
   const confirmListing = async () => {
@@ -141,6 +183,41 @@ const OperationsViewPage = () => {
     } catch (error: any) {
       console.error('❌ Failed to list asset:', error);
       alert(`Failed to list asset: ${error.message || 'Unknown error'}`);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const confirmAuctionScheduling = async () => {
+    if (!selectedAsset) return;
+    setProcessing(true);
+
+    try {
+      console.log('🔨 Scheduling auction for:', selectedAsset.assetId);
+      console.log('⏱ Start delay:', startDelayMinutes, 'minutes');
+
+      // Call scheduling API (admin-approve.sh Step 6)
+      const response = await adminService.scheduleAuction(
+        selectedAsset.assetId,
+        parseInt(startDelayMinutes)
+      );
+
+      console.log('✅ Auction scheduled successfully:', response);
+      console.log('📅 Scheduled start time:', response.scheduledStartTime);
+      console.log('📄 Message:', response.message);
+
+      await fetchAdminDashboardData();
+      setShowAuctionSchedulingModal(false);
+      setSelectedAsset(null);
+
+      alert(
+        `Auction scheduled successfully!\n\n` +
+        `${response.message}\n\n` +
+        `Scheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}`
+      );
+    } catch (error: any) {
+      console.error('❌ Failed to schedule auction:', error);
+      alert(`Failed to schedule auction: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
     }
@@ -434,10 +511,22 @@ const OperationsViewPage = () => {
                       <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
                         <CheckCircle2 className="w-6 h-6 text-green-600" />
                       </div>
-                      <div>
-                        <h4 className="font-antic text-lg font-normal text-foreground">
-                          Invoice #{asset.metadata.invoiceNumber}
-                        </h4>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-antic text-lg font-normal text-foreground">
+                            Invoice #{asset.metadata.invoiceNumber}
+                          </h4>
+                          {asset.assetType === 'AUCTION' && (
+                            <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
+                              🔨 AUCTION
+                            </span>
+                          )}
+                          {asset.assetType === 'STATIC' && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                              📊 STATIC
+                            </span>
+                          )}
+                        </div>
                         <p className="font-inter text-xs text-foreground/60">
                           {asset.metadata.industry}
                         </p>
@@ -718,6 +807,126 @@ const OperationsViewPage = () => {
               <Button
                 onClick={() => {
                   setShowTokenizeModal(false);
+                  setSelectedAsset(null);
+                }}
+                disabled={processing}
+                className="flex-1 font-inter font-medium rounded-xl bg-gray-200 hover:bg-gray-300 text-foreground"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auction Scheduling Modal */}
+      {showAuctionSchedulingModal && selectedAsset && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className="rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                <Layers className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="font-antic text-2xl font-normal text-foreground">
+                Schedule Auction
+              </h3>
+            </div>
+
+            <p className="font-inter text-sm text-foreground/70 mb-6">
+              Schedule a Dutch auction for this asset. The auction will start at the specified time and run for the selected duration.
+            </p>
+
+            {/* Asset Details */}
+            <div className="bg-white rounded-xl p-6 mb-6 space-y-4">
+              <h4 className="font-inter text-sm font-semibold text-foreground mb-3">Asset Details</h4>
+              <div className="grid grid-cols-2 gap-4 font-inter text-sm">
+                <div>
+                  <span className="text-foreground/60">Invoice Number:</span>
+                  <p className="text-foreground font-medium mt-1">{selectedAsset.metadata.invoiceNumber}</p>
+                </div>
+                <div>
+                  <span className="text-foreground/60">Token Address:</span>
+                  <p className="font-mono text-xs text-foreground mt-1">
+                    {selectedAsset.token?.address ? `${selectedAsset.token.address.slice(0, 10)}...${selectedAsset.token.address.slice(-8)}` : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-foreground/60">Total Supply:</span>
+                  <p className="text-foreground font-medium mt-1">
+                    {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                  </p>
+                </div>
+                <div>
+                  <span className="text-foreground/60">Reserve Price:</span>
+                  <p className="text-foreground font-medium mt-1">
+                    ${(parseFloat(selectedAsset.listing?.reservePrice || '800000') / 1e6).toFixed(2)} USDC
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Auction Configuration */}
+            <div className="bg-white rounded-xl p-6 mb-6 space-y-4">
+              <h4 className="font-inter text-sm font-semibold text-foreground mb-3">
+                Auction Scheduling
+              </h4>
+
+              <div>
+                <label className="block font-inter text-sm font-medium text-foreground mb-2">
+                  Start Delay (minutes from now)
+                </label>
+                <select
+                  value={startDelayMinutes}
+                  onChange={(e) => setStartDelayMinutes(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-inter text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="1">1 minute (testing)</option>
+                  <option value="5">5 minutes - Recommended</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                </select>
+                <p className="font-inter text-xs text-foreground/60 mt-1">
+                  Auction will start automatically after this delay
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="font-inter text-xs text-blue-800">
+                  <strong>How it works:</strong> The auction will be scheduled to start in {startDelayMinutes} minute{startDelayMinutes !== '1' ? 's' : ''}.
+                  At the scheduled time, the system will:
+                </p>
+                <ul className="font-inter text-xs text-blue-800 mt-2 ml-4 list-disc">
+                  <li>Activate the auction on-chain</li>
+                  <li>Create an AUCTION_LIVE announcement</li>
+                  <li>Allow investors to start submitting bids</li>
+                </ul>
+                <p className="font-inter text-xs text-blue-800 mt-2">
+                  The auction will run for 15 minutes (configured in asset settings).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={confirmAuctionScheduling}
+                disabled={processing}
+                className="flex-1 font-inter font-medium rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
+                  boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
+                }}
+              >
+                {processing ? 'Scheduling Auction...' : 'Schedule Auction'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowAuctionSchedulingModal(false);
                   setSelectedAsset(null);
                 }}
                 disabled={processing}

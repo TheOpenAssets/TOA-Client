@@ -3,7 +3,7 @@
 // 100% Script-Verified from investor-bidding.sh, investor-settle.sh, admin-endauction.sh
 
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   CONTRACTS,
   USDC_ABI,
@@ -33,6 +33,7 @@ export function useSubmitBid() {
   const { address } = useAccount();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingBidParams, setPendingBidParams] = useState<BidSubmissionParams | null>(null);
 
   // Contract write hooks
   const {
@@ -48,7 +49,7 @@ export function useSubmitBid() {
   } = useWriteContract();
 
   // Wait for transactions
-  const { isLoading: isApprovePending } = useWaitForTransactionReceipt({
+  const { isLoading: isApprovePending, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
     hash: approveHash,
   });
 
@@ -64,17 +65,118 @@ export function useSubmitBid() {
     args: address ? [address, CONTRACTS.PrimaryMarketplace] : undefined,
   });
 
+  // CRITICAL: Auto-submit bid after approval succeeds (investor-bidding.sh flow)
+  useEffect(() => {
+    if (isApproveSuccess && pendingBidParams) {
+      console.log('✅ USDC approval confirmed! Auto-submitting bid...');
+      console.log('📦 Pending bid params:', pendingBidParams);
+
+      // Convert parameters
+      const assetIdBytes32 = uuidToBytes32(pendingBidParams.assetId);
+      const tokenAmountWei = parseTokenAmount(pendingBidParams.tokenAmount);
+      const priceWei = parseUSDC(pendingBidParams.pricePerToken);
+
+      setStatus('Submitting bid on-chain...');
+      console.log('🔨 Submitting bid to contract...');
+      console.log('🔨 Contract address:', CONTRACTS.PrimaryMarketplace);
+      console.log('🔨 Args:', [assetIdBytes32, tokenAmountWei.toString(), priceWei.toString()]);
+
+      try {
+        submitBidTx({
+          address: CONTRACTS.PrimaryMarketplace,
+          abi: MARKETPLACE_ABI,
+          functionName: 'submitBid',
+          args: [assetIdBytes32, tokenAmountWei, priceWei],
+        });
+        console.log('✅ Bid submission transaction triggered');
+        // Clear pending params
+        setPendingBidParams(null);
+      } catch (error: any) {
+        console.error('❌ Error triggering bid submission:', error);
+        setStatus(`Error: ${error.message}`);
+        setIsLoading(false);
+        setPendingBidParams(null);
+      }
+    }
+  }, [isApproveSuccess, pendingBidParams, submitBidTx]);
+
+  // CRITICAL: Auto-notify backend after bid transaction succeeds (investor-bidding.sh line 362)
+  const lastBidParamsRef = useRef<BidSubmissionParams | null>(null);
+  const notificationSentRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handleBidSuccess = async () => {
+      if (isBidSuccess && bidHash && lastBidParamsRef.current) {
+        // Prevent duplicate notifications for the same transaction
+        if (notificationSentRef.current === bidHash) {
+          console.log('⏭️ Notification already sent for this transaction');
+          return;
+        }
+
+        console.log('✅ Bid transaction confirmed! Notifying backend...');
+        console.log('📝 Bid hash:', bidHash);
+
+        try {
+          setStatus('Notifying backend...');
+
+          const tokenAmountWei = parseTokenAmount(lastBidParamsRef.current.tokenAmount);
+          const priceWei = parseUSDC(lastBidParamsRef.current.pricePerToken);
+
+          // Call backend notification API
+          await marketplaceService.notifyBidPlaced({
+            txHash: bidHash,
+            assetId: lastBidParamsRef.current.assetId,
+            tokenAmount: tokenAmountWei.toString(),
+            price: priceWei.toString(),
+            blockNumber: '0', // Backend will verify from chain
+          });
+
+          console.log('✅ Backend notified successfully');
+          setStatus('Bid submitted successfully! 🎉');
+
+          // Mark this transaction as notified
+          notificationSentRef.current = bidHash;
+
+          // Reset loading state
+          setIsLoading(false);
+
+          // Clear the stored params after successful notification
+          lastBidParamsRef.current = null;
+
+          // Redirect to portfolio after 1 second
+          setTimeout(() => {
+            window.location.href = '/portfolio';
+          }, 1000);
+        } catch (error: any) {
+          console.error('❌ Error notifying backend:', error);
+          setStatus(`Backend notification failed: ${error.message}`);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    handleBidSuccess();
+  }, [isBidSuccess, bidHash]);
+
   const submitBid = useCallback(
     async (params: BidSubmissionParams) => {
+      console.log('🎯 submitBid called with params:', params);
+      console.log('🎯 Current address:', address);
+      console.log('🎯 Current allowance:', currentAllowance?.toString());
+
       if (!address) {
         throw new Error('Wallet not connected');
       }
+
+      // Store params for backend notification after success
+      lastBidParamsRef.current = params;
 
       setIsLoading(true);
       setStatus('Preparing bid...');
 
       try {
         // Convert parameters to contract format
+        console.log('🔄 Converting parameters...');
         const assetIdBytes32 = uuidToBytes32(params.assetId);
         const tokenAmountWei = parseTokenAmount(params.tokenAmount);
         const priceWei = parseUSDC(params.pricePerToken);
@@ -82,7 +184,7 @@ export function useSubmitBid() {
         // Calculate deposit needed (investor-bidding.sh line 273)
         const depositNeeded = calculateDepositNeeded(priceWei, tokenAmountWei);
 
-        console.log('Bid parameters:', {
+        console.log('✅ Bid parameters converted:', {
           assetId: params.assetId,
           assetIdBytes32,
           tokenAmount: params.tokenAmount,
@@ -94,39 +196,68 @@ export function useSubmitBid() {
 
         // Step 1: Check and approve USDC if needed (investor-bidding.sh lines 285-293)
         const allowance = currentAllowance as bigint | undefined;
+        console.log('🔍 Checking allowance:', {
+          currentAllowance: allowance?.toString() || '0',
+          depositNeeded: depositNeeded.toString(),
+          needsApproval: !allowance || allowance < depositNeeded,
+        });
+
         if (!allowance || allowance < depositNeeded) {
           setStatus('Approving USDC...');
-          console.log('Approving USDC:', depositNeeded.toString());
-
-          approveUSDC({
-            address: CONTRACTS.USDC,
-            abi: USDC_ABI,
-            functionName: 'approve',
-            args: [CONTRACTS.PrimaryMarketplace, depositNeeded],
+          console.log('💰 Approving USDC:', depositNeeded.toString());
+          console.log('💰 Contract addresses:', {
+            USDC: CONTRACTS.USDC,
+            Marketplace: CONTRACTS.PrimaryMarketplace,
           });
 
-          // Wait for approval (handled by useWaitForTransactionReceipt above)
-          // User will see "Approving USDC..." status
+          // Store params for auto-submit after approval
+          setPendingBidParams(params);
+          console.log('📦 Stored pending bid params for auto-submit after approval');
+
+          try {
+            approveUSDC({
+              address: CONTRACTS.USDC,
+              abi: USDC_ABI,
+              functionName: 'approve',
+              args: [CONTRACTS.PrimaryMarketplace, depositNeeded],
+            });
+            console.log('✅ USDC approval transaction triggered');
+            console.log('⏳ Waiting for approval confirmation... (useEffect will auto-submit bid)');
+          } catch (approveError: any) {
+            console.error('❌ Error triggering USDC approval:', approveError);
+            setPendingBidParams(null); // Clear on error
+            throw new Error(`Failed to approve USDC: ${approveError.message}`);
+          }
+
+          // DON'T return - useEffect will handle bid submission after approval
           return { requiresApproval: true };
         }
 
         // Step 2: Submit bid to contract (investor-bidding.sh line 297)
         setStatus('Submitting bid on-chain...');
-        console.log('Submitting bid to contract...');
+        console.log('🔨 Submitting bid to contract...');
+        console.log('🔨 Contract address:', CONTRACTS.PrimaryMarketplace);
+        console.log('🔨 Args:', [assetIdBytes32, tokenAmountWei.toString(), priceWei.toString()]);
 
-        submitBidTx({
-          address: CONTRACTS.PrimaryMarketplace,
-          abi: MARKETPLACE_ABI,
-          functionName: 'submitBid',
-          args: [assetIdBytes32, tokenAmountWei, priceWei],
-        });
+        try {
+          submitBidTx({
+            address: CONTRACTS.PrimaryMarketplace,
+            abi: MARKETPLACE_ABI,
+            functionName: 'submitBid',
+            args: [assetIdBytes32, tokenAmountWei, priceWei],
+          });
+          console.log('✅ Bid submission transaction triggered');
+        } catch (submitError: any) {
+          console.error('❌ Error triggering bid submission:', submitError);
+          throw new Error(`Failed to submit bid: ${submitError.message}`);
+        }
 
         // Step 3: Wait for transaction and notify backend
         // (handled by useEffect when isBidSuccess changes)
 
         return { requiresApproval: false };
       } catch (error: any) {
-        console.error('Error submitting bid:', error);
+        console.error('❌ Error in submitBid:', error);
         setStatus(`Error: ${error.message}`);
         setIsLoading(false);
         throw error;
@@ -135,31 +266,8 @@ export function useSubmitBid() {
     [address, currentAllowance, approveUSDC, submitBidTx]
   );
 
-  // Notify backend after successful bid (investor-bidding.sh line 362)
-  const notifyBackend = useCallback(
-    async (params: BidSubmissionParams, txHash: string, blockNumber: number) => {
-      setStatus('Notifying backend...');
-
-      const tokenAmountWei = parseTokenAmount(params.tokenAmount);
-      const priceWei = parseUSDC(params.pricePerToken);
-
-      await marketplaceService.notifyBidPlaced({
-        txHash,
-        assetId: params.assetId,
-        tokenAmount: tokenAmountWei.toString(),
-        price: priceWei.toString(),
-        blockNumber: blockNumber.toString(),
-      });
-
-      setStatus('Bid submitted successfully! 🎉');
-      setIsLoading(false);
-    },
-    []
-  );
-
   return {
     submitBid,
-    notifyBackend,
     status,
     isLoading: isLoading || isApproving || isSubmitting || isApprovePending || isBidPending,
     isApproving: isApproving || isApprovePending,

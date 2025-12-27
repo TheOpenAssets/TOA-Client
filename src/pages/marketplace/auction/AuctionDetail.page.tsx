@@ -23,6 +23,7 @@ const AuctionDetailPage = () => {
   const [tokenAmount, setTokenAmount] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [bidParams, setBidParams] = useState<{assetId: string; tokenAmount: string; pricePerToken: string} | null>(null);
+  const [isApprovingForBid, setIsApprovingForBid] = useState(false);
 
   // Fetch auction details
   useEffect(() => {
@@ -43,6 +44,20 @@ const AuctionDetailPage = () => {
         });
     }
   }, [isBidSuccess, bidHash, bidParams, notifyBackend, navigate]);
+
+  // Auto-submit bid after approval is confirmed
+  useEffect(() => {
+    // If we were waiting for an approval to go through for the bid, and it's no longer approving,
+    // it means the approval finished. Now we can submit the actual bid.
+    if (isApprovingForBid && !isApproving && bidParams) {
+      console.log('✅ Approval finished. Now submitting the actual bid...');
+      setIsApprovingForBid(false); // Reset for next time
+      submitBid(bidParams).catch((err) => {
+        console.error('❌ Error submitting bid after approval:', err);
+        alert(`Error submitting bid after approval: ${err.message}`);
+      });
+    }
+  }, [isApprovingForBid, isApproving, bidParams, submitBid]);
 
   // Calculate time remaining
   const getTimeRemaining = (endTime: string): string => {
@@ -68,25 +83,48 @@ const AuctionDetailPage = () => {
 
   // Handle bid submission (SCRIPT-VERIFIED: investor-bidding.sh)
   const handleSubmitBid = async () => {
+    console.log('🔨 Place Bid button clicked!');
+    console.log('📊 Current state:', {
+      address,
+      isKYCVerified,
+      tokenAmount,
+      maxPrice,
+      reservePrice: auction?.reservePrice,
+      auctionId,
+    });
+
+    // Validation with user feedback
     if (!address) {
+      alert('Please connect your wallet first.');
       return;
     }
 
     if (!isKYCVerified) {
-      alert('You must complete KYC verification before bidding. Please register with an admin.');
+      alert('You must complete KYC verification before bidding. Please contact an admin.');
       return;
     }
 
     if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
+      alert('Please enter a valid token amount (greater than 0).');
       return;
     }
 
-    if (!maxPrice || parseFloat(maxPrice) < (auction?.reservePrice || 0)) {
+    if (!maxPrice || parseFloat(maxPrice) <= 0) {
+      alert('Please enter a valid max price (greater than 0).');
       return;
     }
 
-    if (!auctionId) return;
+    if (parseFloat(maxPrice) < (auction?.reservePrice || 0)) {
+      alert(`Your max price ($${maxPrice}) must be at least the reserve price ($${auction?.reservePrice.toFixed(2)})`);
+      return;
+    }
 
+    if (!auctionId) {
+      alert('Invalid auction ID. Please refresh the page.');
+      return;
+    }
+
+    console.log('✅ All validations passed!');
     console.log('🔨 Submitting bid (investor-bidding.sh flow)');
     console.log('  → Asset ID:', auctionId);
     console.log('  → Token Amount:', tokenAmount);
@@ -104,10 +142,18 @@ const AuctionDetailPage = () => {
       // This will:
       // 1. Check USDC allowance
       // 2. Approve USDC if needed (investor-bidding.sh line 288)
-      // 3. Submit bid to contract (investor-bidding.sh line 297)
-      await submitBid(params);
+      // 3. If approval is NOT needed, it submits the bid.
+      console.log('📞 Calling submitBid...');
+      const { requiresApproval } = await submitBid(params);
+      console.log('✅ submitBid returned. Requires approval?', requiresApproval);
+      
+      if (requiresApproval) {
+        console.log('⏳ Approval required. Waiting for approval transaction...');
+        setIsApprovingForBid(true);
+      }
     } catch (error: any) {
       console.error('❌ Bid submission error:', error);
+      alert(`Error submitting bid: ${error.message || 'Unknown error'}`);
     }
   };
 

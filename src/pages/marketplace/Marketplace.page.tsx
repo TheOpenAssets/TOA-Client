@@ -322,8 +322,8 @@ const MarketplacePage = () => {
       </div>
 
       {/* Auction/Bids Advertising Strip (NEW) */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 relative border-b border-gray-200 z-40">
-        <div className="max-w-[1400px] mx-auto px-6 py-3">
+      <div className="bg-black/70 relative border-b border-gray-200 z-40">
+        <div className="max-w-[1400px] mx-auto px-6 py-1">
           <div className="flex items-center gap-6 overflow-x-auto">
             {auctions.length > 0 ? (
               auctions.map((auction) => (

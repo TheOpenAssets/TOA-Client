@@ -80,8 +80,24 @@ class AdminService extends BaseService {
       method: 'POST',
       headers: this.getAuthHeaders(),
     });
-    if (!response.ok) throw new Error('Failed to register asset');
-    return response.json();
+
+    const data = await response.json();
+
+    // Check both HTTP status AND success field
+    if (!response.ok || data.success === false) {
+      // If asset is already registered, that's actually OK - just warn
+      if (data.error === 'Asset Already Registered') {
+        console.warn('⚠️ Asset already registered, skipping...');
+        return {
+          success: true,
+          message: 'Asset was already registered',
+          alreadyRegistered: true,
+        };
+      }
+      throw new Error(data.message || data.error || 'Failed to register asset');
+    }
+
+    return data;
   }
 
   async syncStatus(assetId: string, txHash: string, status: string): Promise<any> {
@@ -100,8 +116,24 @@ class AdminService extends BaseService {
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ assetId, name, symbol }),
     });
-    if (!response.ok) throw new Error('Failed to deploy token');
-    return response.json();
+
+    const data = await response.json();
+
+    // Check both HTTP status AND success field
+    if (!response.ok || data.success === false) {
+      // If token is already deployed, that's actually OK - just warn
+      if (data.error && (data.error.includes('already deployed') || data.error.includes('already tokenized'))) {
+        console.warn('⚠️ Token already deployed, skipping...');
+        return {
+          success: true,
+          message: 'Token was already deployed',
+          alreadyDeployed: true,
+        };
+      }
+      throw new Error(data.message || data.error || 'Failed to deploy token');
+    }
+
+    return data;
   }
 
   async listOnMarketplace(assetId: string, type: string, price: string, minInvestment: string, duration: string): Promise<any> {
@@ -112,6 +144,22 @@ class AdminService extends BaseService {
     });
     if (!response.ok) throw new Error('Failed to list on marketplace');
     return response.json();
+  }
+
+  async scheduleAuction(assetId: string, startDelayMinutes: number): Promise<any> {
+    const response = await fetch(`${this.baseURL}/admin/compliance/schedule-auction`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ assetId, startDelayMinutes }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.message || data.error || 'Failed to schedule auction');
+    }
+
+    return data;
   }
 
   // @ts-ignore
@@ -161,17 +209,15 @@ class AdminService extends BaseService {
 
   async getAssetsForCompliance(): Promise<AdminAsset[]> {
     try {
-      // Get ALL assets and filter based on checkpoints
-      // Assets ready for compliance: uploaded, hashed, merkled BUT NOT attested
+      // Get ALL assets and filter based on STATUS (not checkpoints!)
+      // Assets ready for compliance: status = MERKLED (needs attestation/approval)
       const { assets: allAssets } = await this.getAllAssets();
 
       const complianceAssets = allAssets.filter((asset: any) =>
-        asset.checkpoints?.uploaded === true &&
-        asset.checkpoints?.merkled === true &&
-        asset.checkpoints?.attested !== true
+        asset.status === 'MERKLED'
       );
 
-      console.log('📋 Assets for Compliance (merkled but not attested):', complianceAssets);
+      console.log('📋 Assets for Compliance (status=MERKLED, needs attestation):', complianceAssets);
       return complianceAssets;
     } catch (error) {
       console.error('Error fetching compliance assets:', error);
@@ -181,20 +227,20 @@ class AdminService extends BaseService {
 
   async getAssetsForOperations(): Promise<AdminAsset[]> {
     try {
-      // Get ALL assets and filter based on checkpoints
+      // Get ALL assets and filter based on STATUS (not checkpoints!)
       const { assets: allAssets } = await this.getAllAssets();
 
       // Operations includes:
-      // 1. Attested but NOT registered (ready to register)
-      // 2. Registered but NOT tokenized (ready to deploy token)
-      // 3. Tokenized (ready to list on marketplace)
+      // 1. status = ATTESTED (approved, ready to register on-chain)
+      // 2. status = REGISTERED (registered on-chain, ready to deploy token)
+      // 3. status = TOKENIZED (tokenized, ready to list on marketplace)
       const operationsAssets = allAssets.filter((asset: any) =>
-        (asset.checkpoints?.attested === true && asset.checkpoints?.registered !== true) ||
-        (asset.checkpoints?.registered === true && asset.checkpoints?.tokenized !== true) ||
-        asset.checkpoints?.tokenized === true
+        asset.status === 'ATTESTED' ||
+        asset.status === 'REGISTERED' ||
+        asset.status === 'TOKENIZED'
       );
 
-      console.log('⚙️ Assets for Operations (attested, registered, or tokenized):', operationsAssets);
+      console.log('⚙️ Assets for Operations (status=ATTESTED|REGISTERED|TOKENIZED):', operationsAssets);
       return operationsAssets;
     } catch (error) {
       console.error('Error fetching operation assets:', error);
@@ -204,15 +250,15 @@ class AdminService extends BaseService {
 
   async getAssetsForSettlement(): Promise<AdminAsset[]> {
     try {
-      // Get ALL assets and filter based on checkpoints
-      // Assets ready for settlement: tokenized
+      // Get ALL assets and filter based on STATUS (not checkpoints!)
+      // Assets ready for settlement: status = TOKENIZED or LISTED
       const { assets: allAssets } = await this.getAllAssets();
 
       const settlementAssets = allAssets.filter((asset: any) =>
-        asset.checkpoints?.tokenized === true
+        asset.status === 'TOKENIZED' || asset.status === 'LISTED'
       );
 
-      console.log('💰 Assets for Settlement (tokenized):', settlementAssets);
+      console.log('💰 Assets for Settlement (status=TOKENIZED|LISTED):', settlementAssets);
       return settlementAssets;
     } catch (error) {
       console.error('Error fetching settlement assets:', error);
@@ -236,26 +282,26 @@ class AdminService extends BaseService {
 
   async getAdminStats(): Promise<AdminStats> {
     try {
-      // Get all assets and calculate stats based on checkpoints
+      // Get all assets and calculate stats based on STATUS (not checkpoints!)
       const { assets: allAssets } = await this.getAllAssets();
 
       const stats: AdminStats = {
-        // Pending Compliance: merkled but not attested
+        // Pending Compliance: status = MERKLED (needs attestation)
         pendingCompliance: allAssets.filter((a: any) =>
-          a.checkpoints?.merkled === true && a.checkpoints?.attested !== true
+          a.status === 'MERKLED'
         ).length,
-        // Compliance Approved: attested but not registered
+        // Compliance Approved: status = ATTESTED (ready to register)
         complianceApproved: allAssets.filter((a: any) =>
-          a.checkpoints?.attested === true && a.checkpoints?.registered !== true
+          a.status === 'ATTESTED'
         ).length,
-        // On-Chain Assets: registered or tokenized
+        // On-Chain Assets: status = REGISTERED, TOKENIZED, or LISTED
         onChainAssets: allAssets.filter((a: any) =>
-          a.checkpoints?.registered === true || a.checkpoints?.tokenized === true
+          a.status === 'REGISTERED' || a.status === 'TOKENIZED' || a.status === 'LISTED'
         ).length,
         totalYieldDistributed: 0, // TODO: This needs a separate endpoint
       };
 
-      console.log('📊 Admin Stats:', stats);
+      console.log('📊 Admin Stats (using status field):', stats);
       return stats;
     } catch (error) {
       console.error('Error calculating admin stats:', error);

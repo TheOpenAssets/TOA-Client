@@ -52,10 +52,16 @@ export interface AssetToken {
 
 export interface AssetListing {
   listingId?: string;
-  type?: string;
+  type?: string; // 'STATIC' | 'AUCTION'
   price?: string;
   minInvestment?: string;
   transactionHash?: string;
+  active?: boolean; // Whether the asset is currently listed
+  reservePrice?: string; // For AUCTION type
+  duration?: number; // Auction duration in seconds
+  startTime?: string; // Auction start time
+  endTime?: string; // Auction end time
+  phase?: string; // 'BIDDING' | 'ENDED' | 'SETTLED'
 }
 
 export interface AdminAsset {
@@ -63,6 +69,7 @@ export interface AdminAsset {
   assetId: string;
   originator: string;
   status: string;
+  assetType?: string; // 'AUCTION' | 'STATIC'
   metadata: AssetMetadata;
   tokenParams: TokenParams;
   files?: any[];
