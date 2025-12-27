@@ -1,43 +1,64 @@
-// src/pages/issuer/asset-details/AssetDetails.page.tsx
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { type IssuerAsset } from '../../../types/issuer.types';
-import { mockClaimTokens } from '../../../lib/contracts/token-claim.service';
-import { Button } from '../../../components/ui/button';
 import {
   ArrowLeft,
   FileText,
   Calendar,
   DollarSign,
   TrendingUp,
-  AlertTriangle,
   Shield,
   Package,
   CheckCircle,
-  Loader2,
+  Clock,
+  Tag,
+  BarChart2,
+  List,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 
 interface AssetDetailsPageProps {
-  asset: IssuerAsset;
+  asset: any;
 }
 
-type TabType = 'overview' | 'invoice' | 'risk' | 'audit';
+type TabType = 'overview' | 'invoice' | 'cryptography' | 'timeline';
 
 const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [claimSuccess, setClaimSuccess] = useState(false);
-  const [claimError, setClaimError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<string>('');
 
-  const formatCurrency = (amount: number): string => {
+  useEffect(() => {
+    if (asset?.listing?.phase === 'BIDDING' && asset?.listing?.listedAt && asset?.listing?.duration) {
+      const interval = setInterval(() => {
+        const endTime = new Date(asset.listing.listedAt).getTime() + (asset.listing.duration * 24 * 60 * 60 * 1000);
+        const now = new Date().getTime();
+        const distance = endTime - now;
+
+        if (distance < 0) {
+          setTimeLeft('Auction ended');
+          clearInterval(interval);
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [asset]);
+
+  const formatCurrency = (amount: string | number): string => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: asset?.metadata?.currency || 'USD',
       minimumFractionDigits: 0,
-    }).format(amount);
+    }).format(numericAmount);
   };
 
   const formatDate = (dateString: string): string => {
@@ -48,54 +69,50 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
     });
   };
 
-  const handleClaimTokens = async () => {
-    setIsClaiming(true);
-    setClaimError(null);
-
-    try {
-      // Mock wallet address - in real implementation, get from wallet connection
-      const mockWalletAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb';
-
-      const result = await mockClaimTokens({
-        assetId: asset.id,
-        amount: asset.tokenDistribution.unsoldTokens,
-        walletAddress: mockWalletAddress,
-      });
-
-      if (result.success) {
-        setClaimSuccess(true);
-        // Reset success message after 5 seconds
-        setTimeout(() => setClaimSuccess(false), 5000);
-      } else {
-        setClaimError(result.error || 'Failed to claim tokens');
-      }
-    } catch (error) {
-      setClaimError('An unexpected error occurred');
-    } finally {
-      setIsClaiming(false);
-    }
-  };
-
   const soldPercentage =
-    (asset.tokenDistribution.soldTokens / asset.tokenDistribution.totalTokens) * 100;
+    ((asset?.listing?.sold || 0) / (asset?.tokenParams?.totalSupply || 1)) * 100;
 
   const tabs = [
-    { id: 'overview' as TabType, label: 'Overview', icon: FileText },
-    { id: 'invoice' as TabType, label: 'Invoice Details', icon: DollarSign },
-    { id: 'risk' as TabType, label: 'Risk Factors', icon: AlertTriangle },
-    { id: 'audit' as TabType, label: 'Audit', icon: Shield },
+    { id: 'overview' as TabType, label: 'Overview', icon: BarChart2 },
+    { id: 'invoice' as TabType, label: 'Invoice Details', icon: FileText },
+    { id: 'cryptography' as TabType, label: 'Cryptography', icon: Shield },
+    { id: 'timeline' as TabType, label: 'Timeline', icon: List },
   ];
 
-  const getRiskLevelColor = (level: 'low' | 'medium' | 'high') => {
-    switch (level) {
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
+  const getStatusComponent = () => {
+    if (asset?.status === 'PAYOUT_COMPLETE') {
+      return (
+        <div className="bg-green-100 border border-green-200 text-green-800 rounded-xl p-6 text-center">
+          <CheckCircle className="w-12 h-12 mx-auto mb-3" />
+          <h3 className="font-antic text-xl font-semibold">Payout Complete</h3>
+          <p className="font-inter text-sm mt-1">
+            The funds for this asset have been successfully paid out.
+          </p>
+        </div>
+      );
     }
+
+    if (asset?.listing?.phase === 'BIDDING' && timeLeft) {
+        return (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+                <Clock className="w-12 h-12 mx-auto mb-3 text-blue-500" />
+                <h3 className="font-antic text-xl font-semibold text-blue-800">Auction in Progress</h3>
+                <p className="font-mono text-2xl text-blue-600 mt-2">{timeLeft}</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center">
+            <Tag className="w-12 h-12 mx-auto mb-3 text-gray-500" />
+            <h3 className="font-antic text-xl font-semibold text-gray-800">Status: {asset?.status}</h3>
+            <p className="font-inter text-sm mt-1">
+                Current phase of the asset.
+            </p>
+        </div>
+    )
   };
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -112,12 +129,12 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
             </button>
             <div className="flex-1">
               <h1 className="font-antic text-2xl font-normal text-foreground">
-                {asset.name}
+                {asset?.metadata?.invoiceNumber ? `Invoice #${asset.metadata.invoiceNumber}` : "Asset Details"}
               </h1>
               <p className="font-inter text-sm text-foreground/60 mt-1 flex items-center gap-2">
-                <span>{asset.assetType}</span>
+                <span>{asset?.assetType}</span>
                 <span className="text-foreground/40">•</span>
-                <span>{asset.location}</span>
+                <span>{asset?.metadata?.industry}</span>
               </p>
             </div>
           </div>
@@ -141,7 +158,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex-1 px-4 py-3 font-inter font-medium text-sm transition-all duration-200 rounded-lg ${
                         activeTab === tab.id
-                          ? 'text-black/30 bg-foreground'
+                          ? 'text-white bg-foreground/80'
                           : 'text-foreground/70 hover:text-foreground hover:bg-white/50'
                       }`}
                     >
@@ -155,283 +172,89 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
               </div>
 
               <div className="p-8 overflow-y-auto  flex-1">
-                {/* Overview Tab */}
                 {activeTab === 'overview' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="font-antic font-normal text-xl mb-3 text-foreground">
-                        Asset Overview
-                      </h3>
-                      <p className="font-inter text-foreground/70 leading-relaxed text-base">
-                        {asset.overview ||
-                          'This asset represents a tokenized real-world asset with fractional ownership enabled through blockchain technology.'}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-5">
-                      <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div className="flex items-center gap-3 mb-3">
-                          <Package className="w-5 h-5 text-foreground/60" />
-                          <span className="font-inter text-sm text-foreground/70 font-medium">
-                            Total Tokens
-                          </span>
+                     <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-5">
+                            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3 mb-3">
+                                <Package className="w-5 h-5 text-foreground/60" />
+                                <span className="font-inter text-sm text-foreground/70 font-medium">
+                                    Total Supply
+                                </span>
+                                </div>
+                                <p className="font-antic text-3xl font-normal text-foreground">
+                                {parseInt(asset.tokenParams?.totalSupply || '0').toLocaleString()} Tokens
+                                </p>
+                            </div>
+                            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3 mb-3">
+                                <DollarSign className="w-5 h-5 text-foreground/60" />
+                                <span className="font-inter text-sm text-foreground/70 font-medium">
+                                    Face Value
+                                </span>
+                                </div>
+                                <p className="font-antic text-3xl font-normal text-foreground">
+                                {formatCurrency(asset.metadata?.faceValue)}
+                                </p>
+                            </div>
                         </div>
-                        <p className="font-antic text-3xl font-normal text-foreground">
-                          {asset.tokenDistribution.totalTokens.toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div className="flex items-center gap-3 mb-3">
-                          <TrendingUp className="w-5 h-5 text-foreground/60" />
-                          <span className="font-inter text-sm text-foreground/70 font-medium">
-                            Token Price
-                          </span>
-                        </div>
-                        <p className="font-antic text-3xl font-normal text-foreground">
-                          {formatCurrency(asset.tokenDistribution.tokenPrice)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Invoice Summary */}
-                    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                      <h4 className="font-antic font-normal text-lg mb-4 flex items-center gap-2 text-foreground">
-                        <DollarSign className="w-5 h-5 text-foreground/60" />
-                        Invoice Summary
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                          <span className="font-inter text-sm text-foreground/70">
-                            Invoice Number
-                          </span>
-                          <span className="font-inter font-medium text-foreground">
-                            {asset.invoice.invoiceNumber}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                          <span className="font-inter text-sm text-foreground/70">Amount</span>
-                          <span className="font-antic font-normal text-lg text-foreground">
-                            {formatCurrency(asset.invoice.amount)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <span className="font-inter text-sm text-foreground/70">Due Date</span>
-                          <span className="font-inter font-medium text-foreground">
-                            {formatDate(asset.invoice.dueDate)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                     </div>
                 )}
-
-                {/* Invoice Details Tab */}
                 {activeTab === 'invoice' && (
-                  <div className="space-y-4">
-                    <h3 className="font-antic font-semibold text-lg mb-4 text-foreground">
-                      Complete Invoice Information
-                    </h3>
-
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                        <span className="font-inter text-sm text-gray-600">
-                          Invoice Number
-                        </span>
-                        <span className="font-inter font-medium text-foreground">
-                          {asset.invoice.invoiceNumber}
-                        </span>
-                      </div>
-
-                      <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                        <span className="font-inter text-sm text-gray-600">
-                          Invoice Amount
-                        </span>
-                        <span className="font-antic font-bold text-foreground text-lg">
-                          {formatCurrency(asset.invoice.amount)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                        <span className="font-inter text-sm text-gray-600">Issue Date</span>
-                        <span className="font-inter font-medium text-foreground">
-                          {formatDate(asset.invoice.issueDate)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                        <span className="font-inter text-sm text-gray-600">Due Date</span>
-                        <span className="font-inter font-medium text-foreground">
-                          {formatDate(asset.invoice.dueDate)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-start justify-between py-3 border-b border-gray-100">
-                        <span className="font-inter text-sm text-gray-600">
-                          Payment Terms
-                        </span>
-                        <span className="font-inter font-medium text-foreground">
-                          {asset.invoice.paymentTerms}
-                        </span>
-                      </div>
-
-                      <div className="pt-3">
-                        <span className="font-inter text-sm text-gray-600 block mb-2">
-                          Description
-                        </span>
-                        <p className="font-inter text-foreground leading-relaxed">
-                          {asset.invoice.description}
-                        </p>
-                      </div>
+                    <div className="space-y-4">
+                         <div className="space-y-3">
+                            <div className="flex items-start justify-between py-3 border-b border-gray-100">
+                                <span className="font-inter text-sm text-gray-600">Invoice Number</span>
+                                <span className="font-inter font-medium text-foreground">{asset.metadata?.invoiceNumber}</span>
+                            </div>
+                            <div className="flex items-start justify-between py-3 border-b border-gray-100">
+                                <span className="font-inter text-sm text-gray-600">Face Value</span>
+                                <span className="font-antic font-bold text-foreground text-lg">{formatCurrency(asset.metadata?.faceValue)}</span>
+                            </div>
+                            <div className="flex items-start justify-between py-3 border-b border-gray-100">
+                                <span className="font-inter text-sm text-gray-600">Issue Date</span>
+                                <span className="font-inter font-medium text-foreground">{formatDate(asset.metadata?.issueDate)}</span>
+                            </div>
+                            <div className="flex items-start justify-between py-3 border-b border-gray-100">
+                                <span className="font-inter text-sm text-gray-600">Due Date</span>
+                                <span className="font-inter font-medium text-foreground">{formatDate(asset.metadata?.dueDate)}</span>
+                            </div>
+                         </div>
                     </div>
-                  </div>
                 )}
-
-                {/* Risk Factors Tab */}
-                {activeTab === 'risk' && (
-                  <div className="space-y-4">
-                    <h3 className="font-antic font-semibold text-lg mb-4 text-foreground">
-                      Risk Assessment
-                    </h3>
-
-                    {asset.riskFactors.length > 0 ? (
-                      <div className="space-y-3">
-                        {asset.riskFactors.map((risk, index) => (
-                          <div
-                            key={index}
-                            className="bg-gray-50 rounded-lg p-4 border border-gray-100"
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-gray-600" />
-                                <h4 className="font-inter font-semibold text-foreground">
-                                  {risk.category}
-                                </h4>
-                              </div>
-                              <span
-                                className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getRiskLevelColor(
-                                  risk.level
-                                )}`}
-                              >
-                                {risk.level.toUpperCase()}
-                              </span>
-                            </div>
-                            <p className="font-inter text-sm text-gray-700 leading-relaxed">
-                              {risk.description}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="font-inter text-gray-500">
-                          No risk factors documented
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Audit Tab */}
-                {activeTab === 'audit' && (
-                  <div className="space-y-4">
-                    <h3 className="font-antic font-semibold text-lg mb-4 text-foreground">
-                      Audit Information
-                    </h3>
-
-                    {asset.audit ? (
-                      <div className="space-y-4">
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <span className="font-inter text-sm text-gray-600 block mb-1">
-                                Auditor
-                              </span>
-                              <span className="font-inter font-medium text-foreground">
-                                {asset.audit.auditor}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="font-inter text-sm text-gray-600 block mb-1">
-                                Audit Date
-                              </span>
-                              <span className="font-inter font-medium text-foreground">
-                                {formatDate(asset.audit.auditDate)}
-                              </span>
-                            </div>
-                          </div>
+                {activeTab === 'cryptography' && (
+                     <div className="space-y-4">
+                        <div className="font-mono text-xs break-all bg-gray-50 p-4 rounded-lg border">
+                            <h4 className="font-sans font-semibold text-base mb-2">Document Hash</h4>
+                            <p>{asset.cryptography?.documentHash}</p>
                         </div>
-
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                          <span className="font-inter text-sm text-gray-600 block mb-2">
-                            Status
-                          </span>
-                          <span
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                              asset.audit.status === 'completed'
-                                ? 'bg-green-100 text-green-800'
-                                : asset.audit.status === 'in_progress'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}
-                          >
-                            {asset.audit.status === 'completed' && (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
-                            {asset.audit.status.replace('_', ' ').toUpperCase()}
-                          </span>
+                        <div className="font-mono text-xs break-all bg-gray-50 p-4 rounded-lg border">
+                            <h4 className="font-sans font-semibold text-base mb-2">Merkle Root</h4>
+                            <p>{asset.cryptography?.merkleRoot}</p>
                         </div>
-
-                        {asset.audit.findings && (
-                          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                            <span className="font-inter text-sm text-gray-600 block mb-2">
-                              Findings
-                            </span>
-                            <p className="font-inter text-foreground leading-relaxed">
-                              {asset.audit.findings}
-                            </p>
-                          </div>
-                        )}
-
-                        {asset.audit.reportUrl && (
-                          <Button
-                            onClick={() => window.open(asset.audit?.reportUrl, '_blank')}
-                            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
-                          >
-                            View Full Audit Report
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="font-inter text-gray-500">No audit information available</p>
-                      </div>
-                    )}
-                  </div>
+                     </div>
                 )}
+                {activeTab === 'timeline' && <div className="text-center py-8">Coming Soon</div>}
               </div>
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="flex flex-col gap-6 h-full">
-            {/* Token Distribution Card */}
+            {getStatusComponent()}
+
             <div
               className="rounded-2xl shadow-lg p-6 h-full z-20"
               style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
             >
               <h3 className="font-antic font-normal text-xl mb-6 text-foreground">
-                Token Distribution
+                Auction Progress
               </h3>
-
               <div className="space-y-5">
-                {/* Progress */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-inter text-sm text-foreground/70 font-medium">
-                      Sales Progress
+                      Sale Progress
                     </span>
                     <span className="font-inter font-semibold text-foreground text-base">
                       {soldPercentage.toFixed(1)}%
@@ -444,141 +267,22 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                     />
                   </div>
                 </div>
-
-                {/* Stats */}
                 <div className="space-y-3 pt-3">
                   <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
                     <span className="font-inter text-sm text-foreground/70 font-medium">
                       Sold Tokens
                     </span>
                     <span className="font-antic font-normal text-foreground text-base">
-                      {asset.tokenDistribution.soldTokens.toLocaleString()}
+                      {parseInt(asset.listing?.sold || '0').toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="font-inter text-sm text-foreground/70 font-medium">
-                      Unsold Tokens
-                    </span>
-                    <span className="font-antic font-normal text-foreground text-base">
-                      {asset.tokenDistribution.unsoldTokens.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
+                   <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
                     <span className="font-inter text-sm text-foreground/70 font-medium">
                       Total Tokens
                     </span>
                     <span className="font-antic font-normal text-foreground text-base">
-                      {asset.tokenDistribution.totalTokens.toLocaleString()}
+                      {parseInt(asset.tokenParams?.totalSupply || '0').toLocaleString()}
                     </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Claim Unsold Tokens Card */}
-            <div
-              className="rounded-2xl shadow-lg p-6 h-full"
-              style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-            >
-              <h3 className="font-antic font-normal text-xl mb-4 text-foreground/70 ">
-                Claim Unsold Tokens
-              </h3>
-
-              <p className="font-inter text-sm text-foreground/70 mb-5">
-                You have {asset.tokenDistribution.unsoldTokens.toLocaleString()} unsold tokens
-                available to claim.
-              </p>
-
-              <div className="bg-white rounded-xl p-5 mb-5 border border-gray-200">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-inter text-sm text-foreground/70 font-medium">
-                    Claimable Amount
-                  </span>
-                  <span className="font-antic font-normal text-foreground text-xl">
-                    {asset.tokenDistribution.unsoldTokens.toLocaleString()}
-                  </span>
-                </div>
-                <div className="w-full h-px bg-gray-200 my-3"></div>
-                <div className="flex justify-between items-center">
-                  <span className="font-inter text-sm text-foreground/70 font-medium">
-                    Estimated Value
-                  </span>
-                  <span className="font-antic font-normal text-foreground text-lg">
-                    {formatCurrency(
-                      asset.tokenDistribution.unsoldTokens *
-                        asset.tokenDistribution.tokenPrice
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {claimSuccess && (
-                <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-foreground" />
-                    <span className="font-inter text-sm text-foreground font-medium">
-                      Tokens claimed successfully!
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {claimError && (
-                <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-foreground/60" />
-                    <span className="font-inter text-sm text-foreground/70 font-medium">
-                      {claimError}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <Button
-                onClick={handleClaimTokens}
-                disabled={isClaiming || asset.tokenDistribution.unsoldTokens === 0}
-                className="w-full bg-foreground hover:bg-foreground/90 text-black font-inter font-medium py-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isClaiming ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Claiming Tokens...
-                  </>
-                ) : (
-                  'Claim Unsold Tokens'
-                )}
-              </Button>
-
-              <p className="font-inter text-xs text-foreground/60 mt-3 text-center">
-                Tokens will be transferred to your connected wallet
-              </p>
-            </div>
-
-            {/* Quick Info */}
-            <div
-              className="rounded-2xl shadow-lg p-6 h-full"
-              style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-            >
-              <h3 className="font-antic font-normal text-xl mb-5 text-foreground">
-                Quick Info
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 bg-white rounded-lg p-3 border border-gray-200">
-                  <Calendar className="w-4 h-4 text-foreground/60" />
-                  <div>
-                    <div className="font-inter text-xs text-foreground/60 font-medium">Created</div>
-                    <div className="font-inter text-sm text-foreground font-medium">
-                      {formatDate(asset.createdAt)}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-white rounded-lg p-3 border border-gray-200">
-                  <FileText className="w-4 h-4 text-foreground/60" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-inter text-xs text-foreground/60 font-medium">Asset ID</div>
-                    <div className="font-mono text-sm text-foreground font-medium truncate">
-                      {asset.id}
-                    </div>
                   </div>
                 </div>
               </div>

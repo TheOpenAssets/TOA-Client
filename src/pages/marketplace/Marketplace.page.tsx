@@ -197,9 +197,9 @@ const MarketplacePage = () => {
             {/* Left: Logo + Search */}
             <div className="flex items-center gap-6">
               {/* Logo */}
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">@</span>
+              <div className="  top-0 left-0">
+                <div className="w-16 h-8 bg-foreground rounded-full  top-0 left-0">
+                  <span className="text-white font-bold text-lg top-0 left-0"><img src="src/assets/ALogo-removebg-preview.png" alt="Logo" /></span>
                 </div>
               </div>
 
@@ -321,43 +321,95 @@ const MarketplacePage = () => {
         </div>
       </div>
 
-      {/* Auction/Bids Advertising Strip (NEW) */}
-      <div className="bg-black/70 relative border-b border-gray-200 z-40">
-        <div className="max-w-[1400px] mx-auto px-6 py-1">
-          <div className="flex items-center gap-6 overflow-x-auto">
-            {auctions.length > 0 ? (
-              auctions.map((auction) => (
-                <div
-                  key={auction.auctionId}
-                  className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm"
-                  onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
-                >
-                  <span className="font-antic text-xs text-blue-600 font-semibold">
-                    🔨 LIVE
-                  </span>
-                  <span className="font-antic text-xs font-bold text-foreground">
-                    {auction.metadata?.invoiceNumber || auction.assetId}
-                  </span>
-                  <span className="text-gray-300">|</span>
-                  <span className="font-antic text-xs text-gray-600">
-                    {auction.totalSupply.toLocaleString()} tokens
-                  </span>
-                  <span className="text-gray-300">|</span>
-                  <span className="font-antic text-xs text-green-600 font-medium">
-                    ${auction.reservePrice.toFixed(2)} - ${((auction.reservePrice || 0) * 1.2).toFixed(2)}
-                  </span>
-                  <span className="text-gray-300">|</span>
-                  <span className="font-antic text-xs text-orange-600 font-medium">
-                    ⏱ {getAuctionTimeRemaining(auction.endTime)} left
-                  </span>
-                </div>
-              ))
-            ) : (
+      {/* Auction/Bids Advertising Strip - Infinite Carousel */}
+      <div className="bg-black/70 relative border-b border-gray-200 z-40 overflow-hidden">
+        <style>{`
+          @keyframes scroll-left {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+
+          .carousel-track {
+            animation: scroll-left 30s linear infinite;
+          }
+
+          .carousel-track:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
+
+        <div className="max-w-full mx-auto px-6 py-1">
+          {auctions.length > 0 ? (
+            <div className="flex items-center overflow-hidden">
+              <div className="carousel-track flex items-center gap-6">
+                {/* First set of auctions */}
+                {auctions.map((auction) => (
+                  <div
+                    key={`first-${auction.auctionId}`}
+                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
+                    onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  >
+                    <span className="font-antic text-xs text-blue-600 font-semibold">
+                      🔨 LIVE
+                    </span>
+                    <span className="font-antic text-xs font-bold text-foreground">
+                      {auction.metadata?.invoiceNumber || auction.assetId}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-gray-600">
+                      {auction.totalSupply ? auction.totalSupply.toLocaleString() : '0'} tokens
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-green-600 font-medium">
+                      ${auction.reservePrice ? auction.reservePrice.toFixed(2) : '0.00'} - ${auction.reservePrice ? ((auction.reservePrice) * 1.2).toFixed(2) : '0.00'}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-orange-600 font-medium">
+                      ⏱ {getAuctionTimeRemaining(auction.endTime)} left
+                    </span>
+                  </div>
+                ))}
+
+                {/* Duplicate set for seamless loop */}
+                {auctions.map((auction) => (
+                  <div
+                    key={`second-${auction.auctionId}`}
+                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
+                    onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  >
+                    <span className="font-antic text-xs text-blue-600 font-semibold">
+                      🔨 LIVE
+                    </span>
+                    <span className="font-antic text-xs font-bold text-foreground">
+                      {auction.metadata?.invoiceNumber || auction.assetId}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-gray-600">
+                      {auction.totalSupply ? auction.totalSupply.toLocaleString() : '0'} tokens
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-green-600 font-medium">
+                      ${auction.reservePrice ? auction.reservePrice.toFixed(2) : '0.00'} - ${auction.reservePrice ? ((auction.reservePrice) * 1.2).toFixed(2) : '0.00'}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-orange-600 font-medium">
+                      ⏱ {getAuctionTimeRemaining(auction.endTime)} left
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
               <span className="font-antic text-xs text-gray-400">
                 No active auctions at the moment
               </span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

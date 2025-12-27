@@ -72,9 +72,9 @@ class AssetService extends BaseService {
 
   /**
    * Get a single asset by ID
-   * 
+   *
    * Endpoint: GET /assets/:id
-   * 
+   *
    * @param assetId - The asset ID
    * @returns Promise with asset data
    */
@@ -93,6 +93,37 @@ class AssetService extends BaseService {
       return await response.json();
     } catch (error) {
       console.error('Error fetching asset:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload a new asset
+   *
+   * Endpoint: POST /assets/upload
+   *
+   * @param formData - FormData containing all asset information
+   * @returns Promise with upload response
+   */
+  async uploadAsset(formData: FormData): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/assets/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          // Don't set Content-Type - browser will set it with boundary for FormData
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to upload asset: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error uploading asset:', error);
       throw error;
     }
   }

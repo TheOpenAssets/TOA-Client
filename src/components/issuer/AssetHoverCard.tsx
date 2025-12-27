@@ -4,7 +4,7 @@ import { type IssuerAsset } from '../../types/issuer.types';
 import { TrendingUp, Calendar, MapPin, Info } from 'lucide-react';
 
 interface AssetHoverCardProps {
-  asset: IssuerAsset;
+  asset: any;
   onViewMore: () => void;
   position: { top: number; left: number };
 }
@@ -27,7 +27,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
   };
 
   const soldPercentage =
-    (asset.tokenDistribution.soldTokens / asset.tokenDistribution.totalTokens) * 100;
+    ((asset?.listing?.sold || 0) / (asset?.tokenParams?.totalSupply || 1)) * 100;
 
   return (
     <div
@@ -47,7 +47,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
       {/* Header */}
       <div className="p-5 border-b border-gray-200">
         <h3 className="font-antic font-normal text-xl leading-tight mb-2 text-foreground">
-          {asset.name}
+          {asset.metadata?.buyerName}
         </h3>
 
         {asset.location && (
@@ -78,7 +78,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
               </span>
             </div>
             <p className="font-antic font-normal text-foreground text-base">
-              {formatCurrency(asset.invoice.amount)}
+              {formatCurrency(asset.metadata?.faceValue)}
             </p>
           </div>
 
@@ -89,7 +89,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
               <span className="text-xs font-medium text-foreground/70 font-inter">Due Date</span>
             </div>
             <p className="font-antic font-normal text-foreground text-sm">
-              {formatDate(asset.invoice.dueDate)}
+              {formatDate(asset.metadata?.dueDate)}
             </p>
           </div>
         </div>
@@ -116,12 +116,12 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
           <div className="flex items-center justify-between text-xs font-inter">
             <span className="text-foreground/70">
               Sold: <span className="font-semibold text-foreground">
-                {asset.tokenDistribution.soldTokens.toLocaleString()}
+                {(asset.listing?.sold || 0).toLocaleString()}
               </span>
             </span>
             <span className="text-foreground/70">
               Total: <span className="font-semibold text-foreground">
-                {asset.tokenDistribution.totalTokens.toLocaleString()}
+                {(asset.tokenParams?.totalSupply || 0).toLocaleString()}
               </span>
             </span>
           </div>

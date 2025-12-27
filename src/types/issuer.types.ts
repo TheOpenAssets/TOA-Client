@@ -2,55 +2,40 @@
 
 import type { AuthTokens, User } from "./auth.types";
 
-
-
 export const UserRole = {
   INVESTOR : 'INVESTOR',
   ORIGINATOR : 'ORIGINATOR',
   ADMIN : 'ADMIN'
 } as const;
 
-// Example Issuer types
 export interface Issuer {
   id: string;
   name: string;
 }
 
-/**
- * Issuer data received from Typeform submission
- * This data is stored in the backend when user submits the "List Your Asset" form
- */
 export interface IssuerData {
-  name: string;           // Issuer's full name
-  company: string;        // Company name
-  assetType: string;      // Type of asset (Real Estate, Bonds, etc.)
-  location: string;       // Location of the asset/company
-  email: string;          // Email address
+  name: string;
+  company: string;
+  assetType: string;
+  location: string;
+  email: string;
 }
 
-/**
- * Response from token validation endpoint
- * Used to validate the onboarding token from email link
- */
 export interface TokenValidationResponse {
-  valid: boolean;         // Whether the token is valid and not expired
-  issuerData?: IssuerData; // Issuer data if token is valid
-  error?: string;         // Error message if token is invalid
+  valid: boolean;
+  issuerData?: IssuerData;
+  error?: string;
 }
 
 export interface LoginPayload {
   walletAddress: string;
   message: string;
   signature: string;
-  onboardingToken?: string;  // Optional: For issuer onboarding flow
+  onboardingToken?: string;
 }
 
-
-/**
- * Request payload for validating an onboarding token
- */
 export interface TokenValidationPayload {
-  token: string;          // The onboarding token from URL parameter
+  token: string;
 }
 
 export interface ChallengeResponse {
@@ -63,89 +48,69 @@ export interface LoginResponse {
   tokens: AuthTokens;
 }
 
-/**
- * Asset status types
- */
-export type AssetStatus = 'pending' | 'registered' | 'listed' | 'partially_sold' | 'settled';
+export type AssetStatus =
+  | 'UPLOADED'
+  | 'HASHED'
+  | 'MERKLED'
+  | 'ATTESTED'
+  | 'REGISTERED'
+  | 'TOKENIZED'
+  | 'LISTED'
+  | 'SETTLED'
+  | 'PAYOUT_COMPLETE';
 
-/**
- * Invoice details for an asset
- */
-export interface InvoiceDetails {
-  invoiceNumber: string;
-  amount: number;
-  dueDate: string;
-  description: string;
-  issueDate: string;
-  paymentTerms: string;
+
+export interface AssetMetadata {
+    invoiceNumber: string;
+    faceValue: string;
+    currency: string;
+    issueDate: string;
+    dueDate: string;
+    buyerName: string;
+    industry: string;
+    riskTier: string;
 }
 
-/**
- * Risk assessment for an asset
- */
-export interface RiskFactor {
-  level: 'low' | 'medium' | 'high';
-  category: string;
-  description: string;
+export interface TokenParams {
+    totalSupply: string;
+    minInvestment: string;
+    minRaise: string;
 }
 
-/**
- * Audit information for an asset
- */
-export interface AuditInfo {
-  auditor: string;
-  auditDate: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  reportUrl?: string;
-  findings?: string;
+export interface PriceRange {
+    min: string;
+    max: string;
 }
 
-/**
- * Token distribution information
- */
-export interface TokenDistribution {
-  totalTokens: number;
-  soldTokens: number;
-  unsoldTokens: number;
-  claimableTokens: number;
-  tokenPrice: number;
+export interface AssetListing {
+    type: string;
+    reservePrice: string;
+    priceRange: PriceRange;
+    duration: number;
+    sold: string;
+    active: boolean;
+    listedAt: string;
+    phase: string;
 }
 
-/**
- * Complete asset data for issuer dashboard
- */
+export interface Cryptography {
+    documentHash: string;
+    merkleLeaves: string[];
+    merkleRoot: string;
+}
+
 export interface IssuerAsset {
-  id: string;
-  name: string;
-  assetType: string;
+  _id: string;
+  assetId: string;
+  originator: string;
   status: AssetStatus;
-  tokenDistribution: TokenDistribution;
-  invoice: InvoiceDetails;
-  riskFactors: RiskFactor[];
-  audit?: AuditInfo;
+  assetType: string;
+  metadata: AssetMetadata;
+  tokenParams: TokenParams;
+  files: any; 
+  checkpoints: any;
+  listing: AssetListing;
   createdAt: string;
   updatedAt: string;
-  imageUrl?: string;
-  location?: string;
-  overview?: string;
-}
-
-/**
- * Claim request payload
- */
-export interface ClaimTokensPayload {
-  assetId: string;
-  amount: number;
-  walletAddress: string;
-}
-
-/**
- * Claim response
- */
-export interface ClaimTokensResponse {
-  success: boolean;
-  transactionHash?: string;
-  claimedAmount: number;
-  message?: string;
-  error?: string;
+  cryptography: Cryptography;
 }

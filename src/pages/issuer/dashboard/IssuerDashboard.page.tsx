@@ -4,21 +4,45 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Plus, TrendingUp, Package, Clock, CheckCircle, Loader2 } from 'lucide-react';
-import { type AssetStatus, type IssuerAsset } from '../../../types/issuer.types';
+import { type IssuerAsset } from '../../../types/issuer.types';
 import { AssetHoverCard } from '../../../components/issuer/AssetHoverCard';
+import { AssetUploadModal } from '../../../components/issuer/AssetUploadModal';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationInboxPopover } from '../../../components/ui/notification-inbox-popover';
 import { assetService } from '../../../lib/api/asset.service';
 
 // Calculate stats from assets
-const calculateStats = (assets: IssuerAsset[]) => {
+const calculateStats = (assets: any[]) => {
   const totalAssets = assets.length;
-  const fundsRaised = assets.reduce(
-    (acc, asset) => acc + asset.tokenDistribution.soldTokens * asset.tokenDistribution.tokenPrice,
-    0
-  );
-  const assetsPending = assets.filter((a) => a.status === 'pending').length;
-  const settledAssets = assets.filter((a) => a.status === 'settled').length;
+
+  // Calculate funds raised from sold tokens
+  const fundsRaised = assets.reduce((acc, asset) => {
+    // Get sold tokens from listing
+    const soldTokensRaw = asset.listing?.sold || '0';
+    const soldTokens = typeof soldTokensRaw === 'string'
+      ? (soldTokensRaw.length > 18 ? parseFloat(soldTokensRaw) / 1e18 : parseFloat(soldTokensRaw))
+      : soldTokensRaw;
+
+    // Get price from listing (USDC has 6 decimals)
+    const priceRaw = asset.listing?.price || asset.tokenParams?.pricePerToken || '0';
+    const tokenPrice = typeof priceRaw === 'string'
+      ? (priceRaw.length > 6 ? parseFloat(priceRaw) / 1e6 : parseFloat(priceRaw))
+      : priceRaw;
+
+    if (soldTokens > 0 && tokenPrice > 0) {
+      return acc + (soldTokens * tokenPrice);
+    }
+    return acc;
+  }, 0);
+
+  // Count assets by status
+  const assetsPending = assets.filter((a) =>
+    a.status === 'UPLOADED' || a.status === 'HASHED' || a.status === 'MERKLED'
+  ).length;
+
+  const settledAssets = assets.filter((a) =>
+    a.status === 'SETTLED' || a.listing?.active === false
+  ).length;
 
   return {
     totalAssets,
@@ -36,6 +60,7 @@ const IssuerDashboardPage = () => {
   const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 });
   const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Fetch assets on component mount
   useEffect(() => {
@@ -112,18 +137,26 @@ const IssuerDashboardPage = () => {
     setHoveredAssetId(null);
   };
 
-  // Open asset onboarding typeform
+  // Open asset upload modal
   const openAssetOnboardingForm = () => {
-    const width = 800;
-    const height = 600;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
+    setIsUploadModalOpen(true);
+  };
 
-    window.open(
-      'https://form.typeform.com/to/y0BQnYxs',
-      'AssetOnboardingForm',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
+  // Handle successful upload
+  const handleUploadSuccess = () => {
+    // Refresh assets list
+    const fetchAssets = async () => {
+      try {
+        setLoading(true);
+        const response = await assetService.getAllAssets({ limit: 100 });
+        setAssets(response.assets);
+      } catch (err) {
+        console.error('Failed to fetch assets:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssets();
   };
 
   // Format currency
@@ -138,31 +171,67 @@ const IssuerDashboardPage = () => {
   };
 
   // Get status badge styling
-  const getStatusBadge = (status: AssetStatus) => {
-    const badges = {
+  const getStatusBadge = (status: string) => {
+    const badges: Record<string, { label: string; className: string }> = {
+      UPLOADED: {
+        label: 'Uploaded',
+        className: 'bg-blue-100 text-blue-700 border-blue-200',
+      },
+      HASHED: {
+        label: 'Hashed',
+        className: 'bg-blue-100 text-blue-700 border-blue-200',
+      },
+      MERKLED: {
+        label: 'Merkled',
+        className: 'bg-purple-100 text-purple-700 border-purple-200',
+      },
+      ATTESTED: {
+        label: 'Attested',
+        className: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      },
+      REGISTERED: {
+        label: 'Registered',
+        className: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+      },
+      TOKENIZED: {
+        label: 'Tokenized',
+        className: 'bg-teal-100 text-teal-700 border-teal-200',
+      },
+      LISTED: {
+        label: 'Listed',
+        className: 'bg-green-100 text-green-700 border-green-200',
+      },
+      SETTLED: {
+        label: 'Settled',
+        className: 'bg-gray-100 text-gray-700 border-gray-200',
+      },
       pending: {
         label: 'Pending',
-        className: 'bg-gray-100 text-foreground border-gray-200',
+        className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
       },
       registered: {
         label: 'Registered',
-        className: 'bg-gray-100 text-foreground border-gray-200',
+        className: 'bg-cyan-100 text-cyan-700 border-cyan-200',
       },
       listed: {
         label: 'Listed',
-        className: 'bg-gray-100 text-foreground border-gray-200',
+        className: 'bg-green-100 text-green-700 border-green-200',
       },
       partially_sold: {
         label: 'Partially Sold',
-        className: 'bg-gray-100 text-foreground border-gray-200',
+        className: 'bg-orange-100 text-orange-700 border-orange-200',
       },
       settled: {
         label: 'Settled',
-        className: 'bg-gray-100 text-foreground border-gray-200',
+        className: 'bg-gray-100 text-gray-700 border-gray-200',
       },
     };
 
-    const badge = badges[status];
+    const badge = badges[status] || {
+      label: status,
+      className: 'bg-gray-100 text-gray-700 border-gray-200',
+    };
+
     return (
       <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${badge.className}`}>
         {badge.label}
@@ -335,19 +404,44 @@ const IssuerDashboardPage = () => {
           </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-          {assets.map((asset) => {
-          const soldPercentage =
-            (asset.tokenDistribution.soldTokens /
-              asset.tokenDistribution.totalTokens) *
-            100;
+          {assets.map((asset: any) => {
+          // Map API response to display format
+          const invoiceNumber = asset.metadata?.invoiceNumber || asset.name || 'Unnamed Asset';
+          const assetType = asset.assetType || 'N/A';
+
+          // Parse total supply from tokenParams (could be string or number, with/without decimals)
+          const totalSupplyRaw = asset.tokenParams?.totalSupply || '0';
+          const totalTokens = typeof totalSupplyRaw === 'string'
+            ? (totalSupplyRaw.length > 18 ? parseFloat(totalSupplyRaw) / 1e18 : parseFloat(totalSupplyRaw))
+            : totalSupplyRaw;
+
+          // Get sold tokens from listing
+          const soldTokensRaw = asset.listing?.sold || '0';
+          const soldTokens = typeof soldTokensRaw === 'string'
+            ? (soldTokensRaw.length > 18 ? parseFloat(soldTokensRaw) / 1e18 : parseFloat(soldTokensRaw))
+            : soldTokensRaw;
+
+          const unsoldTokens = totalTokens - soldTokens;
+
+          // Get price from listing (USDC has 6 decimals)
+          const priceRaw = asset.listing?.price || asset.tokenParams?.pricePerToken || '0';
+          const tokenPrice = typeof priceRaw === 'string'
+            ? (priceRaw.length > 6 ? parseFloat(priceRaw) / 1e6 : parseFloat(priceRaw))
+            : priceRaw;
+
+          const soldPercentage = totalTokens > 0 ? (soldTokens / totalTokens) * 100 : 0;
+
+          // Get invoice details from metadata
+          const faceValue = parseFloat(asset.metadata?.faceValue || '0');
+          const dueDate = asset.metadata?.dueDate;
 
           return (
             <tr
-              key={asset.id}
+              key={asset._id || asset.assetId}
               className="hover:bg-gray-50/50 transition-all duration-200 cursor-pointer relative group"
-              onMouseEnter={(e) => handleMouseEnter(asset.id, e)}
+              onMouseEnter={(e) => handleMouseEnter(asset.assetId, e)}
               onMouseLeave={handleMouseLeave}
-              onClick={() => handleViewAssetDetails(asset.id)}
+              onClick={() => handleViewAssetDetails(asset.assetId)}
             >
               <td className="px-6 py-5">
             <div className="flex items-center gap-3">
@@ -356,10 +450,10 @@ const IssuerDashboardPage = () => {
               </div>
               <div>
                 <div className="font-antic font-normal text-foreground text-base">
-              {asset.name}
+              {invoiceNumber}
                 </div>
                 <div className="font-inter text-xs text-foreground/60 mt-0.5">
-              {asset.assetType}
+              {assetType}
                 </div>
               </div>
             </div>
@@ -367,11 +461,11 @@ const IssuerDashboardPage = () => {
               <td className="px-6 py-5">
             <div className="font-inter text-sm mb-2">
               <span className="font-semibold text-foreground text-base">
-                {asset.tokenDistribution.soldTokens.toLocaleString()}
+                {soldTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
               <span className="text-foreground/60">
                 {' '}
-                / {asset.tokenDistribution.totalTokens.toLocaleString()}
+                / {totalTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
             {/* Progress bar */}
@@ -388,23 +482,23 @@ const IssuerDashboardPage = () => {
               <td className="px-6 py-5">
             <div className="inline-flex flex-col items-start">
               <div className="font-inter font-semibold text-foreground text-base">
-                {asset.tokenDistribution.unsoldTokens.toLocaleString()}
+                {unsoldTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
               <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                {formatCurrency(asset.tokenDistribution.tokenPrice)} per token
+                {formatCurrency(tokenPrice)} per token
               </div>
             </div>
               </td>
               <td className="px-6 py-5">
             <div className="font-antic font-normal text-foreground text-base">
-              {formatCurrency(asset.invoice.amount)}
+              {formatCurrency(faceValue)}
             </div>
             <div className="font-inter text-xs text-foreground/60 mt-0.5">
-              Due: {new Date(asset.invoice.dueDate).toLocaleDateString('en-US', {
+              Due: {dueDate ? new Date(dueDate).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric'
-              })}
+              }) : 'N/A'}
             </div>
               </td>
               <td className="px-6 py-5">{getStatusBadge(asset.status)}</td>
@@ -421,8 +515,8 @@ const IssuerDashboardPage = () => {
           onMouseLeave={handleCardMouseLeave}
             >
           <AssetHoverCard
-            asset={assets.find((a) => a.id === hoveredAssetId)!}
-            onViewMore={() => handleViewAssetDetails(hoveredAssetId)}
+            asset={assets.find((a: any) => a.assetId === hoveredAssetId)!}
+            onViewMore={() => handleViewAssetDetails(hoveredAssetId!)}
             position={hoverPosition}
           />
             </div>
@@ -451,6 +545,13 @@ const IssuerDashboardPage = () => {
           )}
         </div>
       </main>
+
+      {/* Asset Upload Modal */}
+      <AssetUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={handleUploadSuccess}
+      />
     </div>
   );
 };
