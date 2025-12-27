@@ -349,6 +349,10 @@
     animation: bounce-slow 3s ease-in-out infinite;
   }
 
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
   /* Scroll Reveal Elements */
   [data-scroll-reveal] {
     opacity: 0;
@@ -406,5 +410,16 @@
   }
   50% {
     transform: translateY(-15px);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

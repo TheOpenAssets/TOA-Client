@@ -49,9 +49,9 @@ const INITIAL_FORM_DATA: FormData = {
   assetType: 'STATIC',
   totalSupply: '',
   minInvestment: '',
-  minRaisePercentage: '80',
-  maxRaisePercentage: '100',
-  auctionDuration: '7',
+  minRaisePercentage: '75', // 75% for STATIC (leaving room for platform fees 1.5% and yield)
+  maxRaisePercentage: '95', // 95% for STATIC (default placeholder as per script)
+  auctionDuration: '300', // 5 minutes (300 seconds) for AUCTION
 };
 
 export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModalProps) => {
@@ -115,13 +115,24 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         return false;
       }
     } else if (currentStep === 3) {
-      if (!formData.totalSupply || !formData.minInvestment) {
+      if (!formData.totalSupply || !formData.minInvestment || !formData.minRaisePercentage || !formData.maxRaisePercentage) {
         setError('Please fill in all required fields');
         return false;
       }
+      // Validate raise percentages
+      const minRaise = parseFloat(formData.minRaisePercentage);
+      const maxRaise = parseFloat(formData.maxRaisePercentage);
+      if (minRaise < 0 || minRaise > 100 || maxRaise < 0 || maxRaise > 100) {
+        setError('Raise percentages must be between 0 and 100');
+        return false;
+      }
+      if (minRaise > maxRaise) {
+        setError('Min raise % cannot be greater than max raise %');
+        return false;
+      }
     } else if (currentStep === 4 && formData.assetType === 'AUCTION') {
-      if (!formData.minRaisePercentage || !formData.maxRaisePercentage || !formData.auctionDuration) {
-        setError('Please fill in all auction settings');
+      if (!formData.auctionDuration) {
+        setError('Please fill in auction duration');
         return false;
       }
     }
@@ -167,9 +178,12 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       formDataToSubmit.append('totalSupply', formData.totalSupply);
       formDataToSubmit.append('minInvestment', formData.minInvestment);
 
+      // IMPORTANT: Both STATIC and AUCTION need minRaise/maxRaise percentages
+      formDataToSubmit.append('minRaisePercentage', formData.minRaisePercentage);
+      formDataToSubmit.append('maxRaisePercentage', formData.maxRaisePercentage);
+
+      // Only AUCTION needs duration
       if (formData.assetType === 'AUCTION') {
-        formDataToSubmit.append('minRaisePercentage', formData.minRaisePercentage);
-        formDataToSubmit.append('maxRaisePercentage', formData.maxRaisePercentage);
         formDataToSubmit.append('auctionDuration', formData.auctionDuration);
       }
 
@@ -487,12 +501,15 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             Total Supply (Tokens) <span className="text-red-500">*</span>
           </label>
           <input
-            type="number"
+            type="text"
             value={formData.totalSupply}
             onChange={(e) => updateField('totalSupply', e.target.value)}
-            placeholder="10000"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="100000000000000000000000"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <p className="font-antic text-xs text-gray-500 mt-1">
+            In wei (18 decimals). Example: 100,000 tokens = 100000000000000000000000
+          </p>
         </div>
 
         <div>
@@ -500,12 +517,60 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             Minimum Investment <span className="text-red-500">*</span>
           </label>
           <input
-            type="number"
+            type="text"
             value={formData.minInvestment}
             onChange={(e) => updateField('minInvestment', e.target.value)}
-            placeholder="1000"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="1000000000000000000000"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <p className="font-antic text-xs text-gray-500 mt-1">
+            In wei (18 decimals). Example: 1,000 tokens = 1000000000000000000000
+          </p>
+        </div>
+      </div>
+
+      {/* Raise Percentages - Required for BOTH STATIC and AUCTION */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="font-antic text-sm text-blue-800 mb-4">
+          <strong>Raise Limits:</strong> Set minimum and maximum fundraise as % of face value.
+          {formData.assetType === 'STATIC' && ' For static assets, 95% max leaves room for platform fees (1.5%) and investor yield.'}
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+              Min Raise % <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={formData.minRaisePercentage}
+              onChange={(e) => updateField('minRaisePercentage', e.target.value)}
+              placeholder="75"
+              min="0"
+              max="100"
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="font-antic text-xs text-gray-500 mt-1">
+              Minimum % of face value to raise
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+              Max Raise % <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={formData.maxRaisePercentage}
+              onChange={(e) => updateField('maxRaisePercentage', e.target.value)}
+              placeholder="95"
+              min="0"
+              max="100"
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="font-antic text-xs text-gray-500 mt-1">
+              Maximum % of face value to raise
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -514,65 +579,49 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   // Render step 4: Auction Settings (only for AUCTION type)
   const renderStep4 = () => (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <p className="font-antic text-sm text-blue-800">
-          Configure auction parameters for competitive bidding
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+        <p className="font-antic text-sm text-orange-800">
+          <strong>🔨 Auction Configuration:</strong> Set the duration for competitive bidding.
+          Raise percentages were already configured in Step 3.
         </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
-            Min Raise % <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            value={formData.minRaisePercentage}
-            onChange={(e) => updateField('minRaisePercentage', e.target.value)}
-            placeholder="80"
-            min="0"
-            max="100"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="font-antic text-xs text-gray-500 mt-1">
-            Minimum percentage of tokens to raise
-          </p>
-        </div>
-
-        <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
-            Max Raise % <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            value={formData.maxRaisePercentage}
-            onChange={(e) => updateField('maxRaisePercentage', e.target.value)}
-            placeholder="100"
-            min="0"
-            max="100"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="font-antic text-xs text-gray-500 mt-1">
-            Maximum percentage of tokens to raise
-          </p>
-        </div>
       </div>
 
       <div>
         <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
           Auction Duration (seconds) <span className="text-red-500">*</span>
         </label>
-        <input
-          type="number"
+        <select
           value={formData.auctionDuration}
           onChange={(e) => updateField('auctionDuration', e.target.value)}
-          placeholder="7"
-          min="1"
           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        >
+          <option value="300">5 minutes (300 seconds) - Recommended</option>
+          <option value="600">10 minutes (600 seconds)</option>
+          <option value="900">15 minutes (900 seconds)</option>
+          <option value="1800">30 minutes (1800 seconds)</option>
+          <option value="3600">1 hour (3600 seconds)</option>
+          <option value="7200">2 hours (7200 seconds)</option>
+        </select>
         <p className="font-antic text-xs text-gray-500 mt-1">
-          How long the auction will run
+          How long the auction will run before settlement
         </p>
+      </div>
+
+      {/* Summary of configured raise percentages */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <p className="font-antic text-sm font-semibold text-gray-700 mb-2">
+          Configured Raise Limits:
+        </p>
+        <div className="grid grid-cols-2 gap-4 font-antic text-sm">
+          <div>
+            <span className="text-gray-600">Min Raise:</span>
+            <span className="font-semibold text-gray-800 ml-2">{formData.minRaisePercentage}%</span>
+          </div>
+          <div>
+            <span className="text-gray-600">Max Raise:</span>
+            <span className="font-semibold text-gray-800 ml-2">{formData.maxRaisePercentage}%</span>
+          </div>
+        </div>
       </div>
     </div>
   );
