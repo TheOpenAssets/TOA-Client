@@ -6,7 +6,6 @@ import type {
 } from '../../types/auth.types';
 import { UserRole } from '../../types/issuer.types';
 import type { AdminAsset, AdminStats, AdminActivity } from '../../stores/admin.store';
-import  type { SettlementFormData } from '../../types/admin.types';
 import BaseService from './base.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
@@ -162,12 +161,175 @@ class AdminService extends BaseService {
     return data;
   }
 
-  // @ts-ignore
-  async recordSettlement(formData: SettlementFormData): Promise<any> {
-    // TODO: Backend endpoint for recording settlement is not in the script.
-    // Assuming an endpoint like /admin/settlements/record
-    console.warn('Mocking record settlement. Endpoint /admin/settlements/record is not in the script.');
-    return new Promise(resolve => setTimeout(() => resolve({ success: true }), 1000));
+  /**
+   * Record yield settlement for an asset
+   * Step 3 from admin-yeild.sh script
+   *
+   * @param assetId - The asset ID to settle
+   * @param settlementAmount - Settlement amount in USD (e.g., 100000)
+   * @param settlementDate - Settlement date in ISO format
+   * @returns Settlement ID, platform fee (1.5%), and net distribution amount
+   */
+  async recordYieldSettlement(
+    assetId: string,
+    settlementAmount: number,
+    settlementDate: string
+  ): Promise<{
+    _id: string;
+    settlementId?: string;
+    netDistribution: number;
+    platformFee: number;
+    status: string;
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/yield/settlement`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          assetId,
+          settlementAmount,
+          settlementDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to record yield settlement');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error recording yield settlement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Confirm USDC conversion for a settlement
+   * Step 4 from admin-yeild.sh script
+   *
+   * @param settlementId - The settlement ID
+   * @param usdcAmount - USDC amount in wei (6 decimals)
+   * @returns Updated settlement with status READY_FOR_DISTRIBUTION
+   */
+  async confirmUSDCConversion(
+    settlementId: string,
+    usdcAmount: string
+  ): Promise<{
+    status: string;
+    usdcAmount: string;
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/yield/confirm-usdc`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          settlementId,
+          usdcAmount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to confirm USDC conversion');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error confirming USDC conversion:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Distribute yield on-chain to token holders
+   * Step 5 from admin-yeild.sh script
+   * Executes: USDC approval → deposit to YieldVault → distribute (time-weighted)
+   *
+   * @param settlementId - The settlement ID
+   * @returns Distribution results with total distributed, holders, token-days, effective yield
+   */
+  async distributeYield(
+    settlementId: string
+  ): Promise<{
+    message: string;
+    totalDistributed: string;
+    holders: number;
+    totalTokenDays: string;
+    effectiveYield: string;
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/yield/distribute`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          settlementId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to distribute yield');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error distributing yield:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get settlement details by ID
+   * Step 6 from admin-yeild.sh script
+   *
+   * @param settlementId - The settlement ID
+   * @returns Settlement details with status
+   */
+  async getSettlement(settlementId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/yield/settlement/${settlementId}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch settlement');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching settlement ${settlementId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all settlements
+   * For displaying settlements list in admin dashboard
+   *
+   * @returns Array of all settlements
+   */
+  async getAllSettlements(): Promise<any[]> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/yield/settlements`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch settlements');
+      }
+
+      const data = await response.json();
+      return Array.isArray(data) ? data : data.settlements || [];
+    } catch (error) {
+      console.error('Error fetching settlements:', error);
+      return [];
+    }
   }
 
   // FETCH ASSETS FROM BACKEND
@@ -251,14 +413,15 @@ class AdminService extends BaseService {
   async getAssetsForSettlement(): Promise<AdminAsset[]> {
     try {
       // Get ALL assets and filter based on STATUS (not checkpoints!)
-      // Assets ready for settlement: status = TOKENIZED or LISTED
+      // Assets ready for yield settlement: status = PAYOUT_COMPLETE
+      // According to admin-yeild.sh script, asset must be in PAYOUT_COMPLETE status
       const { assets: allAssets } = await this.getAllAssets();
 
       const settlementAssets = allAssets.filter((asset: any) =>
-        asset.status === 'TOKENIZED' || asset.status === 'LISTED'
+        asset.status === 'PAYOUT_COMPLETE'
       );
 
-      console.log('💰 Assets for Settlement (status=TOKENIZED|LISTED):', settlementAssets);
+      console.log('💰 Assets for Yield Settlement (status=PAYOUT_COMPLETE):', settlementAssets);
       return settlementAssets;
     } catch (error) {
       console.error('Error fetching settlement assets:', error);
@@ -276,6 +439,32 @@ class AdminService extends BaseService {
       return await response.json();
     } catch (error) {
       console.error(`Error fetching asset ${assetId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute payout to originator for a listed asset
+   *
+   * @param assetId - The asset ID to payout
+   * @returns Promise with payout details
+   */
+  async executePayout(assetId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/assets/${assetId}/payout`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to execute payout');
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`Error executing payout for ${assetId}:`, error);
       throw error;
     }
   }

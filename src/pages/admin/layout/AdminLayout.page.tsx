@@ -7,9 +7,11 @@ import {
   Network,
   Coins,
   Package,
+  DollarSign,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import { calculateAdminStats } from '../../../lib/data/admin-mock-data';
+import { NotificationBell } from '../../../components/notifications/NotificationBell';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -32,6 +34,11 @@ const AdminLayout = () => {
       path: '/admin/operations',
       icon: Network,
       badge: stats.complianceApproved,
+    },
+    {
+      name: 'Payouts',
+      path: '/admin/payouts',
+      icon: DollarSign,
     },
     {
       name: 'Settlements & Yield',
@@ -98,6 +105,9 @@ const AdminLayout = () => {
                     {formatCurrency(stats.totalYieldDistributed)}
                   </p>
                 </div>
+                <div className="h-10 w-px bg-gray-300" />
+                {/* Notification Bell */}
+                <NotificationBell role="ADMIN" />
               </div>
             </div>
           </div>

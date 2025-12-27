@@ -23,6 +23,7 @@ import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/m
 import HeroBackground from '../landing/HeroBackground';
 import { authService } from '../../lib/api/auth.service';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
+import { NotificationBell } from '../../components/notifications/NotificationBell';
 
 const MarketplacePage = () => {
   const navigate = useNavigate();
@@ -237,6 +238,9 @@ const MarketplacePage = () => {
 
             {/* Right: Auth / Wallet Display */}
             <div className="flex items-center gap-3">
+              {isConnected && address && (
+                <NotificationBell role="INVESTOR" />
+              )}
               {isConnected && address ? (
                 <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
                   {truncateAddress(address)}

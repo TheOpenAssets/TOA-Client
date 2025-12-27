@@ -290,6 +290,8 @@ export function useSettleBid() {
   const { address } = useAccount();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const lastSettleParamsRef = useRef<BidSettlementParams | null>(null);
+  const notificationSentRef = useRef<string | null>(null);
 
   const {
     writeContract: settleBidTx,
@@ -297,7 +299,7 @@ export function useSettleBid() {
     isPending: isSubmitting,
   } = useWriteContract();
 
-  const { isLoading: isPending, isSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isPending, isSuccess, data: receipt } = useWaitForTransactionReceipt({
     hash: txHash,
   });
 
@@ -309,6 +311,9 @@ export function useSettleBid() {
 
       setIsLoading(true);
       setStatus('Settling bid on-chain...');
+
+      // Store params for auto-notification after success
+      lastSettleParamsRef.current = params;
 
       try {
         // Convert parameters
@@ -331,13 +336,52 @@ export function useSettleBid() {
         console.error('Error settling bid:', error);
         setStatus(`Error: ${error.message}`);
         setIsLoading(false);
+        lastSettleParamsRef.current = null;
         throw error;
       }
     },
     [address, settleBidTx]
   );
 
+  // CRITICAL: Auto-notify backend after settlement succeeds (investor-settle.sh line 264)
+  useEffect(() => {
+    const handleSettleSuccess = async () => {
+      if (isSuccess && txHash && lastSettleParamsRef.current && receipt) {
+        // Prevent duplicate notifications
+        if (notificationSentRef.current === txHash) {
+          return;
+        }
+
+        try {
+          setStatus('Notifying backend...');
+          console.log('✅ Settlement confirmed! Notifying backend...');
+
+          await marketplaceService.notifyBidSettled({
+            assetId: lastSettleParamsRef.current.assetId,
+            bidIndex: lastSettleParamsRef.current.bidIndex,
+            txHash,
+            blockNumber: receipt.blockNumber.toString(),
+          });
+
+          notificationSentRef.current = txHash;
+          setStatus('Bid settled successfully! 🎉');
+          setIsLoading(false);
+          lastSettleParamsRef.current = null;
+
+          console.log('✅ Backend notified successfully!');
+        } catch (error: any) {
+          console.error('❌ Backend notification failed:', error);
+          setStatus(`Settlement complete, but backend notification failed: ${error.message}`);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    handleSettleSuccess();
+  }, [isSuccess, txHash, receipt]);
+
   // Notify backend after successful settlement (investor-settle.sh line 264)
+  // This is kept for backwards compatibility but should not be needed anymore
   const notifyBackend = useCallback(
     async (params: BidSettlementParams, txHash: string, blockNumber: number) => {
       setStatus('Notifying backend...');

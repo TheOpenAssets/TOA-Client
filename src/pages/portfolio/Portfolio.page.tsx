@@ -8,6 +8,7 @@ import { Search, TrendingUp } from 'lucide-react';
 import type { BidStatus } from '../../types/marketplace.types';
 import { useSettleBid } from '../../hooks/useAuctionContracts';
 import HeroBackground from '../landing/HeroBackground';
+import { NotificationBell } from '../../components/notifications/NotificationBell';
 
 const PortfolioPage = () => {
   const navigate = useNavigate();
@@ -190,9 +191,12 @@ const PortfolioPage = () => {
             {/* Right: Wallet Display */}
             <div className="flex items-center gap-3">
               {address && (
-                <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
-                  {truncateAddress(address)}
-                </div>
+                <>
+                  <NotificationBell role="INVESTOR" />
+                  <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
+                    {truncateAddress(address)}
+                  </div>
+                </>
               )}
             </div>
           </div>

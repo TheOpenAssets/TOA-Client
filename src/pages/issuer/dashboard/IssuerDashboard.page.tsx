@@ -8,7 +8,7 @@ import { type IssuerAsset } from '../../../types/issuer.types';
 import { AssetHoverCard } from '../../../components/issuer/AssetHoverCard';
 import { AssetUploadModal } from '../../../components/issuer/AssetUploadModal';
 import HeroBackground from '../../landing/HeroBackground';
-import { NotificationInboxPopover } from '../../../components/ui/notification-inbox-popover';
+import { NotificationBell } from '../../../components/notifications/NotificationBell';
 import { assetService } from '../../../lib/api/asset.service';
 
 // Calculate stats from assets
@@ -264,7 +264,7 @@ const IssuerDashboardPage = () => {
             {/* Right side actions */}
             <div className="flex items-center gap-3">
               {/* Notification Bell */}
-              <NotificationInboxPopover />
+              <NotificationBell role="ORIGINATOR" />
 
               {/* Create Asset Button */}
               <Button
