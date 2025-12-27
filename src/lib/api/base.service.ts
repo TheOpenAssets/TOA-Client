@@ -28,7 +28,7 @@ class BaseService {
   protected getAuthHeaders = () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      throw new Error('No access token found');
+      throw new Error('Not a verified user, please solve the challenge');
     }
     return {
       ...this.getHeaders(),

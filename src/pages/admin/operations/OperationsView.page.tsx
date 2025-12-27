@@ -13,6 +13,8 @@ import {
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
 import { Button } from '../../../components/ui/button';
+import { useToast } from '../../../hooks/useToast';
+import { ToastContainer } from '../../../components/ui/toast';
 
 const OperationsViewPage = () => {
   const {
@@ -21,6 +23,7 @@ const OperationsViewPage = () => {
     isLoading,
     error
   } = useAdminStore();
+  const { toasts, success, error: showError, info, removeToast } = useToast();
 
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -94,17 +97,17 @@ const OperationsViewPage = () => {
 
       // Show appropriate message
       if (result.alreadyRegistered) {
-        alert(
-          'This asset was already registered on-chain.\n\n' +
-          'Note: If it\'s still showing in Step 1, there may be a backend data sync issue. ' +
-          'Please refresh the page. If the issue persists, contact the backend team to manually update the checkpoints.'
+        info(
+          'Asset Already Registered',
+          'This asset was already registered on-chain.\n\nNote: If it\'s still showing in Step 1, there may be a backend data sync issue. Please refresh the page.',
+          8000
         );
       } else {
-        alert('Asset registered successfully on Mantle!');
+        success('Registration Successful!', 'Asset has been successfully registered on Mantle blockchain.');
       }
     } catch (error: any) {
       console.error('❌ Failed to register asset:', error);
-      alert(`Failed to register asset: ${error.message || 'Unknown error'}`);
+      showError('Registration Failed', error.message || 'An error occurred while registering the asset.');
     } finally {
       setProcessing(false);
     }
@@ -134,17 +137,17 @@ const OperationsViewPage = () => {
 
       // Show appropriate message
       if (result.alreadyDeployed) {
-        alert(
-          'Token was already deployed for this asset.\n\n' +
-          'Note: If it\'s still showing in Step 2, there may be a backend data sync issue. ' +
-          'Please refresh the page. If the issue persists, contact the backend team to manually update the checkpoints.'
+        info(
+          'Token Already Deployed',
+          'Token was already deployed for this asset.\n\nNote: If it\'s still showing in Step 2, there may be a backend data sync issue. Please refresh the page.',
+          8000
         );
       } else {
-        alert('Token deployed successfully!');
+        success('Token Deployed!', 'ERC-3643 compliant token has been successfully deployed on Mantle.');
       }
     } catch (error: any) {
       console.error('❌ Failed to deploy token:', error);
-      alert(`Failed to deploy token: ${error.message || 'Unknown error'}`);
+      showError('Deployment Failed', error.message || 'An error occurred while deploying the token.');
     } finally {
       setProcessing(false);
     }
@@ -179,10 +182,10 @@ const OperationsViewPage = () => {
       fetchAdminDashboardData();
       setShowListingModal(false);
       setSelectedAsset(null);
-      alert('Asset listed on marketplace successfully!');
+      success('Listed on Marketplace!', 'Asset is now available for investors on the marketplace.');
     } catch (error: any) {
       console.error('❌ Failed to list asset:', error);
-      alert(`Failed to list asset: ${error.message || 'Unknown error'}`);
+      showError('Listing Failed', error.message || 'An error occurred while listing the asset.');
     } finally {
       setProcessing(false);
     }
@@ -210,14 +213,14 @@ const OperationsViewPage = () => {
       setShowAuctionSchedulingModal(false);
       setSelectedAsset(null);
 
-      alert(
-        `Auction scheduled successfully!\n\n` +
-        `${response.message}\n\n` +
-        `Scheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}`
+      success(
+        'Auction Scheduled!',
+        `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}`,
+        8000
       );
     } catch (error: any) {
       console.error('❌ Failed to schedule auction:', error);
-      alert(`Failed to schedule auction: ${error.message || 'Unknown error'}`);
+      showError('Scheduling Failed', error.message || 'An error occurred while scheduling the auction.');
     } finally {
       setProcessing(false);
     }
@@ -232,7 +235,9 @@ const OperationsViewPage = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <div className="space-y-8">
       {/* Header */}
       <div>
         <h2 className="font-antic text-3xl font-normal text-foreground mb-2">
@@ -1082,6 +1087,7 @@ const OperationsViewPage = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

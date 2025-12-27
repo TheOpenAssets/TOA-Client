@@ -560,7 +560,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
       <div>
         <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
-          Auction Duration (Days) <span className="text-red-500">*</span>
+          Auction Duration (seconds) <span className="text-red-500">*</span>
         </label>
         <input
           type="number"

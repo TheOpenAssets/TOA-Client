@@ -17,10 +17,13 @@ import { adminService } from '../../../lib/api/admin.service';
 import type { RiskLevel } from '../../../types/admin.types';
 import { Button } from '../../../components/ui/button';
 import { useAuthStore } from '../../../stores/auth.store';
+import { useToast } from '../../../hooks/useToast';
+import { ToastContainer } from '../../../components/ui/toast';
 
 const ComplianceViewPage = () => {
   const { assetsForCompliance, isLoading, error, fetchAdminDashboardData } = useAdminStore();
   const { user } = useAuthStore();
+  const { toasts, success, error: showError, warning, removeToast } = useToast();
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -98,16 +101,16 @@ const ComplianceViewPage = () => {
 
     if (!user) {
       console.error('No user found in auth store');
-      alert('User not authenticated. Please login again.');
+      showError('Authentication Required', 'Please login again to continue.');
       return;
     }
 
     // Get wallet address - check both possible property names
     const adminWallet = user.walletAddress;
-    
+
     if (!adminWallet) {
       console.error('No wallet address found. User object:', user);
-      alert('Wallet address not found. Please reconnect your wallet.');
+      showError('Wallet Not Connected', 'Please reconnect your wallet to continue.');
       return;
     }
 
@@ -127,12 +130,12 @@ const ComplianceViewPage = () => {
       // Close modal and reset
       setShowApproveModal(false);
       setSelectedAsset(null);
-      
+
       // Show success message
-      alert('Asset approved successfully!');
+      success('Asset Approved!', 'Asset has been successfully approved and is ready for on-chain registration.');
     } catch (error: any) {
       console.error('❌ Failed to approve asset:', error);
-      alert(`Failed to approve asset: ${error.message}`);
+      showError('Approval Failed', error.message || 'An error occurred while approving the asset.');
     } finally {
       setProcessing(false);
     }
@@ -146,7 +149,7 @@ const ComplianceViewPage = () => {
 
   const confirmReject = () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      warning('Rejection Reason Required', 'Please provide a reason for rejecting this asset.');
       return;
     }
 
@@ -159,6 +162,7 @@ const ComplianceViewPage = () => {
       setShowRejectModal(false);
       setRejectionReason('');
       setSelectedAsset(null);
+      success('Asset Rejected', 'Asset has been rejected. The originator will be notified.');
       // In real app: Update backend status to COMPLIANCE_REJECTED
     }, 1500);
   };
@@ -172,7 +176,9 @@ const ComplianceViewPage = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <div className="space-y-8">
       {/* Header */}
       <div>
         <h2 className="font-antic text-3xl font-normal text-foreground mb-2">
@@ -328,12 +334,7 @@ const ComplianceViewPage = () => {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleTriggerKYC(asset)}
-                          className="px-3 py-1.5 text-xs font-medium font-inter text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          Trigger KYC
-                        </button>
+                       
                         <button
                           onClick={() => handleApprove(asset)}
                           className="px-3 py-1.5 text-xs font-medium font-inter text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
@@ -562,6 +563,7 @@ const ComplianceViewPage = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

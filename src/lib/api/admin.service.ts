@@ -506,18 +506,42 @@ class AdminService extends BaseService {
 
   async getAdminActivities(): Promise<AdminActivity[]> {
     try {
-      // Get recent assets with needsAttention flag
-      const { assets } = await this.getAllAssets({ needsAttention: true, limit: 10 });
+      // Get recent assets (limit to 10 most recent)
+      const { assets } = await this.getAllAssets({ limit: 10 });
 
       // Convert assets to activity format
-      const activities: AdminActivity[] = assets.map((asset: any, index: number) => ({
-        id: asset.id || `activity-${index}`,
-        assetName: asset.name || asset.invoiceNumber || `Asset ${asset.id}`,
-        details: `Status: ${asset.status}`,
-        actor: asset.originator || 'System',
-        timestamp: asset.createdAt || asset.uploadedAt || new Date().toISOString(),
-        type: this.getActivityType(asset.status),
-      }));
+      const activities: AdminActivity[] = assets.map((asset: any, index: number) => {
+        // Extract metadata fields
+        const invoiceNumber = asset.metadata?.invoiceNumber || 'N/A';
+        const buyerName = asset.metadata?.buyerName || 'Unknown';
+        const faceValue = asset.metadata?.faceValue || '0';
+        const currency = asset.metadata?.currency || 'USD';
+
+        // Create descriptive asset name
+        const assetName = `Invoice ${invoiceNumber} - ${buyerName}`;
+
+        // Create detailed description based on status and type
+        let details = '';
+        if (asset.assetType === 'AUCTION') {
+          details = `${asset.status} • Auction • ${currency} ${faceValue}`;
+        } else {
+          details = `${asset.status} • Static • ${currency} ${faceValue}`;
+        }
+
+        // Format originator address (show first 6 and last 4 characters)
+        const originator = asset.originator
+          ? `${asset.originator.substring(0, 6)}...${asset.originator.substring(asset.originator.length - 4)}`
+          : 'System';
+
+        return {
+          id: asset._id || asset.assetId || `activity-${index}`,
+          assetName,
+          details,
+          actor: originator,
+          timestamp: asset.updatedAt || asset.createdAt || new Date().toISOString(),
+          type: this.getActivityType(asset.status),
+        };
+      });
 
       console.log('🔔 Admin Activities:', activities);
       return activities;
@@ -530,6 +554,7 @@ class AdminService extends BaseService {
   private getActivityType(status: string): string {
     switch (status) {
       case 'UPLOADED':
+      case 'MERKLED':
         return 'COMPLIANCE_PENDING';
       case 'ATTESTED':
         return 'COMPLIANCE_APPROVED';
@@ -539,8 +564,10 @@ class AdminService extends BaseService {
         return 'ASSET_TOKENIZED';
       case 'LISTED':
         return 'ASSET_LISTED';
+      case 'PAYOUT_COMPLETE':
+        return 'YIELD_DISTRIBUTED';
       default:
-        return 'UNKNOWN';
+        return 'ASSET_REGISTERED';
     }
   }
 }

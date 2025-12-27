@@ -184,11 +184,8 @@ const HeroSection = () => {
 
             <Button
               size="lg"
-              className="btn-gradient text-white rounded-[10px] font-inter font-medium px-8 py-6 text-sm"
-              style={{
-                background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',
-                boxShadow: '0 4px 14px 0 rgba(75, 167, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
-              }}
+              className="cta-button"
+              
               onClick={handleGetStarted}
               disabled={isAuthenticating}
             >
@@ -198,11 +195,8 @@ const HeroSection = () => {
                     size="lg"
                     onClick={handleIssuerGetStarted}
                     disabled={isAuthenticating}
-                    className="btn-gradient text-white rounded-[10px] font-inter font-medium px-8 py-6 text-sm"
-              style={{
-                background: 'linear-gradient(135deg, hsla(204, 15%, 61%, 1.00) 0%, hsla(215, 46%, 54%, 1.00) 100%)',
-                boxShadow: '0 4px 14px 0 rgba(75, 167, 229, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)'
-              }}
+                    className="cta-button"
+             
                   >
                     Become an Issuer
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 256 256">

@@ -126,7 +126,7 @@ class KYCService extends BaseService {
       const accessToken = localStorage.getItem('access_token');
 
       if (!accessToken) {
-        throw new Error('No access token found. Please login first.');
+        throw new Error('Not a verified user, please solve the challenge.');
       }
 
       // Simulate network delay

@@ -29,18 +29,10 @@ const Navbar = () => {
 
         {/* Navigation Links */}
         <nav className="navbar-nav">
-          <a href="#features" className="nav-link">
-            Features
+          <a href="/marketplace" className="nav-link">
+            Marketplace
           </a>
-          <a href="#pricing" className="nav-link">
-            Pricing
-          </a>
-          <a href="#changelog" className="nav-link">
-            Changelog
-          </a>
-          <a href="#contact" className="nav-link">
-            Contact
-          </a>
+          
         </nav>
 
         {/* CTA Button */}

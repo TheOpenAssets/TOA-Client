@@ -45,8 +45,12 @@ const AdminOverviewPage = () => {
         return { icon: Network, color: 'text-blue-500', bg: 'bg-blue-50' };
       case 'COMPLIANCE_APPROVED':
         return { icon: ShieldCheck, color: 'text-purple-500', bg: 'bg-purple-50' };
+      case 'COMPLIANCE_PENDING':
+        return { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-50' };
       case 'ASSET_REGISTERED':
         return { icon: Package, color: 'text-orange-500', bg: 'bg-orange-50' };
+      case 'ASSET_LISTED':
+        return { icon: Gavel, color: 'text-indigo-500', bg: 'bg-indigo-50' };
       default:
         return { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-50' };
     }
