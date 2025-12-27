@@ -12,6 +12,7 @@ import AdminLayout from '../../pages/admin/layout/AdminLayout.page';
 import AdminOverviewPage from '../../pages/admin/overview/AdminOverview.page';
 import ComplianceViewPage from '../../pages/admin/compliance/ComplianceView.page';
 import OperationsViewPage from '../../pages/admin/operations/OperationsView.page';
+import PayoutViewPage from '../../pages/admin/payout/PayoutView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
 
 // Component Showcase
@@ -83,6 +84,10 @@ export const publicRoutes: RouteObject[] = [
       {
         path: 'operations',
         element: <OperationsViewPage />,
+      },
+      {
+        path: 'payouts',
+        element: <PayoutViewPage />,
       },
       {
         path: 'settlements',
