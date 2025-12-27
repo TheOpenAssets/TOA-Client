@@ -99,7 +99,7 @@ const AssetDetailsPage = () => {
     console.log('\n🛒 ===== STARTING PURCHASE FLOW =====');
     console.log('Asset ID:', asset.assetId);
     console.log('Invoice Number:', asset.metadata.invoiceNumber);
-    console.log('Token Address:', asset.token.address);
+    console.log('Token Address:', asset.token?.address || 'N/A');
     console.log('Token Amount:', tokensToBuy);
     console.log('Buyer Address:', address);
     console.log('=====================================\n');
@@ -110,7 +110,7 @@ const AssetDetailsPage = () => {
           assetId: asset.assetId,
           tokenAmount: tokensToBuy,
         },
-        asset.token.address // Pass token address for debugging
+        asset.token?.address || '' // Pass token address for debugging
       );
 
       if (result.success) {
@@ -274,18 +274,18 @@ const AssetDetailsPage = () => {
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Token Address</p>
                   <p className="font-medium text-[#111111] font-mono text-xs break-all">
-                    {asset.token.address}
+                    {asset.token?.address || 'N/A'}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Attestation Hash</p>
                   <p className="font-medium text-[#111111] font-mono text-xs break-all">
-                    {asset.attestation.hash}
+                    {asset.attestation?.hash || 'N/A'}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Registry Block</p>
-                  <p className="font-medium text-[#111111]">{asset.registry.blockNumber}</p>
+                  <p className="font-medium text-[#111111]">{asset.registry?.blockNumber || 'N/A'}</p>
                 </div>
               </div>
             </div>

@@ -53,10 +53,10 @@ class AssetService extends BaseService {
       const queryString = queryParams.toString();
       const url = `${this.baseURL}/assets${queryString ? `?${queryString}` : ''}`;
 
-      const response = await fetch(url, {
+      const response = await this.fetchWithTimeout(url, {
         method: 'GET',
         headers: this.getAuthHeaders(),
-      });
+      }, 30000);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -80,10 +80,10 @@ class AssetService extends BaseService {
    */
   async getAssetById(assetId: string): Promise<IssuerAsset | undefined> {
     try {
-      const response = await fetch(`${this.baseURL}/assets/${assetId}`, {
+      const response = await this.fetchWithTimeout(`${this.baseURL}/assets/${assetId}`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
-      });
+      }, 30000);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -107,14 +107,23 @@ class AssetService extends BaseService {
    */
   async uploadAsset(formData: FormData): Promise<any> {
     try {
-      const response = await fetch(`${this.baseURL}/assets/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          // Don't set Content-Type - browser will set it with boundary for FormData
+      console.log('⬆️ Starting asset upload...');
+
+      // Use fetchWithTimeout with 5-minute timeout for file uploads
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/assets/upload`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            // Don't set Content-Type - browser will set it with boundary for FormData
+          },
+          body: formData,
         },
-        body: formData,
-      });
+        300000 // 5 minutes
+      );
+
+      console.log('✅ Upload request completed');
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -122,7 +131,11 @@ class AssetService extends BaseService {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message?.includes('timeout')) {
+        console.error('❌ Upload timeout: Request took longer than 5 minutes');
+        throw new Error('Upload timeout: Request took longer than 5 minutes. Please try again or contact support.');
+      }
       console.error('Error uploading asset:', error);
       throw error;
     }
