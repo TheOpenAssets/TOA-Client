@@ -392,9 +392,7 @@ const IssuerDashboardPage = () => {
             <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
               Token Distribution
             </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-              Unsold Tokens
-            </th>
+           
             <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
               Invoice Amount
             </th>
@@ -479,16 +477,7 @@ const IssuerDashboardPage = () => {
               {soldPercentage.toFixed(1)}% Sold
             </div>
               </td>
-              <td className="px-6 py-5">
-            <div className="inline-flex flex-col items-start">
-              <div className="font-inter font-semibold text-foreground text-base">
-                {unsoldTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </div>
-              <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                {formatCurrency(tokenPrice)} per token
-              </div>
-            </div>
-              </td>
+              
               <td className="px-6 py-5">
             <div className="font-antic font-normal text-foreground text-base">
               {formatCurrency(faceValue)}
