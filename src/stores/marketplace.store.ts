@@ -18,7 +18,8 @@ interface MarketplaceState {
   error: string | null;
 
   // Auction state
-  auctions: Auction[];
+  auctions: Auction[]; // AUCTION_LIVE only
+  scheduledAuctions: Auction[]; // AUCTION_SCHEDULED only
   currentAuction: Auction | null;
   userBids: Bid[];
   isLoadingAuctions: boolean;
@@ -64,7 +65,8 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
   error: null,
 
   // Auction state
-  auctions: [],
+  auctions: [], // AUCTION_LIVE only
+  scheduledAuctions: [], // AUCTION_SCHEDULED only
   currentAuction: null,
   userBids: [],
   isLoadingAuctions: false,
@@ -128,71 +130,125 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
     set({ currentAsset: null });
   },
 
-  // Auction actions (Script-Verified Approach)
+  // Auction actions - Fetch and filter AUCTION_LIVE and AUCTION_SCHEDULED
   fetchActiveAuctions: async () => {
     set({ isLoadingAuctions: true, auctionError: null });
     try {
-      // Step 1: Get AUCTION_LIVE announcements (verified: admin-approve.sh line 400)
-      const announcements = await marketplaceService.getAuctionAnnouncements('AUCTION_LIVE', 'ACTIVE');
+      // Step 1: Get ALL announcements (backend returns all types)
+      const allAnnouncements = await marketplaceService.getAuctionAnnouncements('AUCTION_LIVE', 'ACTIVE');
 
-      console.log('📊 Fetched auction announcements:', announcements.length);
-      console.log('📊 First announcement:', announcements[0]);
+      console.log('📊 Fetched all announcements:', allAnnouncements.length);
 
-      // Step 2: For each announcement, fetch full asset details using GET /marketplace/listings/:assetId
-      const auctionPromises = announcements.map(async (announcement: any) => {
+      // Step 2: Filter announcements by type - EXCLUDE AUCTION_ENDED explicitly
+      const liveAnnouncements = allAnnouncements.filter((a: any) => a.type === 'AUCTION_LIVE');
+      const scheduledAnnouncements = allAnnouncements.filter((a: any) => a.type === 'AUCTION_SCHEDULED');
+      const endedCount = allAnnouncements.filter((a: any) => a.type === 'AUCTION_ENDED').length;
+
+      console.log('🔨 AUCTION_LIVE count:', liveAnnouncements.length);
+      console.log('📅 AUCTION_SCHEDULED count:', scheduledAnnouncements.length);
+      console.log('❌ AUCTION_ENDED excluded:', endedCount);
+
+      // Step 3: Process AUCTION_LIVE announcements
+      const liveAuctionPromises = liveAnnouncements.map(async (announcement: any) => {
         try {
-          console.log(`📡 Fetching asset details for: ${announcement.assetId}`);
+          console.log(`📡 Fetching LIVE auction: ${announcement.assetId}`);
 
-          // ✅ FIXED: Use correct endpoint
+          // Get asset details from marketplace endpoint
           const asset = await marketplaceService.getListingById(announcement.assetId);
 
-          console.log(`✅ Asset fetched for ${announcement.assetId}:`, {
-            tokenSupply: asset.tokenParams?.totalSupply,
-            reservePrice: asset.listing?.reservePrice,
-            phase: asset.listing?.phase,
-          });
-
-          // ✅ FIXED: Parse WEI data from ASSET ENDPOINT (primary source)
-          const totalSupplyWei = BigInt(asset.tokenParams?.totalSupply || announcement.metadata?.totalSupply || '0');
+          // Parse totalSupply from announcement metadata (already in wei 18 decimals)
+          const totalSupplyWei = BigInt(announcement.metadata?.totalSupply || '0');
           const totalSupply = Number(totalSupplyWei) / 1e18;
 
-          const reservePriceWei = BigInt(asset.listing?.reservePrice || announcement.metadata?.priceRange?.min || '0');
+          // Parse reserve price from announcement metadata (USDC 6 decimals)
+          const reservePriceWei = BigInt(announcement.metadata?.priceRange?.min || '0');
           const reservePrice = Number(reservePriceWei) / 1e6;
-
-          const clearingPriceWei = asset.listing?.clearingPrice
-            ? BigInt(asset.listing.clearingPrice)
-            : undefined;
-          const clearingPrice = clearingPriceWei ? Number(clearingPriceWei) / 1e6 : undefined;
 
           const auction = {
             auctionId: announcement.assetId,
             assetId: announcement.assetId,
             totalSupply,
             reservePrice,
-            clearingPrice,
+            clearingPrice: undefined,
             status: 'BIDDING' as const,
-            startTime: announcement.metadata?.auctionStartTime || asset.listing?.listedAt || announcement.createdAt,
-            endTime: announcement.metadata?.auctionEndTime || asset.listing?.endTime || '',
-            totalBids: 0, // Will be fetched separately if needed
+            startTime: announcement.metadata?.auctionStartTime || announcement.createdAt,
+            endTime: announcement.metadata?.auctionEndTime || '',
+            totalBids: 0,
             totalDemand: 0,
-            metadata: asset.metadata || announcement.metadata,
+            metadata: {
+              invoiceNumber: announcement.metadata?.invoiceNumber,
+              industry: announcement.metadata?.industry,
+              riskTier: announcement.metadata?.riskTier,
+              faceValue: announcement.metadata?.faceValue,
+              ...asset.metadata,
+            },
           };
-
-          console.log(`🔨 Parsed auction for ${announcement.assetId}:`, auction);
 
           return auction;
         } catch (error) {
-          console.error(`❌ Error fetching asset ${announcement.assetId}:`, error);
+          console.error(`❌ Error fetching live auction ${announcement.assetId}:`, error);
           return null;
         }
       });
 
-      const auctions = (await Promise.all(auctionPromises)).filter((a) => a !== null);
-      console.log('Fetched active auctions with details:', auctions.length);
-      set({ auctions, isLoadingAuctions: false });
+      // Step 4: Process AUCTION_SCHEDULED announcements
+      const scheduledAuctionPromises = scheduledAnnouncements.map(async (announcement: any) => {
+        try {
+          console.log(`📡 Fetching SCHEDULED auction: ${announcement.assetId}`);
+
+          // Get asset details from marketplace endpoint
+          const asset = await marketplaceService.getListingById(announcement.assetId);
+
+          // Parse totalSupply from announcement metadata
+          const totalSupplyWei = BigInt(announcement.metadata?.totalSupply || '0');
+          const totalSupply = Number(totalSupplyWei) / 1e18;
+
+          // Parse reserve price from announcement metadata
+          const reservePriceWei = BigInt(announcement.metadata?.priceRange?.min || '0');
+          const reservePrice = Number(reservePriceWei) / 1e6;
+
+          const auction = {
+            auctionId: announcement.assetId,
+            assetId: announcement.assetId,
+            totalSupply,
+            reservePrice,
+            clearingPrice: undefined,
+            status: 'SCHEDULED' as const,
+            startTime: announcement.metadata?.auctionStartTime || announcement.createdAt,
+            endTime: announcement.metadata?.auctionEndTime || '',
+            totalBids: 0,
+            totalDemand: 0,
+            metadata: {
+              invoiceNumber: announcement.metadata?.invoiceNumber,
+              industry: announcement.metadata?.industry,
+              riskTier: announcement.metadata?.riskTier,
+              faceValue: announcement.metadata?.faceValue,
+              ...asset.metadata,
+            },
+          };
+
+          return auction;
+        } catch (error) {
+          console.error(`❌ Error fetching scheduled auction ${announcement.assetId}:`, error);
+          return null;
+        }
+      });
+
+      // Step 5: Wait for all promises and filter out nulls
+      const liveAuctions = (await Promise.all(liveAuctionPromises)).filter((a) => a !== null);
+      const scheduledAuctions = (await Promise.all(scheduledAuctionPromises)).filter((a) => a !== null);
+
+      console.log('✅ Fetched LIVE auctions:', liveAuctions.length);
+      console.log('✅ Fetched SCHEDULED auctions:', scheduledAuctions.length);
+
+      set({
+        auctions: liveAuctions,
+        scheduledAuctions: scheduledAuctions,
+        isLoadingAuctions: false
+      });
     } catch (error: any) {
-      console.error('Error fetching active auctions:', error);
-      set({ auctionError: error.message, isLoadingAuctions: false, auctions: [] });
+      console.error('Error fetching auctions:', error);
+      set({ auctionError: error.message, isLoadingAuctions: false, auctions: [], scheduledAuctions: [] });
     }
   },
 
@@ -200,7 +256,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
     set({ isLoadingAuctions: true, auctionError: null });
     try {
       // Get AUCTION_ENDED announcements
-      const announcements = await marketplaceService.getAuctionAnnouncements('AUCTION_ENDED', 'ACTIVE');
+      const announcements = await marketplaceService.getAuctionAnnouncements('AUCTION_LIVE', 'ACTIVE');
       console.log('📊 Fetched ended auction announcements:', announcements.length);
 
       // For each announcement, fetch full asset details

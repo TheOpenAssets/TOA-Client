@@ -132,7 +132,7 @@ class MarketplaceService extends BaseService {
    * - Marketplace page to display active auctions
    * - Admin dashboard to view all auctions
    */
-  async getAuctionAnnouncements(_type: 'AUCTION_LIVE' | 'AUCTION_ENDED' | 'AUCTION_FAILED' = 'AUCTION_LIVE', _status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE'): Promise<any[]> {
+  async getAuctionAnnouncements(_type: 'AUCTION_LIVE'  = 'AUCTION_LIVE', _status: 'ACTIVE'  = 'ACTIVE'): Promise<any[]> {
     try {
       const response = await fetch(`${this.baseURL}/announcements`, {
         method: 'GET',

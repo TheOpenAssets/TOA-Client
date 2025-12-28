@@ -36,7 +36,8 @@ const MarketplacePage = () => {
     isLoading,
     error,
     fetchListings,
-    auctions,
+    auctions, // AUCTION_LIVE only
+    scheduledAuctions, // AUCTION_SCHEDULED only
     isLoadingAuctions,
     fetchActiveAuctions,
     marketplaceInfo,
@@ -352,7 +353,7 @@ const MarketplacePage = () => {
         </div>
       </div>
 
-      {/* Auction/Bids Advertising Strip - Infinite Carousel */}
+      {/* Auction/Bids Advertising Strip - AUCTION_SCHEDULED only */}
       <div className="bg-black/70 relative border-b border-gray-200 z-40 overflow-hidden">
         <style>{`
           @keyframes scroll-left {
@@ -374,18 +375,18 @@ const MarketplacePage = () => {
         `}</style>
 
         <div className="max-w-full mx-auto px-6 py-1">
-          {auctions.length > 0 ? (
+          {scheduledAuctions.length > 0 ? (
             <div className="flex items-center overflow-hidden">
               <div className="carousel-track flex items-center gap-6">
-                {/* First set of auctions */}
-                {auctions.map((auction) => (
+                {/* First set of scheduled auctions */}
+                {scheduledAuctions.map((auction) => (
                   <div
                     key={`first-${auction.auctionId}`}
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
-                    <span className="font-antic text-xs text-blue-600 font-semibold">
-                      🔨 LIVE
+                    <span className="font-antic text-xs text-purple-600 font-semibold">
+                      📅 SCHEDULED
                     </span>
                     <span className="font-antic text-xs font-bold text-foreground">
                       {auction.metadata?.invoiceNumber || auction.assetId}
@@ -400,20 +401,20 @@ const MarketplacePage = () => {
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-orange-600 font-medium">
-                      ⏱ {getAuctionTimeRemaining(auction.endTime)} left
+                      🕐 Starts: {new Date(auction.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 ))}
 
                 {/* Duplicate set for seamless loop */}
-                {auctions.map((auction) => (
+                {scheduledAuctions.map((auction) => (
                   <div
                     key={`second-${auction.auctionId}`}
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
-                    <span className="font-antic text-xs text-blue-600 font-semibold">
-                      🔨 LIVE
+                    <span className="font-antic text-xs text-purple-600 font-semibold">
+                      📅 SCHEDULED
                     </span>
                     <span className="font-antic text-xs font-bold text-foreground">
                       {auction.metadata?.invoiceNumber || auction.assetId}
@@ -428,7 +429,7 @@ const MarketplacePage = () => {
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-orange-600 font-medium">
-                      ⏱ {getAuctionTimeRemaining(auction.endTime)} left
+                      🕐 Starts: {new Date(auction.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 ))}
@@ -437,7 +438,7 @@ const MarketplacePage = () => {
           ) : (
             <div className="flex items-center justify-center">
               <span className="font-antic text-xs text-gray-400">
-                No active auctions at the moment
+                No scheduled auctions at the moment
               </span>
             </div>
           )}
@@ -816,10 +817,10 @@ const MarketplacePage = () => {
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
                       >
                         View Details
-                      </button> |
+                      </button>
                       <button
-                        onClick={() => navigate(`/marketplace/invest/${asset.id}`)}
-                        className="ml-2 px-4 py-2 bg-red-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-red-700 transition-colors"
+                        onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
+                        className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors"
                       >
                         Buy Now
                       </button>
