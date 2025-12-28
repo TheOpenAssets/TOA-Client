@@ -135,7 +135,7 @@ class AdminService extends BaseService {
     return data;
   }
 
-  async listOnMarketplace(assetId: string, type: string, price: string, minInvestment: string, duration: string): Promise<any> {
+  async listOnMarketplace(assetId: string, _type: string, _price: string, _minInvestment: string, _duration: string): Promise<any> {
     const response = await fetch(`${this.baseURL}/admin/assets/list-on-marketplace`, {
       method: 'POST',
       headers: this.getAuthHeaders(),

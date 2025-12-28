@@ -69,6 +69,7 @@ const ComplianceViewPage = () => {
   };
 
   // Handle Trigger KYC
+  // @ts-ignore - Function reserved for future KYC trigger functionality
   const _handleTriggerKYC = (asset: AdminAsset) => {
     setSelectedAsset(asset);
     setShowKycModal(true);

@@ -298,7 +298,7 @@ const MarketplacePage = () => {
             <div className="flex items-center gap-8 overflow-x-auto">
               {/* Metric 1: Total Assets */}
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="font-antic text-xs text-gray-500">Total Assets Tokenized</span>
+                <span className="font-antic text-xs text-gray-500">Total Assets </span>
                 <span className="font-antic text-sm font-semibold text-foreground">
                   {marketplaceInfo.totalAssets} Assets
                 </span>

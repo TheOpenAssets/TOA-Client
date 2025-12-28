@@ -5,6 +5,9 @@ import type {
   MarketplaceListing,
   AssetDetails,
   NotifyPurchasePayload,
+  Bid,
+  UserBidsResponse,
+  SubmitBidPayload,
 } from '@/types/marketplace.types';
 import BaseService from './base.service';
 
@@ -129,9 +132,9 @@ class MarketplaceService extends BaseService {
    * - Marketplace page to display active auctions
    * - Admin dashboard to view all auctions
    */
-  async getAuctionAnnouncements(type: 'AUCTION_LIVE' | 'AUCTION_ENDED' | 'AUCTION_FAILED' = 'AUCTION_LIVE', status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE'): Promise<any[]> {
+  async getAuctionAnnouncements(_type: 'AUCTION_LIVE' | 'AUCTION_ENDED' | 'AUCTION_FAILED' = 'AUCTION_LIVE', _status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE'): Promise<any[]> {
     try {
-      const response = await fetch(`${this.baseURL}/announcements?type=${type}&status=${status}`, {
+      const response = await fetch(`${this.baseURL}/announcements`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });

@@ -34,10 +34,10 @@ const OperationsViewPage = () => {
   const [processing, setProcessing] = useState(false);
 
   // Listing form data
-  const [listingType, setListingType] = useState('STATIC');
-  const [price, setPrice] = useState('1000000'); // 1 USDC in 6 decimals
+  const [listingType] = useState('STATIC');
+  const [price] = useState('1000000'); // 1 USDC in 6 decimals
   const [minInvestment, setMinInvestment] = useState(''); // Will be populated from asset data
-  const [duration, setDuration] = useState('0');
+  const [duration] = useState('0');
 
   // Auction scheduling form data
   const [startDelayMinutes, setStartDelayMinutes] = useState('5'); // 5 minutes default (matches script)

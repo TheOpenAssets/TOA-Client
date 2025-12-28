@@ -18,7 +18,7 @@ const PortfolioPage = () => {
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
-  const { toasts, success, error: showError, warning, info, removeToast } = useToast();
+  const { toasts, success, error: showError, warning, removeToast } = useToast();
 
   // Contract interaction for settling bids (investor-settle.sh verified)
   const { settleBid, notifyBackend, status: settleStatus, isLoading: isSettling, isSuccess, txHash } = useSettleBid();

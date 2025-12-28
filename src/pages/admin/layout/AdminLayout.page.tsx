@@ -10,15 +10,14 @@ import {
   DollarSign,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
-import { calculateAdminStats } from '../../../lib/data/admin-mock-data';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
 import { authService } from '../../../lib/api/auth.service';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const _stats = calculateAdminStats();
+  const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
    useEffect(() => {
@@ -96,6 +95,12 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-[#f6fbff]">
       <HeroBackground />
+
+      {error && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
 
       <div className="relative z-10">
         {/* Top Header */}
@@ -177,8 +182,4 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
-
-function setError(arg0: string) {
-  throw new Error('Function not implemented.');
-}
 

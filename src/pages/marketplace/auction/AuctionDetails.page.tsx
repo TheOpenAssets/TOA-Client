@@ -183,7 +183,7 @@ const AuctionDetailsPage = () => {
                 <div className="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-lg">
                   <Clock className="w-4 h-4 text-orange-600" />
                   <span className="font-antic text-sm font-medium text-orange-600">
-                    {getTimeRemaining(asset.endTime)} left
+                    {asset.endTime ? getTimeRemaining(asset.endTime) : 'N/A'} left
                   </span>
                 </div>
               </div>
