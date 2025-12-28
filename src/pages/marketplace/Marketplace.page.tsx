@@ -11,11 +11,7 @@ import {
   Clock,
 } from 'lucide-react';
 import {
-  platformMetrics,
   marketplaceAssets,
-  getFeaturedAssets,
-  getHighYieldAssets,
-  getRecentlyVerifiedAssets,
   formatCurrency,
   getCategoryIcon,
 } from '../../lib/data/marketplace-mock-data';
@@ -43,25 +39,29 @@ const MarketplacePage = () => {
     auctions,
     isLoadingAuctions,
     fetchActiveAuctions,
+    marketplaceInfo,
+    isLoadingInfo,
+    fetchMarketplaceInfo,
+    trendingAssets,
+    isLoadingTrending,
+    fetchTrendingAssets,
   } = useMarketplaceStore();
 
   // Fetch listings and auctions on mount
   useEffect(() => {
-    console.log('🚀 Marketplace: Fetching listings from API...');
+    console.log('🚀 Marketplace: Fetching data from APIs...');
     fetchListings();
-    console.log('🚀 Marketplace: Fetching active auctions (SCRIPT-VERIFIED)...');
-    console.log('  → GET /announcements?type=AUCTION_LIVE&status=ACTIVE');
-    console.log('  → Then GET /assets/:assetId for each');
+    console.log('  → GET /marketplace/listings');
     fetchActiveAuctions(); // Fetch using announcements + assets (100% script-verified)
-  }, [fetchListings, fetchActiveAuctions]);
-
-  // Use mock data as fallback for featured sections (until backend provides these endpoints)
-  const _featuredAssets = getFeaturedAssets();
-  const highYieldAssets = getHighYieldAssets();
-  const recentlyVerifiedAssets = getRecentlyVerifiedAssets();
+    console.log('  → GET /announcements?type=AUCTION_LIVE&status=ACTIVE');
+    fetchMarketplaceInfo(); // NEW: Platform metrics
+    console.log('  → GET /marketplace/info');
+    fetchTrendingAssets(3); // NEW: Top 3 trending assets
+    console.log('  → GET /marketplace/top-grossing?limit=3');
+  }, [fetchListings, fetchActiveAuctions, fetchMarketplaceInfo, fetchTrendingAssets]);
 
   // Convert backend listings to frontend format for display
-  // NOTE: This is a temporary adapter until backend provides all required fields
+  // Using REAL API data with sold percentage for progress bars
   const displayAssets: MarketplaceAsset[] = listings.length > 0
     ? (() => {
         console.log('✅ Marketplace: Using REAL data from API', { count: listings.length });
@@ -71,7 +71,30 @@ const MarketplacePage = () => {
           const dueDate = new Date(listing.dueDate);
           const today = new Date();
           const maturityDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          
+
+          // Parse sold and totalSupply from wei (18 decimals)
+          // @ts-ignore
+          const soldWei = BigInt(listing.sold || '0');
+          // @ts-ignore
+          const totalSupplyWei = BigInt(listing.totalSupply || '0');
+          const sold = Number(soldWei) / 1e18;
+          const totalSupply = Number(totalSupplyWei) / 1e18;
+
+          // Calculate funding progress (sold percentage)
+          const fundingProgress = totalSupply > 0 ? (sold / totalSupply) * 100 : 0;
+
+          // Parse price per token (USDC 6 decimals)
+          // @ts-ignore
+          const pricePerTokenWei = BigInt(listing.pricePerToken || '0');
+          const pricePerToken = Number(pricePerTokenWei) / 1e6;
+
+          // Calculate total raised (sold * price per token)
+          const totalRaised = sold * pricePerToken;
+
+          // Target amount is face value
+          // @ts-ignore
+          const targetAmount = parseFloat(listing.faceValue || '0');
+
           return {
             id: listing.assetId,
             // @ts-ignore
@@ -82,14 +105,12 @@ const MarketplacePage = () => {
             description: `${listing.industry} · Invoice · ${listing.riskTier} Risk`,
             category: 'invoice' as const,
             icon: '📄',
-            // @ts-ignore
-            tokenPrice: parseFloat(listing.pricePerToken) / 1e18, // Convert from wei to token
+            tokenPrice: pricePerToken,
             yieldAPY: 8, // TODO: Backend needs to provide this - using default
             maturityDays: maturityDays > 0 ? maturityDays : 90,
-            totalRaised: 0, // TODO: Backend needs to provide this
-            // @ts-ignore
-            targetAmount: parseFloat(listing.faceValue),
-            fundingProgress: 0, // TODO: Backend needs to provide this
+            totalRaised: totalRaised,
+            targetAmount: targetAmount,
+            fundingProgress: fundingProgress,
             status: listing.status,
             verified: listing.status === 'TOKENIZED',
             // @ts-ignore
@@ -266,70 +287,68 @@ const MarketplacePage = () => {
         </div>
       </header>
 
-      {/* Platform Metrics Strip */}
+      {/* Platform Metrics Strip - Real Data from GET /marketplace/info */}
       <div className="bg-transparent relative border-b border-gray-200 z-40">
         <div className="max-w-[1400px] mx-auto px-6 py-4">
-          <div className="flex items-center gap-8 overflow-x-auto">
-            {/* Metric 1: Total Assets Issued */}
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="font-antic text-xs text-gray-500">Total Assets Issued</span>
-              <span className="font-antic text-sm font-semibold text-foreground">
-                {platformMetrics.totalAssetsIssued} Assets
-              </span>
-              <span className="flex items-center gap-1 text-green-600">
-                <TrendingUp className="w-3 h-3" />
-                <span className="font-antic text-xs">{platformMetrics.totalAssetsChange}</span>
-              </span>
+          {isLoadingInfo ? (
+            <div className="flex items-center justify-center py-2">
+              <span className="font-antic text-xs text-gray-500">Loading metrics...</span>
             </div>
+          ) : marketplaceInfo ? (
+            <div className="flex items-center gap-8 overflow-x-auto">
+              {/* Metric 1: Total Assets */}
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="font-antic text-xs text-gray-500">Total Assets Tokenized</span>
+                <span className="font-antic text-sm font-semibold text-foreground">
+                  {marketplaceInfo.totalAssets} Assets
+                </span>
+                <span className="flex items-center gap-1 text-green-600">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="font-antic text-xs">Live</span>
+                </span>
+              </div>
 
-            {/* Metric 2: Average Platform Yield */}
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="font-antic text-xs text-gray-500">Average Platform Yield</span>
-              <span className="font-antic text-sm font-semibold text-foreground">
-                {platformMetrics.averageYield}% APY
-              </span>
-              <span className="flex items-center gap-1 text-green-600">
-                <TrendingUp className="w-3 h-3" />
-                <span className="font-antic text-xs">{platformMetrics.averageYieldChange}%</span>
-              </span>
-            </div>
+              {/* Metric 2: Total Value Tokenized */}
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="font-antic text-xs text-gray-500">Total Value Tokenized</span>
+                <span className="font-antic text-sm font-semibold text-foreground">
+                  ${formatLargeNumber(marketplaceInfo.totalValueTokenized)}
+                </span>
+                <span className="flex items-center gap-1 text-green-600">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="font-antic text-xs">USD</span>
+                </span>
+              </div>
 
-            {/* Metric 3: Total Value Tokenized */}
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="font-antic text-xs text-gray-500">Total Value Tokenized</span>
-              <span className="font-antic text-sm font-semibold text-foreground">
-                ${platformMetrics.totalValueTokenized}M
-              </span>
-              <span className="flex items-center gap-1 text-green-600">
-                <TrendingUp className="w-3 h-3" />
-                <span className="font-antic text-xs">{platformMetrics.totalValueChange}%</span>
-              </span>
-            </div>
+              {/* Metric 3: Active Users */}
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="font-antic text-xs text-gray-500">Active Users</span>
+                <span className="font-antic text-sm font-semibold text-foreground">
+                  {marketplaceInfo.activeUsers.toLocaleString()}
+                </span>
+                <span className="flex items-center gap-1 text-green-600">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="font-antic text-xs">Investors</span>
+                </span>
+              </div>
 
-            {/* Metric 4: Active Investors */}
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="font-antic text-xs text-gray-500">Active Investors</span>
-              <span className="font-antic text-sm font-semibold text-foreground">
-                {platformMetrics.activeInvestors.toLocaleString()}
-              </span>
-              <span className="flex items-center gap-1 text-green-600">
-                <TrendingUp className="w-3 h-3" />
-                <span className="font-antic text-xs">{platformMetrics.activeInvestorsChange}</span>
-              </span>
+              {/* Metric 4: Settlements Completed */}
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="font-antic text-xs text-gray-500">Total Settlements</span>
+                <span className="font-antic text-sm font-semibold text-foreground">
+                  {marketplaceInfo.totalSettlements.toLocaleString()}
+                </span>
+                <span className="flex items-center gap-1 text-green-600">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="font-antic text-xs">Completed</span>
+                </span>
+              </div>
             </div>
-
-            {/* Metric 5: Settlements Completed */}
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="font-antic text-xs text-gray-500">Settlements Completed (30d)</span>
-              <span className="font-antic text-sm font-semibold text-foreground">
-                {platformMetrics.settlementsCompleted.toLocaleString()}
-              </span>
-              <span className="flex items-center gap-1 text-green-600">
-                <TrendingUp className="w-3 h-3" />
-                <span className="font-antic text-xs">{platformMetrics.settlementsChange}</span>
-              </span>
+          ) : (
+            <div className="flex items-center justify-center py-2">
+              <span className="font-antic text-xs text-gray-500">Unable to load metrics</span>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -494,56 +513,69 @@ const MarketplacePage = () => {
             </div>
           </div>
 
-          {/* Section 2: High-Yield Opportunities */}
+          {/* Section 2: Trending Assets (Highest Sold %) - Real Data from GET /marketplace/top-grossing */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
               <h2 className="font-antic text-2xl  text-foreground">
-                High-Yield Opportunities
+                Trending Assets
               </h2>
             </div>
             <div className="border-t border-gray-200">
-              {highYieldAssets.map((asset, index) => (
-                <div key={asset.id}>
-                  <div className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors">
-                    <div className="flex items-center justify-between">
-                      {/* Left: Icon + Asset Info */}
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16  rounded-full flex items-center justify-center text-2xl flex-shrink-0">
-                          {getCategoryIcon(asset.category)}
-                        </div>
-                        <div>
-                          <div className="font-antic text-lg font-bold text-foreground mb-1">
-                            {asset.assetId}
+              {isLoadingTrending ? (
+                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                  Loading trending assets...
+                </div>
+              ) : trendingAssets.length === 0 ? (
+                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                  No trending assets
+                </div>
+              ) : (
+                trendingAssets.map((asset, index) => (
+                  <div key={asset.assetId}>
+                    <div
+                      className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/marketplace/asset/${asset.assetId}`)}
+                    >
+                      <div className="flex items-center justify-between">
+                        {/* Left: Icon + Asset Info */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0">
+                            {getCategoryIcon(asset.industry || 'invoice')}
                           </div>
-                          <div className="font-antic text-sm text-gray-500">
-                            {asset.description}
+                          <div>
+                            <div className="font-antic text-lg font-bold text-foreground mb-1">
+                              {asset.name || asset.assetId}
+                            </div>
+                            <div className="font-antic text-sm text-gray-500">
+                              {asset.industry} · {asset.activityMetrics?.totalActivity || 0} activities
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Right: Price + Yield */}
-                      <div className="text-right">
-                        <div className="font-antic text-lg font-bold text-foreground mb-1">
-                          ${formatCurrency(asset.tokenPrice)}
-                        </div>
-                        <div className="flex items-center justify-end gap-1 text-green-600">
-                          <TrendingUp className="w-4 h-4" />
-                          <span className="font-antic text-sm font-semibold">
-                            {asset.yieldAPY}%
-                          </span>
+                        {/* Right: Sold % + Activity */}
+                        <div className="text-right">
+                          <div className="font-antic text-lg font-bold text-green-600 mb-1">
+                            {asset.percentageSold?.toFixed(1) || 0}% Sold
+                          </div>
+                          <div className="flex items-center justify-end gap-1 text-gray-600">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="font-antic text-sm">
+                              {asset.activityMetrics?.purchaseCount || 0} purchases
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    {index < trendingAssets.length - 1 && (
+                      <div className="border-t border-gray-200"></div>
+                    )}
                   </div>
-                  {index < highYieldAssets.length - 1 && (
-                    <div className="border-t border-gray-200"></div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Section 3: Recently Verified Assets */}
+          {/* Section 3: Recently Verified Assets - Real Data from GET /marketplace/listings (Top 3, sorted by newest) */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
               <h2 className="font-antic text-2xl  text-foreground">
@@ -551,43 +583,64 @@ const MarketplacePage = () => {
               </h2>
             </div>
             <div className="border-t border-gray-200">
-              {recentlyVerifiedAssets.map((asset, index) => (
-                <div key={asset.id}>
-                  <div className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors">
-                    <div className="flex items-center justify-between">
-                      {/* Left: Icon + Asset Info */}
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16  rounded-full flex items-center justify-center text-2xl flex-shrink-0">
-                          {getCategoryIcon(asset.category)}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-antic text-lg font-bold text-foreground">
-                              {asset.assetId}
-                            </span>
-                            {asset.verified && (
-                              <span className="text-green-600 font-bold">✓</span>
-                            )}
+              {isLoading ? (
+                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                  Loading recent assets...
+                </div>
+              ) : listings.length === 0 ? (
+                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                  No verified assets
+                </div>
+              ) : (
+                listings.slice(0, 3).map((listing, index) => (
+                  <div key={listing.assetId}>
+                    <div
+                      className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/marketplace/asset/${listing.assetId}`)}
+                    >
+                      <div className="flex items-center justify-between">
+                        {/* Left: Icon + Asset Info */}
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0">
+                            {/* @ts-ignore */}
+                            {getCategoryIcon(listing.industry || 'invoice')}
                           </div>
-                          <div className="font-antic text-sm text-gray-500">
-                            {asset.description}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-antic text-lg font-bold text-foreground">
+                                {/* @ts-ignore */}
+                                {listing.name || listing.assetId}
+                              </span>
+                              {/* @ts-ignore */}
+                              {(listing.status === 'LISTED' || listing.status === 'TOKENIZED') && (
+                                <span className="text-green-600 font-bold">✓</span>
+                              )}
+                            </div>
+                            <div className="font-antic text-sm text-gray-500">
+                              {/* @ts-ignore */}
+                              {listing.industry} · {listing.listingType}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Right: Price */}
-                      <div className="text-right">
-                        <div className="font-antic text-lg font-bold text-foreground">
-                          ${asset.tokenPrice.toFixed(2)}
+                        {/* Right: Price */}
+                        <div className="text-right">
+                          <div className="font-antic text-lg font-bold text-foreground">
+                            {/* @ts-ignore */}
+                            ${formatLargeNumber(parseFloat(listing.pricePerToken || '0') / 1e6)}
+                          </div>
+                          <div className="font-antic text-xs text-gray-500">
+                            per token
+                          </div>
                         </div>
                       </div>
                     </div>
+                    {index < Math.min(listings.length, 3) - 1 && (
+                      <div className="border-t border-gray-200"></div>
+                    )}
                   </div>
-                  {index < recentlyVerifiedAssets.length - 1 && (
-                    <div className="border-t border-gray-200"></div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

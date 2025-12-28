@@ -448,6 +448,106 @@ class MarketplaceService extends BaseService {
     console.log('[PLACEHOLDER] Settle bid on contract:', { auctionId, bidIndex });
     return Promise.resolve({ success: true, message: 'Bid settled (placeholder)' });
   }
+
+  /**
+   * Get marketplace aggregate info/statistics
+   *
+   * ENDPOINT: GET /marketplace/info
+   *
+   * Returns aggregate marketplace statistics:
+   * {
+   *   success: boolean,
+   *   info: {
+   *     totalAssets: number,          // Total tokenized assets
+   *     activeUsers: number,          // Unique users who made purchases or bids
+   *     totalSettlements: number,     // Total settlement records
+   *     totalValueTokenized: number   // Sum of face values of all tokenized assets
+   *   }
+   * }
+   *
+   * Used by: Marketplace page for Platform Metrics Strip
+   */
+  async getMarketplaceInfo(): Promise<{
+    totalAssets: number;
+    activeUsers: number;
+    totalSettlements: number;
+    totalValueTokenized: number;
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/info`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch marketplace info');
+      }
+
+      const data = await response.json();
+      console.log('📡 Marketplace Info API Response:', data);
+
+      return data.info;
+    } catch (error) {
+      console.error('Error fetching marketplace info:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get top-grossing/trending assets based on activity
+   *
+   * ENDPOINT: GET /marketplace/top-grossing?limit=N
+   *
+   * Returns the most popular assets based on purchase and bid activity.
+   * Sorted by total activity (purchases + bids), highest first.
+   *
+   * Response:
+   * {
+   *   success: boolean,
+   *   count: number,
+   *   assets: [{
+   *     assetId: string,
+   *     tokenAddress: string,
+   *     name: string,
+   *     industry: string,
+   *     faceValue: string,
+   *     totalSupply: string,
+   *     sold: string,
+   *     percentageSold: number,
+   *     pricePerToken: string,
+   *     listingType: string,
+   *     activityMetrics: {
+   *       purchaseCount: number,
+   *       bidCount: number,
+   *       totalActivity: number
+   *     }
+   *   }]
+   * }
+   *
+   * Used by: Marketplace page for "Trending Assets" section (sorted by percentageSold)
+   */
+  async getTopGrossingAssets(limit: number = 3): Promise<any[]> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/top-grossing?limit=${limit}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch top grossing assets');
+      }
+
+      const data = await response.json();
+      console.log('📡 Top Grossing Assets API Response:', data);
+
+      return data.assets || [];
+    } catch (error) {
+      console.error('Error fetching top grossing assets:', error);
+      throw error;
+    }
+  }
 }
 
 export const marketplaceService = new MarketplaceService();

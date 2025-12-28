@@ -25,6 +25,19 @@ interface MarketplaceState {
   isLoadingBids: boolean;
   auctionError: string | null;
 
+  // Marketplace Info (Platform Metrics)
+  marketplaceInfo: {
+    totalAssets: number;
+    activeUsers: number;
+    totalSettlements: number;
+    totalValueTokenized: number;
+  } | null;
+  isLoadingInfo: boolean;
+
+  // Top Grossing/Trending Assets
+  trendingAssets: any[];
+  isLoadingTrending: boolean;
+
   // Existing actions
   fetchListings: () => Promise<void>;
   fetchAssetDetails: (assetId: string) => Promise<void>;
@@ -36,6 +49,10 @@ interface MarketplaceState {
   fetchAuctionByAssetId: (assetId: string) => Promise<void>;
   fetchUserBids: (assetId?: string) => Promise<void>;
   clearAuctionError: () => void;
+
+  // New actions for marketplace info and trending assets
+  fetchMarketplaceInfo: () => Promise<void>;
+  fetchTrendingAssets: (limit?: number) => Promise<void>;
 }
 
 export const useMarketplaceStore = create<MarketplaceState>((set) => ({
@@ -53,6 +70,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
   isLoadingAuctions: false,
   isLoadingBids: false,
   auctionError: null,
+
+  // Marketplace Info state
+  marketplaceInfo: null,
+  isLoadingInfo: false,
+
+  // Trending Assets state
+  trendingAssets: [],
+  isLoadingTrending: false,
 
   // Existing actions
   fetchListings: async () => {
@@ -294,5 +319,31 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
 
   clearAuctionError: () => {
     set({ auctionError: null });
+  },
+
+  // Fetch marketplace info (Platform Metrics)
+  fetchMarketplaceInfo: async () => {
+    set({ isLoadingInfo: true });
+    try {
+      const info = await marketplaceService.getMarketplaceInfo();
+      console.log('✅ Fetched marketplace info:', info);
+      set({ marketplaceInfo: info, isLoadingInfo: false });
+    } catch (error: any) {
+      console.error('❌ Error fetching marketplace info:', error);
+      set({ isLoadingInfo: false });
+    }
+  },
+
+  // Fetch trending/top grossing assets
+  fetchTrendingAssets: async (limit: number = 3) => {
+    set({ isLoadingTrending: true });
+    try {
+      const assets = await marketplaceService.getTopGrossingAssets(limit);
+      console.log('✅ Fetched trending assets:', assets);
+      set({ trendingAssets: assets, isLoadingTrending: false });
+    } catch (error: any) {
+      console.error('❌ Error fetching trending assets:', error);
+      set({ isLoadingTrending: false, trendingAssets: [] });
+    }
   },
 }));
