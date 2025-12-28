@@ -30,7 +30,8 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
   useEffect(() => {
     if (asset?.listing?.phase === 'BIDDING' && asset?.listing?.listedAt && asset?.listing?.duration) {
       const interval = setInterval(() => {
-        const endTime = new Date(asset.listing.listedAt).getTime() + (asset.listing.duration * 24 * 60 * 60 * 1000);
+        // duration is in seconds from API, convert to milliseconds
+        const endTime = new Date(asset.listing.listedAt).getTime() + (asset.listing.duration * 1000);
         const now = new Date().getTime();
         const distance = endTime - now;
 
@@ -76,7 +77,6 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
     { id: 'overview' as TabType, label: 'Overview', icon: BarChart2 },
     { id: 'invoice' as TabType, label: 'Invoice Details', icon: FileText },
     { id: 'cryptography' as TabType, label: 'Cryptography', icon: Shield },
-    { id: 'timeline' as TabType, label: 'Timeline', icon: List },
   ];
 
   const getStatusComponent = () => {
@@ -183,7 +183,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                                 </span>
                                 </div>
                                 <p className="font-antic text-3xl font-normal text-foreground">
-                                {parseInt(asset.tokenParams?.totalSupply || '0').toLocaleString()} Tokens
+                                {(parseInt(asset.tokenParams?.totalSupply || '0') / 1e18).toLocaleString()} Tokens
                                 </p>
                             </div>
                             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
@@ -281,7 +281,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                       Total Tokens
                     </span>
                     <span className="font-antic font-normal text-foreground text-base">
-                      {parseInt(asset.tokenParams?.totalSupply || '0').toLocaleString()}
+                      {(parseInt(asset.tokenParams?.totalSupply || '0')/1e18).toLocaleString()}
                     </span>
                   </div>
                 </div>

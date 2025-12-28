@@ -145,7 +145,10 @@ class KYCService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/kyc/upload`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          // Do NOT set Content-Type - let the browser handle multipart/form-data boundary
+        },
         body: payload,
       });
 

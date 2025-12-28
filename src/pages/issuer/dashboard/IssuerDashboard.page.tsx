@@ -10,6 +10,7 @@ import { AssetUploadModal } from '../../../components/issuer/AssetUploadModal';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
 import { assetService } from '../../../lib/api/asset.service';
+import { authService } from '../../../lib/api/auth.service';
 
 // Calculate stats from assets
 const calculateStats = (assets: any[]) => {
@@ -61,6 +62,43 @@ const IssuerDashboardPage = () => {
   const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 });
   const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  // Verify authentication on component mount
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        // Check if access token exists
+        if (!authService.isAuthenticated()) {
+          console.warn('No access token found. Redirecting to login...');
+          navigate('/', { replace: true });
+          return;
+        }
+
+        // Verify token with backend
+        const user = await authService.getCurrentUser();
+
+        // Check if user has ORIGINATOR role (issuer)
+        if (user.role !== 'ORIGINATOR') {
+          console.warn(`Unauthorized role: ${user.role}. Issuer dashboard requires ORIGINATOR role.`);
+          setError('Unauthorized access. You do not have permission to access the issuer dashboard.');
+          setTimeout(() => {
+            navigate('/', { replace: true });
+          }, 2000);
+          return;
+        }
+
+        console.log('Authentication verified. User:', user);
+      } catch (err: any) {
+        console.error('Authentication verification failed:', err);
+        setError(err.message || 'Authentication failed. Redirecting to login...');
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 2000);
+      }
+    };
+
+    verifyAuth();
+  }, [navigate]);
 
   // Fetch assets on component mount
   useEffect(() => {
@@ -197,6 +235,10 @@ const IssuerDashboardPage = () => {
         label: 'Tokenized',
         className: 'bg-teal-100 text-teal-700 border-teal-200',
       },
+      SCHEDULED: {
+        label: 'Scheduled',
+        className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+       },
       LISTED: {
         label: 'Listed',
         className: 'bg-green-100 text-green-700 border-green-200',
@@ -534,6 +576,18 @@ const IssuerDashboardPage = () => {
           )}
         </div>
       </main>
+      {/* Sticky Logout Button */}
+      <div className="fixed bottom-6 left-6 z-50">
+        <button
+          onClick={() => {
+        authService.logout();
+        navigate('/');
+          }}
+          className="bg-black/50 hover:bg-black/90 text-white font-antic rounded-xl px-6 py-3  font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          Logout
+        </button>
+      </div>
 
       {/* Asset Upload Modal */}
       <AssetUploadModal

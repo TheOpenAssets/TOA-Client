@@ -333,6 +333,60 @@ class AuthService extends BaseService {
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
   }
+
+  /**
+   * Get current authenticated user details
+   *
+   * ENDPOINT: GET /auth/me
+   *
+   * BACKEND IMPLEMENTATION REQUIREMENTS:
+   * - Header: Authorization: Bearer {access_token}
+   * - Validate JWT token
+   * - Return user details from token payload
+   *
+   * EXPECTED BACKEND RESPONSE:
+   * {
+   *   id: string,
+   *   walletAddress: string,
+   *   role: 'INVESTOR' | 'ORIGINATOR' | 'ADMIN',
+   *   kyc: boolean
+   * }
+   *
+   * ERROR CASES:
+   * - 401: Invalid or expired token
+   * - 403: Token valid but user not authorized
+   */
+  async getCurrentUser(): Promise<{ id: string; walletAddress: string; role: string; kyc: boolean }> {
+    const token = this.getAccessToken();
+
+    if (!token) {
+      throw new Error('No access token found');
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          ...this.getHeaders(),
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired or invalid - clear tokens
+          this.logout();
+          throw new Error('Session expired. Please login again.');
+        }
+        throw new Error('Failed to verify authentication');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      throw error;
+    }
+  }
 }
 
 // Factory instance

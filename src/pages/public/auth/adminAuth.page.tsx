@@ -64,6 +64,7 @@ const AdminAuthPage = () => {
           >
             {isLoading ? 'Authenticating...' : 'Login as Admin'}
           </Button>
+          
         ) : (
           <div className="flex justify-center">
             <ConnectButton />

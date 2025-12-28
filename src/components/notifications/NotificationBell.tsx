@@ -244,9 +244,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
         >
           <Bell size={16} strokeWidth={2} aria-hidden="true" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 left-full min-w-5 -translate-x-1/2 px-1 bg-red-500">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            <Badge className="absolute -top-2 left-full min-w-5 -translate-x-1/2 px-1 bg-purple-500 rounded-full w-5 h-5 flex items-center justify-center" />
           )}
         </Button>
       </PopoverTrigger>
@@ -261,7 +259,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
               <TabsTrigger value="unread" className="text-sm font-inter">
                 Unread
                 {unreadCount > 0 && (
-                  <Badge className="ml-2 bg-red-500 text-white">{unreadCount}</Badge>
+                  <Badge className="ml-2 bg-purple-500 text-white">{unreadCount}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
@@ -327,7 +325,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
                       </p>
                     </div>
                     {!notification.read && (
-                      <span className="mt-2 inline-block w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />
+                      <span className="mt-2 inline-block w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
                     )}
                   </button>
                 );

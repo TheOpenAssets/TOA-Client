@@ -8,6 +8,7 @@ import { authService } from '../../lib/api/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useState, useEffect } from 'react';
 import { issuerService } from "../../lib/api/issuer.service";
+import { User } from "lucide-react";
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ const HeroSection = () => {
 
       setUser(loginResponse.user);
 
-      if (loginResponse.user.kyc === true) {
+      if (loginResponse.user.kyc === true && loginResponse.user.role === 'INVESTOR') {
         navigate('/portfolio');
       } else {
         navigate('/auth', { state: { showKycForm: true } });
@@ -88,7 +89,7 @@ const HeroSection = () => {
 
       setUser(loginResponse.user);
 
-      if (loginResponse.user.kyc === true) {
+      if (loginResponse.user.kyc === true && loginResponse.user.role === 'ORIGINATOR') {
         navigate('/issuer/dashboard');
       } else {
         navigate('/auth', { state: { showKycForm: true } });
@@ -109,7 +110,11 @@ const HeroSection = () => {
 
       if (!isConnected || !address) {
         // Open RainbowKit modal and set pending action
-        setPendingAction('investor');
+        if (loginResponse.user.role === 'ORIGINATOR') 
+        setPendingAction('issuer');
+       else if( loginResponse.user.role === 'INVESTOR'
+        setPendingAction('investor')
+       )
         if (openConnectModal) {
           openConnectModal();
         } else {

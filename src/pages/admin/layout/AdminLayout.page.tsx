@@ -12,10 +12,50 @@ import {
 import HeroBackground from '../../landing/HeroBackground';
 import { calculateAdminStats } from '../../../lib/data/admin-mock-data';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
+import { authService } from '../../../lib/api/auth.service';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminLayout = () => {
   const location = useLocation();
   const stats = calculateAdminStats();
+  const navigate = useNavigate();
+
+    useEffect(() => {
+      const verifyAuth = async () => {
+        try {
+          // Check if access token exists
+          if (!authService.isAuthenticated()) {
+            console.warn('No access token found. Redirecting to login...');
+            navigate('/', { replace: true });
+            return;
+          }
+  
+          // Verify token with backend
+          const user = await authService.getCurrentUser();
+  
+          // Check if user has ORIGINATOR role (issuer)
+          if (user.role !== 'ORIGINATOR') {
+            console.warn(`Unauthorized role: ${user.role}. Issuer dashboard requires ORIGINATOR role.`);
+            setError('Unauthorized access. You do not have permission to access the issuer dashboard.');
+            setTimeout(() => {
+              navigate('/', { replace: true });
+            }, 2000);
+            return;
+          }
+  
+          console.log('Authentication verified. User:', user);
+        } catch (err: any) {
+          console.error('Authentication verification failed:', err);
+          setError(err.message || 'Authentication failed. Redirecting to login...');
+          setTimeout(() => {
+            navigate('/', { replace: true });
+          }, 2000);
+        }
+      };
+  
+      verifyAuth();
+    }, [navigate]);
 
   const navigation = [
     {
@@ -27,13 +67,12 @@ const AdminLayout = () => {
       name: 'Compliance Queue',
       path: '/admin/compliance',
       icon: ShieldCheck,
-      badge: stats.pendingCompliance,
+      
     },
     {
       name: 'On-Chain Operations',
       path: '/admin/operations',
       icon: Network,
-      badge: stats.complianceApproved,
     },
     {
       name: 'Payouts',
@@ -85,27 +124,7 @@ const AdminLayout = () => {
 
               {/* Global Stats - Top Bar */}
               <div className="hidden xl:flex items-center gap-6">
-                <div className="text-right">
-                  <p className="font-inter text-xs text-foreground/60">Total AUM</p>
-                  <p className="font-antic text-xl font-normal text-foreground">
-                    {formatCurrency(stats.assetsUnderManagement)}
-                  </p>
-                </div>
-                <div className="h-10 w-px bg-gray-300" />
-                <div className="text-right">
-                  <p className="font-inter text-xs text-foreground/60">On-Chain Assets</p>
-                  <p className="font-antic text-xl font-normal text-foreground">
-                    {stats.onChainAssets}
-                  </p>
-                </div>
-                <div className="h-10 w-px bg-gray-300" />
-                <div className="text-right">
-                  <p className="font-inter text-xs text-foreground/60">Yield Distributed</p>
-                  <p className="font-antic text-xl font-normal text-foreground">
-                    {formatCurrency(stats.totalYieldDistributed)}
-                  </p>
-                </div>
-                <div className="h-10 w-px bg-gray-300" />
+                
                 {/* Notification Bell */}
                 <NotificationBell role="ADMIN" />
               </div>
@@ -140,20 +159,7 @@ const AdminLayout = () => {
                       <Icon className="w-5 h-5" />
                       <span>{item.name}</span>
                     </div>
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <span
-                        className={`
-                        px-2.5 py-0.5 rounded-lg text-xs font-semibold
-                        ${
-                          active
-                            ? 'bg-white/20 text-white'
-                            : 'bg-primary/10 text-primary'
-                        }
-                      `}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
+                   
                   </Link>
                 );
               })}
@@ -182,3 +188,7 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
+function setError(arg0: string) {
+  throw new Error('Function not implemented.');
+}
+

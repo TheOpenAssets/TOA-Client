@@ -153,7 +153,7 @@ class NotificationService extends BaseService {
         try {
           console.log('🔄 Fetching notifications from API...');
           const response = await fetch(
-            `${this.baseURL}/notifications?${queryParams.toString()}`,
+            `${this.baseURL}/notifications`,
             {
               method: 'GET',
               headers: this.getAuthHeaders(),

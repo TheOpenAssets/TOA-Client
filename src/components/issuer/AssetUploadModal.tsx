@@ -33,7 +33,11 @@ interface FormData {
   // Step 4: Auction Settings (only if AUCTION)
   minRaisePercentage: string;
   maxRaisePercentage: string;
-  auctionDuration: string;
+  auctionDuration: string; // stored as seconds (to send to backend)
+  auctionDays: string;
+  auctionHours: string;
+  auctionMinutes: string;
+  auctionSeconds: string;
 }
 
 const INITIAL_FORM_DATA: FormData = {
@@ -51,7 +55,11 @@ const INITIAL_FORM_DATA: FormData = {
   minInvestment: '',
   minRaisePercentage: '75', // 75% for STATIC (leaving room for platform fees 1.5% and yield)
   maxRaisePercentage: '95', // 95% for STATIC (default placeholder as per script)
-  auctionDuration: '300', // 5 minutes (300 seconds) for AUCTION
+  auctionDuration: '300', // stored in seconds for backend
+  auctionDays: '0',
+  auctionHours: '0',
+  auctionMinutes: '5', // default 5 minutes
+  auctionSeconds: '0',
 };
 
 export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModalProps) => {
@@ -60,6 +68,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalSteps = formData.assetType === 'AUCTION' ? 4 : 3;
@@ -98,6 +107,38 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
     setError(null);
   };
 
+  // Calculate total seconds from days, hours, minutes, seconds
+  const calculateTotalSeconds = (days: string, hours: string, minutes: string, seconds: string): string => {
+    const d = parseInt(days) || 0;
+    const h = parseInt(hours) || 0;
+    const m = parseInt(minutes) || 0;
+    const s = parseInt(seconds) || 0;
+
+    const total = (d * 24 * 60 * 60) + (h * 60 * 60) + (m * 60) + s;
+    return total.toString();
+  };
+
+  // Update individual duration field and recalculate total seconds
+  const updateDurationField = (field: 'auctionDays' | 'auctionHours' | 'auctionMinutes' | 'auctionSeconds', value: string) => {
+    // Only allow non-negative integers
+    const numValue = parseInt(value) || 0;
+    const clampedValue = Math.max(0, numValue).toString();
+
+    const newFormData = { ...formData, [field]: value === '' ? '0' : clampedValue };
+
+    // Recalculate total seconds
+    const totalSeconds = calculateTotalSeconds(
+      field === 'auctionDays' ? newFormData.auctionDays : formData.auctionDays,
+      field === 'auctionHours' ? newFormData.auctionHours : formData.auctionHours,
+      field === 'auctionMinutes' ? newFormData.auctionMinutes : formData.auctionMinutes,
+      field === 'auctionSeconds' ? newFormData.auctionSeconds : formData.auctionSeconds
+    );
+
+    newFormData.auctionDuration = totalSeconds;
+    setFormData(newFormData);
+    setError(null);
+  };
+
   // Validate current step
   const validateStep = (): boolean => {
     if (currentStep === 1) {
@@ -131,8 +172,9 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         return false;
       }
     } else if (currentStep === 4 && formData.assetType === 'AUCTION') {
-      if (!formData.auctionDuration) {
-        setError('Please fill in auction duration');
+      const totalSeconds = parseInt(formData.auctionDuration);
+      if (isNaN(totalSeconds) || totalSeconds <= 0) {
+        setError('Please enter a valid auction duration (at least 1 second)');
         return false;
       }
     }
@@ -208,11 +250,17 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
       await assetService.uploadAsset(formDataToSubmit);
 
-      // Success!
-      setFormData(INITIAL_FORM_DATA);
-      setCurrentStep(1);
-      onSuccess?.();
-      onClose();
+      // Success! Show confirmation
+      setShowSuccess(true);
+
+      // Auto-close after 2 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+        setFormData(INITIAL_FORM_DATA);
+        setCurrentStep(1);
+        onSuccess?.();
+        onClose();
+      }, 2000);
     } catch (err: any) {
       console.error('Upload failed:', err);
       setError(err.message || 'Failed to upload asset. Please try again.');
@@ -587,7 +635,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               onChange={(e) => updateField('maxRaisePercentage', e.target.value)}
               placeholder="95"
               min="0"
-              max="100"
+              max="95"
               className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="font-antic text-xs text-gray-500 mt-1">
@@ -610,24 +658,87 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       </div>
 
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
-          Auction Duration (seconds) <span className="text-red-500">*</span>
+        <label className="block font-antic text-sm font-medium text-gray-700 mb-3">
+          Auction Duration <span className="text-red-500">*</span>
         </label>
-        <select
-          value={formData.auctionDuration}
-          onChange={(e) => updateField('auctionDuration', e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="300">5 minutes (300 seconds) - Recommended</option>
-          <option value="600">10 minutes (600 seconds)</option>
-          <option value="900">15 minutes (900 seconds)</option>
-          <option value="1800">30 minutes (1800 seconds)</option>
-          <option value="3600">1 hour (3600 seconds)</option>
-          <option value="7200">2 hours (7200 seconds)</option>
-        </select>
-        <p className="font-antic text-xs text-gray-500 mt-1">
-          How long the auction will run before settlement
+        <p className="font-antic text-xs text-gray-600 mb-3">
+          Set how long the auction will run. You can use any combination of time units.
         </p>
+
+        <div className="grid grid-cols-4 gap-3">
+          <div>
+            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+              Days
+            </label>
+            <input
+              type="number"
+              value={formData.auctionDays}
+              onChange={(e) => updateDurationField('auctionDays', e.target.value)}
+              placeholder="0"
+              min="0"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+              Hours
+            </label>
+            <input
+              type="number"
+              value={formData.auctionHours}
+              onChange={(e) => updateDurationField('auctionHours', e.target.value)}
+              placeholder="0"
+              min="0"
+              max="23"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+              Minutes
+            </label>
+            <input
+              type="number"
+              value={formData.auctionMinutes}
+              onChange={(e) => updateDurationField('auctionMinutes', e.target.value)}
+              placeholder="0"
+              min="0"
+              max="59"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+              Seconds
+            </label>
+            <input
+              type="number"
+              value={formData.auctionSeconds}
+              onChange={(e) => updateDurationField('auctionSeconds', e.target.value)}
+              placeholder="0"
+              min="0"
+              max="59"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="font-antic text-sm font-medium text-blue-900">
+              Total Duration:
+            </p>
+            <p className="font-mono text-lg font-semibold text-blue-700">
+              {formData.auctionDays}d {formData.auctionHours}h {formData.auctionMinutes}m {formData.auctionSeconds}s
+            </p>
+          </div>
+          <p className="font-antic text-xs text-blue-700 mt-2">
+            = {formData.auctionDuration} seconds total
+          </p>
+        </div>
       </div>
 
       {/* Summary of configured raise percentages */}
@@ -651,6 +762,23 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {/* Success Notification Overlay */}
+      {showSuccess && (
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h3 className="font-antic text-2xl font-semibold text-foreground mb-2">
+              Asset Submitted Successfully!
+            </h3>
+            <p className="font-inter text-sm text-foreground/70">
+              Your asset has been uploaded and will be processed shortly.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-[#f6fbff] rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">

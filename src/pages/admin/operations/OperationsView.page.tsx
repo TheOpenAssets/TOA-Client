@@ -63,7 +63,7 @@ const OperationsViewPage = () => {
 
   // Step 3: List on Marketplace - show TOKENIZED assets that are NOT already listed
   const tokenizedAssets = assetsForOperations.filter(
-    (asset) => asset.status === 'TOKENIZED' && !asset.listing?.active
+    (asset) => (asset.status === 'TOKENIZED' || asset.status ==='SCHEDULED') && !asset.listing?.active
   );
 
   // Handle Register
@@ -570,16 +570,15 @@ const OperationsViewPage = () => {
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-inter text-xs text-foreground/60">Listing Status:</span>
-                        {/* @ts-ignore */}
+                        <span className="font-inter text-xs text-foreground/60">
+                          {asset.assetType === 'AUCTION' ? 'Auction Status:' : 'Listing Status:'}
+                        </span>
                         <span className={`font-inter text-xs font-medium ${asset.listing?.active ? 'text-green-600' : 'text-orange-600'}`}>
-                          {/* @ts-ignore */}
                           {asset.listing?.active ? '✓ Listed' : 'Not Listed'}
                         </span>
                       </div>
                     </div>
                   </div>
-                  {/* @ts-ignore */}
                   {!asset.listing?.active && (
                     <Button
                       onClick={() => handleListOnMarketplace(asset)}
@@ -589,11 +588,10 @@ const OperationsViewPage = () => {
                         boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
                       }}
                     >
-                      List on Marketplace
+                      {asset.assetType === 'AUCTION' ? 'Schedule Auction' : 'List on Marketplace'}
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
-                  {/* @ts-ignore */}
                   {asset.listing?.active && (
                     <div className="px-4 py-2 bg-green-100 text-green-700 rounded-xl font-inter text-sm font-medium">
                       ✓ Active on Marketplace
