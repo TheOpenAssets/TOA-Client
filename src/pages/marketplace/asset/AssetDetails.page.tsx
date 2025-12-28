@@ -69,8 +69,9 @@ const AssetDetailsPage = () => {
   const timeFilters = ['1D', '1W', '1M', '1Y', 'ALL'];
 
   // Calculate estimated total price (actual price will be fetched from contract during purchase)
+  // Note: pricePerToken is in USDC (6 decimals), not wei (18 decimals)
   const estimatedTotalPrice = tokensToBuy
-    ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken))/1e18).toFixed(2)
+    ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken))/1e6).toFixed(2)
     : '0.00';
     
 
@@ -191,9 +192,9 @@ const AssetDetailsPage = () => {
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <p className="text-5xl font-semibold text-[#111111]">
-                          ${(parseFloat(asset.tokenParams.pricePerToken) / 1e18).toFixed(2)}
+                          ${(parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2)}
                         </p>
-                        <p className="text-green-600 text-sm mt-1">Token Price</p>
+                        <p className="text-green-600 text-sm mt-1">Token Price (USDC)</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {timeFilters.map(filter => (

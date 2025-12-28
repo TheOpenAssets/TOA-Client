@@ -5,14 +5,14 @@ import { ethers } from 'ethers';
 /**
  * Contract Service - Handles smart contract interactions for token purchase
  *
- * Smart Contracts:
- * - USDC: 0xfD61dC86e7799479597c049D7b19e6E638adDdd0
- * - PrimaryMarketplace: 0x444a6f69FC9411d0ea9627CbDdBD3Dfa563aE615
+ * Smart Contracts (Updated: 2025-12-25):
+ * - USDC: 0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238
+ * - PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
  */
 
-// Contract addresses
-const USDC_ADDRESS = '0xfD61dC86e7799479597c049D7b19e6E638adDdd0';
-const PRIMARY_MARKETPLACE_ADDRESS = '0x444a6f69FC9411d0ea9627CbDdBD3Dfa563aE615';
+// Contract addresses - Updated to match deployed_contracts.json
+const USDC_ADDRESS = '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
+const PRIMARY_MARKETPLACE_ADDRESS = '0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C';
 
 // USDC ABI - Only the functions we need
 const USDC_ABI = [
@@ -111,7 +111,16 @@ class ContractService {
 
       // Get current price from contract
       const assetId = assetIdBytes32 || this.assetIdToBytes32(params.assetId);
-      const currentPrice = await marketplaceContract.getCurrentPrice(assetId);
+
+      // Get listing to determine type and price
+      const listing = await marketplaceContract.listings(assetId);
+      const listingType = listing[2];
+      const staticPrice = listing[3];
+
+      // Always use staticPrice to avoid revert issues with getCurrentPrice()
+      // Note: getCurrentPrice() seems to revert even for auctions in this contract
+      const currentPrice = staticPrice;
+      console.log('Using static price from listing:', ethers.formatUnits(currentPrice, 6), 'USDC');
 
       // Calculate payment needed (matching script formula)
       const tokenAmountWei = ethers.parseUnits(params.tokenAmount, 18);
@@ -291,8 +300,13 @@ class ContractService {
         const active = listing[10];
         const minInvestment = listing[11];
 
+        const listingType = listing[2]; // 0 = STATIC, 1 = DUTCH_AUCTION
+        const staticPrice = listing[3];
+
         console.log('Listing details (UUID format):', {
           tokenAddress,
+          listingType: listingType === 0 ? 'STATIC' : 'DUTCH_AUCTION',
+          staticPrice: staticPrice.toString(),
           totalSupply: totalSupply.toString(),
           sold: sold.toString(),
           availableSupply: (totalSupply - sold).toString(),
@@ -309,6 +323,7 @@ class ContractService {
           try {
             const altListing = await marketplaceContract.listings(altAssetId);
             const altTokenAddress = altListing[0];
+            const altStaticPrice = altListing[3];
             const altTotalSupply = altListing[8];
             const altSold = altListing[9];
             const altActive = altListing[10];
@@ -325,8 +340,8 @@ class ContractService {
                 return { isValid: false, error: 'No tokens available for purchase' };
               }
 
-              // Get current price
-              const currentPrice = await marketplaceContract.getCurrentPrice(altAssetId);
+              // Always use staticPrice - getCurrentPrice() reverts in this contract
+              const currentPrice = altStaticPrice;
 
               return {
                 isValid: true,
@@ -358,9 +373,9 @@ class ContractService {
           return { isValid: false, error: 'No tokens available for purchase' };
         }
 
-        // Get current price using getCurrentPrice()
-        const currentPrice = await marketplaceContract.getCurrentPrice(assetIdBytes32);
-        console.log('Current price:', ethers.formatUnits(currentPrice, 18), 'USDC per token');
+        // Always use staticPrice - getCurrentPrice() seems to revert in this contract
+        const currentPrice = staticPrice;
+        console.log('Using static price:', ethers.formatUnits(currentPrice, 6), 'USDC per token');
 
         return {
           isValid: true,
@@ -426,13 +441,19 @@ class ContractService {
       console.log('\n📋 Fetching listing info...');
       const listing = await marketplaceContract.listings(assetIdBytes32);
       const tokenAddress = listing[0];
-      const currentPrice = await marketplaceContract.getCurrentPrice(assetIdBytes32);
+      const listingType = listing[2];
+      const staticPrice = listing[3];
       const totalSupply = listing[8];
       const sold = listing[9];
       const minInvestment = listing[11];
 
+      // Always use staticPrice - getCurrentPrice() reverts in this contract
+      const currentPrice = staticPrice;
+      console.log('Using static price:', ethers.formatUnits(currentPrice, 6), 'USDC per token');
+
       console.log('Token Address:', tokenAddress);
-      console.log('Current Price:', ethers.formatUnits(currentPrice, 18), 'USDC per token');
+      console.log('Listing Type:', listingType === 0 ? 'STATIC' : 'DUTCH_AUCTION');
+      console.log('Current Price:', ethers.formatUnits(currentPrice, 6), 'USDC per token');
       console.log('Min Investment:', ethers.formatUnits(minInvestment, 18), 'tokens');
       console.log('Sold:', ethers.formatUnits(sold, 18), '/', ethers.formatUnits(totalSupply, 18), 'tokens');
 

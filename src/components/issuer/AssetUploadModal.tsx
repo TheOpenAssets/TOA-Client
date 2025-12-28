@@ -152,6 +152,16 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
     setError(null);
   };
 
+  // Helper: Convert tokens to wei (multiply by 10^18)
+  const tokensToWei = (tokens: string): string => {
+    if (!tokens || tokens === '') return '0';
+    const tokenAmount = parseFloat(tokens);
+    if (isNaN(tokenAmount)) return '0';
+    // Multiply by 10^18 and convert to string without scientific notation
+    const weiAmount = BigInt(Math.floor(tokenAmount)) * BigInt('1000000000000000000');
+    return weiAmount.toString();
+  };
+
   // Submit form
   const handleSubmit = async () => {
     if (!validateStep()) return;
@@ -175,8 +185,17 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       formDataToSubmit.append('industry', formData.industry);
       formDataToSubmit.append('riskTier', formData.riskTier);
       formDataToSubmit.append('assetType', formData.assetType);
-      formDataToSubmit.append('totalSupply', formData.totalSupply);
-      formDataToSubmit.append('minInvestment', formData.minInvestment);
+
+      // Convert tokens to wei before sending
+      const totalSupplyWei = tokensToWei(formData.totalSupply);
+      const minInvestmentWei = tokensToWei(formData.minInvestment);
+
+      console.log('📊 Token Conversion:');
+      console.log('  Total Supply: ', formData.totalSupply, 'tokens →', totalSupplyWei, 'wei');
+      console.log('  Min Investment:', formData.minInvestment, 'tokens →', minInvestmentWei, 'wei');
+
+      formDataToSubmit.append('totalSupply', totalSupplyWei);
+      formDataToSubmit.append('minInvestment', minInvestmentWei);
 
       // IMPORTANT: Both STATIC and AUCTION need minRaise/maxRaise percentages
       formDataToSubmit.append('minRaisePercentage', formData.minRaisePercentage);
@@ -501,30 +520,34 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             Total Supply (Tokens) <span className="text-red-500">*</span>
           </label>
           <input
-            type="text"
+            type="number"
             value={formData.totalSupply}
             onChange={(e) => updateField('totalSupply', e.target.value)}
-            placeholder="100000000000000000000000"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="100000"
+            min="0"
+            step="1"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="font-antic text-xs text-gray-500 mt-1">
-            In wei (18 decimals). Example: 100,000 tokens = 100000000000000000000000
+            Number of tokens to issue (e.g., 100000 for 100,000 tokens)
           </p>
         </div>
 
         <div>
           <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
-            Minimum Investment <span className="text-red-500">*</span>
+            Minimum Investment (Tokens) <span className="text-red-500">*</span>
           </label>
           <input
-            type="text"
+            type="number"
             value={formData.minInvestment}
             onChange={(e) => updateField('minInvestment', e.target.value)}
-            placeholder="1000000000000000000000"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="1000"
+            min="0"
+            step="1"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="font-antic text-xs text-gray-500 mt-1">
-            In wei (18 decimals). Example: 1,000 tokens = 1000000000000000000000
+            Minimum tokens an investor must buy (e.g., 1000 tokens)
           </p>
         </div>
       </div>

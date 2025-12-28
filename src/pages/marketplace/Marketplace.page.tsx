@@ -169,6 +169,14 @@ const MarketplacePage = () => {
     return `${hours}h`;
   };
 
+  const formatLargeNumber = (num: number | null | undefined): string => {
+    if (!num) return '0.00';
+    if (num < 1000) return num.toFixed(2);
+    if (num < 1_000_000) return `${(num / 1_000).toFixed(0)}k`;
+    if (num < 1_000_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    return `${(num / 1_000_000_000).toFixed(1)}B`;
+  };
+
   // Show loading state
   if (isLoading && listings.length === 0) {
     return (
@@ -369,7 +377,7 @@ const MarketplacePage = () => {
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-green-600 font-medium">
-                      ${auction.reservePrice ? auction.reservePrice.toFixed(2) : '0.00'} - ${auction.reservePrice ? ((auction.reservePrice) * 1.2).toFixed(2) : '0.00'}
+                      ${formatLargeNumber(auction.reservePrice)} - ${formatLargeNumber((auction.reservePrice || 0) * 1.2)}
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-orange-600 font-medium">
@@ -397,7 +405,7 @@ const MarketplacePage = () => {
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-green-600 font-medium">
-                      ${auction.reservePrice ? auction.reservePrice.toFixed(2) : '0.00'} - ${auction.reservePrice ? ((auction.reservePrice) * 1.2).toFixed(2) : '0.00'}
+                      ${formatLargeNumber(auction.reservePrice)} - ${formatLargeNumber((auction.reservePrice || 0) * 1.2)}
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-orange-600 font-medium">
@@ -455,7 +463,7 @@ const MarketplacePage = () => {
                               {auction.metadata?.invoiceNumber || auction.assetId}
                             </div>
                             <div className="font-antic text-sm text-gray-500">
-                              {auction.totalSupply.toLocaleString()} tokens · ${auction.reservePrice.toFixed(2)} min
+                              {auction.totalSupply.toLocaleString()} tokens · ${formatLargeNumber(auction.reservePrice)} min
                             </div>
                           </div>
                         </div>
@@ -466,7 +474,7 @@ const MarketplacePage = () => {
                             Bid Range
                           </div>
                           <div className="font-antic text-lg font-bold text-foreground mb-1">
-                            ${auction.reservePrice.toFixed(2)} - ${((auction.reservePrice || 0) * 1.2).toFixed(2)}
+                            ${formatLargeNumber(auction.reservePrice)} - ${formatLargeNumber(((auction.reservePrice || 0) * 1.2))}
                           </div>
                           <div className="flex items-center justify-end gap-1 text-blue-600">
                             <Clock className="w-3 h-3" />
