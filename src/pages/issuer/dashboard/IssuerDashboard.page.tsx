@@ -503,7 +503,7 @@ const IssuerDashboardPage = () => {
             {/* Progress bar */}
             <div className="w-32 bg-gray-200 rounded-full h-1.5 overflow-hidden">
               <div
-                className="bg-foreground h-1.5 rounded-full transition-all duration-500"
+                className="bg-black h-1.5 rounded-full transition-all duration-500"
                 style={{ width: `${soldPercentage}%` }}
               />
             </div>

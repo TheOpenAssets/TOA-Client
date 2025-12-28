@@ -259,7 +259,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-foreground h-2 rounded-full transition-all duration-500"
+                      className="bg-black h-2 rounded-full transition-all duration-500"
                       style={{ width: `${soldPercentage}%` }}
                     />
                   </div>

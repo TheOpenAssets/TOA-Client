@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
+import { contractService } from '../../../lib/api/contract.service';
 import { Button } from '../../../components/ui/button';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
@@ -181,6 +182,8 @@ const OperationsViewPage = () => {
     if (!selectedAsset) return;
     setProcessing(true);
     try {
+      // Step 1: List asset on marketplace (Backend API call)
+      console.log('🔨 Step 1: Listing asset on marketplace...');
       await adminService.listOnMarketplace(
         selectedAsset.assetId,
         listingType,
@@ -189,10 +192,66 @@ const OperationsViewPage = () => {
         duration
       );
       console.log('✅ Asset listed on marketplace successfully');
-      fetchAdminDashboardData();
+
+      // Step 2: Approve marketplace to spend RWA tokens (ADMIN executes ON-CHAIN transaction)
+      // Admin wallet directly calls: RWAToken.approve(PrimaryMarketplace, MaxUint256)
+      // PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+      console.log('🔨 Step 2: Admin executing ON-CHAIN marketplace approval...');
+
+      // Get token address from selected asset
+      const tokenAddress = selectedAsset.token?.address;
+
+      if (!tokenAddress) {
+        console.warn('⚠️ No token address found, skipping approval');
+        info(
+          'Listed Successfully!',
+          'Asset is listed on marketplace.\n\nWarning: No token address found. Please approve marketplace manually.',
+          8000
+        );
+        await fetchAdminDashboardData();
+        setShowListingModal(false);
+        setSelectedAsset(null);
+        return;
+      }
+
+      try {
+        const approvalResult = await contractService.approveMarketplaceForRWAToken(tokenAddress);
+
+        if (!approvalResult.success) {
+          throw new Error(approvalResult.error || 'Approval failed');
+        }
+
+        if (approvalResult.alreadyApproved) {
+          console.log('ℹ️ Marketplace was already approved on-chain');
+          info(
+            'Listed Successfully!',
+            'Asset is now available on the marketplace.\n\nNote: Marketplace approval was already set on-chain.',
+            6000
+          );
+        } else {
+          console.log('✅ ON-CHAIN marketplace approval successful');
+          console.log('Transaction Hash:', approvalResult.transactionHash);
+          console.log('Block Number:', approvalResult.blockNumber);
+          success(
+            'Listed & Approved!',
+            `Asset is now available on the marketplace.\n\nON-CHAIN approval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${approvalResult.transactionHash}`,
+            10000
+          );
+        }
+      } catch (approvalError: any) {
+        console.error('⚠️ ON-CHAIN marketplace approval failed (non-critical):', approvalError);
+        // Show warning but don't fail the entire operation
+        info(
+          'Listed (Approval Warning)',
+          `Asset is listed on marketplace, but ON-CHAIN approval failed: ${approvalError.message}\n\nPlease approve marketplace manually using your admin wallet.`,
+          10000
+        );
+      }
+
+      // Refresh dashboard and close modal
+      await fetchAdminDashboardData();
       setShowListingModal(false);
       setSelectedAsset(null);
-      success('Listed on Marketplace!', 'Asset is now available for investors on the marketplace.');
     } catch (error: any) {
       console.error('❌ Failed to list asset:', error);
       showError('Listing Failed', error.message || 'An error occurred while listing the asset.');
