@@ -7,6 +7,9 @@ import { useAccount } from 'wagmi';
 import { Search, TrendingUp } from 'lucide-react';
 import type { BidStatus } from '../../types/marketplace.types';
 import { useSettleBid } from '../../hooks/useAuctionContracts';
+import { contractService } from '../../lib/api/contract.service';
+import { useToast } from '../../hooks/useToast';
+import { ToastContainer } from '../../components/ui/toast';
 import HeroBackground from '../landing/HeroBackground';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 
@@ -15,10 +18,18 @@ const PortfolioPage = () => {
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
+  const { toasts, success, error: showError, warning, info, removeToast } = useToast();
 
   // Contract interaction for settling bids (investor-settle.sh verified)
   const { settleBid, notifyBackend, status: settleStatus, isLoading: isSettling, isSuccess, txHash } = useSettleBid();
   const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
+
+  // Yield claiming state (investor-claim-yield.sh)
+  const [claimingAssetId, setClaimingAssetId] = useState<string | null>(null);
+  const [claimStatus, setClaimStatus] = useState<string>('');
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimableAmount, setClaimableAmount] = useState<string>('0');
+  const [selectedAssetForClaim, setSelectedAssetForClaim] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPortfolio();
@@ -92,6 +103,99 @@ const PortfolioPage = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  /**
+   * Handle yield claim for an asset (investor-claim-yield.sh flow)
+   * Step 1: Check claimable amount and show modal
+   */
+  const handleClaimYield = async (assetId: string) => {
+    if (!address) {
+      warning('Wallet Not Connected', 'Please connect your wallet to claim yield.');
+      return;
+    }
+
+    setClaimingAssetId(assetId);
+    setClaimStatus('Checking...');
+
+    try {
+      // Step 1: Check claimable yield
+      console.log('🔍 Step 1: Checking claimable yield for asset:', assetId);
+      const claimableResult = await contractService.getClaimableYield(address);
+
+      if (!claimableResult.success) {
+        throw new Error(claimableResult.error || 'Failed to check claimable yield');
+      }
+
+      const claimableUsdc = parseFloat(claimableResult.claimableUsdc || '0');
+
+      if (claimableUsdc === 0) {
+        warning(
+          'No Yield Available',
+          'No yield available to claim.\n\nPossible reasons:\n• Yield hasn\'t been distributed yet\n• You already claimed your yield\n• You don\'t hold any tokens for this asset',
+          8000
+        );
+        setClaimingAssetId(null);
+        setClaimStatus('');
+        return;
+      }
+
+      // Show confirmation modal
+      setClaimableAmount(claimableResult.claimableUsdc || '0');
+      setSelectedAssetForClaim(assetId);
+      setShowClaimModal(true);
+      setClaimingAssetId(null);
+      setClaimStatus('');
+
+    } catch (error: any) {
+      console.error('❌ Error checking claimable yield:', error);
+      showError('Check Failed', error.message || 'Failed to check claimable yield');
+      setClaimingAssetId(null);
+      setClaimStatus('');
+    }
+  };
+
+  /**
+   * Execute yield claim after user confirms
+   * Step 2: Claim yield from YieldVault
+   */
+  const executeClaimYield = async () => {
+    if (!selectedAssetForClaim) return;
+
+    setShowClaimModal(false);
+    setClaimingAssetId(selectedAssetForClaim);
+    setClaimStatus('Claiming...');
+
+    try {
+      // Step 2: Claim yield
+      console.log('💰 Step 2: Claiming yield...');
+      const claimResult = await contractService.claimYield();
+
+      if (!claimResult.success) {
+        throw new Error(claimResult.error || 'Failed to claim yield');
+      }
+
+      // Step 3: Success!
+      console.log('✅ Yield claimed:', claimResult.claimedUsdc, 'USDC');
+      console.log('TX:', claimResult.transactionHash);
+
+      success(
+        'Yield Claimed Successfully! 🎉',
+        `Amount: ${claimResult.claimedUsdc} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${claimResult.transactionHash}`,
+        10000
+      );
+
+      // Refresh portfolio to update balances
+      fetchPortfolio();
+
+    } catch (error: any) {
+      console.error('❌ Error claiming yield:', error);
+      showError('Claim Failed', error.message || 'Failed to claim yield');
+    } finally {
+      setClaimingAssetId(null);
+      setClaimStatus('');
+      setSelectedAssetForClaim(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
@@ -141,8 +245,11 @@ const PortfolioPage = () => {
   );
 
   return (
-    <div className="h-screen flex flex-col bg-[#f6fbff] overflow-hidden">
-      <HeroBackground />
+    <>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      <div className="h-screen flex flex-col bg-[#f6fbff] overflow-hidden">
+        <HeroBackground />
 
       {/* Top Navigation Bar - Fixed Height */}
       <header className="bg-transparent border-b border-gray-200 z-40 relative flex-shrink-0">
@@ -355,9 +462,11 @@ const PortfolioPage = () => {
                                 View
                               </button>
                               <button
-                                className="px-3 py-1 bg-green-600 text-white rounded-lg font-antic text-xs font-medium hover:bg-green-700 transition-colors"
+                                onClick={() => handleClaimYield(asset.assetId)}
+                                disabled={claimingAssetId === asset.assetId}
+                                className="px-3 py-1 bg-green-600 text-white rounded-lg font-antic text-xs font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                Claim 
+                                {claimingAssetId === asset.assetId ? claimStatus : 'Claim'}
                               </button>
                             </div>
                           </td>
@@ -520,7 +629,66 @@ const PortfolioPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Yield Claim Confirmation Modal */}
+      {showClaimModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className="rounded-2xl p-8 max-w-md w-full"
+            style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-8 h-8 text-green-600" />
+              </div>
+
+              <h2 className="font-antic text-2xl font-semibold text-foreground mb-2">
+                Claim Your Yield
+              </h2>
+
+              <p className="font-inter text-sm text-foreground/70 mb-6">
+                You have yield available to claim from the YieldVault.
+              </p>
+
+              <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
+                <p className="font-inter text-xs text-gray-500 mb-2">Claimable Amount</p>
+                <p className="font-antic text-4xl font-semibold text-green-600">
+                  ${parseFloat(claimableAmount).toFixed(2)}
+                </p>
+                <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>
+              </div>
+
+              <p className="font-inter text-xs text-foreground/60 mb-6">
+                This will transfer USDC from the YieldVault to your wallet.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowClaimModal(false);
+                    setSelectedAssetForClaim(null);
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-foreground rounded-xl font-inter font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeClaimYield}
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-inter font-medium transition-colors"
+                  style={{
+                    background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+                    boxShadow: '0 4px 14px 0 rgba(22, 163, 74, 0.25)',
+                  }}
+                >
+                  Claim Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </>
   );
 };
 

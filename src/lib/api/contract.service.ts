@@ -10,9 +10,10 @@ import { ethers } from 'ethers';
  * - PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
  */
 
-// Contract addresses - Updated to match deployed_contracts.json
+// Contract addresses - Updated to match deployed_contracts.json (2025-12-25)
 const USDC_ADDRESS = '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
 const PRIMARY_MARKETPLACE_ADDRESS = '0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C';
+const YIELD_VAULT_ADDRESS = '0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD';
 
 // USDC ABI - Only the functions we need
 const USDC_ABI = [
@@ -27,6 +28,14 @@ const MARKETPLACE_ABI = [
   'function getCurrentPrice(bytes32 assetId) view returns (uint256)',
   'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 startPrice, uint256 endPrice, uint256 duration, uint256 startTime, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
+];
+
+// YieldVault ABI - For claiming USDC yield (matches investor-claim-yield.sh)
+const YIELD_VAULT_ABI = [
+  'function getUserClaimable(address user) view returns (uint256)',
+  'function claimAllYield() external',
+  'function USDC() view returns (address)',
+  'event YieldClaimed(address indexed user, uint256 amount, uint256 timestamp)',
 ];
 
 export interface PurchaseParams {
@@ -633,6 +642,166 @@ class ContractService {
     } catch (error) {
       console.error('Error getting RWA token balance:', error);
       throw new Error('Failed to get token balance');
+    }
+  }
+
+  /**
+   * Get claimable yield amount for investor (Step 1 from investor-claim-yield.sh)
+   *
+   * Calls YieldVault.getUserClaimable(address) to check how much USDC yield
+   * the investor can claim. Returns amount in USDC (6 decimals).
+   *
+   * Contract: YieldVault 0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD
+   *
+   * @param investorAddress - The investor wallet address (optional, uses connected wallet if not provided)
+   * @returns { claimableWei, claimableUsdc } Amount claimable in wei and USDC
+   */
+  async getClaimableYield(investorAddress?: string): Promise<{
+    success: boolean;
+    claimableWei?: string;
+    claimableUsdc?: string;
+    error?: string;
+  }> {
+    try {
+      if (!window.ethereum) {
+        throw new Error('No wallet found');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = investorAddress || await signer.getAddress();
+
+      const yieldVaultContract = new ethers.Contract(
+        YIELD_VAULT_ADDRESS,
+        YIELD_VAULT_ABI,
+        provider
+      );
+
+      console.log('💰 Checking Claimable Yield');
+      console.log('━'.repeat(50));
+      console.log('YieldVault Address:', YIELD_VAULT_ADDRESS);
+      console.log('Investor Wallet:', userAddress);
+      console.log();
+
+      // Get claimable amount (returns uint256 in USDC 6 decimals)
+      const claimable = await yieldVaultContract.getUserClaimable(userAddress);
+      const claimableUsdc = ethers.formatUnits(claimable, 6);
+
+      console.log('Claimable Yield:', claimableUsdc, 'USDC');
+      console.log('Claimable (wei):', claimable.toString());
+      console.log();
+
+      if (claimable === 0n) {
+        console.log('⚠️  No yield available to claim');
+        console.log('Possible reasons:');
+        console.log('  • Yield hasn\'t been distributed yet');
+        console.log('  • You already claimed your yield');
+        console.log('  • You don\'t hold any tokens for this asset');
+      }
+
+      return {
+        success: true,
+        claimableWei: claimable.toString(),
+        claimableUsdc: claimableUsdc,
+      };
+    } catch (error: any) {
+      console.error('❌ Error checking claimable yield:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to check claimable yield',
+      };
+    }
+  }
+
+  /**
+   * Claim all available yield (Step 2 from investor-claim-yield.sh)
+   *
+   * Calls YieldVault.claimAllYield() to claim all available USDC yield.
+   * This transfers USDC from YieldVault to the investor's wallet.
+   *
+   * Emits: YieldClaimed(address indexed user, uint256 amount, uint256 timestamp)
+   *
+   * Contract: YieldVault 0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD
+   *
+   * @returns { success, transactionHash, blockNumber, claimedAmount }
+   */
+  async claimYield(): Promise<{
+    success: boolean;
+    transactionHash?: string;
+    blockNumber?: number;
+    claimedAmount?: string;
+    claimedUsdc?: string;
+    error?: string;
+  }> {
+    try {
+      if (!window.ethereum) {
+        throw new Error('No wallet found. Please connect your wallet.');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const investorAddress = await signer.getAddress();
+
+      const yieldVaultContract = new ethers.Contract(
+        YIELD_VAULT_ADDRESS,
+        YIELD_VAULT_ABI,
+        signer
+      );
+
+      console.log('💰 Claiming Yield from YieldVault');
+      console.log('━'.repeat(50));
+      console.log('YieldVault:', YIELD_VAULT_ADDRESS);
+      console.log('Investor:', investorAddress);
+      console.log();
+
+      // Call claimAllYield() - no parameters needed
+      console.log('⏳ Submitting claimAllYield() transaction...');
+      const tx = await yieldVaultContract.claimAllYield();
+      console.log('TX Hash:', tx.hash);
+      console.log('⏳ Waiting for confirmation...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
+      console.log();
+
+      // Parse YieldClaimed event to get actual claimed amount
+      let claimedAmount = '0';
+      let claimedUsdc = '0';
+
+      for (const log of receipt.logs) {
+        try {
+          const parsed = yieldVaultContract.interface.parseLog(log);
+          if (parsed && parsed.name === 'YieldClaimed') {
+            claimedAmount = parsed.args.amount.toString();
+            claimedUsdc = ethers.formatUnits(claimedAmount, 6);
+            console.log('Claimed:', claimedUsdc, 'USDC');
+            console.log('Claimed (wei):', claimedAmount);
+          }
+        } catch (e) {
+          // Skip non-matching logs
+        }
+      }
+
+      console.log();
+      console.log('✅ Yield claimed successfully!');
+      console.log('TX Hash:', tx.hash);
+      console.log('Block:', receipt.blockNumber);
+      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log();
+
+      return {
+        success: true,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        claimedAmount: claimedAmount,
+        claimedUsdc: claimedUsdc,
+      };
+    } catch (error: any) {
+      console.error('❌ Error claiming yield:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to claim yield',
+      };
     }
   }
 
