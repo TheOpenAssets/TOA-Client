@@ -382,7 +382,9 @@ Retrieves all assets uploaded by the authenticated originator.
 
 **Example:**
 ```bash
-curl -X GET 'http://localhost:3000/assets/originator/my-assets' \
+
+curl -X GET '
+/originator/my-assets' \
   --header 'Authorization: Bearer <access_token>'
 ```
 
