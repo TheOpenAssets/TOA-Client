@@ -53,8 +53,17 @@ const HeroSection = () => {
 
       setUser(loginResponse.user);
 
-      if (loginResponse.user.kyc === true && loginResponse.user.role === 'INVESTOR') {
-        navigate('/portfolio');
+      // Route based on role from login response
+      if (loginResponse.user.role === 'ORIGINATOR') {
+        navigate('/issuer/dashboard');
+      } else if (loginResponse.user.role === 'INVESTOR') {
+        if (loginResponse.user.kyc === true) {
+          navigate('/portfolio');
+        } else {
+          navigate('/auth', { state: { showKycForm: true } });
+        }
+      } else if (loginResponse.user.role === 'ADMIN') {
+        navigate('/admin');
       } else {
         navigate('/auth', { state: { showKycForm: true } });
       }
@@ -89,8 +98,17 @@ const HeroSection = () => {
 
       setUser(loginResponse.user);
 
-      if (loginResponse.user.kyc === true && loginResponse.user.role === 'ORIGINATOR') {
-        navigate('/issuer/dashboard');
+      // Route based on role from login response
+      if (loginResponse.user.role === 'ORIGINATOR') {
+        if (loginResponse.user.kyc === true) {
+          navigate('/issuer/dashboard');
+        } else {
+          navigate('/auth', { state: { showKycForm: true } });
+        }
+      } else if (loginResponse.user.role === 'INVESTOR') {
+        navigate('/portfolio');
+      } else if (loginResponse.user.role === 'ADMIN') {
+        navigate('/admin');
       } else {
         navigate('/auth', { state: { showKycForm: true } });
       }
@@ -109,12 +127,8 @@ const HeroSection = () => {
       setError(null);
 
       if (!isConnected || !address) {
-        // Open RainbowKit modal and set pending action
-        if (loginResponse.user.role === 'ORIGINATOR') 
-        setPendingAction('issuer');
-       else if( loginResponse.user.role === 'INVESTOR'
-        setPendingAction('investor')
-       )
+        // Open RainbowKit modal and set pending action for investor
+        setPendingAction('investor');
         if (openConnectModal) {
           openConnectModal();
         } else {
@@ -124,6 +138,7 @@ const HeroSection = () => {
       }
 
       // Wallet is already connected, proceed with authentication
+      // Role-based routing will happen in authenticateInvestor based on login response
       await authenticateInvestor();
     } catch (err: any) {
       console.error('Error during get started:', err);
