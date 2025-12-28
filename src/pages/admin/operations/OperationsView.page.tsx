@@ -1059,73 +1059,7 @@ const OperationsViewPage = () => {
             </div>
 
             {/* Listing Configuration */}
-            <div className="bg-white rounded-xl p-6 mb-6 space-y-4">
-              <h4 className="font-inter text-sm font-semibold text-foreground mb-3">
-                Listing Configuration
-              </h4>
-
-              <div>
-                <label className="block font-inter text-sm font-medium text-foreground mb-2">
-                  Listing Type
-                </label>
-                <select
-                  value={listingType}
-                  onChange={(e) => setListingType(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-inter text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="STATIC">Static Price (Fixed)</option>
-                  <option value="DUTCH">Dutch Auction (Declining Price)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-inter text-sm font-medium text-foreground mb-2">
-                  Price per Token (USDC, 6 decimals)
-                </label>
-                <input
-                  type="text"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="1000000"
-                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="font-inter text-xs text-foreground/60 mt-1">
-                  Default: 1000000 = 1 USDC per token
-                </p>
-              </div>
-
-              <div>
-                <label className="block font-inter text-sm font-medium text-foreground mb-2">
-                  Minimum Investment (from asset)
-                </label>
-                <input
-                  type="text"
-                  value={minInvestment}
-                  onChange={(e) => setMinInvestment(e.target.value)}
-                  placeholder="Auto-filled from asset data"
-                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="font-inter text-xs text-foreground/60 mt-1">
-                  Auto-filled from asset's tokenParams.minInvestment (backend sends in 18 decimals format)
-                </p>
-              </div>
-
-              <div>
-                <label className="block font-inter text-sm font-medium text-foreground mb-2">
-                  Duration (seconds, 0 = unlimited)
-                </label>
-                <input
-                  type="text"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="0"
-                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="font-inter text-xs text-foreground/60 mt-1">
-                  0 = No expiration, or specify seconds (e.g., 86400 = 1 day)
-                </p>
-              </div>
-            </div>
+            
 
             <div className="flex gap-3">
               <Button
