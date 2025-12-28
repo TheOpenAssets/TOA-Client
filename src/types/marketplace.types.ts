@@ -80,6 +80,10 @@ export interface AssetDetails {
   registry: Registry;
   cryptography: Cryptography;
   attestation: Attestation;
+  // Additional fields for auction/listing display
+  endTime?: string;
+  totalSupply?: number;
+  reservePrice?: number;
 }
 
 export interface ListingResponse {
@@ -113,12 +117,6 @@ export interface NotifyBidSettledPayload {
   bidIndex: number;
   txHash: string;
   blockNumber: string;
-}
-
-export interface EndAuctionPayload {
-  assetId: string;
-  clearingPrice: string;
-  txHash: string;
 }
 
 // MarketplaceAsset - Extended interface for UI display (used by mock data)
@@ -202,6 +200,7 @@ export interface Auction {
 export interface Bid {
   bidId: string;
   auctionId: string;
+  assetId?: string; // Alternative ID field for compatibility
   bidder: string;
   tokensRequested: number;
   maxPrice: number;
@@ -211,6 +210,13 @@ export interface Bid {
   status: BidStatus;
   submittedAt: string;
   settledAt?: string;
+  // Additional fields for UI display
+  bidIndex?: number;
+  tokenAmount?: string;
+  price?: string;
+  usdcDeposited?: string;
+  bidDate?: string;
+  txHash?: string;
 }
 
 /**

@@ -6,7 +6,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
-import { Bell, FileCheck, Coins, Award, TrendingUp, CheckCircle, AlertCircle, DollarSign, UserCheck, XCircle } from 'lucide-react';
+import { Bell, FileCheck, Coins, Award, TrendingUp, AlertCircle, DollarSign, UserCheck, XCircle } from 'lucide-react';
 import {
   notificationService,
   type BackendNotification,

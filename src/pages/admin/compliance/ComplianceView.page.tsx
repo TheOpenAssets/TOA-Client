@@ -69,7 +69,7 @@ const ComplianceViewPage = () => {
   };
 
   // Handle Trigger KYC
-  const handleTriggerKYC = (asset: AdminAsset) => {
+  const _handleTriggerKYC = (asset: AdminAsset) => {
     setSelectedAsset(asset);
     setShowKycModal(true);
   };

@@ -18,44 +18,8 @@ import { useNavigate } from 'react-router-dom';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const stats = calculateAdminStats();
+  const _stats = calculateAdminStats();
   const navigate = useNavigate();
-
-    useEffect(() => {
-      const verifyAuth = async () => {
-        try {
-          // Check if access token exists
-          if (!authService.isAuthenticated()) {
-            console.warn('No access token found. Redirecting to login...');
-            navigate('/', { replace: true });
-            return;
-          }
-  
-          // Verify token with backend
-          const user = await authService.getCurrentUser();
-  
-          // Check if user has ORIGINATOR role (issuer)
-          if (user.role !== 'ORIGINATOR') {
-            console.warn(`Unauthorized role: ${user.role}. Issuer dashboard requires ORIGINATOR role.`);
-            setError('Unauthorized access. You do not have permission to access the issuer dashboard.');
-            setTimeout(() => {
-              navigate('/', { replace: true });
-            }, 2000);
-            return;
-          }
-  
-          console.log('Authentication verified. User:', user);
-        } catch (err: any) {
-          console.error('Authentication verification failed:', err);
-          setError(err.message || 'Authentication failed. Redirecting to login...');
-          setTimeout(() => {
-            navigate('/', { replace: true });
-          }, 2000);
-        }
-      };
-  
-      verifyAuth();
-    }, [navigate]);
 
   const navigation = [
     {
@@ -91,17 +55,6 @@ const AdminLayout = () => {
       return location.pathname === '/admin';
     }
     return location.pathname.startsWith(path);
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number): string => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
-    }
-    return `$${amount.toLocaleString()}`;
   };
 
   return (
@@ -188,7 +141,4 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
-function setError(arg0: string) {
-  throw new Error('Function not implemented.');
-}
 

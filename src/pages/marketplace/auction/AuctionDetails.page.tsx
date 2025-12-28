@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { Search, TrendingUp, Clock } from 'lucide-react';
+import { Search, Clock } from 'lucide-react';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { useSubmitBid } from '../../../hooks/useAuctionContracts';
 import HeroBackground from '../../landing/HeroBackground';

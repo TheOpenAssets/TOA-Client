@@ -1,11 +1,10 @@
 // src/lib/data/asset-details-mock.ts
-import type { IssuerAsset } from '@/types/issuer.types';
 
-export const mockAssetDetails: IssuerAsset = {
+export const mockAssetDetails: any = {
   id: '1',
   name: 'Manufacturing Invoice Q1',
   assetType: 'Invoice-backed RWA',
-  status: 'listed',
+  status: 'LISTED',
   tokenDistribution: {
     totalTokens: 100000,
     soldTokens: 48000,

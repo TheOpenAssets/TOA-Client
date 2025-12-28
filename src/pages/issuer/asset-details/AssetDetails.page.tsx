@@ -3,16 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   FileText,
-  Calendar,
   DollarSign,
-  TrendingUp,
   Shield,
   Package,
   CheckCircle,
   Clock,
   Tag,
   BarChart2,
-  List,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 
@@ -273,7 +270,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                       Sold Tokens
                     </span>
                     <span className="font-antic font-normal text-foreground text-base">
-                      {parseInt(asset.listing?.sold || '0').toLocaleString()}
+                      {(parseInt(asset.listing?.sold || '0')/1e18).toLocaleString()}
                     </span>
                   </div>
                    <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">

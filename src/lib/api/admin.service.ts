@@ -139,7 +139,7 @@ class AdminService extends BaseService {
     const response = await fetch(`${this.baseURL}/admin/assets/list-on-marketplace`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ assetId, type, price, minInvestment, duration }),
+      body: JSON.stringify({ assetId, type, price, minInvestment }),
     });
     if (!response.ok) throw new Error('Failed to list on marketplace');
     return response.json();

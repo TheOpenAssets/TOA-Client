@@ -35,7 +35,7 @@ const OperationsViewPage = () => {
   // Listing form data
   const [listingType, setListingType] = useState('STATIC');
   const [price, setPrice] = useState('1000000'); // 1 USDC in 6 decimals
-  const [minInvestment, setMinInvestment] = useState('1000000000000000000000'); // 1000 tokens in 18 decimals
+  const [minInvestment, setMinInvestment] = useState(''); // Will be populated from asset data
   const [duration, setDuration] = useState('0');
 
   // Auction scheduling form data
@@ -156,6 +156,16 @@ const OperationsViewPage = () => {
   // Handle List on Marketplace
   const handleListOnMarketplace = (asset: AdminAsset) => {
     setSelectedAsset(asset);
+
+    // Populate form with asset's data from backend
+    if (asset.tokenParams?.minInvestment) {
+      setMinInvestment(asset.tokenParams.minInvestment);
+      console.log('📝 Using minInvestment from asset:', asset.tokenParams.minInvestment);
+    } else {
+      // Fallback to default if not set
+      setMinInvestment('1000000000000000000000');
+      console.warn('⚠️  Asset has no minInvestment, using default');
+    }
 
     // Check if asset is AUCTION type
     if (asset.assetType === 'AUCTION' || asset.listing?.type === 'AUCTION') {
@@ -1027,17 +1037,17 @@ const OperationsViewPage = () => {
 
               <div>
                 <label className="block font-inter text-sm font-medium text-foreground mb-2">
-                  Minimum Investment (Wei, 18 decimals)
+                  Minimum Investment (from asset)
                 </label>
                 <input
                   type="text"
                   value={minInvestment}
                   onChange={(e) => setMinInvestment(e.target.value)}
-                  placeholder="1000000000000000000000"
+                  placeholder="Auto-filled from asset data"
                   className="w-full px-4 py-2 rounded-xl border border-gray-300 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <p className="font-inter text-xs text-foreground/60 mt-1">
-                  Default: 1000000000000000000000 = 1000 tokens
+                  Auto-filled from asset's tokenParams.minInvestment (backend sends in 18 decimals format)
                 </p>
               </div>
 

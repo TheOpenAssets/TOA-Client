@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Package, Clock, TrendingUp, DollarSign } from 'lucide-react';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
-import { marketplaceService } from '../../../lib/api/marketplace.service';
 import type { CreateAuctionPayload } from '../../../types/marketplace.types';
 
 const AuctionManagementPage = () => {
@@ -11,7 +10,7 @@ const AuctionManagementPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
   const [selectedAuction, setSelectedAuction] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'active' | 'ended'>('active');
+  const [viewMode, _setViewMode] = useState<'active' | 'ended'>('active');
 
   // Create auction form state
   const [createForm, setCreateForm] = useState<CreateAuctionPayload>({
@@ -21,7 +20,7 @@ const AuctionManagementPage = () => {
     duration: 259200, // 72 hours in seconds
   });
   const [createStatus, setCreateStatus] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreating, _setIsCreating] = useState(false);
 
   // End auction form state
   const [clearingPrice, setClearingPrice] = useState('');

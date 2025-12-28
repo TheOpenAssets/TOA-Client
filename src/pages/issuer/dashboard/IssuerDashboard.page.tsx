@@ -461,14 +461,6 @@ const IssuerDashboardPage = () => {
             ? (soldTokensRaw.length > 18 ? parseFloat(soldTokensRaw) / 1e18 : parseFloat(soldTokensRaw))
             : soldTokensRaw;
 
-          const unsoldTokens = totalTokens - soldTokens;
-
-          // Get price from listing (USDC has 6 decimals)
-          const priceRaw = asset.listing?.price || asset.tokenParams?.pricePerToken || '0';
-          const tokenPrice = typeof priceRaw === 'string'
-            ? (priceRaw.length > 6 ? parseFloat(priceRaw) / 1e6 : parseFloat(priceRaw))
-            : priceRaw;
-
           const soldPercentage = totalTokens > 0 ? (soldTokens / totalTokens) * 100 : 0;
 
           // Get invoice details from metadata

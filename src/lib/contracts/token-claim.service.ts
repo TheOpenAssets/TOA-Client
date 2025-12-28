@@ -1,6 +1,8 @@
 // src/lib/contracts/token-claim.service.ts
 
-import { type ClaimTokensPayload, type ClaimTokensResponse } from '../../types/issuer.types';
+// Temporary types until properly defined
+type ClaimTokensPayload = any;
+type ClaimTokensResponse = any;
 
 /**
  * Mock implementation of token claim service

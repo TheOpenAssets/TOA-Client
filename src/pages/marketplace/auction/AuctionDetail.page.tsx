@@ -7,7 +7,7 @@ import { useAccount } from 'wagmi';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { TrendingUp, Clock, Users, DollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, Users, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { useSubmitBid, useCheckKYC } from '../../../hooks/useAuctionContracts';
 
 const AuctionDetailPage = () => {
@@ -17,7 +17,7 @@ const AuctionDetailPage = () => {
   const { currentAuction: auction, isLoadingAuctions, auctionError, fetchAuctionByAssetId } = useMarketplaceStore();
 
   // Contract hooks (SCRIPT-VERIFIED: investor-bidding.sh)
-  const { submitBid, notifyBackend, status, isLoading, isApproving, isSubmitting, isBidSuccess, bidHash } = useSubmitBid();
+  const { submitBid, status, isLoading, isApproving, isSubmitting, isBidSuccess, bidHash } = useSubmitBid();
   const { isVerified: isKYCVerified } = useCheckKYC();
 
   const [tokenAmount, setTokenAmount] = useState('');
@@ -32,18 +32,15 @@ const AuctionDetailPage = () => {
     }
   }, [auctionId, fetchAuctionByAssetId]);
 
-  // Handle successful bid submission - notify backend (investor-bidding.sh line 362)
+  // Handle successful bid submission - redirect to portfolio
   useEffect(() => {
-    if (isBidSuccess && bidHash && bidParams) {
-      notifyBackend(bidParams, bidHash, 0 /* TODO: Get block number from receipt */)
-        .then(() => {
-          // Redirect to portfolio after successful bid
-          setTimeout(() => {
-            navigate('/portfolio');
-          }, 2000);
-        });
+    if (isBidSuccess && bidHash) {
+      // Redirect to portfolio after successful bid
+      setTimeout(() => {
+        navigate('/portfolio');
+      }, 2000);
     }
-  }, [isBidSuccess, bidHash, bidParams, notifyBackend, navigate]);
+  }, [isBidSuccess, bidHash, navigate]);
 
   // Auto-submit bid after approval is confirmed
   useEffect(() => {

@@ -1,6 +1,5 @@
 // src/components/issuer/AssetHoverCard.tsx
 
-import { type IssuerAsset } from '../../types/issuer.types';
 import { TrendingUp, Calendar, MapPin, Info } from 'lucide-react';
 
 interface AssetHoverCardProps {

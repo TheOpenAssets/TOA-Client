@@ -5,14 +5,6 @@ import type {
   MarketplaceListing,
   AssetDetails,
   NotifyPurchasePayload,
-  Auction,
-  Bid,
-  AuctionListResponse,
-  AuctionDetailsResponse,
-  UserBidsResponse,
-  CreateAuctionPayload,
-  SubmitBidPayload,
-  EndAuctionPayload,
 } from '@/types/marketplace.types';
 import BaseService from './base.service';
 

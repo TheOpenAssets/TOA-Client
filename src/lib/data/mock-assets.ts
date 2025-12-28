@@ -1,13 +1,11 @@
 // src/lib/data/mock-assets.ts
 
-import { type IssuerAsset } from '../../types/issuer.types';
-
-export const mockAssets: IssuerAsset[] = [
+export const mockAssets: any[] = [
   {
     id: '1',
     name: 'Downtown Mumbai Commercial Property',
     assetType: 'Real Estate',
-    status: 'listed',
+    status: 'LISTED',
     location: 'Mumbai, Maharashtra, India',
     overview:
       'Premium commercial property located in the heart of Mumbai business district. This property features modern amenities and high-grade infrastructure, making it ideal for corporate offices and retail spaces.',
@@ -56,7 +54,7 @@ export const mockAssets: IssuerAsset[] = [
     id: '2',
     name: 'Green Energy Solar Farm',
     assetType: 'Renewable Energy',
-    status: 'partially_sold',
+    status: 'LISTED',
     location: 'Rajasthan, India',
     overview:
       'Large-scale solar energy facility with 50MW capacity. The farm supplies clean energy to the regional grid with long-term power purchase agreements in place.',
@@ -110,7 +108,7 @@ export const mockAssets: IssuerAsset[] = [
     id: '3',
     name: 'Luxury Resort in Goa',
     assetType: 'Hospitality',
-    status: 'settled',
+    status: 'SETTLED',
     location: 'North Goa, India',
     overview:
       'Beachfront luxury resort featuring 100 rooms, spa facilities, multiple restaurants, and conference halls. Popular destination for weddings and corporate events.',
@@ -158,7 +156,7 @@ export const mockAssets: IssuerAsset[] = [
     id: '4',
     name: 'Tech Park Bangalore',
     assetType: 'Commercial Real Estate',
-    status: 'pending',
+    status: 'UPLOADED',
     location: 'Bangalore, Karnataka, India',
     overview:
       'Modern IT park with Grade A office spaces. Designed for technology companies with high-speed connectivity, backup power, and advanced security systems.',
@@ -205,7 +203,7 @@ export const mockAssets: IssuerAsset[] = [
     id: '5',
     name: 'Residential Complex Delhi',
     assetType: 'Real Estate',
-    status: 'registered',
+    status: 'REGISTERED',
     location: 'New Delhi, India',
     overview:
       'Upscale residential complex with 200 apartments. Features include clubhouse, swimming pool, gym, and landscaped gardens. Located in prime residential area.',
@@ -244,6 +242,6 @@ export const mockAssets: IssuerAsset[] = [
   },
 ];
 
-export const getAssetById = (id: string): IssuerAsset | undefined => {
+export const getAssetById = (id: string): any | undefined => {
   return mockAssets.find((asset) => asset.id === id);
 };

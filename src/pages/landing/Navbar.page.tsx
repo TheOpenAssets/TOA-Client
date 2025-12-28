@@ -13,7 +13,7 @@ const Navbar = () => {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { setUser, setLoading, isLoading } = useAuthStore();
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
    const handleLogin = async () => {
       if (!address) {

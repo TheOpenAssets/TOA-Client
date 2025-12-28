@@ -8,7 +8,6 @@ import { authService } from '../../lib/api/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useState, useEffect } from 'react';
 import { issuerService } from "../../lib/api/issuer.service";
-import { User } from "lucide-react";
 
 const HeroSection = () => {
   const navigate = useNavigate();

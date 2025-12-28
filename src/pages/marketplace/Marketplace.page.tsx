@@ -56,7 +56,7 @@ const MarketplacePage = () => {
   }, [fetchListings, fetchActiveAuctions]);
 
   // Use mock data as fallback for featured sections (until backend provides these endpoints)
-  const featuredAssets = getFeaturedAssets();
+  const _featuredAssets = getFeaturedAssets();
   const highYieldAssets = getHighYieldAssets();
   const recentlyVerifiedAssets = getRecentlyVerifiedAssets();
 

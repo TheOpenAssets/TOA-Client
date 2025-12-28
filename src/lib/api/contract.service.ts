@@ -114,8 +114,20 @@ class ContractService {
 
       // Get listing to determine type and price
       const listing = await marketplaceContract.listings(assetId);
-      const listingType = listing[2];
       const staticPrice = listing[3];
+      const totalSupply = listing[8]; // totalSupply is at index 8
+      const minInvestmentRaw = listing[11]; // minInvestment is at index 11 (matches buyTokens)
+
+      // FIX: Backend sends minInvestment in 1e18 format (token decimals)
+      // but contract expects 1e6 format (USDC decimals)
+      // Convert: divide by 1e12 to go from 1e18 to 1e6
+      const minInvestment = minInvestmentRaw / BigInt(10 ** 12);
+
+      console.log('\n📊 Listing Details:');
+      console.log('Static Price:', ethers.formatUnits(staticPrice, 6), 'USDC per token');
+      console.log('Min Investment (raw from backend):', minInvestmentRaw.toString());
+      console.log('Min Investment (converted):', ethers.formatUnits(minInvestment, 6), 'USDC');
+      console.log('Total Supply:', ethers.formatUnits(totalSupply, 18), 'tokens');
 
       // Always use staticPrice to avoid revert issues with getCurrentPrice()
       // Note: getCurrentPrice() seems to revert even for auctions in this contract
@@ -125,6 +137,13 @@ class ContractService {
       // Calculate payment needed (matching script formula)
       const tokenAmountWei = ethers.parseUnits(params.tokenAmount, 18);
       const payment = (currentPrice * tokenAmountWei) / BigInt(10 ** 18);
+
+      console.log('\n💰 Purchase Calculation:');
+      console.log('Token Amount:', params.tokenAmount, 'tokens (', tokenAmountWei.toString(), 'wei)');
+      console.log('Price per Token:', ethers.formatUnits(currentPrice, 6), 'USDC');
+      console.log('Total Payment:', ethers.formatUnits(payment, 6), 'USDC');
+      console.log('Min Investment:', ethers.formatUnits(minInvestment, 6), 'USDC');
+      console.log('Payment >= MinInvestment?', payment >= minInvestment ? '✅ YES' : '❌ NO');
 
       console.log('\n✅ Step 1: Approving USDC...');
       console.log('Payment to approve:', ethers.formatUnits(payment, 6), 'USDC');
@@ -441,26 +460,47 @@ class ContractService {
       console.log('\n📋 Fetching listing info...');
       const listing = await marketplaceContract.listings(assetIdBytes32);
       const tokenAddress = listing[0];
-      const listingType = listing[2];
       const staticPrice = listing[3];
       const totalSupply = listing[8];
       const sold = listing[9];
-      const minInvestment = listing[11];
+      const minInvestmentRaw = listing[11];
+
+      // FIX: Backend sends minInvestment in 1e18 format (token decimals)
+      // but contract expects 1e6 format (USDC decimals)
+      // Convert: divide by 1e12 to go from 1e18 to 1e6
+      const minInvestment = minInvestmentRaw / BigInt(10 ** 12);
+
+      console.log('🔧 FRONTEND FIX: Converting minInvestment from backend');
+      console.log('Backend sent (1e18 format):', minInvestmentRaw.toString());
+      console.log('Converted (1e6 format):', minInvestment.toString());
+      console.log('Converted (USDC):', ethers.formatUnits(minInvestment, 6), 'USDC');
 
       // Always use staticPrice - getCurrentPrice() reverts in this contract
       const currentPrice = staticPrice;
       console.log('Using static price:', ethers.formatUnits(currentPrice, 6), 'USDC per token');
 
       console.log('Token Address:', tokenAddress);
-      console.log('Listing Type:', listingType === 0 ? 'STATIC' : 'DUTCH_AUCTION');
       console.log('Current Price:', ethers.formatUnits(currentPrice, 6), 'USDC per token');
-      console.log('Min Investment:', ethers.formatUnits(minInvestment, 18), 'tokens');
+      console.log('Min Investment:', ethers.formatUnits(minInvestment, 6), 'USDC');
       console.log('Sold:', ethers.formatUnits(sold, 18), '/', ethers.formatUnits(totalSupply, 18), 'tokens');
 
       // Calculate payment needed (matching script formula)
       const payment = (currentPrice * tokenAmountWei) / BigInt(10 ** 18);
-      console.log('\n💰 Payment Required (raw):', payment.toString());
-      console.log('💰 Payment Required:', ethers.formatUnits(payment, 6), 'USDC');
+      console.log('\n💰 Payment Calculation:');
+      console.log('Payment Required (raw):', payment.toString());
+      console.log('Payment Required:', ethers.formatUnits(payment, 6), 'USDC');
+      console.log('Min Investment (raw):', minInvestment.toString());
+      console.log('Min Investment:', ethers.formatUnits(minInvestment, 6), 'USDC');
+      console.log('Payment >= MinInvestment?', payment >= minInvestment ? '✅ YES' : '❌ NO');
+
+      // Check if payment meets minimum investment requirement
+      if (payment < minInvestment) {
+        const minTokensNeeded = (minInvestment * BigInt(10 ** 18)) / currentPrice;
+        throw new Error(
+          `Purchase amount (${ethers.formatUnits(payment, 6)} USDC) is below minimum investment (${ethers.formatUnits(minInvestment, 6)} USDC). ` +
+          `You need to buy at least ${ethers.formatUnits(minTokensNeeded, 18)} tokens to meet the minimum investment requirement.`
+        );
+      }
 
       // Check USDC balance
       const usdcBalance = await usdcContract.balanceOf(userAddress);
