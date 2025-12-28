@@ -114,9 +114,9 @@ const AdminLayout = () => {
         </header>
 
         {/* Main Content Area */}
-        <div className="flex min-h-screen">
+        <div className="flex h-[calc(100vh-120px)]">
           {/* Sidebar */}
-          <aside className="w-72 border-r  border-gray-200 bg-white/40 backdrop-blur-sm min-h-[calc(100vh-89px)]">
+          <aside className="w-72 border-r border-gray-200 bg-white/40 backdrop-blur-sm h-full overflow-y-auto">
             <nav className="p-4 space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon;
@@ -172,7 +172,7 @@ const AdminLayout = () => {
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 p-8  min-h-[calc(100vh-89px)]">
+          <main className="flex-1 p-8 h-full overflow-y-auto">
             <Outlet />
           </main>
         </div>

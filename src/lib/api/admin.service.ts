@@ -455,7 +455,7 @@ class AdminService extends BaseService {
         method: 'POST',
         headers: this.getAuthHeaders(),
       });
-
+    
       const data = await response.json();
 
       if (!response.ok || data.success === false) {

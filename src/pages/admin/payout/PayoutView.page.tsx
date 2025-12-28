@@ -43,15 +43,8 @@ const PayoutViewPage = () => {
 
       console.log('Listed assets:', allAssets);
 
-      // Map and filter assets with sold tokens
+      // Map all listed assets (show even if no tokens sold yet)
       const payoutAssets: PayoutAsset[] = allAssets
-        .filter((asset: any) => {
-          const soldRaw = asset.listing?.sold || '0';
-          const sold = typeof soldRaw === 'string'
-            ? (soldRaw.length > 18 ? parseFloat(soldRaw) / 1e18 : parseFloat(soldRaw))
-            : soldRaw;
-          return sold > 0; // Only show assets with sold tokens
-        })
         .map((asset: any) => {
           // Parse sold tokens
           const soldRaw = asset.listing?.sold || '0';
@@ -199,10 +192,10 @@ const PayoutViewPage = () => {
             <div className="p-12 text-center">
               <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
               <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
-                No Payouts Pending
+                No Listed Assets
               </h3>
               <p className="font-antic text-sm text-gray-500">
-                No listed assets with sold tokens found
+                No listed assets found. Assets will appear here after listing.
               </p>
             </div>
           ) : (
@@ -276,6 +269,8 @@ const PayoutViewPage = () => {
                     <td className="px-6 py-5 text-right">
                       {asset.payoutExecuted ? (
                         <span className="font-antic text-xs text-gray-500">Completed</span>
+                      ) : asset.sold === 0 ? (
+                        <span className="font-antic text-xs text-gray-400">No tokens sold yet</span>
                       ) : (
                         <button
                           onClick={() => handlePayout(asset.assetId)}
