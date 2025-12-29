@@ -29,6 +29,9 @@ import PortfolioPage from '../../pages/portfolio/Portfolio.page';
 // 404 Page
 import { NotFoundPage } from '../../components/ui/404-page-not-found';
 
+// Challenge Verification Page
+import { ChallengeVerificationPage } from '../../components/ui/challenge-verification';
+
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
@@ -102,6 +105,11 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/showcase',
     element: <ComponentShowcasePage />,
+  },
+  // Challenge Verification
+  {
+    path: '/verify-challenge',
+    element: <ChallengeVerificationPage />,
   },
   // 404 - Catch all unmatched routes
   {

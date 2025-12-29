@@ -1,6 +1,8 @@
 
 // src/lib/api/base.service.ts
 
+import { handleAPIError } from '../utils/error-handler';
+
 /**
  * Utility to create AbortController with timeout
  */
@@ -28,7 +30,8 @@ class BaseService {
   protected getAuthHeaders = () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      throw new Error('Not a verified user, please solve the challenge');
+      // This will trigger the error handler which redirects to /verify-challenge
+      handleAPIError(new Error('Not a verified user, please solve the challenge'));
     }
     return {
       ...this.getHeaders(),

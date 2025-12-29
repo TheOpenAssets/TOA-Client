@@ -1,6 +1,7 @@
 // src/lib/api/kyc.service.ts
 import type { KYCSubmitResponse } from '../../types/auth.types';
 import BaseService from './base.service';
+import { handleAPIError } from '../utils/error-handler';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
@@ -126,7 +127,7 @@ class KYCService extends BaseService {
       const accessToken = localStorage.getItem('access_token');
 
       if (!accessToken) {
-        throw new Error('Not a verified user, please solve the challenge.');
+        handleAPIError(new Error('Not a verified user, please solve the challenge.'));
       }
 
       // Simulate network delay
