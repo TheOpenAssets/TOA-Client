@@ -175,16 +175,17 @@ const HeroSection = () => {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
-            RWA Truth, 
+           RWA Tokenization,
           </h1>
-          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Execution</h1>
+          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Settlement
+</h1>
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
-            & Yield Distribution Layer
+& Cross Protocol Credit 
           </h1>
 
           <p className="font-inter text-base md:text-lg text-foreground/80 mb-12 max-w-2xl mx-auto">
-            We create a single, verifiable RWA truth layer on Mantle, combined with native marketplaces, lending, and yield distribution, and enable secure cross-chain RWA interoperability.
-          </p>
+Tokenize and invest in real-world assets, leverage M-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.
+Tokenize. Invest. Borrow. Earn - all in one unified execution layer.          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {error && (

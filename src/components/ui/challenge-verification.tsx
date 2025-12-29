@@ -85,7 +85,7 @@ export const ChallengeVerificationPage = () => {
       />
 
       {/* Content */}
-      <div className=" bottom-0 z-10 flex flex-col items-center gap-8">
+      <div className=" absolute top-3/4 left-1/2.5 z-10">
         {/* Verification Button */}
         <button
           onClick={handleVerification}

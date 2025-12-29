@@ -698,7 +698,7 @@ const PortfolioPage = () => {
           </div>
         </div>
       )}
-      {isConnected && <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-40">
+      {isConnected && <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-80">
         <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
         
           Logout

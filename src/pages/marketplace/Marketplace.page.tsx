@@ -158,9 +158,7 @@ const MarketplacePage = () => {
   const filters: { value: FilterCategory; label: string }[] = [
     { value: 'all', label: 'All Assets' },
     { value: 'invoices', label: 'Invoices' },
-    { value: 'real-estate', label: 'Real Estate' },
-    { value: 'trade-finance', label: 'Trade Finance' },
-    { value: 'equipment-lease', label: 'Equipment Lease' },
+    
     { value: 'high-yield', label: 'High Yield (>10%)' },
     { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
