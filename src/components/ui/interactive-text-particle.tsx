@@ -6,6 +6,8 @@ interface Pointer {
 }
 
 interface Particle {
+  draw: any;
+  move: any;
   ox: number;
   oy: number;
   cx: number;
