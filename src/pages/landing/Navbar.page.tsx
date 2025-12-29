@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import orion from "../../assets/ALogo.png";
+import orion from "../../assets/ALogo-removebg-preview.png";
 import "../../styles/Navbar.css";
 import { useAccount, useSignMessage } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
@@ -58,38 +58,29 @@ const Navbar = () => {
       <div className={`navbar-desktop ${isScrolled ? "navbar-scrolled" : ""}`}>
         {/* Logo */}
         <div className="navbar-logo">
-          <div className="logo-placeholder">
-            <div className="logo-icon">
-              <img src={orion} alt="Openassets" />
-            </div>
-          </div>
+          <img src={orion} alt="Openassets" className="h-16 w-auto object-contain" />
         </div>
 
         {/* Navigation Links */}
         <nav className="navbar-nav">
-          <a href="/marketplace" className="nav-link">
-            Marketplace
-          </a>
-          
+         <a
+  href="/"
+  className="nav-link underline-animation underline-animation-purple"
+>
+  Change log
+</a>
+
+<a href="/" className="nav-link underline-animation underline-animation-purple">
+  About
+</a>
+
         </nav>
 
         {/* CTA Button */}
         <div className="flex items-center gap-4">
-         {isConnected ? (
-          <Button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="cta-button"
-          >
-            {isLoading ? 'Authenticating...' : 'Login as Admin'}
-          </Button>
-        ) : (
-          <div className="flex justify-center">
-            <ConnectButton />
-          </div>
-        )}
-          <a href="/dashboard" className="cta-button">
-            Launch App
+       
+          <a href="/marketplace" className="cta-button">
+            Explore Marketplace
           </a>
         </div>
       </div>
@@ -98,11 +89,7 @@ const Navbar = () => {
       <div className={`navbar-mobile ${isScrolled ? "navbar-scrolled" : ""}`}>
         {/* Logo */}
         <div className="navbar-logo">
-          <div className="logo-placeholder">
-            <div className="logo-icon">
-              <img src={orion} alt="Openassets" />
-            </div>
-          </div>
+          <img src={orion} alt="Openassets" className="h-12 w-auto object-contain" />
         </div>
 
         {/* Hamburger Menu */}

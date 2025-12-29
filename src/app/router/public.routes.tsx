@@ -26,6 +26,9 @@ import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.p
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
 
+// 404 Page
+import { NotFoundPage } from '../../components/ui/404-page-not-found';
+
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
@@ -99,5 +102,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/showcase',
     element: <ComponentShowcasePage />,
+  },
+  // 404 - Catch all unmatched routes
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ];

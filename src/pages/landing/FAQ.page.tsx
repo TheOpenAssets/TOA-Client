@@ -24,24 +24,77 @@ const FAQSection = () => {
 
   const faqs = [
     {
-      question: "What is this platform in one sentence?",
-      answer: "It’s a platform that creates a single, verifiable RWA truth layer on Mantle, combined with native marketplaces, lending, and yield distribution, and enables secure cross-chain RWA interoperability."
+      question: "What is OpenAssets?",
+      answer: (
+        <div className="space-y-3">
+          <p>A compliant RWA tokenization platform built on Mantle.</p>
+          <div className="pl-4 border-l-2 border-purple-500 space-y-2">
+            <p className="text-sm">✓ Buy, trade, and manage tokenized real-world assets</p>
+            <p className="text-sm">✓ ERC-3643 security tokens with built-in compliance</p>
+            <p className="text-sm">✓ Everything happens on-chain—transparent and legally sound</p>
+          </div>
+        </div>
+      )
     },
     {
-      question: "What kind of assets can be used?",
-      answer: "The platform is designed for real-world cash-flow assets such as invoices, receivables, letters of payment, and other credit instruments."
+      question: "Why choose OpenAssets?",
+      answer: (
+        <div className="space-y-3">
+          <p className="font-medium">Compliance is built directly into the blockchain.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div className="bg-white/50 rounded-lg p-3">
+              <p className="font-semibold text-purple-600 text-sm mb-1">For Issuers</p>
+              <p className="text-sm">Faster capital access without traditional friction</p>
+            </div>
+            <div className="bg-white/50 rounded-lg p-3">
+              <p className="font-semibold text-blue-600 text-sm mb-1">For Investors</p>
+              <p className="text-sm">Transparent, liquid, compliant investments</p>
+            </div>
+          </div>
+          <p className="text-sm italic">KYC/AML checks and regulatory requirements are automatically enforced—no manual intervention.</p>
+        </div>
+      )
     },
     {
-      question: "Why is Mantle essential for this platform?",
-      answer: "Mantle serves as the canonical execution and trust layer. It's used for the RWA registry, all economic activities (minting, trading, yield), and authorizing cross-chain actions. Its low-cost execution and Mantle DA are critical for the platform's functionality."
-    },
-    {
-      question: "How does the platform handle sensitive data?",
-      answer: "Instead of storing raw data on-chain, raw asset metadata and documents are anchored to EigenDA. Only the canonical commitments (hashes, IDs, state) are anchored to Mantle, keeping sensitive data private and scalable."
-    },
-    {
-      question: "Can assets from this platform be used on other chains?",
-      answer: "Yes. The platform enables true cross-chain RWAs. Other chains can mint 'mirror assets' by referencing the Mantle registry state without re-verification, with Mantle acting as the single source of truth."
+      question: "How does OpenAssets work?",
+      answer: (
+        <div className="space-y-4">
+          <p className="font-medium">A simple, fully on-chain process:</p>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+              <div>
+                <p className="font-semibold text-sm">Issuers submit assets</p>
+                <p className="text-sm text-gray-600">Invoices, receivables, and other RWAs</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+              <div>
+                <p className="font-semibold text-sm">We verify & tokenize</p>
+                <p className="text-sm text-gray-600">Using ERC-3643 compliant security tokens</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+              <div>
+                <p className="font-semibold text-sm">Investors buy on marketplace</p>
+                <p className="text-sm text-gray-600">Fixed-price or auction mechanisms</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+              <div>
+                <p className="font-semibold text-sm">Smart contracts automate everything</p>
+                <p className="text-sm text-gray-600">Compliance checks, trading, and yield distribution</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 mt-4">
+            <p className="text-sm font-medium text-center">🔒 Full transparency from registration to settlement</p>
+          </div>
+        </div>
+      )
     }
   ];
 
@@ -49,10 +102,10 @@ const FAQSection = () => {
     <section id="faqs" ref={sectionRef} className="py-24 bg-[#f6fbff] relative">
       <div className="max-w-[1200px] mx-auto px-6">
         {/* Floating Card Component - Matching Integration Section Style */}
-        <div 
+        <div
           className="bg-[#d8dfe5] rounded-[20px] p-12 md:p-16 card-shadow relative opacity-0"
           data-scroll-reveal
-          style={{ 
+          style={{
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             animationDelay: '0.2s'
           }}
@@ -65,15 +118,15 @@ const FAQSection = () => {
               Frequently Asked Questions
             </h2>
             <p className="font-inter text-base md:text-lg text-[#0e1c29]/80 max-w-2xl mx-auto mt-4">
-              Key information about our RWA platform and its integration with the Mantle ecosystem.
+              Discover how OpenAssets brings compliant, on-chain tokenization to real-world assets.
             </p>
           </div>
 
           <div className="max-w-3xl mx-auto opacity-0" data-scroll-reveal style={{ animationDelay: '0.4s' }}>
             <Accordion type="single" collapsible className="space-y-4">
               {faqs.map((faq, index) => (
-                <AccordionItem 
-                  key={`faq-${index}`} 
+                <AccordionItem
+                  key={`faq-${index}`}
                   value={`item-${index}`}
                   className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 border-0"
                   style={{
