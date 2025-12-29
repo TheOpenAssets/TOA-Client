@@ -1,242 +1,594 @@
 # Authentication Flow Documentation
 
 ## Overview
-Complete signup + login flow with wallet-based authentication using RainbowKit, with KYC verification via DigiLocker simulation.
 
-## Tech Stack
-- **Wallet Connection**: RainbowKit + Wagmi + Viem
-- **State Management**: Zustand
-- **Routing**: React Router v7
+This document describes the complete authentication flow for the TOA (Tokenized Open Assets) platform, including wallet-based authentication and KYC verification.
 
-## User Flow
+## Current Status: Mock Mode
 
-### 1. Landing Page
-- User sees "Get Started" CTA button
-- Clicking redirects to `/auth`
-- ✅ No wallet connection on landing page
+**The application is currently running in MOCK MODE** - all backend API calls are simulated on the frontend. This allows development and testing without a backend server.
 
-### 2. Auth Page (`/auth`)
-**Layout**: Split screen
-- **Left**: Static illustration / onboarding
-- **Right**: Authentication panel
+### Switching Between Mock and Real Backend
 
-### 3. Wallet Connection
-- Right panel shows "Connect Wallet" button (RainbowKit)
-- After connection:
-  - Display shortened wallet address
-  - Immediately call backend to check wallet status
+**To enable/disable mock mode:**
 
-### 4. Wallet Status Pre-Check (CRITICAL)
-**API Call**: `GET /users/exists?walletAddress=0xUSER`
+1. Edit your `.env` file (or `.env.local`)
+2. Set `VITE_USE_MOCK_AUTH` to:
+   - `true` - Use mock mode (no backend required) **[DEFAULT]**
+   - `false` - Use real backend (requires backend server running)
 
-**Response**:
+```env
+# Mock mode (development)
+VITE_USE_MOCK_AUTH=true
+
+# Real mode (production)
+VITE_USE_MOCK_AUTH=false
+```
+
+## Authentication Flow Steps
+
+### Step 1: User Clicks "Get Started"
+
+**Location:** `src/pages/landing/Hero.page.tsx:35-46`
+
+User clicks the "Get Started" button on the landing page, which navigates to `/auth`.
+
+### Step 2: Navigate to Auth Page
+
+**Location:** `src/pages/public/auth/Auth.page.tsx`
+
+The auth page is rendered with initial state: `step = 'connect'`
+
+### Step 3: Wallet Connection
+
+User clicks "Connect Wallet" button, which triggers RainbowKit wallet connection.
+
+**Technologies:**
+- RainbowKit (UI)
+- Wagmi (Blockchain interactions)
+- User's wallet extension (MetaMask, etc.)
+
+### Step 4: Wallet Status Check
+
+**Endpoint:** `GET /users/exists?walletAddress=0xUSER`
+
+**Service Method:** `authService.checkWalletStatus()`
+
+**Location:** `src/lib/api/auth.service.ts:60-103`
+
+Once wallet is connected, the frontend checks if the wallet address is already registered.
+
+**Expected Response:**
 ```json
 {
-  "exists": boolean,
-  "kyc": boolean
+  "exists": boolean,  // true if wallet is in database
+  "kyc": boolean      // true if KYC is approved
 }
 ```
 
-### 5. UI Decision Based on Response
+**Mock Behavior:**
+- Returns `{ exists: false, kyc: false }` by default
+- Can be changed in `auth.service.ts:75-76` to test different scenarios
 
-#### Case A: Existing KYC User
-**Condition**: `{ "exists": true, "kyc": true }`
+### Step 5: UI Decision
 
-**UI**:
-- Show text: "Welcome back"
-- Show button: "Login"
-- ❌ NO DigiLocker
-- ❌ NO identity verification
+Based on the wallet status response, the UI shows different screens:
 
-**User Action**: Click "Login" → Proceed to wallet signature
+#### Case A: Existing User (exists=true, kyc=true)
+- Shows: "Welcome back" message + "Login" button
+- Next step: User clicks Login → Goes to Step 7
 
-#### Case B: New User / No KYC
-**Condition**: `{ "exists": false, "kyc": false }`
+#### Case B: New User (exists=false OR kyc=false)
+- Shows: Email input + "Connect DigiLocker" button
+- Next step: User enters email → Opens document upload modal
 
-**UI**:
-- Show DigiLocker-style identity verification screen
-- Frontend-only simulation
-- No real API calls
+### Step 6: Document Upload (Frontend Only)
 
-### 6. DigiLocker Simulation (Frontend Only)
+**Location:** `src/components/wallet/DocumentUploadModal.tsx`
 
-**Steps**:
-1. Show "Verify your identity" title
-2. Button: "Connect DigiLocker"
-3. Loading states:
-   - "Fetching Aadhaar details..."
-   - "Fetching PAN details..."
-4. Show masked previews:
-   - Aadhaar: `XXXX-XXXX-1234`
-   - PAN: `ABCDE1234F`
-5. Button: "Continue"
+User uploads:
+- Aadhaar Card (PDF/Image, max 5MB)
+- PAN Card (PDF/Image, max 5MB)
 
-**Important**: 
-- ❌ No real API calls
-- ❌ No manual input fields
-- ✅ Pure frontend simulation
+**Note:** Files are stored locally in component state, **not uploaded to server yet**.
 
-### 7. Authentication Flow (Both Cases)
+After upload, UI changes to show "Documents Uploaded ✓" + "Complete Registration" button.
 
-#### Step 7.1: Get Challenge
-```typescript
-GET /auth/challenge?walletAddress=0xUSER
+### Step 7: Authentication Flow
 
-Response:
+**This is a 3-part process:**
+
+#### 7.1: Get Challenge
+
+**Endpoint:** `GET /auth/challenge?walletAddress=0xUSER`
+
+**Service Method:** `authService.getChallenge()`
+
+**Location:** `src/lib/api/auth.service.ts:135-176`
+
+Backend generates a unique challenge message with nonce.
+
+**Expected Response:**
+```json
 {
-  "message": "Sign this message...\nNonce: ...",
-  "nonce": "..."
+  "message": "Sign this message to authenticate with TOA Platform\n\nWallet: 0x...\nNonce: abc123\nTimestamp: 2024-01-01T00:00:00Z",
+  "nonce": "abc123"
 }
 ```
 
-#### Step 7.2: Wallet Signs Message
-- User signs exact message from challenge
-- Uses RainbowKit's `useSignMessage` hook
-- No transaction, no gas, no extra data
+**Mock Behavior:**
+- Generates random nonce
+- Creates challenge message with wallet address and timestamp
 
-#### Step 7.3: Login API (AUTH ONLY)
-```typescript
-POST /auth/login
+#### 7.2: Wallet Signature
 
-Payload (STRICT):
+User's wallet extension prompts them to sign the challenge message.
+
+**Technology:** Wagmi's `signMessageAsync()`
+
+This proves the user controls the wallet address.
+
+#### 7.3: Login API Call
+
+**Endpoint:** `POST /auth/login`
+
+**Service Method:** `authService.login()`
+
+**Location:** `src/lib/api/auth.service.ts:232-293`
+
+**Request Body:**
+```json
 {
-  "walletAddress": "0xUSER",
-  "message": "message from challenge",
-  "signature": "wallet signature"
+  "walletAddress": "0x...",
+  "message": "Sign this message...",
+  "signature": "0xabc123..."
 }
 ```
 
-**CRITICAL**:
-- 🚫 Do NOT send KYC data
-- 🚫 Do NOT change payload structure
-- ✅ This is ONLY for authentication
-
-### 8. Backend Login Result
+**Expected Response:**
 ```json
 {
   "user": {
-    "id": "userId",
-    "walletAddress": "0xUSER",
+    "id": "user_123",
+    "walletAddress": "0x...",
     "role": "INVESTOR",
-    "kyc": boolean
+    "kyc": false
   },
   "tokens": {
-    "access": "ACCESS_TOKEN",
-    "refresh": "REFRESH_TOKEN"
+    "access": "eyJhbGc...",
+    "refresh": "eyJhbGc..."
   }
 }
 ```
 
-### 9. Post-Login Handling
+**Mock Behavior:**
+- Generates mock JWT tokens
+- Creates mock user object
+- Stores tokens in localStorage
 
-**If `user.kyc === true`**:
-- Store tokens in localStorage
-- Update auth store with user data
-- Redirect to `/dashboard`
+### Step 8: Post-Login Handling
 
-**If `user.kyc === false`**:
-- Proceed to KYC completion
+**Location:** `src/pages/public/auth/Auth.page.tsx:119-129`
 
-### 10. KYC Completion API (Separate)
+After successful login, check user's KYC status:
 
-**Only for users who saw DigiLocker simulation**
+- If `user.kyc === true` → Redirect to `/dashboard`
+- If `user.kyc === false` → Proceed to Step 10 (KYC submission)
 
-```typescript
-POST /kyc/submit
-Authorization: Bearer ACCESS_TOKEN
+### Step 9: Store User in State
 
-Payload:
+**Location:** `src/stores/auth.store.ts`
+
+User data is stored in Zustand global state for access throughout the app.
+
+### Step 10: KYC Submission
+
+**Endpoint:** `POST /kyc/submit`
+
+**Service Method:** `kycService.submitKYC()`
+
+**Location:** `src/lib/api/kyc.service.ts:121-178`
+
+**Authentication:** Requires `Authorization: Bearer {access_token}` header
+
+**Request Body:**
+```json
 {
-  "source": "DIGILOCKER_SIMULATION",
+  "source": "DOCUMENT_UPLOAD",
   "documents": {
-    "aadhaar": "XXXX-XXXX-1234",
-    "pan": "ABCDE1234F"
+    "aadhaar": "aadhaar_file_name.pdf",
+    "pan": "pan_file_name.pdf"
   }
 }
 ```
 
-**Backend Updates**:
-- Set `user.kyc = true`
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "KYC submitted successfully",
+  "user": {
+    "id": "user_123",
+    "walletAddress": "0x...",
+    "role": "INVESTOR",
+    "kyc": true
+  }
+}
+```
 
-**After Success**:
-- Redirect to `/dashboard`
+**Mock Behavior:**
+- Auto-approves KYC (sets kyc=true)
+- Returns success immediately
+
+### Step 11: Redirect to Dashboard
+
+After successful KYC submission, user is redirected to `/dashboard`.
+
+## API Endpoints Summary
+
+### Public Endpoints (No Auth Required)
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/users/exists` | GET | Check if wallet is registered |
+| `/auth/challenge` | GET | Get challenge for signature |
+| `/auth/login` | POST | Login with wallet signature |
+
+### Protected Endpoints (Auth Required)
+
+| Endpoint | Method | Purpose | Auth Header |
+|----------|--------|---------|-------------|
+| `/kyc/submit` | POST | Submit KYC documents | `Bearer {access_token}` |
+
+## Backend Implementation Guide
+
+### Endpoint 1: Check Wallet Status
+
+```http
+GET /users/exists?walletAddress=0xUSER
+```
+
+**Implementation:**
+```typescript
+// Pseudo-code
+async function checkWalletStatus(walletAddress: string) {
+  const user = await db.users.findOne({ walletAddress });
+
+  return {
+    exists: !!user,
+    kyc: user?.kycStatus === 'APPROVED'
+  };
+}
+```
+
+### Endpoint 2: Get Challenge
+
+```http
+GET /auth/challenge?walletAddress=0xUSER
+```
+
+**Implementation:**
+```typescript
+// Pseudo-code
+async function getChallenge(walletAddress: string) {
+  const nonce = crypto.randomBytes(32).toString('hex');
+  const timestamp = new Date().toISOString();
+
+  // Store nonce in Redis with 5min TTL
+  await redis.set(`nonce:${walletAddress}`, nonce, 'EX', 300);
+
+  const message = `Sign this message to authenticate with TOA Platform
+
+Wallet: ${walletAddress}
+Nonce: ${nonce}
+Timestamp: ${timestamp}`;
+
+  return { message, nonce };
+}
+```
+
+### Endpoint 3: Login
+
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "walletAddress": "0x...",
+  "message": "Sign this message...",
+  "signature": "0xabc123..."
+}
+```
+
+**Implementation:**
+```typescript
+// Pseudo-code
+import { ethers } from 'ethers';
+
+async function login(payload: LoginPayload) {
+  // 1. Verify signature
+  const recoveredAddress = ethers.utils.verifyMessage(
+    payload.message,
+    payload.signature
+  );
+
+  if (recoveredAddress.toLowerCase() !== payload.walletAddress.toLowerCase()) {
+    throw new Error('Invalid signature');
+  }
+
+  // 2. Verify nonce (extract from message and check Redis)
+  const nonce = extractNonceFromMessage(payload.message);
+  const storedNonce = await redis.get(`nonce:${payload.walletAddress}`);
+
+  if (nonce !== storedNonce) {
+    throw new Error('Invalid or expired nonce');
+  }
+
+  // 3. Delete used nonce
+  await redis.del(`nonce:${payload.walletAddress}`);
+
+  // 4. Get or create user
+  let user = await db.users.findOne({ walletAddress: payload.walletAddress });
+
+  if (!user) {
+    user = await db.users.create({
+      walletAddress: payload.walletAddress,
+      role: 'INVESTOR',
+      kycStatus: 'NOT_STARTED'
+    });
+  }
+
+  // 5. Generate JWT tokens
+  const accessToken = jwt.sign(
+    { userId: user.id, walletAddress: user.walletAddress, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  const refreshToken = jwt.sign(
+    { userId: user.id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  // 6. Return user and tokens
+  return {
+    user: {
+      id: user.id,
+      walletAddress: user.walletAddress,
+      role: user.role,
+      kyc: user.kycStatus === 'APPROVED'
+    },
+    tokens: {
+      access: accessToken,
+      refresh: refreshToken
+    }
+  };
+}
+```
+
+### Endpoint 4: KYC Submit
+
+```http
+POST /kyc/submit
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "source": "DOCUMENT_UPLOAD",
+  "documents": {
+    "aadhaar": "aadhaar_id",
+    "pan": "pan_id"
+  }
+}
+```
+
+**Implementation:**
+```typescript
+// Pseudo-code
+async function submitKYC(payload: KYCSubmitPayload, userId: string) {
+  // 1. Verify user exists
+  const user = await db.users.findById(userId);
+  if (!user) throw new Error('User not found');
+
+  // 2. Check if KYC already done
+  if (user.kycStatus === 'APPROVED') {
+    throw new Error('KYC already approved');
+  }
+
+  // 3. Store document references
+  await db.kycDocuments.create([
+    {
+      userId: user.id,
+      documentType: 'AADHAAR',
+      documentIdentifier: payload.documents.aadhaar,
+      source: payload.source,
+      submittedAt: new Date()
+    },
+    {
+      userId: user.id,
+      documentType: 'PAN',
+      documentIdentifier: payload.documents.pan,
+      source: payload.source,
+      submittedAt: new Date()
+    }
+  ]);
+
+  // 4. Update user KYC status
+  user.kycStatus = 'APPROVED'; // or 'PENDING' if manual review needed
+  user.kycSubmittedAt = new Date();
+  await user.save();
+
+  // 5. Return updated user
+  return {
+    success: true,
+    message: 'KYC submitted successfully',
+    user: {
+      id: user.id,
+      walletAddress: user.walletAddress,
+      role: user.role,
+      kyc: true
+    }
+  };
+}
+```
+
+## Database Schema
+
+### Users Table
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  wallet_address VARCHAR(42) UNIQUE NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'INVESTOR',
+  kyc_status VARCHAR(20) NOT NULL DEFAULT 'NOT_STARTED',
+  kyc_submitted_at TIMESTAMP,
+  kyc_approved_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_users_wallet ON users(wallet_address);
+```
+
+### KYC Documents Table
+
+```sql
+CREATE TABLE kyc_documents (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  document_type VARCHAR(20) NOT NULL,
+  document_identifier VARCHAR(255) NOT NULL,
+  source VARCHAR(50) NOT NULL,
+  submitted_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_kyc_user ON kyc_documents(user_id);
+```
+
+## Security Considerations
+
+### 1. Signature Verification
+- Always verify signatures on the backend
+- Never trust client-side signature verification
+- Use established libraries (ethers.js, web3.js)
+
+### 2. Nonce Management
+- Generate cryptographically secure nonces
+- Store nonces temporarily (Redis with TTL)
+- Prevent nonce reuse (delete after use)
+- Nonce should expire after 5 minutes
+
+### 3. JWT Tokens
+- Use strong secret keys (store in env variables)
+- Set appropriate expiration times
+- Access token: 15 minutes
+- Refresh token: 7 days
+- Implement token refresh endpoint
+
+### 4. Document Storage
+- Store documents in secure cloud storage (AWS S3, etc.)
+- Encrypt sensitive documents at rest
+- Use signed URLs for temporary access
+- Implement proper access controls
+
+### 5. Rate Limiting
+- Implement rate limiting on all endpoints
+- Especially important for `/auth/challenge` and `/auth/login`
+- Prevent brute force attacks
+
+## Testing Different Scenarios
+
+### Test New User Flow
+
+In `src/lib/api/auth.service.ts:75-76`, set:
+```typescript
+exists: false,
+kyc: false,
+```
+
+**Expected:** Shows email input + document upload
+
+### Test Existing User Flow
+
+In `src/lib/api/auth.service.ts:75-76`, set:
+```typescript
+exists: true,
+kyc: true,
+```
+
+**Expected:** Shows "Welcome back" + Login button → Goes directly to dashboard
+
+### Test Registered but Not Verified
+
+In `src/lib/api/auth.service.ts:75-76`, set:
+```typescript
+exists: true,
+kyc: false,
+```
+
+**Expected:** Shows Login button → After login, requires KYC submission
 
 ## File Structure
 
 ```
 src/
-├── pages/public/auth/
-│   └── Auth.page.tsx              # Main auth page with full flow
-├── components/wallet/
-│   ├── ConnectWallet.tsx          # RainbowKit wallet connection
-│   ├── WalletAddress.tsx          # Display shortened address
-│   └── DigiLockerSimulation.tsx   # DigiLocker UI simulation
-├── lib/api/
-│   ├── auth.service.ts            # Auth API calls
-│   └── kyc.service.ts             # KYC API calls (separate)
+├── lib/
+│   └── api/
+│       ├── auth.service.ts     # Authentication API calls
+│       └── kyc.service.ts      # KYC API calls
+├── pages/
+│   ├── landing/
+│   │   └── Hero.page.tsx       # Landing page with "Get Started"
+│   └── public/
+│       └── auth/
+│           └── Auth.page.tsx   # Main authentication page
+├── components/
+│   └── wallet/
+│       ├── ConnectWallet.tsx   # Wallet connection button
+│       └── DocumentUploadModal.tsx  # KYC document upload
 ├── stores/
-│   └── auth.store.ts              # Zustand auth state
-├── types/
-│   └── auth.types.ts              # TypeScript types
-└── app/providers/
-    └── WalletProvider.tsx         # RainbowKit + Wagmi setup
+│   └── auth.store.ts           # Global auth state (Zustand)
+└── types/
+    └── auth.types.ts           # TypeScript types for auth
 ```
-
-## Key Rules
-
-1. ✅ **No passwords** - Wallet signature only
-2. ✅ **No form-based KYC** - DigiLocker simulation
-3. ✅ **No KYC data in `/auth/login`** - Separate APIs
-4. ✅ **Wallet signature happens once** - During login
-5. ✅ **Auth APIs not modified** - Strict payload structure
-6. ✅ **DigiLocker is UI simulation only** - No backend calls
-7. ✅ **Existing KYC wallets never see DigiLocker** - Check status first
 
 ## Environment Variables
 
-Create `.env` file:
-```bash
+```env
+# Required
 VITE_API_URL=http://localhost:3000/api
-VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id
+
+# Optional (defaults to true)
+VITE_USE_MOCK_AUTH=true
 ```
 
-Get WalletConnect Project ID from: https://cloud.walletconnect.com/
+## Frontend Dependencies
 
-## Testing the Flow
+- **RainbowKit** - Wallet connection UI
+- **Wagmi** - Ethereum library for React
+- **Viem** - TypeScript Ethereum library
+- **Zustand** - State management
+- **React Router** - Navigation
 
-### Test Case 1: New User
-1. Navigate to landing page
-2. Click "Get Started"
-3. Connect wallet (new address)
-4. See DigiLocker simulation
-5. Complete DigiLocker steps
-6. Sign wallet message
-7. KYC submitted automatically
-8. Redirected to dashboard
+## Next Steps for Backend Integration
 
-### Test Case 2: Existing KYC User
-1. Navigate to landing page
-2. Click "Get Started"
-3. Connect wallet (known address with KYC)
-4. See "Welcome back" message
-5. Click "Login"
-6. Sign wallet message
-7. Redirected to dashboard immediately
+1. ✅ Create the 4 endpoints listed above
+2. ✅ Set up database with users and kyc_documents tables
+3. ✅ Implement JWT authentication middleware
+4. ✅ Set up file upload endpoint (if using real file upload)
+5. ✅ Configure environment variables (JWT_SECRET, etc.)
+6. ✅ Test all endpoints with Postman or similar tool
+7. ✅ Update `.env` file: `VITE_USE_MOCK_AUTH=false`
+8. ✅ Test the complete flow end-to-end
 
-### Test Case 3: Existing User Without KYC
-1. Connect wallet (known address without KYC)
-2. See DigiLocker simulation
-3. Complete verification
-4. Auto-login after KYC
+## Questions?
 
-## Error Handling
+For any questions or issues with the auth flow, check the inline comments in:
+- `src/lib/api/auth.service.ts`
+- `src/lib/api/kyc.service.ts`
+- `src/pages/public/auth/Auth.page.tsx`
 
-- **Nonce expired**: Show error, allow retry
-- **Invalid signature**: Show error, request new signature
-- **Wallet rejected**: Show error, return to connect state
-- **API errors**: Display user-friendly messages
-- **Network errors**: Show retry option
-
-## Core Principle
-
-> Check wallet KYC status first, show DigiLocker only if needed, then authenticate with a single wallet signature.
+All endpoints are thoroughly documented with expected request/response formats.
