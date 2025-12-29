@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import "../../styles/Navbar.css";
-import HeroBackground from "./HeroBackground";
-import { useAccount, useSignMessage } from 'wagmi';
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { Button } from "../../components/ui/button.tsx";
 
@@ -9,7 +7,6 @@ import { Button } from "../../components/ui/button.tsx";
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
     const {  isAuthenticating, handleGetStarted } = useAuthActions();
   
 

@@ -8,7 +8,6 @@ import {
   IconTerminal2,
   IconCoin,
 } from "@tabler/icons-react";
-import HeroBackground from "./HeroBackground";
 
 
 const AutoRepayingSection = () => {
