@@ -288,7 +288,7 @@ const MarketplacePage = () => {
       </header>
 
       {/* Platform Metrics Strip - Real Data from GET /marketplace/info */}
-      <div className="bg-transparent relative border-b border-gray-200 z-40">
+      <div className="bg-transparent relative border-b border-gray-200 z-40 flex items-center">
         <div className="max-w-[1400px] mx-auto px-6 py-4">
           {isLoadingInfo ? (
             <div className="flex items-center justify-center py-2">

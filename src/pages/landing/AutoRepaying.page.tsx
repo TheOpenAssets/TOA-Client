@@ -105,17 +105,7 @@ const AutoRepayingSection = () => {
           ))}
         </div>
 
-        <div className="mt-16 flex flex-wrap justify-center gap-6 opacity-0" data-scroll-reveal>
-          <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Cryptographic Truth</div>
-          </div>
-          <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">On-chain Execution</div>
-          </div>
-          <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Native Yield</div>
-          </div>
-        </div>
+        
       </div>
     </section>
   );
