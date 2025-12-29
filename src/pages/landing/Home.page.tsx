@@ -3,13 +3,7 @@
 import HeroSection from "./Hero.page";
 import Navbar from "./Navbar.page";
 import Footer from "./Footer.page";
-
-import AutoRepayingSection from "./AutoRepaying.page";
 import FAQSection from "./FAQ.page";
-import ReviewsSection from "./Reviews.page";
-import AssetTokenizationSection from "./AssetTokenization.page";
-import CTASection from "./CTA.page";
-import IntegrationsSection from "./IntegrationsSection.page";
 
 const HomePage = () => {
   return (

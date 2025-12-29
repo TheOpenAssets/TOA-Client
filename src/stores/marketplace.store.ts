@@ -176,11 +176,11 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             totalBids: 0,
             totalDemand: 0,
             metadata: {
+              ...asset.metadata,
               invoiceNumber: announcement.metadata?.invoiceNumber,
               industry: announcement.metadata?.industry,
               riskTier: announcement.metadata?.riskTier,
               faceValue: announcement.metadata?.faceValue,
-              ...asset.metadata,
             },
           };
 
@@ -219,11 +219,11 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             totalBids: 0,
             totalDemand: 0,
             metadata: {
+              ...asset.metadata,
               invoiceNumber: announcement.metadata?.invoiceNumber,
               industry: announcement.metadata?.industry,
               riskTier: announcement.metadata?.riskTier,
               faceValue: announcement.metadata?.faceValue,
-              ...asset.metadata,
             },
           };
 

@@ -172,7 +172,7 @@ export type SortOption =
 // AUCTION TYPES (Based on AUTION.md specification)
 // ============================================================================
 
-export type AuctionStatus = 'BIDDING' | 'ENDED' | 'SETTLED' | 'CANCELLED';
+export type AuctionStatus = 'SCHEDULED' | 'BIDDING' | 'ENDED' | 'SETTLED' | 'CANCELLED';
 export type BidStatus = 'PENDING' | 'SUCCESSFUL' | 'FAILED' | 'PARTIALLY_FILLED';
 
 /**

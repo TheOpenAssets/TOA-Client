@@ -1,6 +1,5 @@
 import { Button } from "../../components/ui/button";
 import HeroBackground from "./HeroBackground";
-import Logo from "../../assets/ALogo-removebg-preview.png";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useSignMessage } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
