@@ -1,9 +1,22 @@
 import { useState, useEffect } from "react";
-import orion from "../../assets/ALogo-removebg-preview.png";
 import "../../styles/Navbar.css";
+import HeroBackground from "./HeroBackground";
+import { useAccount, useSignMessage } from 'wagmi';
+import { useAuthActions } from "../../hooks/useAuthActions";
+import { Button } from "../../components/ui/button.tsx";
+
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+    const {  isAuthenticating, handleGetStarted } = useAuthActions();
+  
+
+
+
+
+ 
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,11 +29,11 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className="navbar-container">
+    <header className="max-w-7xl mx-auto px-6 relative z-20">
       <div className={`navbar-desktop ${isScrolled ? "navbar-scrolled" : ""}`}>
         {/* Logo */}
         <div className="navbar-logo">
-          <img src={orion} alt="Openassets" className="h-16 w-auto object-contain" />
+          <img src="./ALogo-removebg-preview.svg" alt="Openassets" className="h-16 w-auto object-contain" />
         </div>
 
         {/* Navigation Links */}
@@ -41,9 +54,13 @@ const Navbar = () => {
         {/* CTA Button */}
         <div className="flex items-center gap-4">
        
-          <a href="/marketplace" className="cta-button">
-            Explore Marketplace
-          </a>
+         <Button
+                     onClick={handleGetStarted}
+                     disabled={isAuthenticating}
+                     className="cta-button"
+                   >
+                     {isAuthenticating ? "Authenticating..." : "Explore Marketplace"}
+                   </Button>
         </div>
       </div>
 
@@ -51,7 +68,7 @@ const Navbar = () => {
       <div className={`navbar-mobile ${isScrolled ? "navbar-scrolled" : ""}`}>
         {/* Logo */}
         <div className="navbar-logo">
-          <img src={orion} alt="Openassets" className="h-12 w-auto object-contain" />
+          <img src="./ALogo-removebg-preview.svg" alt="Openassets" className="h-12 w-auto object-contain" />
         </div>
 
         {/* Hamburger Menu */}
@@ -66,3 +83,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+

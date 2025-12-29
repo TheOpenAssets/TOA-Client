@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect } from 'wagmi';
+
 import {
   Search,
   TrendingUp,
@@ -224,7 +225,7 @@ const MarketplacePage = () => {
               {/* Logo */}
               <div className="flex items-center">
                 <img
-                  src="src/assets/ALogo-removebg-preview.png"
+                  src="./ALogo-removebg-preview.svg"
                   alt="Logo"
                   className="h-16 w-auto object-contain cursor-pointer"
                   onClick={() => navigate('/marketplace')}
@@ -269,9 +270,19 @@ const MarketplacePage = () => {
                 <NotificationBell role="INVESTOR" />
               )}
               {isConnected && address ? (
+                <>
                 <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
                   {truncateAddress(address)}
-                </div>
+                  </div>
+                <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-40">
+        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
+        
+          Logout
+        </button>
+      </div>
+        </>
+
+   
               ) : (
                 <button
                   onClick={() => navigate('/auth')}
@@ -809,18 +820,21 @@ const MarketplacePage = () => {
                     </td>
 
                     <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+                        className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
                       >
-                        View Details
+                        Buy
                       </button>
+                      <span className="text-gray-400">|</span>
                       <button
                         onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
-                        className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors"
+                        className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 transition-colors"
                       >
-                        Buy Now
+                        Trade
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -829,12 +843,7 @@ const MarketplacePage = () => {
           </div>
         </div>
       </div>
-      {isConnected && <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-40">
-        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
-        
-          Logout
-        </button>
-      </div>}
+      
     </div>
   );
 };

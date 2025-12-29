@@ -16,10 +16,6 @@
 
 /* Navbar Container - Fixed positioning */
 .navbar-container {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 100;
 }
 
@@ -28,8 +24,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  backdrop-filter: blur(5px);
-  background-color: rgba(245, 250, 255, 0);
+  background-color: transparent;
   border-radius: 16px;
   padding: 8px 32px;
   width: calc(100vw - 40px);

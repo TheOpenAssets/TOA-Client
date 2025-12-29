@@ -7,6 +7,9 @@
 /* Orion Design System - Soft Premium Modern Aesthetic */
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   :root {
     /* Soft Premium Color Palette */
     --background: 205 100% 97.5%;  /* #f6fbff */
