@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { usePortfolioStore } from '../../stores/portfolio.store';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { Search, TrendingUp } from 'lucide-react';
 import type { BidStatus } from '../../types/marketplace.types';
 import { useSettleBid } from '../../hooks/useAuctionContracts';
@@ -12,13 +12,16 @@ import { useToast } from '../../hooks/useToast';
 import { ToastContainer } from '../../components/ui/toast';
 import HeroBackground from '../landing/HeroBackground';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
+import { authService } from '../../lib/api/auth.service';
+
 
 const PortfolioPage = () => {
   const navigate = useNavigate();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
+  const { disconnect } = useDisconnect();
 
   // Contract interaction for settling bids (investor-settle.sh verified)
   const { settleBid, notifyBackend, status: settleStatus, isLoading: isSettling, isSuccess, txHash } = useSettleBid();
@@ -63,6 +66,14 @@ const PortfolioPage = () => {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
     return numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
+    const handlelogout = () => {
+      authService.logout();
+      disconnect();
+      navigate('/'); // Redirect to home or login page after logout
+    };
+
+
 
   const formatTokenAmount = (weiAmount: string): string => {
     const tokens = parseFloat(weiAmount) / 1e18;
@@ -687,9 +698,18 @@ const PortfolioPage = () => {
           </div>
         </div>
       )}
+      {isConnected && <div className="bottom-0 flex items-start sticky justify-start p-6 bg-transparent z-80">
+        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
+        
+          Logout
+        </button>
+      </div>}
     </div>
     </>
   );
 };
 
 export default PortfolioPage;
+
+
+

@@ -4,6 +4,7 @@ import HeroSection from "./Hero.page";
 import Navbar from "./Navbar.page";
 import Footer from "./Footer.page";
 import FAQSection from "./FAQ.page";
+import AutoRepayingSection from "./AutoRepaying.page";
 
 const HomePage = () => {
   return (
@@ -13,7 +14,8 @@ const HomePage = () => {
       <main className="overflow-x-hidden">
 
         <HeroSection />
-      
+        
+        <AutoRepayingSection />
       
         <FAQSection />
     

@@ -10,11 +10,7 @@ import {
   List,
   Clock,
 } from 'lucide-react';
-import {
-  marketplaceAssets,
-  formatCurrency,
-  getCategoryIcon,
-} from '../../lib/data/marketplace-mock-data';
+import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-mock-data';
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
 import HeroBackground from '../landing/HeroBackground';
 import { authService } from '../../lib/api/auth.service';
@@ -120,9 +116,9 @@ const MarketplacePage = () => {
         });
       })()
     : (() => {
-        console.log('⚠️ Marketplace: Using MOCK data (API returned empty or failed)');
-        return marketplaceAssets;
-      })(); // Fallback to mock data if API returns empty
+        console.log('ℹ️ Marketplace: No live data returned; leaving empty.');
+        return [] as MarketplaceAsset[];
+      })(); // No fallback to mock data; keep empty state
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -162,9 +158,7 @@ const MarketplacePage = () => {
   const filters: { value: FilterCategory; label: string }[] = [
     { value: 'all', label: 'All Assets' },
     { value: 'invoices', label: 'Invoices' },
-    { value: 'real-estate', label: 'Real Estate' },
-    { value: 'trade-finance', label: 'Trade Finance' },
-    { value: 'equipment-lease', label: 'Equipment Lease' },
+    
     { value: 'high-yield', label: 'High Yield (>10%)' },
     { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
@@ -214,11 +208,11 @@ const MarketplacePage = () => {
     <div className="min-h-screen bg-[#f6fbff]">
       <HeroBackground />
 
-      {/* Show error message if API fails but still render with mock data */}
+      {/* Show error message if API fails; no mock data fallback */}
       {error && listings.length === 0 && (
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mx-6 mt-4">
           <p className="font-medium">Unable to load live data</p>
-          <p className="text-sm">Displaying demo data. Error: {error}</p>
+          <p className="text-sm">No marketplace data available. Error: {error}</p>
         </div>
       )}
       {/* Top Navigation Bar */}
@@ -292,7 +286,7 @@ const MarketplacePage = () => {
       </header>
 
       {/* Platform Metrics Strip - Real Data from GET /marketplace/info */}
-      <div className="bg-transparent relative border-b border-gray-200 z-40">
+      <div className="bg-transparent relative border-b border-gray-200 z-40 flex items-center">
         <div className="max-w-[1400px] mx-auto px-6 py-4">
           {isLoadingInfo ? (
             <div className="flex items-center justify-center py-2">

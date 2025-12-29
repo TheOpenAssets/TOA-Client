@@ -23,31 +23,42 @@ const AutoRepayingSection = () => {
   }, []);
 
   const features = [
-    {
-      title: "Canonical RWA Truth & Compliance",
-      description: "Ingests real-world asset data, performs KYC/compliance, cryptographic hashing, and ZK proof generation. Mantle is the root of trust."
-    },
-    {
-      title: "Mantle as RWA Execution Hub",
-      description: "Mantle is the only chain authorized to validate and execute economic actions on assets: minting, trading, yield accounting, and lending."
-    },
-    {
-      title: "Native Asset Minting on Mantle",
-      description: "Verified RWAs are minted as fractional, compliance-aware ERC-3643 style tokens, fully composable with Mantle DeFi."
-    },
-    {
-      title: "Primary & Secondary Marketplace",
-      description: "Fund new RWAs in the primary market and trade existing RWA tokens peer-to-peer in the secondary market with low-cost execution."
-    },
-    {
-      title: "Yield Distribution Engine",
-      description: "As real-world cash flows settle, yield is distributed pro-rata to token holders with gas-efficient, index-based accounting."
-    },
-    {
-      title: "RWA-Backed Lending",
-      description: "Use RWA tokens as collateral to borrow liquidity, with loans backed by deterministic cash-flow assets."
-    }
-  ];
+  {
+    title: "Canonical RWA Tokenization",
+    description:
+      "Real-world assets are verified, structured, and minted on-chain as compliant RWA tokens. The protocol currently focuses on invoices, with extensibility to additional asset classes over time."
+  },
+  {
+    title: "Leveraged RWA Buying (M-ETH)",
+    description:
+      "Users acquire RWA tokens using M-ETH deposited into a leveraged vault. USDC is sourced from the protocol’s lending pool, while M-ETH yield is programmatically applied toward loan repayment."
+  },
+  {
+    title: "Automated Leverage Repayment Engine",
+    description:
+      "Interest earned on M-ETH is routed through Fluxion or protocol-native swaps to service senior pool obligations, reducing user debt without manual intervention."
+  },
+  {
+    title: "RWA & Private Asset–Backed Credit",
+    description:
+      "Issue on-chain credit using tokenized RWAs or privately documented assets held in a solvency vault, without fractionalizing ownership or exposing sensitive asset data."
+  },
+  {
+    title: "Cross-Protocol Borrowing Access",
+    description:
+      "Collateralized positions can source liquidity from multiple partner protocols and the native lending pool, enabling flexible credit routing without breaking solvency guarantees."
+  },
+  {
+    title: "Deterministic Yield Distribution",
+    description:
+      "Real-world cash flows are settled on-chain and distributed pro-rata to RWA token holders using deterministic, index-based accounting."
+  },
+  {
+    title: "Secondary & OTC RWA Marketplace",
+    description:
+      "Trade RWA tokens via a native peer-to-peer and OTC marketplace, with on-chain buy and sell orders that counterparties can directly satisfy."
+  }
+];
 
   return (
     <section id="auto-repaying" ref={sectionRef} className="py-24 bg-white relative overflow-hidden">
@@ -94,17 +105,7 @@ const AutoRepayingSection = () => {
           ))}
         </div>
 
-        <div className="mt-16 flex flex-wrap justify-center gap-6 opacity-0" data-scroll-reveal>
-          <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Cryptographic Truth</div>
-          </div>
-          <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">On-chain Execution</div>
-          </div>
-          <div className="text-center px-8 py-4">
-            <div className="font-inter text-sm font-medium text-muted-foreground mb-1">Native Yield</div>
-          </div>
-        </div>
+        
       </div>
     </section>
   );
