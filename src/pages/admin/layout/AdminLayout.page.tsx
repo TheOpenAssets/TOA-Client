@@ -34,9 +34,9 @@ const AdminLayout = () => {
         const user = await authService.getCurrentUser();
 
         // Check if user has ORIGINATOR role (issuer)
-        if (user.role !== 'ORIGINATOR') {
-          console.warn(`Unauthorized role: ${user.role}. Issuer dashboard requires ORIGINATOR role.`);
-          setError('Unauthorized access. You do not have permission to access the issuer dashboard.');
+        if (user.role !== 'ADMIN') {
+          console.warn(`Unauthorized role: ${user.role}. Admin dashboard requires Admin role.`);
+          setError('Unauthorized access. You do not have permission to access the admin dashboard.');
           setTimeout(() => {
             navigate('/', { replace: true });
           }, 2000);

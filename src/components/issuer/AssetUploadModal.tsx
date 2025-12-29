@@ -761,7 +761,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 z-50 p-0 sm:p-4 flex items-end sm:items-center justify-center">
       {/* Success Notification Overlay */}
       {showSuccess && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -779,9 +779,9 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         </div>
       )}
 
-      <div className="bg-[#f6fbff] rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-[#f6fbff] w-full h-full sm:max-w-3xl sm:max-h-[90vh] sm:h-auto sm:rounded-2xl shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between">
           <div>
             <h2 className="font-antic text-2xl font-semibold text-foreground">
               Upload New Asset
@@ -799,12 +799,14 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         </div>
 
         {/* Step Indicator */}
-        <div className="px-8 py-6 bg-white border-b border-gray-200">
-          {renderStepIndicator()}
+        <div className="px-4 sm:px-8 py-4 sm:py-6 bg-white border-b border-gray-200 overflow-x-auto">
+          <div className="min-w-max">
+            {renderStepIndicator()}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 280px)' }}>
+        <div className="flex-1 min-h-0 px-4 sm:px-8 py-4 sm:py-6 overflow-y-auto">
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
@@ -819,21 +821,21 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         </div>
 
         {/* Footer */}
-        <div className="bg-white border-t border-gray-200 px-8 py-6 flex items-center justify-between">
+        <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-4 sm:py-6 flex flex-col-reverse sm:flex-row gap-3 sm:gap-0 sm:items-center sm:justify-between">
           <button
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-antic text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-antic text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
             Previous
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex relative items-center gap-3">
             {currentStep < totalSteps ? (
               <button
                 onClick={handleNext}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
@@ -842,7 +844,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
