@@ -172,14 +172,7 @@ const HeroSection = () => {
     <section id="hero" className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20 pb-24 bg-[#f0f8ffe6]">
       <HeroBackground />
 
-      <div className="flex justify-center mb-8 relative z-10">
-        <div className="w-16 h-16 bg-foreground rounded-xl flex items-center justify-center shadow-lg">
-          <div className="w-64 h-64 bg-background rounded-md">
-            <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
-          </div>
-        </div>
-      </div>
-
+      
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">

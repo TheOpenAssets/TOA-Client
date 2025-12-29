@@ -19,12 +19,12 @@ const HomePage = () => {
       <main className="overflow-x-hidden">
 
         <HeroSection />
-        <IntegrationsSection />
-        <AutoRepayingSection />
+      
+      
         <FAQSection />
-        <ReviewsSection />
-        <AssetTokenizationSection />
-        <CTASection />
+    
+       
+       
       </main>
       <Footer />
     </div>

@@ -228,10 +228,13 @@ const MarketplacePage = () => {
             {/* Left: Logo + Search */}
             <div className="flex items-center gap-6">
               {/* Logo */}
-              <div className="  top-0 left-0">
-                <div className="w-16 h-8 bg-foreground rounded-full  top-0 left-0">
-                  <span className="text-white font-bold text-lg top-0 left-0"><img src="src/assets/ALogo-removebg-preview.png" alt="Logo" /></span>
-                </div>
+              <div className="flex items-center">
+                <img
+                  src="src/assets/ALogo-removebg-preview.png"
+                  alt="Logo"
+                  className="h-16 w-auto object-contain cursor-pointer"
+                  onClick={() => navigate('/marketplace')}
+                />
               </div>
 
               {/* Search Bar */}
