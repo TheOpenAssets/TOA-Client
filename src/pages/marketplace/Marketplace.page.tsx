@@ -10,11 +10,7 @@ import {
   List,
   Clock,
 } from 'lucide-react';
-import {
-  marketplaceAssets,
-  formatCurrency,
-  getCategoryIcon,
-} from '../../lib/data/marketplace-mock-data';
+import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-mock-data';
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
 import HeroBackground from '../landing/HeroBackground';
 import { authService } from '../../lib/api/auth.service';
@@ -120,9 +116,9 @@ const MarketplacePage = () => {
         });
       })()
     : (() => {
-        console.log('⚠️ Marketplace: Using MOCK data (API returned empty or failed)');
-        return marketplaceAssets;
-      })(); // Fallback to mock data if API returns empty
+        console.log('ℹ️ Marketplace: No live data returned; leaving empty.');
+        return [] as MarketplaceAsset[];
+      })(); // No fallback to mock data; keep empty state
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -214,11 +210,11 @@ const MarketplacePage = () => {
     <div className="min-h-screen bg-[#f6fbff]">
       <HeroBackground />
 
-      {/* Show error message if API fails but still render with mock data */}
+      {/* Show error message if API fails; no mock data fallback */}
       {error && listings.length === 0 && (
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mx-6 mt-4">
           <p className="font-medium">Unable to load live data</p>
-          <p className="text-sm">Displaying demo data. Error: {error}</p>
+          <p className="text-sm">No marketplace data available. Error: {error}</p>
         </div>
       )}
       {/* Top Navigation Bar */}
