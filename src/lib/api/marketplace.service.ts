@@ -341,7 +341,7 @@ class MarketplaceService extends BaseService {
    * ENDPOINT: POST /marketplace/bids/notify (VERIFIED from investor-bidding.sh line 362)
    * REF: investor-bidding.sh Step 4
    *
-   * Payload: { txHash, assetId, tokenAmount (wei), price (wei), blockNumber }
+   * Payload: { txHash, assetId, tokenAmount (wei), price (wei) }
    *
    * Called AFTER successful on-chain bid submission
    */
@@ -350,7 +350,6 @@ class MarketplaceService extends BaseService {
     assetId: string;
     tokenAmount: string;
     price: string;
-    blockNumber: number;
   }): Promise<any> {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/bids/notify`, {

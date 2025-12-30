@@ -128,7 +128,6 @@ export function useSubmitBid() {
             assetId: lastBidParamsRef.current.assetId,
             tokenAmount: tokenAmountWei.toString(),
             price: priceWei.toString(),
-            blockNumber: Number(bidReceipt.blockNumber),
           });
 
           console.log('✅ Backend notified successfully');
