@@ -58,7 +58,7 @@ const AutoRepayingSection = () => {
   return (
     
     <div className="bg-transparent py-10 max-w-7xl mx-auto">
-      <h1 className="font-antic text-black text-4xl text-center mb-8">Features</h1>
+      <h1 className="font-antic text-black text-[64px] text-center mb-8  relative z-50">Features</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 relative z-10">
       {features.map((feature, index) => (
         <Feature key={feature.title} {...feature} index={index} />
