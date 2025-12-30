@@ -193,19 +193,19 @@ const AuctionDetailsPage = () => {
                 <div>
                   <p className="font-antic text-xs text-gray-500 mb-1">Total Supply</p>
                   <p className="font-antic text-lg font-semibold text-foreground">
-                    {asset.totalSupply ? asset.totalSupply.toLocaleString() : '0'} tokens
+                    {asset.tokenParams.totalSupply ? ((Number(asset.tokenParams.totalSupply) / 1e18).toLocaleString()) : '0'} tokens
                   </p>
                 </div>
                 <div>
                   <p className="font-antic text-xs text-gray-500 mb-1">Reserve Price</p>
                   <p className="font-antic text-lg font-semibold text-foreground">
-                    ${asset.reservePrice ? asset.reservePrice.toFixed(2) : '0.00'}
+                    ${asset.listing?.reservePrice ? (Number(asset.listing.reservePrice) / 1e6).toFixed(2) : '0.00'}
                   </p>
                 </div>
                 <div>
                   <p className="font-antic text-xs text-gray-500 mb-1">Bid Range</p>
                   <p className="font-antic text-lg font-semibold text-green-600">
-                    ${asset.reservePrice ? asset.reservePrice.toFixed(2) : '0.00'} - ${asset.reservePrice ? ((asset.reservePrice) * 1.2).toFixed(2) : '0.00'}
+                    ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
                   </p>
                 </div>
               </div>
@@ -306,10 +306,10 @@ const AuctionDetailsPage = () => {
                 {/* Place Bid Button */}
                 <button
                   onClick={handlePlaceBid}
-                  disabled={isLoading || !address}
+                  disabled={isLoading || !address }
                   className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : 'Place Bid'}
+                  {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : (asset.endTime && new Date(asset.endTime).getTime() <= new Date().getTime()) ? 'Auction Ended' : 'Place Bid'}
                 </button>
 
                 {/* Bid Summary */}
