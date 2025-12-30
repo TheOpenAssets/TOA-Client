@@ -11,7 +11,7 @@ export type AdminAssetStatus =
   | 'REGISTERED'
   | 'TOKENIZED'
   | 'YIELDING'
-  | 'SETTLED';
+  | 'SETTled';
 
 /**
  * Risk Scoring System (0-100)
@@ -297,4 +297,26 @@ export interface AdminAssetsResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+export interface AuctionBid {
+  bidder: string;
+  tokenAmount: string;
+  price: string;
+  timestamp: string;
+}
+
+export interface AuctionPricePoint {
+  price: string;
+  totalTokens: string;
+  bidCount: number;
+}
+
+export interface AuctionClearingPriceInfo {
+  suggestedPrice: string;
+  tokensAtPrice: string;
+  percentageOfSupply: number;
+  totalBids: number;
+  allBids: AuctionBid[];
+  priceBreakdown: AuctionPricePoint[];
 }

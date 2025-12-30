@@ -6,6 +6,7 @@ import type {
 } from '../../types/auth.types';
 import { UserRole } from '../../types/issuer.types';
 import type { AdminAsset, AdminStats, AdminActivity } from '../../stores/admin.store';
+import type { AuctionClearingPriceInfo } from '../../types/admin.types';
 import BaseService from './base.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
@@ -302,6 +303,24 @@ class AdminService extends BaseService {
       // It's possible the backend notification is not critical or might be handled by a job,
       // so we don't necessarily want to throw. We can return an error object.
       return { success: false, error: error.message };
+    }
+  }
+
+  async getAuctionClearingPriceInfo(assetId: string): Promise<AuctionClearingPriceInfo> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/compliance/auction-clearing-price/${assetId}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch auction clearing price info');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching clearing price info for asset ${assetId}:`, error);
+      throw error;
     }
   }
 

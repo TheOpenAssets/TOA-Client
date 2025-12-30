@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminService } from '../../../lib/api/admin.service';
 import { contractService } from '../../../lib/api/contract.service';
-import type { ApiAdminAsset } from '../../../types/admin.types';
+import type { ApiAdminAsset, AuctionClearingPriceInfo } from '../../../types/admin.types';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import {
@@ -26,6 +26,8 @@ const ListingsPage = () => {
   const [selectedAsset, setSelectedAsset] = useState<ApiAdminAsset | null>(null);
   const [clearingPrice, setClearingPrice] = useState('');
   const [isEndingAuction, setIsEndingAuction] = useState(false);
+  const [clearingInfo, setClearingInfo] = useState<AuctionClearingPriceInfo | null>(null);
+  const [isLoadingInfo, setIsLoadingInfo] = useState(false);
   const { success, error: toastError, info } = useToast();
 
   const fetchAssets = async () => {
@@ -46,10 +48,21 @@ const ListingsPage = () => {
     fetchAssets();
   }, []);
 
-  const handleEndAuctionClick = (asset: ApiAdminAsset) => {
+  const handleEndAuctionClick = async (asset: ApiAdminAsset) => {
     setSelectedAsset(asset);
     setClearingPrice('');
+    setClearingInfo(null);
     setIsModalOpen(true);
+    setIsLoadingInfo(true);
+    try {
+      const info = await adminService.getAuctionClearingPriceInfo(asset.assetId);
+      setClearingInfo(info);
+      setClearingPrice( (Number(info.suggestedPrice) / 1e6).toFixed(2) );
+    } catch (error) {
+      toastError('Failed to load auction data', 'Could not load bidding data for this auction.');
+    } finally {
+      setIsLoadingInfo(false);
+    }
   };
 
   const handleConfirmEndAuction = async () => {
@@ -173,27 +186,64 @@ const ListingsPage = () => {
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>End Auction for {selectedAsset?.metadata.invoiceNumber}</DialogTitle>
             <DialogDescription>
               Enter the final clearing price in USDC. This action will execute a blockchain transaction and is irreversible.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="clearing-price" className="text-right font-semibold">
-                Clearing Price
+          <div className="grid grid-cols-2 gap-6 py-4">
+            <div>
+              <label htmlFor="clearing-price" className="text-sm font-semibold">
+                Clearing Price (USDC)
               </label>
-              <Input
-                id="clearing-price"
-                type="number"
-                value={clearingPrice}
-                onChange={(e) => setClearingPrice(e.target.value)}
-                className="col-span-3"
-                placeholder="e.g., 0.85"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="clearing-price"
+                  type="number"
+                  value={clearingPrice}
+                  onChange={(e) => setClearingPrice(e.target.value)}
+                  className="col-span-3"
+                  placeholder="e.g., 0.85"
+                />
+              </div>
+              {clearingInfo && <p className="text-xs text-muted-foreground mt-1">Suggested: ${(Number(clearingInfo.suggestedPrice) / 1e6).toFixed(2)}</p>}
             </div>
+            {isLoadingInfo ? (
+              <div className="col-span-2 flex items-center justify-center h-48">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : clearingInfo && (
+              <div className="col-span-2 space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><strong>{clearingInfo.totalBids} total bids</strong>, covering {clearingInfo.percentageOfSupply.toFixed(2)}% of supply.</p>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-md p-2">
+                  <h4 className="font-semibold">All Bids</h4>
+                  {clearingInfo.allBids.map((bid, i) => (
+                    <div key={i} className="text-xs flex justify-between">
+                      <span>{bid.bidder.slice(0, 10)}...</span>
+                      <span>{(Number(bid.tokenAmount) / 1e18).toLocaleString()} tokens</span>
+                      <span className="font-mono">${(Number(bid.price) / 1e6).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-md p-2">
+                   <h4 className="font-semibold">Price Breakdown</h4>
+                   {clearingInfo.priceBreakdown.map((point, i) => (
+                    <div key={i} className="text-xs flex justify-between">
+                      <span className="font-mono">${(Number(point.price) / 1e6).toFixed(2)}</span>
+                      <span>{(Number(point.totalTokens) / 1e18).toLocaleString()} tokens</span>
+                      <span>{point.bidCount} bids</span>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isEndingAuction}>
