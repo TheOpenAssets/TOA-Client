@@ -878,12 +878,17 @@ const MarketplacePage = () => {
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                      <button
+                      {asset.fundingProgress == 100 ?<button
+                        onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
+                        className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button> :<button
                         onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
                         className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
                       >
                         Buy
-                      </button>
+                      </button>}
                       <span className="text-gray-400">|</span>
                       <button
                         onClick={() => navigate(`/marketplace/asset/${asset.id}`)}

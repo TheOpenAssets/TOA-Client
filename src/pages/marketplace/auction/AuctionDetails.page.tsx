@@ -334,12 +334,7 @@ const AuctionDetailsPage = () => {
                         ${(parseFloat(bidAmount) * parseFloat(pricePerToken)).toFixed(2)} USDC
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-antic text-xs text-gray-500">Deposit Required</span>
-                      <span className="font-antic text-sm font-semibold text-foreground">
-                        ${((parseFloat(bidAmount) * parseFloat(pricePerToken)) * 0.85).toFixed(2)} USDC
-                      </span>
-                    </div>
+                   
                   </div>
                 )}
               </div>

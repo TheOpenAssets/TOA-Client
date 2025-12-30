@@ -155,7 +155,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex-1 px-4 py-3 font-inter font-medium text-sm transition-all duration-200 rounded-lg ${
                         activeTab === tab.id
-                          ? 'text-white bg-foreground/80'
+                          ? 'text-black/30 bg-foreground/80'
                           : 'text-foreground/70 hover:text-foreground hover:bg-white/50'
                       }`}
                     >

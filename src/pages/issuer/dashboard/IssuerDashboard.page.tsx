@@ -471,8 +471,7 @@ const IssuerDashboardPage = () => {
             <tr
               key={asset._id || asset.assetId}
               className="hover:bg-gray-50/50 transition-all duration-200 cursor-pointer relative group"
-              onMouseEnter={(e) => handleMouseEnter(asset.assetId, e)}
-              onMouseLeave={handleMouseLeave}
+              
               onClick={() => handleViewAssetDetails(asset.assetId)}
             >
               <td className="px-6 py-5">

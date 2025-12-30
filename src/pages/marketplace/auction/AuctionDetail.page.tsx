@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Clock, Users, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { useSubmitBid, useCheckKYC } from '../../../hooks/useAuctionContracts';
+import { contractService } from '../../../lib/api/contract.service';
 
 const AuctionDetailPage = () => {
   const { auctionId } = useParams<{ auctionId: string }>();
@@ -24,6 +25,7 @@ const AuctionDetailPage = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [bidParams, setBidParams] = useState<{assetId: string; tokenAmount: string; pricePerToken: string} | null>(null);
   const [isApprovingForBid, setIsApprovingForBid] = useState(false);
+  const [usdcBalance, setUsdcBalance] = useState('0');
 
   // Fetch auction details
   useEffect(() => {
@@ -31,6 +33,22 @@ const AuctionDetailPage = () => {
       fetchAuctionByAssetId(auctionId);
     }
   }, [auctionId, fetchAuctionByAssetId]);
+
+    // Fetch USDC balance
+    useEffect(() => {
+      if (address) {
+        const fetchBalance = async () => {
+          try {
+            const balance = await contractService.checkUSDCBalance(address);
+            setUsdcBalance(balance);
+          } catch (error) {
+            console.error('Failed to fetch USDC balance:', error);
+            setUsdcBalance('0');
+          }
+        };
+        fetchBalance();
+      }
+    }, [address]);
 
   // Handle successful bid submission - redirect to portfolio
   useEffect(() => {
@@ -88,45 +106,61 @@ const AuctionDetailPage = () => {
       maxPrice,
       reservePrice: auction?.reservePrice,
       auctionId,
+      usdcBalance,
     });
-
+  
     // Validation with user feedback
     if (!address) {
       alert('Please connect your wallet first.');
       return;
     }
-
+  
     if (!isKYCVerified) {
       alert('You must complete KYC verification before bidding. Please contact an admin.');
       return;
     }
-
-    if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
+  
+    const parsedTokenAmount = parseFloat(tokenAmount);
+    if (!tokenAmount || parsedTokenAmount <= 0) {
       alert('Please enter a valid token amount (greater than 0).');
       return;
     }
-
-    if (!maxPrice || parseFloat(maxPrice) <= 0) {
+  
+    const minInvestment = auction?.minInvestmentTokens || 0;
+    if (parsedTokenAmount < minInvestment) {
+      alert(`Your bid must be at least the minimum investment of ${minInvestment} tokens.`);
+      return;
+    }
+  
+    const parsedMaxPrice = parseFloat(maxPrice);
+    if (!maxPrice || parsedMaxPrice <= 0) {
       alert('Please enter a valid max price (greater than 0).');
       return;
     }
-
-    if (parseFloat(maxPrice) < (auction?.reservePrice || 0)) {
+  
+    if (parsedMaxPrice < (auction?.reservePrice || 0)) {
       alert(`Your max price ($${maxPrice}) must be at least the reserve price ($${auction?.reservePrice.toFixed(2)})`);
       return;
     }
-
+  
+    const totalCost = parsedTokenAmount * parsedMaxPrice;
+    const currentUserBalance = parseFloat(usdcBalance);
+    if (totalCost > currentUserBalance) {
+      alert(`Your total bid cost ($${totalCost.toFixed(2)}) exceeds your available balance ($${currentUserBalance.toFixed(2)}).`);
+      return;
+    }
+  
     if (!auctionId) {
       alert('Invalid auction ID. Please refresh the page.');
       return;
     }
-
+  
     console.log('✅ All validations passed!');
     console.log('🔨 Submitting bid (investor-bidding.sh flow)');
     console.log('  → Asset ID:', auctionId);
     console.log('  → Token Amount:', tokenAmount);
     console.log('  → Max Price:', maxPrice);
-
+  
     // Store bid params for backend notification after success
     const params = {
       assetId: auctionId,
@@ -134,7 +168,7 @@ const AuctionDetailPage = () => {
       pricePerToken: maxPrice,
     };
     setBidParams(params);
-
+  
     try {
       // This will:
       // 1. Check USDC allowance
@@ -409,6 +443,9 @@ const AuctionDetailPage = () => {
                         onChange={(e) => setTokenAmount(e.target.value)}
                         className="bg-transparent border-none text-2xl font-medium text-[#111111] font-antic p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
+                      <p className="text-xs text-[#6B7280] font-antic mt-1">
+ Min: {auction.minInvestmentTokens}
+ </p>
                     </div>
 
                     {/* Max Price Input */}
@@ -445,6 +482,13 @@ const AuctionDetailPage = () => {
                         Excess will be refunded after clearing
                       </p>
                     </div>
+
+                    {/* Balance Display */}
+                    {address && (
+                      <div className="text-xs text-center text-[#6B7280] font-antic">
+                        Your Balance: {parseFloat(usdcBalance).toFixed(2)} USDC
+                      </div>
+                    )}
 
                     {/* KYC Status */}
                     {address && (
