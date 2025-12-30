@@ -193,9 +193,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
           const reservePriceWei = BigInt(announcement.metadata?.priceRange?.min || '0');
           const reservePrice = Number(reservePriceWei) / 1e6;
 
+          // Parse minimum investment from asset tokenParams (18 decimals)
+          const minInvestmentWei = BigInt(asset.tokenParams?.minInvestment || '0');
+          const minInvestmentTokens = Number(minInvestmentWei) / 1e18;
+
           const auction = {
             auctionId: announcement.assetId,
             assetId: announcement.assetId,
+            minInvestmentTokens,
             totalSupply,
             reservePrice,
             clearingPrice: undefined,
@@ -236,9 +241,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
           const reservePriceWei = BigInt(announcement.metadata?.priceRange?.min || '0');
           const reservePrice = Number(reservePriceWei) / 1e6;
 
+          // Parse minimum investment from asset tokenParams (18 decimals)
+          const minInvestmentWei = BigInt(asset.tokenParams?.minInvestment || '0');
+          const minInvestmentTokens = Number(minInvestmentWei) / 1e18;
+
           const auction = {
             auctionId: announcement.assetId,
             assetId: announcement.assetId,
+            minInvestmentTokens,
             totalSupply,
             reservePrice,
             clearingPrice: undefined,
@@ -286,9 +296,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
           const clearingPriceWei = BigInt(announcement.metadata?.clearingPrice || '0');
           const clearingPrice = Number(clearingPriceWei) / 1e6;
 
+          // Parse minimum investment from asset tokenParams (18 decimals)
+          const minInvestmentWei = BigInt(asset.tokenParams?.minInvestment || '0');
+          const minInvestmentTokens = Number(minInvestmentWei) / 1e18;
+
           const auction = {
             auctionId: announcement.assetId,
             assetId: announcement.assetId,
+            minInvestmentTokens,
             totalSupply,
             reservePrice: clearingPrice, // Use clearing price as display price
             clearingPrice,
@@ -361,9 +376,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             : undefined;
           const clearingPrice = clearingPriceWei ? Number(clearingPriceWei) / 1e6 : undefined;
 
+          // Parse minimum investment from asset tokenParams (18 decimals)
+          const minInvestmentWei = BigInt(asset.tokenParams?.minInvestment || '0');
+          const minInvestmentTokens = Number(minInvestmentWei) / 1e18;
+
           return {
             auctionId: announcement.assetId,
             assetId: announcement.assetId,
+            minInvestmentTokens,
             totalSupply,
             reservePrice,
             clearingPrice,
@@ -415,6 +435,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         : undefined;
       const clearingPrice = clearingPriceWei ? Number(clearingPriceWei) / 1e6 : undefined;
 
+      // Parse minimum investment from asset tokenParams (18 decimals)
+      const minInvestmentWei = BigInt(asset.tokenParams?.minInvestment || '0');
+      const minInvestmentTokens = Number(minInvestmentWei) / 1e18;
+
       console.log('🔍 Auction Data Parsed:', {
         assetId,
         totalSupplyWei: totalSupplyWei.toString(),
@@ -422,11 +446,13 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         reservePriceWei: reservePriceWei.toString(),
         reservePrice,
         clearingPrice,
+        minInvestmentTokens,
       });
 
       const auction = {
         auctionId: assetId,
         assetId: assetId,
+        minInvestmentTokens,
         totalSupply,
         reservePrice,
         clearingPrice,

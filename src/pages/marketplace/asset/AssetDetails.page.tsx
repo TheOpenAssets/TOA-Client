@@ -17,7 +17,6 @@ const AssetDetailsPage = () => {
   const [timeRange, setTimeRange] = useState('1M');
   const [tokensToBuy, setTokensToBuy] = useState('');
   const [usdcBalance, setUsdcBalance] = useState('0');
-  const [usdcAllowance, setUsdcAllowance] = useState('0');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
 
@@ -37,9 +36,7 @@ const AssetDetailsPage = () => {
     if (!address) return;
     try {
       const balance = await contractService.checkUSDCBalance(address);
-      const allowance = await contractService.checkUSDCAllowance(address);
       setUsdcBalance(balance);
-      setUsdcAllowance(allowance);
     } catch (error) {
       console.error('Error loading wallet data:', error);
     }
@@ -313,16 +310,22 @@ const AssetDetailsPage = () => {
               <div className="bg-white rounded-3xl p-6 shadow-sm">
                 <h2 className="text-2xl font-semibold text-[#111111] mb-6">Buy Tokens</h2>
                 <div className="space-y-6">
-                  <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                  <label htmlFor="tokens-to-buy" className="text-xs text-[#6B7280]">
+                    <div className="bg-[#F3F4F6] rounded-2xl p-4">
+                    <label htmlFor="tokens-to-buy" className="text-xs text-[#6B7280]">
                     Tokens to buy
-                  </label>
-                  <Input
+                    </label>
+                    <Input
                     id="tokens-to-buy"
                     type="number"
                     placeholder="0"
                     value={tokensToBuy}
                     onChange={(e) => {
+                    const inputValue = e.target.value;
+                    
+                    // Allow any input including empty, partial numbers, decimals
+                    setTokensToBuy(inputValue);
+                    }}
+                    onBlur={(e) => {
                     const inputValue = e.target.value;
                     const numValue = parseFloat(inputValue);
                     
@@ -332,29 +335,27 @@ const AssetDetailsPage = () => {
                     const availableTokens = totalSupply - soldTokens;
                     const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
                     
-                    // Determine max allowed (available or min, whichever is lower if available < min)
-                    const maxAllowed = availableTokens < minInvestment ? availableTokens : availableTokens;
-                    
-                    // Allow empty input
-                    if (inputValue === '' || inputValue === '0') {
-                    setTokensToBuy(inputValue);
-                    return;
+                    // Only validate on blur (when user leaves the field)
+                    if (inputValue === '' || isNaN(numValue)) {
+                      return; // Allow empty or invalid during typing
                     }
                     
                     // Enforce minimum (unless available is less than minimum)
                     if (numValue < minInvestment && availableTokens >= minInvestment) {
-                    setTokensToBuy(minInvestment.toString());
-                    return;
+                      setTokensToBuy(minInvestment.toString());
+                      return;
                     }
                     
                     // Enforce maximum (available tokens)
-                    if (numValue > maxAllowed) {
-                    setTokensToBuy(maxAllowed.toString());
-                    return;
+                    if (numValue > availableTokens) {
+                      setTokensToBuy(availableTokens.toString());
+                      return;
                     }
                     
-                    // Set valid value
-                    setTokensToBuy(inputValue);
+                    // If value is valid but needs formatting
+                    if (numValue > 0) {
+                      setTokensToBuy(numValue.toString());
+                    }
                     }}
                     min={(() => {
                     const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
@@ -375,15 +376,15 @@ const AssetDetailsPage = () => {
                     return soldTokens >= totalSupply;
                     })()}
                     className="bg-transparent border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                  <p className="text-xs text-[#6B7280] mt-2">
+                    />
+                    <p className="text-xs text-[#6B7280] mt-2">
                     Available: {(() => {
                     const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
                     const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
                     return (totalSupply - soldTokens).toLocaleString();
                     })()} tokens
-                  </p>
-                  </div>
+                    </p>
+                    </div>
                   <div className="bg-[#F3F4F6] rounded-2xl p-4">
                   <label htmlFor="total-price" className="text-xs text-[#6B7280]">
                     Estimated Total Price
@@ -427,7 +428,7 @@ const AssetDetailsPage = () => {
                     const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
                     const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
                     return soldTokens >= totalSupply;
-                  })()}
+                  })() || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)}
                   className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                   {(() => {
@@ -436,6 +437,7 @@ const AssetDetailsPage = () => {
                     if (soldTokens >= totalSupply) return 'Sold Out';
                     if (isPurchasing) return 'Processing...';
                     if (!address) return 'Connect Wallet';
+                    if( parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
                     return 'Buy Tokens';
                   })()}
                   </Button>

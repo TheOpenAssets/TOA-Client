@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import { Search, Clock } from 'lucide-react';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { useSubmitBid } from '../../../hooks/useAuctionContracts';
+import { contractService } from '../../../lib/api/contract.service';
 import HeroBackground from '../../landing/HeroBackground';
 
 const AuctionDetailsPage = () => {
@@ -15,6 +16,7 @@ const AuctionDetailsPage = () => {
 
   const [bidAmount, setBidAmount] = useState('');
   const [pricePerToken, setPricePerToken] = useState('');
+  const [usdcBalance, setUsdcBalance] = useState('0');
 
   const { submitBid, status, error: bidError, isLoading, reset } = useSubmitBid();
 
@@ -32,8 +34,20 @@ const AuctionDetailsPage = () => {
     if (assetId && fetchAssetDetails) {
       fetchAssetDetails(assetId);
     }
+    if (address) {
+      const fetchBalance = async () => {
+        try {
+          const balance = await contractService.checkUSDCBalance(address);
+          setUsdcBalance(balance);
+        } catch (error) {
+          console.error('Failed to fetch USDC balance:', error);
+          setUsdcBalance('0');
+        }
+      };
+      fetchBalance();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId]);
+  }, [assetId, address]);
 
   // Truncate wallet address
   const truncateAddress = (address: string): string => {
@@ -438,6 +452,24 @@ const AuctionDetailsPage = () => {
                   </div>
                 )}
 
+                {/* Bid Summary */}
+                {bidAmount && pricePerToken && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-antic text-xs text-gray-500">Total Cost</span>
+                      <span className="font-antic text-sm font-semibold text-foreground">
+                        ${(parseFloat(bidAmount) * parseFloat(pricePerToken)).toFixed(2)} USDC
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-antic text-xs text-gray-500">Your Balance</span>
+                      <span className="font-antic text-sm font-semibold text-foreground">
+                        ${parseFloat(usdcBalance).toFixed(2)} USDC
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Place Bid / Retry Button */}
                 {bidError ? (
                   <button
@@ -453,24 +485,32 @@ const AuctionDetailsPage = () => {
                 ) : (
                   <button
                     onClick={handlePlaceBid}
-                    disabled={isLoading || !address || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
+                    disabled={
+                      isLoading ||
+                      !address ||
+                      !!(
+                        asset.listing?.scheduledEndTime &&
+                        new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
+                      ) ||
+                      (parseFloat(bidAmount || '0') * parseFloat(pricePerToken || '0') > parseFloat(usdcBalance) &&
+                       parseFloat(bidAmount || '0') > 0 &&
+                       parseFloat(pricePerToken || '0') > 0)
+                    }
                     className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : (asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()) ? 'Auction Ended' : 'Place Bid'}
+                    {isLoading
+                      ? 'Processing...'
+                      : !address
+                      ? 'Connect Wallet'
+                      : asset.listing?.scheduledEndTime &&
+                        new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
+                      ? 'Auction Ended'
+                      : bidAmount &&
+                        pricePerToken &&
+                        parseFloat(bidAmount) * parseFloat(pricePerToken) > parseFloat(usdcBalance)
+                      ? 'Insufficient Balance'
+                      : 'Place Bid'}
                   </button>
-                )}
-
-                {/* Bid Summary */}
-                {bidAmount && pricePerToken && (
-                  <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-antic text-xs text-gray-500">Total Cost</span>
-                      <span className="font-antic text-sm font-semibold text-foreground">
-                        ${(parseFloat(bidAmount) * parseFloat(pricePerToken)).toFixed(2)} USDC
-                      </span>
-                    </div>
-                   
-                  </div>
                 )}
               </div>
             </div>

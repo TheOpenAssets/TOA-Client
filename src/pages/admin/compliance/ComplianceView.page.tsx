@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   ShieldAlert,
-  FileText,
   AlertCircle,
   CheckCircle2,
   XCircle,
@@ -274,9 +273,6 @@ const ComplianceViewPage = () => {
             <tbody className="bg-white divide-y divide-gray-100">
               {assetsForCompliance.map((asset) => {
                 const uploadDate = new Date(asset.createdAt);
-                const daysAgo = Math.floor(
-                  (Date.now() - uploadDate.getTime()) / (1000 * 60 * 60 * 24)
-                );
 
                 return (
                   <tr

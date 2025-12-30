@@ -59,7 +59,7 @@ const IssuerDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
-  const [hoverPosition, setHoverPosition] = useState({ top: 0, left: 0 });
+  const [hoverPosition] = useState({ top: 0, left: 0 });
   const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
@@ -120,49 +120,6 @@ const IssuerDashboardPage = () => {
   }, []);
 
   const stats = calculateStats(assets);
-
-  const handleMouseEnter = (
-    assetId: string,
-    event: React.MouseEvent<HTMLTableRowElement>
-  ) => {
-    if (hideTimeoutId) {
-      clearTimeout(hideTimeoutId);
-      setHideTimeoutId(null);
-    }
-
-    const cardWidth = 768; // Width of hover card
-    const cardHeight = 400; // Approximate height of hover card
-    const offset = 20; // Offset from cursor
-
-    const mouseX = event.clientX;
-    const mouseY = event.clientY;
-
-    // Calculate position to the right of cursor
-    let left = mouseX + offset;
-    let top = mouseY - (cardHeight / 2); // Center vertically with cursor
-
-    // Ensure card stays within viewport horizontally
-    if (left + cardWidth > window.innerWidth) {
-      left = mouseX - cardWidth - offset; // Show on left if not enough space on right
-    }
-
-    // Ensure card stays within viewport vertically
-    if (top < 10) {
-      top = 10;
-    } else if (top + cardHeight > window.innerHeight - 10) {
-      top = window.innerHeight - cardHeight - 10;
-    }
-
-    setHoveredAssetId(assetId);
-    setHoverPosition({ top, left });
-  };
-
-  const handleMouseLeave = () => {
-    const timeoutId = setTimeout(() => {
-      setHoveredAssetId(null);
-    }, 200);
-    setHideTimeoutId(timeoutId);
-  };
 
   const handleCardMouseEnter = () => {
     if (hideTimeoutId) {

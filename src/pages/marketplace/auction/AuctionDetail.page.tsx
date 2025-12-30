@@ -441,11 +441,21 @@ const AuctionDetailPage = () => {
                         placeholder="10000"
                         value={tokenAmount}
                         onChange={(e) => setTokenAmount(e.target.value)}
+                        onBlur={(e) => {
+                          const numValue = parseFloat(e.target.value);
+                          if (auction && !isNaN(numValue)) {
+                            const minTokens = auction.minInvestmentTokens;
+                            if (numValue < minTokens) {
+                              setTokenAmount(minTokens.toString());
+                            }
+                          }
+                        }}
+                        min={auction?.minInvestmentTokens}
                         className="bg-transparent border-none text-2xl font-medium text-[#111111] font-antic p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                       <p className="text-xs text-[#6B7280] font-antic mt-1">
- Min: {auction.minInvestmentTokens}
- </p>
+                        Min: {auction?.minInvestmentTokens}
+                      </p>
                     </div>
 
                     {/* Max Price Input */}
@@ -539,7 +549,7 @@ const AuctionDetailPage = () => {
                         ? 'Connect Wallet'
                         : !isKYCVerified
                         ? 'KYC Required'
-                        : 'Place Bid'}
+                        : 'Plac Bid'}
                     </Button>
 
                     {/* Info Note */}

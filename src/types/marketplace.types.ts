@@ -180,6 +180,7 @@ export type BidStatus = 'PENDING' | 'WON' | 'LOST' | 'SETTLED' | 'REFUNDED';
 export interface Auction {
   auctionId: string;
   assetId: string;
+  minInvestmentTokens: number;
   totalSupply: number;
   reservePrice: number;
   clearingPrice?: number;
