@@ -24,7 +24,7 @@ const PortfolioPage = () => {
   const { disconnect } = useDisconnect();
 
   // Contract interaction for settling bids (investor-settle.sh verified)
-  const { settleBid, notifyBackend, status: settleStatus, isLoading: isSettling, isSuccess, txHash } = useSettleBid();
+  const { settleBid, status: settleStatus, isLoading: isSettling, isSuccess } = useSettleBid();
   const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
 
   // Yield claiming state (investor-claim-yield.sh)
@@ -42,24 +42,14 @@ const PortfolioPage = () => {
 
   // Handle successful settlement
   useEffect(() => {
-    if (isSuccess && txHash && settlingBidId) {
-      const bid = userBids.find((b) => b.bidId === settlingBidId);
-      if (bid) {
-        notifyBackend(
-          {
-            assetId: bid.assetId || bid.auctionId,
-            bidIndex: bid.bidIndex !== undefined ? bid.bidIndex : 0,
-          },
-          txHash,
-          0
-        ).then(() => {
-          fetchUserBids();
-          setSettlingBidId(null);
-        });
-      }
+    if (isSuccess && settlingBidId) {
+      // Backend notification is handled by the `useSettleBid` hook.
+      // We just need to refresh the bids list.
+      fetchUserBids();
+      setSettlingBidId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSuccess, txHash, settlingBidId]);
+  }, [isSuccess, settlingBidId]);
 
   // Helper functions
   const formatCurrency = (value: string | number): string => {
@@ -631,9 +621,12 @@ const PortfolioPage = () => {
                                       disabled={isSettling && settlingBidId === bid.bidId}
                                       className="px-4 py-2 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                      {isSettling && settlingBidId === bid.bidId
+                                      {bid.status === 'WON' && (isSettling && settlingBidId === bid.bidId
                                         ? settleStatus
-                                        : 'Claim Tokens'}
+                                        : 'Claim Tokens')}
+                                      {bid.status === 'LOST' && (isSettling && settlingBidId === bid.bidId
+                                        ? settleStatus
+                                        : 'Refund USDC')}
                                     </button>
                                   </div>
                                 )}

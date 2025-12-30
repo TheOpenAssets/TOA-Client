@@ -385,7 +385,7 @@ class MarketplaceService extends BaseService {
     assetId: string;
     bidIndex: number;
     txHash: string;
-    blockNumber: string;
+    blockNumber: number;
   }): Promise<any> {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/bids/settle-notify`, {

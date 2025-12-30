@@ -53,7 +53,7 @@ export function useSubmitBid() {
     hash: approveHash,
   });
 
-  const { isLoading: isBidPending, isSuccess: isBidSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isBidPending, isSuccess: isBidSuccess, data: bidReceipt } = useWaitForTransactionReceipt({
     hash: bidHash,
   });
 
@@ -106,7 +106,7 @@ export function useSubmitBid() {
 
   useEffect(() => {
     const handleBidSuccess = async () => {
-      if (isBidSuccess && bidHash && lastBidParamsRef.current) {
+      if (isBidSuccess && bidHash && lastBidParamsRef.current && bidReceipt) {
         // Prevent duplicate notifications for the same transaction
         if (notificationSentRef.current === bidHash) {
           console.log('⏭️ Notification already sent for this transaction');
@@ -128,7 +128,7 @@ export function useSubmitBid() {
             assetId: lastBidParamsRef.current.assetId,
             tokenAmount: tokenAmountWei.toString(),
             price: priceWei.toString(),
-            blockNumber: '0', // Backend will verify from chain
+            blockNumber: bidReceipt.blockNumber.toString(),
           });
 
           console.log('✅ Backend notified successfully');
@@ -156,7 +156,7 @@ export function useSubmitBid() {
     };
 
     handleBidSuccess();
-  }, [isBidSuccess, bidHash]);
+  }, [isBidSuccess, bidHash, bidReceipt]);
 
   const submitBid = useCallback(
     async (params: BidSubmissionParams) => {
@@ -356,12 +356,12 @@ export function useSettleBid() {
           setStatus('Notifying backend...');
           console.log('✅ Settlement confirmed! Notifying backend...');
 
-          await marketplaceService.notifyBidSettled({
+            await marketplaceService.notifyBidSettled({
             assetId: lastSettleParamsRef.current.assetId,
             bidIndex: lastSettleParamsRef.current.bidIndex,
             txHash,
-            blockNumber: receipt.blockNumber.toString(),
-          });
+            blockNumber: receipt.blockNumber,
+            });
 
           notificationSentRef.current = txHash;
           setStatus('Bid settled successfully! 🎉');
@@ -380,28 +380,8 @@ export function useSettleBid() {
     handleSettleSuccess();
   }, [isSuccess, txHash, receipt]);
 
-  // Notify backend after successful settlement (investor-settle.sh line 264)
-  // This is kept for backwards compatibility but should not be needed anymore
-  const notifyBackend = useCallback(
-    async (params: BidSettlementParams, txHash: string, blockNumber: number) => {
-      setStatus('Notifying backend...');
-
-      await marketplaceService.notifyBidSettled({
-        assetId: params.assetId,
-        bidIndex: params.bidIndex,
-        txHash,
-        blockNumber: blockNumber.toString(),
-      });
-
-      setStatus('Bid settled successfully! 🎉');
-      setIsLoading(false);
-    },
-    []
-  );
-
   return {
     settleBid,
-    notifyBackend,
     status,
     isLoading: isLoading || isSubmitting || isPending,
     isSuccess,
