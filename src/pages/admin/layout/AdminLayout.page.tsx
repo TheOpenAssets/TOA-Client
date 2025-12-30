@@ -8,6 +8,7 @@ import {
   Coins,
   Package,
   DollarSign,
+  List,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
@@ -61,6 +62,11 @@ const AdminLayout = () => {
       name: 'Overview',
       path: '/admin',
       icon: LayoutDashboard,
+    },
+    {
+      name: 'Listings',
+      path: '/admin/listings',
+      icon: List,
     },
     {
       name: 'Compliance Queue',

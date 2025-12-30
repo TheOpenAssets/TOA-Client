@@ -189,3 +189,112 @@ export interface SettlementFormData {
   settlementDate: string;
   notes?: string;
 }
+
+// From the /admin/assets API response
+
+export interface AdminFile {
+  tempPath: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface AdminAssetCheckpoints {
+  uploaded: boolean;
+  hashed: boolean;
+  merkled: boolean;
+  attested: boolean;
+  registered: boolean;
+  tokenized: boolean;
+  payoutComplete?: boolean;
+}
+
+export interface AdminAssetCryptography {
+  documentHash: string;
+  merkleLeaves: string[];
+  merkleRoot: string;
+}
+
+export interface AdminAssetAttestation {
+  attestor: string;
+  hash: string;
+  payload: string;
+  signature: string;
+  timestamp: string;
+}
+
+export interface AdminAssetRegistry {
+  registeredAt: string;
+  transactionHash: string;
+  blockNumber: number;
+}
+
+export interface AdminAssetToken {
+  address: string;
+  compliance: string;
+  deployedAt: string;
+  supply: string;
+  transactionHash: string;
+}
+
+export interface ApiAdminAsset {
+  _id: string;
+  assetId: string;
+  originator: string;
+  status: string; // Could be more specific e.g., 'LISTED' | 'TOKENIZED' etc.
+  assetType: 'AUCTION' | 'STATIC';
+  metadata: {
+    invoiceNumber: string;
+    faceValue: string;
+    currency: string;
+    issueDate: string;
+    dueDate: string;
+    buyerName: string;
+    industry: string;
+    riskTier: string;
+  };
+  tokenParams: {
+    totalSupply: string;
+    minInvestment: string;
+    minRaise: string;
+    pricePerToken?: string;
+  };
+  files: {
+    invoice: AdminFile;
+  };
+  checkpoints: AdminAssetCheckpoints;
+  listing?: {
+    type: 'AUCTION' | 'STATIC';
+    reservePrice?: string;
+    priceRange?: {
+      min: string;
+      max: string;
+    };
+    duration?: number;
+    sold: string;
+    active: boolean;
+    listedAt: string;
+    phase?: 'BIDDING' | 'ENDED' | 'SETTLED';
+    scheduledEndTime?: string;
+    scheduledStartTime?: string;
+    transactionHash?: string;
+    price?: string;
+    amountRaised?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  cryptography: AdminAssetCryptography;
+  attestation: AdminAssetAttestation;
+  registry: AdminAssetRegistry;
+  token: AdminAssetToken;
+}
+
+export interface AdminAssetsResponse {
+  assets: ApiAdminAsset[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}

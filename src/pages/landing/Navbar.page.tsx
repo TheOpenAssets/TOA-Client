@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../styles/Navbar.css";
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { Button } from "../../components/ui/button.tsx";
@@ -6,14 +7,13 @@ import { Button } from "../../components/ui/button.tsx";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
 
-    const {  isAuthenticating, handleGetStarted } = useAuthActions();
+  const { isAuthenticating, handleGetStarted } = useAuthActions();
   
-
-
-
-
- 
+  const handleGetUsdcClick = () => {
+    navigate('/faucet');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,7 +39,7 @@ const Navbar = () => {
   href="/"
   className="nav-link underline-animation underline-animation-purple"
 >
-  Change log
+  Changelog
 </a>
 
 <a href="/" className="nav-link underline-animation underline-animation-purple">
@@ -50,7 +50,12 @@ const Navbar = () => {
 
         {/* CTA Button */}
         <div className="flex items-center gap-4">
-       
+        <Button
+            onClick={handleGetUsdcClick}
+            variant="outline"
+          >
+            Get USDC
+          </Button>
          <Button
                      onClick={handleGetStarted}
                      disabled={isAuthenticating}

@@ -29,8 +29,8 @@ interface Attestation {
 }
 
 interface Listing {
-  type: 'DUTCH' | 'FIXED';
-  reservePrice: string; // USDC in wei (6 decimals)
+  type: 'AUCTION' | 'DUTCH' | 'FIXED';
+  reservePrice: string; // USDC with 6 decimals
   priceRange?: {
     min: string;
     max: string;
@@ -40,10 +40,11 @@ interface Listing {
   active?: boolean;
   listedAt?: string;
   phase?: 'BIDDING' | 'ENDED' | 'SETTLED';
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  transactionHash?: string;
   price?: string;
-  clearingPrice?: string; // USDC in wei (6 decimals)
-  startTime?: string;
-  endTime?: string;
+  clearingPrice?: string; // USDC with 6 decimals
 }
 
 export interface AssetMetadata {
@@ -59,8 +60,9 @@ export interface AssetMetadata {
 
 export interface TokenParams {
   totalSupply: string;
-  pricePerToken: string;
   minInvestment: string;
+  minRaise?: string;
+  pricePerToken?: string;
 }
 
 export interface MarketplaceListing {
@@ -76,14 +78,10 @@ export interface AssetDetails {
   metadata: AssetMetadata;
   tokenParams: TokenParams;
   token: Token;
-  listing?: Listing; // ✅ ADDED: Matches actual API response
+  listing?: Listing;
   registry: Registry;
   cryptography: Cryptography;
   attestation: Attestation;
-  // Additional fields for auction/listing display
-  endTime?: string;
-  totalSupply?: number;
-  reservePrice?: number;
 }
 
 export interface ListingResponse {

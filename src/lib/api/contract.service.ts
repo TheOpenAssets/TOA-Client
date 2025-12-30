@@ -24,9 +24,16 @@ const USDC_ABI = [
 
 // PrimaryMarketplace ABI - Must match the actual deployed contract
 const MARKETPLACE_ABI = [
+  // For ending auctions
+  'function endAuction(bytes32 assetId, uint256 clearingPrice) external',
+
+  // For static listings
   'function buyTokens(bytes32 assetId, uint256 amount) external',
-  'function getCurrentPrice(bytes32 assetId) view returns (uint256)',
-  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 startPrice, uint256 endPrice, uint256 duration, uint256 startTime, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
+
+  // Universal listings function (from end-auction script, more up-to-date)
+  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 reservePrice, uint256 endTime, uint256 clearingPrice, uint8 auctionPhase, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
+
+  // Event
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
 ];
 
@@ -899,6 +906,52 @@ class ContractService {
       return {
         success: false,
         error: error.message || 'Failed to approve marketplace',
+      };
+    }
+  }
+
+  async endAuctionOnChain(assetId: string, clearingPrice: string): Promise<{ success: boolean, transactionHash?: string, blockNumber?: number, clearingPriceWei?: string, error?: string }> {
+    try {
+      if (!window.ethereum) {
+        throw new Error('No wallet found. Please connect your admin wallet.');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const adminAddress = await signer.getAddress();
+
+      const marketplaceContract = new ethers.Contract(PRIMARY_MARKETPLACE_ADDRESS, MARKETPLACE_ABI, signer);
+
+      const assetIdBytes32 = this.assetIdToBytes32(assetId);
+      const clearingPriceWei = ethers.parseUnits(clearingPrice, 6); // USDC has 6 decimals
+
+      console.log('🔥 Ending Auction On-Chain');
+      console.log('━'.repeat(50));
+      console.log('Asset ID (bytes32):', assetIdBytes32);
+      console.log('Admin Wallet:', adminAddress);
+      console.log('Clearing Price:', clearingPrice, 'USDC');
+      console.log('Clearing Price (wei):', clearingPriceWei.toString());
+      
+      console.log('Submitting endAuction transaction...');
+      const tx = await marketplaceContract.endAuction(assetIdBytes32, clearingPriceWei);
+      console.log('TX Hash:', tx.hash);
+      console.log('Waiting for confirmation...');
+
+      const receipt = await tx.wait();
+      console.log('Confirmed in block', receipt.blockNumber);
+      
+      return {
+        success: true,
+        transactionHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        clearingPriceWei: clearingPriceWei.toString(),
+      };
+
+    } catch (error: any) {
+      console.error('❌ Error ending auction on-chain:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to end auction on-chain',
       };
     }
   }

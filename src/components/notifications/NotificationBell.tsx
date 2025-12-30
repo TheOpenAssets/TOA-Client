@@ -244,7 +244,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
         >
           <Bell size={16} strokeWidth={2} aria-hidden="true" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 left-full min-w-5 -translate-x-1/2 px-1 bg-purple-500 rounded-full w-1 h-5 flex items-center justify-center" />
+            <Badge className="absolute -top-2 left-full min-w-3  -translate-x-1/2 px-1 bg-purple-500 rounded-full w-1 h-3 flex items-center justify-center" />
           )}
         </Button>
       </PopoverTrigger>

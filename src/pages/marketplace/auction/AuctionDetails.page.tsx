@@ -38,11 +38,18 @@ const AuctionDetailsPage = () => {
 
     if (diff <= 0) return 'Ended';
 
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (days > 0) return `${days}d ${hours % 24}h`;
-    return `${hours}h`;
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+
+    if (parts.length > 0) return parts.join(' ');
+
+    return 'Less than a minute';
   };
 
   const handlePlaceBid = async () => {
@@ -111,10 +118,14 @@ const AuctionDetailsPage = () => {
             {/* Left: Logo + Search */}
             <div className="flex items-center gap-6">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">@</span>
-                </div>
+                <img
+                  src="/ALogo-removebg-preview.svg"
+                  alt="Logo"
+                  className="h-16 w-auto object-contain cursor-pointer"
+                  onClick={() => navigate('/')}
+                />
               </div>
+
 
               <div className="relative w-[400px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -183,7 +194,7 @@ const AuctionDetailsPage = () => {
                 <div className="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-lg">
                   <Clock className="w-4 h-4 text-orange-600" />
                   <span className="font-antic text-sm font-medium text-orange-600">
-                    {asset.endTime ? getTimeRemaining(asset.endTime) : 'N/A'} left
+                    {asset.listing?.scheduledEndTime ? getTimeRemaining(asset.listing.scheduledEndTime) : 'N/A'} left
                   </span>
                 </div>
               </div>
@@ -273,6 +284,7 @@ const AuctionDetailsPage = () => {
                   <input
                     type="number"
                     placeholder="0"
+                    disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -288,11 +300,12 @@ const AuctionDetailsPage = () => {
                     type="number"
                     placeholder="0.00"
                     value={pricePerToken}
+                    disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                     onChange={(e) => setPricePerToken(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <p className="font-antic text-xs text-gray-500 mt-1">
-                    Min: ${asset.reservePrice ? asset.reservePrice.toFixed(2) : '0.00'}
+                    Min : {asset.listing?.reservePrice ? (Number(asset.listing.reservePrice) / 1e6).toFixed(2) : '0.00'}
                   </p>
                 </div>
 
@@ -306,10 +319,10 @@ const AuctionDetailsPage = () => {
                 {/* Place Bid Button */}
                 <button
                   onClick={handlePlaceBid}
-                  disabled={isLoading || !address }
+                  disabled={isLoading || !address || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                   className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : (asset.endTime && new Date(asset.endTime).getTime() <= new Date().getTime()) ? 'Auction Ended' : 'Place Bid'}
+                  {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : (asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()) ? 'Auction Ended' : 'Place Bid'}
                 </button>
 
                 {/* Bid Summary */}

@@ -5,6 +5,7 @@ import { useAccount, useSignMessage } from "wagmi";
 import { useAuthStore } from "../../stores/auth.store";
 import { authService } from "../../lib/api/auth.service";
 import { ParticleTextEffect } from "./interactive-text-particle";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export const ChallengeVerificationPage = () => {
   const navigate = useNavigate();
@@ -104,6 +105,11 @@ export const ChallengeVerificationPage = () => {
             </>
           )}
         </button>
+         {!address && (
+                    <div className="mt-6 flex justify-center">
+                      <ConnectButton />
+                    </div>
+                  )}
 
         {!isConnected && (
           <p className="text-sm text-red-600 bg-white/90 px-4 py-2 rounded-lg shadow-md">

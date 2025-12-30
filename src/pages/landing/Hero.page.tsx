@@ -18,8 +18,8 @@ const HeroSection = () => {
           </h1>
 
           <p className="font-inter text-base md:text-lg text-foreground/80 mb-12 max-w-2xl mx-auto">
-Tokenize and invest in real-world assets, leverage M-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.
-Tokenize. Invest. Borrow. Earn - all in one unified execution layer.          </p>
+Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.
+Tokenize. Invest. Borrow. Earn. - All in one unified execution layer.          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {error && (

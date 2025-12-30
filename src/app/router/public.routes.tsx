@@ -14,6 +14,7 @@ import ComplianceViewPage from '../../pages/admin/compliance/ComplianceView.page
 import OperationsViewPage from '../../pages/admin/operations/OperationsView.page';
 import PayoutViewPage from '../../pages/admin/payout/PayoutView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
+import ListingsPage from '../../pages/admin/listings/Listings.page';
 
 // Component Showcase
 import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
@@ -25,6 +26,7 @@ import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.p
 
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
+import FaucetPage from '../../pages/faucet/Faucet.page';
 
 // 404 Page
 import { NotFoundPage } from '../../components/ui/404-page-not-found';
@@ -55,6 +57,10 @@ export const publicRoutes: RouteObject[] = [
     element: <PortfolioPage />,
   },
   {
+    path: '/faucet',
+    element: <FaucetPage />,
+  },
+  {
     path: '/auth',
     element: <AuthPage />,
   },
@@ -82,6 +88,10 @@ export const publicRoutes: RouteObject[] = [
       {
         index: true,
         element: <AdminOverviewPage />,
+      },
+      {
+        path: 'listings',
+        element: <ListingsPage />,
       },
       {
         path: 'compliance',

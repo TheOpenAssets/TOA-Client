@@ -282,6 +282,29 @@ class AdminService extends BaseService {
     }
   }
 
+  async notifyAuctionEnded(assetId: string, clearingPrice: string, transactionHash: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/compliance/end-auction`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ assetId, clearingPrice, transactionHash }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to notify backend of auction end');
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error notifying auction end:', error);
+      // It's possible the backend notification is not critical or might be handled by a job,
+      // so we don't necessarily want to throw. We can return an error object.
+      return { success: false, error: error.message };
+    }
+  }
+
   /**
    * Get settlement details by ID
    * Step 6 from admin-yeild.sh script

@@ -4,9 +4,9 @@ import React from 'react';
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div>
-      <header>App Header</header>
+      <header></header>
       <main>{children}</main>
-      <footer>App Footer</footer>
+      <footer></footer>
     </div>
   );
 };

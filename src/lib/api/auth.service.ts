@@ -159,6 +159,8 @@ class AuthService extends BaseService {
         {
           method: 'GET',
           headers: this.getHeaders(),
+                credentials: 'include',
+
         }
       );
 

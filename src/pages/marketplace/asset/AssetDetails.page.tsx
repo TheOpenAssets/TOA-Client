@@ -70,7 +70,7 @@ const AssetDetailsPage = () => {
 
   // Calculate estimated total price (actual price will be fetched from contract during purchase)
   // Note: pricePerToken is in USDC (6 decimals), not wei (18 decimals)
-  const estimatedTotalPrice = tokensToBuy
+  const estimatedTotalPrice = tokensToBuy && asset.tokenParams.pricePerToken
     ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken))/1e6).toFixed(2)
     : '0.00';
     
@@ -192,7 +192,7 @@ const AssetDetailsPage = () => {
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <p className="text-5xl font-semibold text-[#111111]">
-                          ${(parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2)}
+                          ${asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2) : 'N/A'}
                         </p>
                         <p className="text-green-600 text-sm mt-1">Token Price (USDC)</p>
                     </div>
@@ -255,6 +255,12 @@ const AssetDetailsPage = () => {
                   <p className="text-[#6B7280]">Minimum Investment</p>
                   <p className="font-medium text-[#111111]">
                     {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
+                  </p>
+                </div>
+                 <div className="space-y-1">
+                  <p className="text-[#6B7280]">Sold Tokens</p>
+                  <p className="font-medium text-[#111111]">
+                    {(parseFloat(asset.listing?.sold || '0') / 1e18).toLocaleString()} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
