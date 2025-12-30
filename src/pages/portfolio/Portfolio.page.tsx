@@ -27,12 +27,18 @@ const PortfolioPage = () => {
   const { settleBid, status: settleStatus, isLoading: isSettling, isSuccess } = useSettleBid();
   const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
 
-  // Yield claiming state (investor-claim-yield.sh)
+  // Yield claiming state (investor-claim-yield.sh burn-to-claim model)
   const [claimingAssetId, setClaimingAssetId] = useState<string | null>(null);
   const [claimStatus, setClaimStatus] = useState<string>('');
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [claimableAmount, setClaimableAmount] = useState<string>('0');
-  const [selectedAssetForClaim, setSelectedAssetForClaim] = useState<string | null>(null);
+  const [selectedAssetForClaim, setSelectedAssetForClaim] = useState<{
+    assetId: string;
+    tokenAddress: string;
+    tokenSymbol: string;
+    investorBalance: string;
+    expectedUsdc: string;
+    allowance: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchPortfolio();
@@ -108,7 +114,7 @@ const PortfolioPage = () => {
 
   /**
    * Handle yield claim for an asset (investor-claim-yield.sh flow)
-   * Step 1: Check claimable amount and show modal
+   * Step 1: Check settlement info, token balance, and allowance
    */
   const handleClaimYield = async (assetId: string) => {
     if (!address) {
@@ -116,24 +122,33 @@ const PortfolioPage = () => {
       return;
     }
 
+    // Find the asset in portfolio to get tokenAddress
+    const asset = portfolio?.portfolio?.find(a => a.assetId === assetId);
+    if (!asset || !asset.tokenAddress) {
+      showError('Asset Not Found', 'Could not find token address for this asset');
+      return;
+    }
+
     setClaimingAssetId(assetId);
     setClaimStatus('Checking...');
 
     try {
-      // Step 1: Check claimable yield
-      console.log('🔍 Step 1: Checking claimable yield for asset:', assetId);
-      const claimableResult = await contractService.getClaimableYield(address);
+      // Step 1: Check settlement info and token balance (matching script)
+      console.log('🔍 Step 1: Checking Settlement Info & Token Balance');
+      console.log('Asset ID:', assetId);
+      console.log('Token Address:', asset.tokenAddress);
 
-      if (!claimableResult.success) {
-        throw new Error(claimableResult.error || 'Failed to check claimable yield');
+      const settlementResult = await contractService.getSettlementInfo(asset.tokenAddress, address);
+
+      if (!settlementResult.success) {
+        throw new Error(settlementResult.error || 'Failed to check settlement info');
       }
 
-      const claimableUsdc = parseFloat(claimableResult.claimableUsdc || '0');
-
-      if (claimableUsdc === 0) {
+      // Validation checks (matching script)
+      if (settlementResult.totalSettlement === '0') {
         warning(
-          'No Yield Available',
-          'No yield available to claim.\n\nPossible reasons:\n• Yield hasn\'t been distributed yet\n• You already claimed your yield\n• You don\'t hold any tokens for this asset',
+          'No Settlement Available',
+          'No settlement deposited for this token yet!\n\nWait for admin to deposit settlement to YieldVault.',
           8000
         );
         setClaimingAssetId(null);
@@ -141,16 +156,46 @@ const PortfolioPage = () => {
         return;
       }
 
-      // Show confirmation modal
-      setClaimableAmount(claimableResult.claimableUsdc || '0');
-      setSelectedAssetForClaim(assetId);
+      if (settlementResult.investorBalance === '0') {
+        warning(
+          'No Tokens Owned',
+          'You don\'t own any tokens for this asset!',
+          5000
+        );
+        setClaimingAssetId(null);
+        setClaimStatus('');
+        return;
+      }
+
+      const expectedUsdc = parseFloat(settlementResult.expectedUsdcForAllTokens || '0');
+
+      if (expectedUsdc === 0) {
+        warning(
+          'No Yield Available',
+          'No yield available to claim for this asset.',
+          5000
+        );
+        setClaimingAssetId(null);
+        setClaimStatus('');
+        return;
+      }
+
+      // Show confirmation modal with settlement details
+      setSelectedAssetForClaim({
+        assetId,
+        tokenAddress: asset.tokenAddress,
+        tokenSymbol: settlementResult.tokenSymbol || 'tokens',
+        investorBalance: settlementResult.investorBalance || '0',
+        expectedUsdc: settlementResult.expectedUsdcForAllTokens || '0',
+        allowance: settlementResult.allowance || '0',
+      });
       setShowClaimModal(true);
       setClaimingAssetId(null);
       setClaimStatus('');
 
     } catch (error: any) {
-      console.error('❌ Error checking claimable yield:', error);
-      showError('Check Failed', error.message || 'Failed to check claimable yield');
+      console.error('❌ Error checking settlement info:', error);
+      showError('Check Failed', error.message || 'Failed to check settlement info');
       setClaimingAssetId(null);
       setClaimStatus('');
     }
@@ -158,32 +203,83 @@ const PortfolioPage = () => {
 
   /**
    * Execute yield claim after user confirms
-   * Step 2: Claim yield from YieldVault
+   * Step 2: Approve YieldVault (if needed)
+   * Step 3: Burn tokens and claim USDC
+   *
+   * This strictly follows investor-claim-yield.sh
    */
   const executeClaimYield = async () => {
     if (!selectedAssetForClaim) return;
 
+    const { assetId, tokenAddress, tokenSymbol, investorBalance, expectedUsdc, allowance } = selectedAssetForClaim;
+
     setShowClaimModal(false);
-    setClaimingAssetId(selectedAssetForClaim);
-    setClaimStatus('Claiming...');
+    setClaimingAssetId(assetId);
+    setClaimStatus('Approving...');
 
     try {
-      // Step 2: Claim yield
-      console.log('💰 Step 2: Claiming yield...');
-      const claimResult = await contractService.claimYield();
+      // Burn ALL tokens (matching script default behavior)
+      const burnAmountWei = investorBalance;
+      const burnAmountFormatted = (parseFloat(investorBalance) / 1e18).toFixed(2);
+
+      console.log('='.repeat(50));
+      console.log('🔥 Burn-to-Claim Yield (v2)');
+      console.log('='.repeat(50));
+      console.log('Token Address:', tokenAddress);
+      console.log('Burn Amount:', burnAmountFormatted, tokenSymbol);
+      console.log('Expected USDC:', expectedUsdc);
+      console.log();
+
+      // Step 2: Approve YieldVault (if needed)
+      const needsApproval = BigInt(allowance) < BigInt(burnAmountWei);
+
+      if (needsApproval) {
+        console.log('✅ Step 2: Approving YieldVault to burn tokens...');
+        setClaimStatus('Approving...');
+
+        const approvalResult = await contractService.approveYieldVault(
+          tokenAddress,
+          burnAmountWei,
+          allowance
+        );
+
+        if (!approvalResult.success) {
+          throw new Error(approvalResult.error || 'Failed to approve YieldVault');
+        }
+
+        if (!approvalResult.skipped) {
+          console.log('✅ Approval successful! TX:', approvalResult.transactionHash);
+        }
+      } else {
+        console.log('✅ Tokens already approved - skipping approval step');
+      }
+
+      // Step 3: Burn tokens and claim USDC
+      console.log('🔥 Step 3: Burning tokens and claiming USDC...');
+      setClaimStatus('Burning & Claiming...');
+
+      const claimResult = await contractService.claimYield(tokenAddress, burnAmountWei);
 
       if (!claimResult.success) {
         throw new Error(claimResult.error || 'Failed to claim yield');
       }
 
-      // Step 3: Success!
-      console.log('✅ Yield claimed:', claimResult.claimedUsdc, 'USDC');
-      console.log('TX:', claimResult.transactionHash);
+      // Success!
+      const tokensBurned = claimResult.tokensBurnedFormatted || '0';
+      const usdcReceived = claimResult.usdcReceivedFormatted || '0';
+
+      console.log('='.repeat(50));
+      console.log('🎉 Claim Successful!');
+      console.log('='.repeat(50));
+      console.log('Tokens Burned:', tokensBurned, tokenSymbol, '🔥');
+      console.log('USDC Received:', usdcReceived, 'USDC');
+      console.log('TX Hash:', claimResult.transactionHash);
+      console.log();
 
       success(
         'Yield Claimed Successfully! 🎉',
-        `Amount: ${claimResult.claimedUsdc} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${claimResult.transactionHash}`,
-        10000
+        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${claimResult.transactionHash}`,
+        12000
       );
 
       // Refresh portfolio to update balances
@@ -644,37 +740,47 @@ const PortfolioPage = () => {
         </div>
       </div>
 
-      {/* Yield Claim Confirmation Modal */}
-      {showClaimModal && (
+      {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
+      {showClaimModal && selectedAssetForClaim && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div
             className="rounded-2xl p-8 max-w-md w-full"
             style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
           >
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🔥</span>
               </div>
 
               <h2 className="font-antic text-2xl font-semibold text-foreground mb-2">
-                Claim Your Yield
+                Burn Tokens to Claim Yield
               </h2>
 
               <p className="font-inter text-sm text-foreground/70 mb-6">
-                You have yield available to claim from the YieldVault.
+                This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
               </p>
 
-              <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
-                <p className="font-inter text-xs text-gray-500 mb-2">Claimable Amount</p>
-                <p className="font-antic text-4xl font-semibold text-green-600">
-                  ${parseFloat(claimableAmount).toFixed(2)}
-                </p>
-                <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>
+              <div className="bg-white rounded-xl p-6 mb-4 border border-gray-200">
+                <div className="mb-4">
+                  <p className="font-inter text-xs text-gray-500 mb-2">Tokens to Burn</p>
+                  <p className="font-antic text-2xl font-semibold text-orange-600">
+                    {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                  </p>
+                </div>
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="font-inter text-xs text-gray-500 mb-2">Expected USDC</p>
+                  <p className="font-antic text-3xl font-semibold text-green-600">
+                    ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
+                  </p>
+                  <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>
+                </div>
               </div>
 
-              <p className="font-inter text-xs text-foreground/60 mb-6">
-                This will transfer USDC from the YieldVault to your wallet.
-              </p>
+              <div className="bg-orange-50 rounded-lg p-3 mb-6 border border-orange-200">
+                <p className="font-inter text-xs text-orange-800">
+                  ⚠️ <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
+                </p>
+              </div>
 
               <div className="flex gap-3">
                 <button

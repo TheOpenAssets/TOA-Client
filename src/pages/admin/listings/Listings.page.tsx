@@ -171,7 +171,7 @@ const ListingsPage = () => {
                 <div className="w-1/6 text-right">
                   {asset.assetType === 'AUCTION' && asset.listing?.phase === 'BIDDING' && (
                     <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className='cta-button'>
-                      End Auction
+                      Announce Clearance
                     </Button>
                   )}
                 </div>
@@ -251,7 +251,7 @@ const ListingsPage = () => {
             </Button>
             <Button onClick={handleConfirmEndAuction} disabled={isEndingAuction || !clearingPrice} className='cta-button'>
               {isEndingAuction && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirm & End Auction
+              Declare results
             </Button>
           </DialogFooter>
         </DialogContent>

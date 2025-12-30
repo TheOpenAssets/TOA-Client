@@ -37,12 +37,22 @@ const MARKETPLACE_ABI = [
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
 ];
 
-// YieldVault ABI - For claiming USDC yield (matches investor-claim-yield.sh)
+// YieldVault ABI - For claiming USDC yield via burn-to-claim model (matches investor-claim-yield.sh)
 const YIELD_VAULT_ABI = [
-  'function getUserClaimable(address user) view returns (uint256)',
-  'function claimAllYield() external',
-  'function USDC() view returns (address)',
-  'event YieldClaimed(address indexed user, uint256 amount, uint256 timestamp)',
+  'function getSettlementInfo(address tokenAddress) view returns (uint256 totalSettlement, uint256 totalTokenSupply, uint256 totalClaimed, uint256 totalTokensBurned, uint256 yieldPerToken)',
+  'function getClaimableForTokens(address tokenAddress, uint256 tokenAmount) view returns (uint256)',
+  'function claimYield(address tokenAddress, uint256 tokenAmount) external',
+  'event YieldClaimed(address indexed user, address indexed tokenAddress, uint256 tokensBurned, uint256 usdcReceived, uint256 timestamp)',
+];
+
+// ERC20 ABI for RWA tokens
+const ERC20_ABI = [
+  'function balanceOf(address account) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
+  'function totalSupply() view returns (uint256)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function approve(address spender, uint256 amount) external returns (bool)',
 ];
 
 export interface PurchaseParams {
@@ -653,20 +663,33 @@ class ContractService {
   }
 
   /**
-   * Get claimable yield amount for investor (Step 1 from investor-claim-yield.sh)
+   * Get settlement info and token balance for investor (Step 1 from investor-claim-yield.sh)
    *
-   * Calls YieldVault.getUserClaimable(address) to check how much USDC yield
-   * the investor can claim. Returns amount in USDC (6 decimals).
+   * This matches the bash script's approach:
+   * 1. Calls YieldVault.getSettlementInfo(tokenAddress) to get settlement details
+   * 2. Gets investor's token balance
+   * 3. Checks allowance for YieldVault
+   * 4. Calculates expected USDC yield based on token balance
    *
    * Contract: YieldVault 0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD
    *
+   * @param tokenAddress - The RWA token contract address
    * @param investorAddress - The investor wallet address (optional, uses connected wallet if not provided)
-   * @returns { claimableWei, claimableUsdc } Amount claimable in wei and USDC
+   * @returns Settlement info, token balance, allowance, and calculated yield
    */
-  async getClaimableYield(investorAddress?: string): Promise<{
+  async getSettlementInfo(tokenAddress: string, investorAddress?: string): Promise<{
     success: boolean;
-    claimableWei?: string;
-    claimableUsdc?: string;
+    totalSettlement?: string;
+    totalTokenSupply?: string;
+    totalClaimed?: string;
+    totalTokensBurned?: string;
+    yieldPerToken?: string;
+    investorBalance?: string;
+    tokenDecimals?: number;
+    tokenSymbol?: string;
+    allowance?: string;
+    expectedUsdcForAllTokens?: string;
+    yieldVaultAddress?: string;
     error?: string;
   }> {
     try {
@@ -684,60 +707,208 @@ class ContractService {
         provider
       );
 
-      console.log('💰 Checking Claimable Yield');
+      const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+
+      console.log('🔍 Step 1: Checking Settlement Info & Token Balance');
       console.log('━'.repeat(50));
       console.log('YieldVault Address:', YIELD_VAULT_ADDRESS);
+      console.log('Token Address:', tokenAddress);
       console.log('Investor Wallet:', userAddress);
       console.log();
 
-      // Get claimable amount (returns uint256 in USDC 6 decimals)
-      const claimable = await yieldVaultContract.getUserClaimable(userAddress);
-      const claimableUsdc = ethers.formatUnits(claimable, 6);
+      // Get settlement info
+      const settlementInfo = await yieldVaultContract.getSettlementInfo(tokenAddress);
+      const totalSettlement = settlementInfo[0];
+      const totalTokenSupply = settlementInfo[1];
+      const totalClaimed = settlementInfo[2];
+      const totalTokensBurned = settlementInfo[3];
+      const yieldPerToken = settlementInfo[4];
 
-      console.log('Claimable Yield:', claimableUsdc, 'USDC');
-      console.log('Claimable (wei):', claimable.toString());
+      const settlementUsdc = ethers.formatUnits(totalSettlement, 6);
+      const claimedUsdc = ethers.formatUnits(totalClaimed, 6);
+      const remainingUsdc = ethers.formatUnits(totalSettlement - totalClaimed, 6);
+      const tokensSupply = ethers.formatUnits(totalTokenSupply, 18);
+      const tokensBurned = ethers.formatUnits(totalTokensBurned, 18);
+      const yieldPerTokenFormatted = ethers.formatUnits(yieldPerToken, 6);
+
+      console.log('Settlement Info:');
+      console.log('  Total Settlement:', settlementUsdc, 'USDC');
+      console.log('  Token Supply:', tokensSupply, 'tokens');
+      console.log('  Yield Per Token:', yieldPerTokenFormatted, 'USDC/token');
+      console.log('  Total Claimed:', claimedUsdc, 'USDC');
+      console.log('  Tokens Burned:', tokensBurned, 'tokens');
+      console.log('  Remaining:', remainingUsdc, 'USDC');
       console.log();
 
-      if (claimable === 0n) {
-        console.log('⚠️  No yield available to claim');
-        console.log('Possible reasons:');
-        console.log('  • Yield hasn\'t been distributed yet');
-        console.log('  • You already claimed your yield');
-        console.log('  • You don\'t hold any tokens for this asset');
+      // Get investor's token balance
+      const balance = await tokenContract.balanceOf(userAddress);
+      const decimals = await tokenContract.decimals();
+      const symbol = await tokenContract.symbol();
+      const balanceFormatted = ethers.formatUnits(balance, decimals);
+
+      console.log('Your Token Balance:', balanceFormatted, symbol);
+      console.log();
+
+      // Check allowance for YieldVault
+      const allowance = await tokenContract.allowance(userAddress, YIELD_VAULT_ADDRESS);
+      const allowanceFormatted = ethers.formatUnits(allowance, decimals);
+
+      console.log('YieldVault Allowance:', allowanceFormatted, symbol);
+      console.log();
+
+      // Calculate expected USDC for all tokens (matching script formula)
+      let expectedUsdc = '0';
+      if (totalTokenSupply > 0n && balance > 0n) {
+        const expectedUsdcWei = (balance * totalSettlement) / totalTokenSupply;
+        expectedUsdc = ethers.formatUnits(expectedUsdcWei, 6);
+        console.log('Expected USDC for all your tokens:', expectedUsdc, 'USDC');
+        console.log();
+      }
+
+      // Validation checks (matching script)
+      if (totalSettlement === 0n) {
+        console.log('⚠️  No settlement deposited for this token yet!');
+        console.log('Wait for admin to deposit settlement to YieldVault');
+      }
+
+      if (balance === 0n) {
+        console.log('⚠️  You don\'t own any tokens!');
       }
 
       return {
         success: true,
-        claimableWei: claimable.toString(),
-        claimableUsdc: claimableUsdc,
+        totalSettlement: totalSettlement.toString(),
+        totalTokenSupply: totalTokenSupply.toString(),
+        totalClaimed: totalClaimed.toString(),
+        totalTokensBurned: totalTokensBurned.toString(),
+        yieldPerToken: yieldPerToken.toString(),
+        investorBalance: balance.toString(),
+        tokenDecimals: Number(decimals),
+        tokenSymbol: symbol,
+        allowance: allowance.toString(),
+        expectedUsdcForAllTokens: expectedUsdc,
+        yieldVaultAddress: YIELD_VAULT_ADDRESS,
       };
     } catch (error: any) {
-      console.error('❌ Error checking claimable yield:', error);
+      console.error('❌ Error checking settlement info:', error);
       return {
         success: false,
-        error: error.message || 'Failed to check claimable yield',
+        error: error.message || 'Failed to check settlement info',
       };
     }
   }
 
   /**
-   * Claim all available yield (Step 2 from investor-claim-yield.sh)
+   * Approve YieldVault to burn tokens (Step 2 from investor-claim-yield.sh)
    *
-   * Calls YieldVault.claimAllYield() to claim all available USDC yield.
-   * This transfers USDC from YieldVault to the investor's wallet.
+   * This approves the YieldVault contract to spend/burn the investor's RWA tokens.
+   * Required before calling claimYield.
    *
-   * Emits: YieldClaimed(address indexed user, uint256 amount, uint256 timestamp)
-   *
-   * Contract: YieldVault 0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD
-   *
-   * @returns { success, transactionHash, blockNumber, claimedAmount }
+   * @param tokenAddress - The RWA token contract address
+   * @param burnAmountWei - The amount of tokens to approve (in wei)
+   * @param currentAllowance - Current allowance (optional, will check if not provided)
+   * @returns Transaction result
    */
-  async claimYield(): Promise<{
+  async approveYieldVault(
+    tokenAddress: string,
+    burnAmountWei: string,
+    currentAllowance?: string
+  ): Promise<{
     success: boolean;
     transactionHash?: string;
     blockNumber?: number;
-    claimedAmount?: string;
-    claimedUsdc?: string;
+    skipped?: boolean;
+    error?: string;
+  }> {
+    try {
+      if (!window.ethereum) {
+        throw new Error('No wallet found');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const investorAddress = await signer.getAddress();
+
+      const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+
+      // Check current allowance if not provided
+      let allowance = currentAllowance ? BigInt(currentAllowance) : 0n;
+      if (!currentAllowance) {
+        allowance = await tokenContract.allowance(investorAddress, YIELD_VAULT_ADDRESS);
+      }
+
+      const burnAmount = BigInt(burnAmountWei);
+
+      console.log('✅ Step 2: Approve YieldVault to Burn Tokens');
+      console.log('━'.repeat(50));
+      console.log('Token Address:', tokenAddress);
+      console.log('YieldVault Address:', YIELD_VAULT_ADDRESS);
+      console.log('Current Allowance:', ethers.formatUnits(allowance, 18), 'tokens');
+      console.log('Burn Amount:', ethers.formatUnits(burnAmount, 18), 'tokens');
+      console.log();
+
+      // Skip if already approved
+      if (allowance >= burnAmount) {
+        console.log('✅ Tokens already approved - skipping approval step');
+        console.log();
+        return {
+          success: true,
+          skipped: true,
+        };
+      }
+
+      // Approve YieldVault
+      console.log('⏳ Approving YieldVault to spend tokens...');
+      const tx = await tokenContract.approve(YIELD_VAULT_ADDRESS, burnAmount);
+      console.log('TX Hash:', tx.hash);
+      console.log('⏳ Waiting for confirmation...');
+
+      const receipt = await tx.wait();
+      console.log('✅ Approved in block', receipt.blockNumber);
+      console.log();
+
+      return {
+        success: true,
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error: any) {
+      console.error('❌ Error approving YieldVault:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to approve YieldVault',
+      };
+    }
+  }
+
+  /**
+   * Burn tokens and claim USDC yield (Step 3 from investor-claim-yield.sh)
+   *
+   * This is the BURN-TO-CLAIM model:
+   * - Burns investor's RWA tokens permanently
+   * - Transfers pro-rata share of settlement USDC to investor
+   *
+   * Formula: USDC = (tokensBurned * totalSettlement) / totalTokenSupply
+   *
+   * Emits: YieldClaimed(address user, address tokenAddress, uint256 tokensBurned, uint256 usdcReceived, uint256 timestamp)
+   *
+   * Contract: YieldVault 0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD
+   *
+   * @param tokenAddress - The RWA token contract address
+   * @param burnAmountWei - Amount of tokens to burn (in wei, 18 decimals)
+   * @returns Transaction result with actual tokens burned and USDC received
+   */
+  async claimYield(
+    tokenAddress: string,
+    burnAmountWei: string
+  ): Promise<{
+    success: boolean;
+    transactionHash?: string;
+    blockNumber?: number;
+    tokensBurned?: string;
+    usdcReceived?: string;
+    tokensBurnedFormatted?: string;
+    usdcReceivedFormatted?: string;
     error?: string;
   }> {
     try {
@@ -755,15 +926,19 @@ class ContractService {
         signer
       );
 
-      console.log('💰 Claiming Yield from YieldVault');
+      console.log('🔥 Step 3: Burn Tokens & Claim USDC');
       console.log('━'.repeat(50));
       console.log('YieldVault:', YIELD_VAULT_ADDRESS);
+      console.log('Token Address:', tokenAddress);
       console.log('Investor:', investorAddress);
+      console.log('Burn Amount:', ethers.formatUnits(burnAmountWei, 18), 'tokens');
+      console.log();
+      console.log('⚠️  THIS WILL BURN YOUR TOKENS PERMANENTLY!');
       console.log();
 
-      // Call claimAllYield() - no parameters needed
-      console.log('⏳ Submitting claimAllYield() transaction...');
-      const tx = await yieldVaultContract.claimAllYield();
+      // Call claimYield(tokenAddress, tokenAmount)
+      console.log('⏳ Submitting claimYield() transaction...');
+      const tx = await yieldVaultContract.claimYield(tokenAddress, burnAmountWei);
       console.log('TX Hash:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
@@ -771,25 +946,29 @@ class ContractService {
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log();
 
-      // Parse YieldClaimed event to get actual claimed amount
-      let claimedAmount = '0';
-      let claimedUsdc = '0';
+      // Parse YieldClaimed event to get actual amounts
+      let tokensBurned = '0';
+      let usdcReceived = '0';
 
       for (const log of receipt.logs) {
         try {
           const parsed = yieldVaultContract.interface.parseLog(log);
           if (parsed && parsed.name === 'YieldClaimed') {
-            claimedAmount = parsed.args.amount.toString();
-            claimedUsdc = ethers.formatUnits(claimedAmount, 6);
-            console.log('Claimed:', claimedUsdc, 'USDC');
-            console.log('Claimed (wei):', claimedAmount);
+            tokensBurned = parsed.args.tokensBurned.toString();
+            usdcReceived = parsed.args.usdcReceived.toString();
+
+            const tokensBurnedFormatted = ethers.formatUnits(tokensBurned, 18);
+            const usdcReceivedFormatted = ethers.formatUnits(usdcReceived, 6);
+
+            console.log('Tokens Burned:', tokensBurnedFormatted, 'tokens 🔥');
+            console.log('USDC Received:', usdcReceivedFormatted, 'USDC');
+            console.log();
           }
         } catch (e) {
           // Skip non-matching logs
         }
       }
 
-      console.log();
       console.log('✅ Yield claimed successfully!');
       console.log('TX Hash:', tx.hash);
       console.log('Block:', receipt.blockNumber);
@@ -800,8 +979,10 @@ class ContractService {
         success: true,
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
-        claimedAmount: claimedAmount,
-        claimedUsdc: claimedUsdc,
+        tokensBurned: tokensBurned,
+        usdcReceived: usdcReceived,
+        tokensBurnedFormatted: ethers.formatUnits(tokensBurned, 18),
+        usdcReceivedFormatted: ethers.formatUnits(usdcReceived, 6),
       };
     } catch (error: any) {
       console.error('❌ Error claiming yield:', error);
