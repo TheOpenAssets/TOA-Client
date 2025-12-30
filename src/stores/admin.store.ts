@@ -64,6 +64,12 @@ export interface AssetListing {
   phase?: string; // 'BIDDING' | 'ENDED' | 'SETTLED'
 }
 
+export interface FileInvoice {
+  tempPath: string;
+  size: number;
+  uploadedAt: string;
+}
+
 export interface AdminAsset {
   _id: string;
   assetId: string;
@@ -72,7 +78,7 @@ export interface AdminAsset {
   assetType?: string; // 'AUCTION' | 'STATIC'
   metadata: AssetMetadata;
   tokenParams: TokenParams;
-  files?: any[];
+  files?:   FileInvoice[];
   checkpoints: AssetCheckpoints;
   cryptography: AssetCryptography;
   attestation: AssetAttestation;
@@ -96,6 +102,7 @@ export interface AdminActivity {
   details: string;
   actor: string;
   timestamp: string;
+  minraise: string;
   type: string;
 }
 

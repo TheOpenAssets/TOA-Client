@@ -580,6 +580,7 @@ class AdminService extends BaseService {
           assetName,
           details,
           actor: originator,
+          minraise:asset.tokenParams?.minRaise || 0,
           timestamp: asset.updatedAt || asset.createdAt || new Date().toISOString(),
           type: this.getActivityType(asset.status),
         };

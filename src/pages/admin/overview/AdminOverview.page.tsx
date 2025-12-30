@@ -196,9 +196,13 @@ const AdminOverviewPage = () => {
                       <p className="font-inter text-xs text-foreground/60 mt-0.5">
                         {activity.details}
                       </p>
+                      <p className="font-inter text-xs text-foreground/60 mt-1">
+                        Minraise: {Number(activity.minraise)/1e6} USDC
+                      </p>
                       <p className="font-inter text-xs text-foreground/50 mt-1">
                         By {activity.actor}
                       </p>
+
                     </div>
                     <span className="font-inter text-xs text-foreground/50 whitespace-nowrap">
                       {formatTime(activity.timestamp)}

@@ -291,12 +291,7 @@ const ComplianceViewPage = () => {
                         <div className="font-inter text-xs text-foreground/60 mt-0.5">
                           {asset.metadata.industry}
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <FileText className="w-3 h-3 text-foreground/50" />
-                          <span className="font-inter text-xs text-foreground/50">
-                            {asset.files?.length ?? 0} documents
-                          </span>
-                        </div>
+                        
                       </div>
                     </td>
                     <td className="px-6 py-5">
@@ -329,9 +324,7 @@ const ComplianceViewPage = () => {
                       <div className="font-inter text-sm text-foreground">
                         {uploadDate.toLocaleDateString()}
                       </div>
-                      <div className="font-inter text-xs text-foreground/60 mt-0.5">
-                        {daysAgo} days ago
-                      </div>
+                      
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-end gap-2">
