@@ -31,6 +31,7 @@ export const ChallengeVerificationPage = () => {
       // Step 2: Sign the challenge message
       const signature = await signMessageAsync({
         message: challenge.message,
+        account: address,
       });
 
       // Step 3: Login with signature

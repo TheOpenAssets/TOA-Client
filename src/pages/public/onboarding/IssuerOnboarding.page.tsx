@@ -132,6 +132,7 @@ const IssuerOnboardingPage = () => {
       // Step 2: Sign Message
       const signature = await signMessageAsync({
         message: challenge.message,
+        account: address,
       });
 
       // Step 3: Login with onboarding token

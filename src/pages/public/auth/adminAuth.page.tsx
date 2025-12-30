@@ -25,7 +25,10 @@ const AdminAuthPage = () => {
       setError(null);
 
       const challenge = await adminService.getChallenge(address);
-      const signature = await signMessageAsync({ message: challenge.message });
+      const signature = await signMessageAsync({
+        message: challenge.message,
+        account: address
+      });
       const loginResponse = await adminService.login({
         walletAddress: address,
         message: challenge.message,

@@ -115,6 +115,7 @@ const AuthPage = () => {
       // Step 7.2: Wallet Signs Message
       const signature = await signMessageAsync({
         message: challenge.message,
+        account: address,
       });
 
       // Step 7.3: Login API (AUTH ONLY)

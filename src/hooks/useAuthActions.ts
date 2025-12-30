@@ -38,6 +38,7 @@ export const useAuthActions = () => {
       const challenge = await authService.getChallenge(address);
       const signature = await signMessageAsync({
         message: challenge.message,
+        account: address,
       });
 
       const loginResponse = await authService.login({
@@ -82,6 +83,7 @@ export const useAuthActions = () => {
       const challenge = await issuerService.getChallenge(address);
       const signature = await signMessageAsync({
         message: challenge.message,
+        account: address,
       });
 
       const loginResponse = await issuerService.login({

@@ -6,7 +6,15 @@ import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { rainbowKitConfig } from '../../lib/blockchain/rainbowkit.config';
 
-const queryClient = new QueryClient();
+// Create a single QueryClient instance with proper configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 interface WalletProviderProps {
   children: React.ReactNode;
@@ -18,12 +26,12 @@ interface WalletProviderProps {
  */
 export const WalletProvider = ({ children }: WalletProviderProps) => {
   return (
-    <WagmiProvider config={rainbowKitConfig}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider config={rainbowKitConfig}>
         <RainbowKitProvider>
           {children}
         </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+      </WagmiProvider>
+    </QueryClientProvider>
   );
 };

@@ -39,6 +39,7 @@ const AssetTokenizationSection = () => {
         // Step 2: Sign the message
         const signature =  await signMessageAsync({
           message: challenge.message,
+          account: address,
         });
   
         // Step 3: Login with signature
