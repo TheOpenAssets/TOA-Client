@@ -183,6 +183,8 @@ export interface Auction {
   totalSupply: number;
   reservePrice: number;
   clearingPrice?: number;
+  tokensSold?: number; // For AUCTION_RESULTS_DECLARED
+  tokensRemaining?: number; // For AUCTION_RESULTS_DECLARED
   status: AuctionStatus;
   startTime: string;
   endTime: string;

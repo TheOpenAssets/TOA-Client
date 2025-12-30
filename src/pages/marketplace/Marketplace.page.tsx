@@ -35,6 +35,7 @@ const MarketplacePage = () => {
     fetchListings,
     auctions, // AUCTION_LIVE only
     scheduledAuctions, // AUCTION_SCHEDULED only
+    auctionResults, // AUCTION_RESULTS_DECLARED only
     isLoadingAuctions,
     fetchActiveAuctions,
     marketplaceInfo,
@@ -361,7 +362,7 @@ const MarketplacePage = () => {
         </div>
       </div>
 
-      {/* Auction/Bids Advertising Strip - AUCTION_SCHEDULED only */}
+      {/* Auction Announcements Strip - SCHEDULED & RESULTS */}
       <div className="bg-black/70 relative border-b border-gray-200 z-40 overflow-hidden">
         <style>{`
           @keyframes scroll-left {
@@ -383,13 +384,13 @@ const MarketplacePage = () => {
         `}</style>
 
         <div className="max-w-full mx-auto px-6 py-1">
-          {scheduledAuctions.length > 0 ? (
+          {(scheduledAuctions.length > 0 || auctionResults.length > 0) ? (
             <div className="flex items-center overflow-hidden">
               <div className="carousel-track flex items-center gap-6">
-                {/* First set of scheduled auctions */}
+                {/* First set - Scheduled auctions */}
                 {scheduledAuctions.map((auction) => (
                   <div
-                    key={`first-${auction.auctionId}`}
+                    key={`first-scheduled-${auction.auctionId}`}
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
@@ -414,10 +415,38 @@ const MarketplacePage = () => {
                   </div>
                 ))}
 
-                {/* Duplicate set for seamless loop */}
+                {/* First set - Auction results */}
+                {auctionResults.map((auction) => (
+                  <div
+                    key={`first-results-${auction.auctionId}`}
+                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-green-200"
+                    onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  >
+                    <span className="font-antic text-xs text-green-600 font-semibold">
+                      🎯 RESULTS
+                    </span>
+                    <span className="font-antic text-xs font-bold text-foreground">
+                      {auction.metadata?.invoiceNumber || auction.assetId}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-blue-600 font-medium">
+                      Clearing: ${formatLargeNumber(auction.clearingPrice || 0)}/token
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-green-600 font-medium">
+                      ✓ Sold: {auction.tokensSold?.toLocaleString() || '0'}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-orange-600 font-medium">
+                      📦 Available: {auction.tokensRemaining?.toLocaleString() || '0'} @ ${formatLargeNumber(auction.clearingPrice || 0)}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Duplicate set for seamless loop - Scheduled */}
                 {scheduledAuctions.map((auction) => (
                   <div
-                    key={`second-${auction.auctionId}`}
+                    key={`second-scheduled-${auction.auctionId}`}
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
@@ -441,12 +470,40 @@ const MarketplacePage = () => {
                     </span>
                   </div>
                 ))}
+
+                {/* Duplicate set for seamless loop - Results */}
+                {auctionResults.map((auction) => (
+                  <div
+                    key={`second-results-${auction.auctionId}`}
+                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-green-200"
+                    onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  >
+                    <span className="font-antic text-xs text-green-600 font-semibold">
+                      🎯 RESULTS
+                    </span>
+                    <span className="font-antic text-xs font-bold text-foreground">
+                      {auction.metadata?.invoiceNumber || auction.assetId}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-blue-600 font-medium">
+                      Clearing: ${formatLargeNumber(auction.clearingPrice || 0)}/token
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-green-600 font-medium">
+                      ✓ Sold: {auction.tokensSold?.toLocaleString() || '0'}
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-antic text-xs text-orange-600 font-medium">
+                      📦 Available: {auction.tokensRemaining?.toLocaleString() || '0'} @ ${formatLargeNumber(auction.clearingPrice || 0)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-center">
               <span className="font-antic text-xs text-gray-400">
-                No scheduled auctions at the moment
+                No auction announcements at the moment
               </span>
             </div>
           )}
