@@ -618,7 +618,7 @@ const PortfolioPage = () => {
                                 </div>
 
                                 {/* Action Button */}
-                                {bid.status === 'WON' && !bid.settledAt && (
+                                {(bid.status === 'WON' || bid.status === 'LOST') && !bid.settledAt && (
                                   <div className="ml-4">
                                     <button
                                       onClick={() => {
