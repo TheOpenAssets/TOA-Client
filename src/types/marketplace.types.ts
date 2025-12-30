@@ -171,7 +171,7 @@ export type SortOption =
 // ============================================================================
 
 export type AuctionStatus = 'SCHEDULED' | 'BIDDING' | 'ENDED' | 'SETTLED' | 'CANCELLED';
-export type BidStatus = 'PENDING' | 'SUCCESSFUL' | 'FAILED' | 'PARTIALLY_FILLED';
+export type BidStatus = 'PENDING' | 'WON' | 'LOST' | 'SETTLED' | 'REFUNDED';
 
 /**
  * Auction - Represents an RWA token auction

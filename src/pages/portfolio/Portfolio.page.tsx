@@ -98,15 +98,17 @@ const PortfolioPage = () => {
 
   const getBidStatusStyle = (status: BidStatus) => {
     switch (status) {
-      case 'SUCCESSFUL':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Successful' };
-      case 'FAILED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed' };
-      case 'PARTIALLY_FILLED':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Partial' };
+      case 'WON':
+        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Won' };
+      case 'LOST':
+        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Lost' };
+      case 'SETTLED':
+        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Settled' };
+      case 'REFUNDED':
+        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Refunded' };
       case 'PENDING':
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Pending' };
+        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' };
     }
   };
 
@@ -616,7 +618,7 @@ const PortfolioPage = () => {
                                 </div>
 
                                 {/* Action Button */}
-                                {bid.status === 'SUCCESSFUL' && !bid.settledAt && (
+                                {bid.status === 'WON' && !bid.settledAt && (
                                   <div className="ml-4">
                                     <button
                                       onClick={() => {

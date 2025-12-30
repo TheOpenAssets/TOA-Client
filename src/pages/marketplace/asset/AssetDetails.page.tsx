@@ -86,6 +86,15 @@ const AssetDetailsPage = () => {
       return;
     }
 
+    // New balance check
+    const currentUsdcBalance = parseFloat(usdcBalance);
+    const estimatedUsdcNeeded = parseFloat(estimatedTotalPrice);
+
+    if (currentUsdcBalance < estimatedUsdcNeeded) {
+      setPurchaseStatus(`Insufficient USDC balance. You need ${estimatedUsdcNeeded.toFixed(2)} USDC but have ${currentUsdcBalance.toFixed(2)} USDC.`);
+      return;
+    }
+
     const minInvestment = parseFloat(asset.tokenParams.minInvestment)/1e18;
     const requestedAmount = parseFloat(tokensToBuy);
 
