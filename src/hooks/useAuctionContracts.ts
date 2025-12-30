@@ -360,7 +360,6 @@ export function useSettleBid() {
             assetId: lastSettleParamsRef.current.assetId,
             bidIndex: lastSettleParamsRef.current.bidIndex,
             txHash,
-            blockNumber: Number(receipt.blockNumber),
             });
 
           notificationSentRef.current = txHash;
