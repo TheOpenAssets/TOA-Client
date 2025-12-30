@@ -139,16 +139,41 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
 
       console.log('📊 Fetched all announcements:', allAnnouncements.length);
 
-      // Step 2: Filter announcements by type - EXCLUDE AUCTION_ENDED explicitly
-      const liveAnnouncements = allAnnouncements.filter((a: any) => a.type === 'AUCTION_LIVE');
-      const scheduledAnnouncements = allAnnouncements.filter((a: any) => a.type === 'AUCTION_SCHEDULED');
-      const endedCount = allAnnouncements.filter((a: any) => a.type === 'AUCTION_ENDED').length;
+      // Step 2: Group announcements by assetId and get the latest one per asset
+      const assetAnnouncementsMap = new Map<string, any>();
 
-      console.log('🔨 AUCTION_LIVE count:', liveAnnouncements.length);
-      console.log('📅 AUCTION_SCHEDULED count:', scheduledAnnouncements.length);
-      console.log('❌ AUCTION_ENDED excluded:', endedCount);
+      allAnnouncements.forEach((announcement: any) => {
+        const assetId = announcement.assetId;
+        const existingAnnouncement = assetAnnouncementsMap.get(assetId);
 
-      // Step 3: Process AUCTION_LIVE announcements
+        if (!existingAnnouncement) {
+          assetAnnouncementsMap.set(assetId, announcement);
+        } else {
+          // Compare dates and keep the latest announcement
+          const existingDate = new Date(existingAnnouncement.updatedAt || existingAnnouncement.createdAt);
+          const currentDate = new Date(announcement.updatedAt || announcement.createdAt);
+
+          if (currentDate > existingDate) {
+            assetAnnouncementsMap.set(assetId, announcement);
+          }
+        }
+      });
+
+      // Step 3: Filter out assets with AUCTION_ENDED as latest status
+      const latestAnnouncements = Array.from(assetAnnouncementsMap.values()).filter(
+        (announcement: any) => announcement.type !== 'AUCTION_ENDED'
+      );
+
+      // Step 4: Separate into LIVE and SCHEDULED based on latest announcement type
+      const liveAnnouncements = latestAnnouncements.filter((a: any) => a.type === 'AUCTION_LIVE');
+      const scheduledAnnouncements = latestAnnouncements.filter((a: any) => a.type === 'AUCTION_SCHEDULED');
+      const endedCount = assetAnnouncementsMap.size - latestAnnouncements.length;
+
+      console.log('🔨 AUCTION_LIVE count (latest status):', liveAnnouncements.length);
+      console.log('📅 AUCTION_SCHEDULED count (latest status):', scheduledAnnouncements.length);
+      console.log('❌ AUCTION_ENDED excluded (latest status):', endedCount);
+
+      // Step 5: Process AUCTION_LIVE announcements
       const liveAuctionPromises = liveAnnouncements.map(async (announcement: any) => {
         try {
           console.log(`📡 Fetching LIVE auction: ${announcement.assetId}`);
@@ -191,7 +216,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         }
       });
 
-      // Step 4: Process AUCTION_SCHEDULED announcements
+      // Step 6: Process AUCTION_SCHEDULED announcements
       const scheduledAuctionPromises = scheduledAnnouncements.map(async (announcement: any) => {
         try {
           console.log(`📡 Fetching SCHEDULED auction: ${announcement.assetId}`);
@@ -234,7 +259,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         }
       });
 
-      // Step 5: Wait for all promises and filter out nulls
+      // Step 7: Wait for all promises and filter out nulls
       const liveAuctions = (await Promise.all(liveAuctionPromises)).filter((a) => a !== null);
       const scheduledAuctions = (await Promise.all(scheduledAuctionPromises)).filter((a) => a !== null);
 
