@@ -17,7 +17,7 @@ import { authService } from '../../lib/api/auth.service';
 
 const PortfolioPage = () => {
   const navigate = useNavigate();
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
