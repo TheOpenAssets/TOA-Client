@@ -29,10 +29,72 @@ import { marketplaceService } from '../lib/api/marketplace.service';
  * 3. Submit bid to contract
  * 4. Notify backend
  */
+/**
+ * Parse error message from contract revert/RPC error
+ * Extracts user-friendly message from various error formats
+ */
+function parseErrorMessage(error: any): string {
+  // Handle wagmi/viem contract revert errors
+  if (error?.cause?.reason) {
+    return error.cause.reason;
+  }
+
+  // Handle direct revert reason
+  if (error?.reason) {
+    return error.reason;
+  }
+
+  // Handle execution reverted errors with extracted reason
+  if (error?.message) {
+    // Extract reason from "execution reverted: <reason>" format
+    const revertMatch = error.message.match(/execution reverted:?\s*(.+?)(\n|$)/i);
+    if (revertMatch) {
+      return revertMatch[1].trim();
+    }
+
+    // Extract reason from "reverted with reason string '<reason>'" format
+    const reasonMatch = error.message.match(/reverted with reason string ['"](.*?)['"]/i);
+    if (reasonMatch) {
+      return reasonMatch[1];
+    }
+
+    // Extract custom error name
+    const customErrorMatch = error.message.match(/reverted with custom error ['"](.*?)['"]/i);
+    if (customErrorMatch) {
+      return `Contract error: ${customErrorMatch[1]}`;
+    }
+
+    // User rejected transaction
+    if (error.message.includes('User rejected') || error.message.includes('user rejected')) {
+      return 'Transaction cancelled by user';
+    }
+
+    // Insufficient funds
+    if (error.message.includes('insufficient funds') || error.message.includes('InsufficientFunds')) {
+      return 'Insufficient funds for transaction';
+    }
+
+    // Network/RPC errors
+    if (error.message.includes('network') || error.message.includes('timeout')) {
+      return 'Network error. Please try again';
+    }
+
+    // Return cleaned message (remove stack traces, etc.)
+    const cleanMessage = error.message.split('\n')[0];
+    if (cleanMessage.length < 100) {
+      return cleanMessage;
+    }
+  }
+
+  // Fallback
+  return 'Transaction failed. Please try again';
+}
+
 export function useSubmitBid() {
   const { address } = useAccount();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pendingBidParams, setPendingBidParams] = useState<BidSubmissionParams | null>(null);
 
   // Contract write hooks
@@ -40,20 +102,31 @@ export function useSubmitBid() {
     writeContract: approveUSDC,
     data: approveHash,
     isPending: isApproving,
+    error: approveError,
   } = useWriteContract();
 
   const {
     writeContract: submitBidTx,
     data: bidHash,
     isPending: isSubmitting,
+    error: bidError,
   } = useWriteContract();
 
   // Wait for transactions
-  const { isLoading: isApprovePending, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
+  const {
+    isLoading: isApprovePending,
+    isSuccess: isApproveSuccess,
+    error: approveReceiptError,
+  } = useWaitForTransactionReceipt({
     hash: approveHash,
   });
 
-  const { isLoading: isBidPending, isSuccess: isBidSuccess, data: bidReceipt } = useWaitForTransactionReceipt({
+  const {
+    isLoading: isBidPending,
+    isSuccess: isBidSuccess,
+    data: bidReceipt,
+    error: bidReceiptError,
+  } = useWaitForTransactionReceipt({
     hash: bidHash,
   });
 
@@ -64,6 +137,54 @@ export function useSubmitBid() {
     functionName: 'allowance',
     args: address ? [address, CONTRACTS.PrimaryMarketplace] : undefined,
   });
+
+  // Handle approval errors
+  useEffect(() => {
+    if (approveError) {
+      const errorMsg = parseErrorMessage(approveError);
+      console.error('❌ USDC Approval Error:', errorMsg);
+      setError(errorMsg);
+      setStatus(`Approval failed: ${errorMsg}`);
+      setIsLoading(false);
+      setPendingBidParams(null);
+    }
+  }, [approveError]);
+
+  // Handle approval receipt errors (transaction failed on-chain)
+  useEffect(() => {
+    if (approveReceiptError) {
+      const errorMsg = parseErrorMessage(approveReceiptError);
+      console.error('❌ USDC Approval Transaction Failed:', errorMsg);
+      setError(errorMsg);
+      setStatus(`Approval failed: ${errorMsg}`);
+      setIsLoading(false);
+      setPendingBidParams(null);
+    }
+  }, [approveReceiptError]);
+
+  // Handle bid submission errors
+  useEffect(() => {
+    if (bidError) {
+      const errorMsg = parseErrorMessage(bidError);
+      console.error('❌ Bid Submission Error:', errorMsg);
+      setError(errorMsg);
+      setStatus(`Bid submission failed: ${errorMsg}`);
+      setIsLoading(false);
+      setPendingBidParams(null);
+    }
+  }, [bidError]);
+
+  // Handle bid receipt errors (transaction failed on-chain)
+  useEffect(() => {
+    if (bidReceiptError) {
+      const errorMsg = parseErrorMessage(bidReceiptError);
+      console.error('❌ Bid Transaction Failed:', errorMsg);
+      setError(errorMsg);
+      setStatus(`Bid failed: ${errorMsg}`);
+      setIsLoading(false);
+      setPendingBidParams(null);
+    }
+  }, [bidReceiptError]);
 
   // CRITICAL: Auto-submit bid after approval succeeds (investor-bidding.sh flow)
   useEffect(() => {
@@ -167,6 +288,9 @@ export function useSubmitBid() {
         throw new Error('Wallet not connected');
       }
 
+      // Clear previous errors
+      setError(null);
+
       // Store params for backend notification after success
       lastBidParamsRef.current = params;
 
@@ -265,15 +389,25 @@ export function useSubmitBid() {
     [address, currentAllowance, approveUSDC, submitBidTx]
   );
 
+  // Reset error and status
+  const reset = useCallback(() => {
+    setError(null);
+    setStatus('');
+    setIsLoading(false);
+    setPendingBidParams(null);
+  }, []);
+
   return {
     submitBid,
     status,
+    error,
     isLoading: isLoading || isApproving || isSubmitting || isApprovePending || isBidPending,
     isApproving: isApproving || isApprovePending,
     isSubmitting: isSubmitting || isBidPending,
     isBidSuccess,
     bidHash,
     approveHash,
+    reset,
   };
 }
 

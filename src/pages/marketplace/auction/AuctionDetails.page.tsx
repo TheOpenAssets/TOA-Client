@@ -16,7 +16,17 @@ const AuctionDetailsPage = () => {
   const [bidAmount, setBidAmount] = useState('');
   const [pricePerToken, setPricePerToken] = useState('');
 
-  const { submitBid, status, isLoading } = useSubmitBid();
+  const { submitBid, status, error: bidError, isLoading, reset } = useSubmitBid();
+
+  // Auto-clear error after 8 seconds
+  useEffect(() => {
+    if (bidError) {
+      const timer = setTimeout(() => {
+        reset();
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [bidError, reset]);
 
   useEffect(() => {
     if (assetId && fetchAssetDetails) {
@@ -275,55 +285,180 @@ const AuctionDetailsPage = () => {
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-8">
               <h2 className="font-antic text-xl font-semibold text-foreground mb-6">Place a Bid</h2>
 
-              <div className="space-y-4">
-                {/* Bid Amount Input */}
-                <div>
-                  <label className="block font-antic text-xs font-medium text-gray-500 mb-2">
-                    Amount of Tokens
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+                <div className="space-y-4">
+                  {/* Bid Amount Input */}
+                  <div>
+                    <label className="block font-antic text-xs font-medium text-gray-500 mb-2">
+                      Amount of Tokens
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
+                      value={bidAmount}
+                      min={asset.tokenParams?.minInvestment ? (Number(asset.tokenParams.minInvestment) / 1e18).toString() : '0'}
+                      max={asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toString() : '0'}
+                      step="0.01"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setBidAmount('');
+                          return;
+                        }
+                        
+                        const numValue = parseFloat(value);
+                        
+                        if (!isNaN(numValue)) {
+                          if (numValue < 0) {
+                            setBidAmount('0');
+                          } else {
+                            setBidAmount(value);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (bidAmount && parseFloat(bidAmount) > 0) {
+                          const numValue = parseFloat(bidAmount);
+                          const available = asset.tokenParams?.totalSupply ? Number(asset.tokenParams.totalSupply) / 1e18 : 0;
+                          const minBid = asset.tokenParams?.minInvestment ? Number(asset.tokenParams.minInvestment) / 1e18 : 0;
+                          const effectiveMin = Math.min(minBid, available);
+                          
+                          if (numValue < effectiveMin) {
+                            setBidAmount(effectiveMin.toFixed(2));
+                          } else if (numValue > available) {
+                            setBidAmount(available.toFixed(2));
+                          } else {
+                            setBidAmount(numValue.toFixed(2));
+                          }
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="font-antic text-xs text-gray-500 mt-1">
+                      Min: {asset.tokenParams?.minInvestment && asset.tokenParams?.totalSupply 
+                        ? Math.min(Number(asset.tokenParams.minInvestment) / 1e18, Number(asset.tokenParams.totalSupply) / 1e18).toFixed(2)
+                        : '0.00'} · Available: {asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toFixed(2) : '0.00'}
+                    </p>
+                  </div>
 
-                {/* Price Per Token Input */}
-                <div>
-                  <label className="block font-antic text-xs font-medium text-gray-500 mb-2">
-                    Price per Token (USDC)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={pricePerToken}
-                    disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
-                    onChange={(e) => setPricePerToken(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="font-antic text-xs text-gray-500 mt-1">
-                    Min : {asset.listing?.reservePrice ? (Number(asset.listing.reservePrice) / 1e6).toFixed(2) : '0.00'}
-                  </p>
-                </div>
+                  {/* Price Per Token Input */}
+                  <div>
+                    <label className="block font-antic text-xs font-medium text-gray-500 mb-2">
+                      Price per Token (USDC)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={pricePerToken}
+                      disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
+                      min={asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toString() : '0'}
+                      max={asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toString() : '0'}
+                      step="0.01"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setPricePerToken('');
+                          return;
+                        }
+                        
+                        const numValue = parseFloat(value);
+                        
+                        if (!isNaN(numValue)) {
+                          if (numValue < 0) {
+                            setPricePerToken('0');
+                          } else {
+                            setPricePerToken(value);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (pricePerToken && parseFloat(pricePerToken) > 0) {
+                          const numValue = parseFloat(pricePerToken);
+                          const minPrice = asset.listing?.priceRange?.min ? Number(asset.listing.priceRange.min) / 1e6 : 0;
+                          const maxPrice = asset.listing?.priceRange?.max ? Number(asset.listing.priceRange.max) / 1e6 : Infinity;
+                          
+                          if (numValue < minPrice) {
+                            setPricePerToken(minPrice.toFixed(2));
+                          } else if (numValue > maxPrice) {
+                            setPricePerToken(maxPrice.toFixed(2));
+                          } else {
+                            setPricePerToken(numValue.toFixed(2));
+                          }
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="font-antic text-xs text-gray-500 mt-1">
+                      Range: ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
+                    </p>
+                  </div>
 
-                {/* Status Message */}
-                {status && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="font-antic text-xs text-blue-800">{status}</p>
+                {/* Error Message */}
+                {bidError && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg relative">
+                    <button
+                      onClick={reset}
+                      className="absolute top-2 right-2 text-red-400 hover:text-red-600 transition-colors"
+                      title="Dismiss"
+                    >
+                      ✕
+                    </button>
+                    <div className="flex items-start gap-2 pr-6">
+                      <span className="text-red-500 text-lg mt-0.5">⚠️</span>
+                      <div>
+                        <p className="font-antic text-sm font-semibold text-red-800 mb-1">Transaction Failed</p>
+                        <p className="font-antic text-xs text-red-700">{bidError}</p>
+                        
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Place Bid Button */}
-                <button
-                  onClick={handlePlaceBid}
-                  disabled={isLoading || !address || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
-                  className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : (asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()) ? 'Auction Ended' : 'Place Bid'}
-                </button>
+                {/* Status/Success Message */}
+                {status && !bidError && (
+                  <div className={`p-3 border rounded-lg ${
+                    status.includes('success') || status.includes('🎉')
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-blue-50 border-blue-200'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {status.includes('success') || status.includes('🎉') ? (
+                        <span className="text-green-600 text-sm">✓</span>
+                      ) : (
+                        <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                      )}
+                      <p className={`font-antic text-xs ${
+                        status.includes('success') || status.includes('🎉')
+                          ? 'text-green-800 font-semibold'
+                          : 'text-blue-800'
+                      }`}>
+                        {status}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Place Bid / Retry Button */}
+                {bidError ? (
+                  <button
+                    onClick={() => {
+                      reset();
+                      handlePlaceBid();
+                    }}
+                    className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>🔄</span>
+                    <span>Try Again</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePlaceBid}
+                    disabled={isLoading || !address || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
+                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Processing...' : !address ? 'Connect Wallet' : (asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()) ? 'Auction Ended' : 'Place Bid'}
+                  </button>
+                )}
 
                 {/* Bid Summary */}
                 {bidAmount && pricePerToken && (

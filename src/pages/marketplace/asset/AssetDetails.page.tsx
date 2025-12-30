@@ -314,66 +314,130 @@ const AssetDetailsPage = () => {
                 <h2 className="text-2xl font-semibold text-[#111111] mb-6">Buy Tokens</h2>
                 <div className="space-y-6">
                   <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                    <label htmlFor="tokens-to-buy" className="text-xs text-[#6B7280]">
-                      Tokens to buy
-                    </label>
-                    <Input
-                      id="tokens-to-buy"
-                      type="number"
-                      placeholder="0"
-                      value={tokensToBuy}
-                      onChange={(e) => setTokensToBuy(e.target.value)}
-                      className="bg-transparent border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
+                  <label htmlFor="tokens-to-buy" className="text-xs text-[#6B7280]">
+                    Tokens to buy
+                  </label>
+                  <Input
+                    id="tokens-to-buy"
+                    type="number"
+                    placeholder="0"
+                    value={tokensToBuy}
+                    onChange={(e) => {
+                    const inputValue = e.target.value;
+                    const numValue = parseFloat(inputValue);
+                    
+                    // Calculate available tokens
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    const availableTokens = totalSupply - soldTokens;
+                    const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
+                    
+                    // Determine max allowed (available or min, whichever is lower if available < min)
+                    const maxAllowed = availableTokens < minInvestment ? availableTokens : availableTokens;
+                    
+                    // Allow empty input
+                    if (inputValue === '' || inputValue === '0') {
+                    setTokensToBuy(inputValue);
+                    return;
+                    }
+                    
+                    // Enforce minimum (unless available is less than minimum)
+                    if (numValue < minInvestment && availableTokens >= minInvestment) {
+                    setTokensToBuy(minInvestment.toString());
+                    return;
+                    }
+                    
+                    // Enforce maximum (available tokens)
+                    if (numValue > maxAllowed) {
+                    setTokensToBuy(maxAllowed.toString());
+                    return;
+                    }
+                    
+                    // Set valid value
+                    setTokensToBuy(inputValue);
+                    }}
+                    min={(() => {
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    const availableTokens = totalSupply - soldTokens;
+                    const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
+                    return availableTokens < minInvestment ? availableTokens : minInvestment;
+                    })()}
+                    max={(() => {
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    return totalSupply - soldTokens;
+                    })()}
+                    step="0.01"
+                    disabled={(() => {
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    return soldTokens >= totalSupply;
+                    })()}
+                    className="bg-transparent border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <p className="text-xs text-[#6B7280] mt-2">
+                    Available: {(() => {
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    return (totalSupply - soldTokens).toLocaleString();
+                    })()} tokens
+                  </p>
                   </div>
                   <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                    <label htmlFor="total-price" className="text-xs text-[#6B7280]">
-                      Estimated Total Price
-                    </label>
-                    <p id="total-price" className="text-2xl font-medium text-[#111111]">
-                      ${estimatedTotalPrice} USDC
-                    </p>
-                    <p className="text-xs text-[#6B7280] mt-1">
-                      (Final price fetched from contract)
-                    </p>
+                  <label htmlFor="total-price" className="text-xs text-[#6B7280]">
+                    Estimated Total Price
+                  </label>
+                  <p id="total-price" className="text-2xl font-medium text-[#111111]">
+                    ${estimatedTotalPrice} USDC
+                  </p>
+                  <p className="text-xs text-[#6B7280] mt-1">
+                    (Final price fetched from contract)
+                  </p>
                   </div>
                   <div className="text-xs text-[#6B7280] space-y-1">
-                    <div className="flex justify-between">
-                      <span>Your USDC Balance</span>
-                      <span className="font-medium text-[#111111]">
-                        {parseFloat(usdcBalance).toFixed(2)} USDC
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Allowance</span>
-                      <span className="font-medium text-green-600">
-                        {parseFloat(usdcAllowance) > 1000000 ? 'Unlimited' : `${parseFloat(usdcAllowance).toFixed(2)} USDC`}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Min Investment</span>
-                      <span className="font-medium text-[#111111]">
-                        {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
-                      </span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span>Your USDC Balance</span>
+                    <span className="font-medium text-[#111111]">
+                    {parseFloat(usdcBalance).toFixed(2)} USDC
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span>Min Investment</span>
+                    <span className="font-medium text-[#111111]">
+                    {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
+                    </span>
+                  </div>
                   </div>
                   {purchaseStatus && (
-                    <div className={`text-sm p-3 rounded-lg ${
-                      purchaseStatus.includes('successful')
-                        ? 'bg-green-100 text-green-800'
-                        : purchaseStatus.includes('Error') || purchaseStatus.includes('failed')
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {purchaseStatus}
-                    </div>
+                  <div className={`text-sm p-3 rounded-lg ${
+                    purchaseStatus.includes('successful')
+                    ? 'bg-green-100 text-green-800'
+                    : purchaseStatus.includes('Error') || purchaseStatus.includes('failed')
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {purchaseStatus}
+                  </div>
                   )}
                   <Button
-                    onClick={handleBuyTokens}
-                    disabled={isPurchasing || !address}
-                    className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleBuyTokens}
+                  disabled={isPurchasing || !address || (() => {
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    return soldTokens >= totalSupply;
+                  })()}
+                  className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isPurchasing ? 'Processing...' : !address ? 'Connect Wallet' : 'Buy Tokens'}
+                  {(() => {
+                    const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                    const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                    if (soldTokens >= totalSupply) return 'Sold Out';
+                    if (isPurchasing) return 'Processing...';
+                    if (!address) return 'Connect Wallet';
+                    return 'Buy Tokens';
+                  })()}
                   </Button>
                 </div>
               </div>
