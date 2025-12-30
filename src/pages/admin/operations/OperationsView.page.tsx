@@ -276,10 +276,10 @@ const OperationsViewPage = () => {
     setProcessing(true);
 
     try {
-      console.log('🔨 Scheduling auction for:', selectedAsset.assetId);
+      // Step 1: Schedule auction (Backend API call)
+      console.log('🔨 Step 1: Scheduling auction for:', selectedAsset.assetId);
       console.log('⏱ Start delay:', startDelayMinutes, 'minutes');
 
-      // Call scheduling API (admin-approve.sh Step 6)
       const response = await adminService.scheduleAuction(
         selectedAsset.assetId,
         parseInt(startDelayMinutes)
@@ -289,15 +289,64 @@ const OperationsViewPage = () => {
       console.log('📅 Scheduled start time:', response.scheduledStartTime);
       console.log('📄 Message:', response.message);
 
+      // Step 2: Approve marketplace to spend RWA tokens (ADMIN executes ON-CHAIN transaction)
+      // Admin wallet directly calls: RWAToken.approve(PrimaryMarketplace, MaxUint256)
+      console.log('🔨 Step 2: Admin executing ON-CHAIN marketplace approval...');
+
+      // Get token address from selected asset
+      const tokenAddress = selectedAsset.token?.address;
+
+      if (!tokenAddress) {
+        console.warn('⚠️ No token address found, skipping approval');
+        info(
+          'Auction Scheduled!',
+          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nWarning: No token address found. Please approve marketplace manually.`,
+          10000
+        );
+        await fetchAdminDashboardData();
+        setShowAuctionSchedulingModal(false);
+        setSelectedAsset(null);
+        return;
+      }
+
+      try {
+        const approvalResult = await contractService.approveMarketplaceForRWAToken(tokenAddress);
+
+        if (!approvalResult.success) {
+          throw new Error(approvalResult.error || 'Approval failed');
+        }
+
+        if (approvalResult.alreadyApproved) {
+          console.log('ℹ️ Marketplace was already approved on-chain');
+          info(
+            'Auction Scheduled!',
+            `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nNote: Marketplace approval was already set on-chain.`,
+            8000
+          );
+        } else {
+          console.log('✅ ON-CHAIN marketplace approval successful');
+          console.log('Transaction Hash:', approvalResult.transactionHash);
+          console.log('Block Number:', approvalResult.blockNumber);
+          success(
+            'Auction Scheduled & Approved!',
+            `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nON-CHAIN approval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${approvalResult.transactionHash}`,
+            12000
+          );
+        }
+      } catch (approvalError: any) {
+        console.error('⚠️ ON-CHAIN marketplace approval failed (non-critical):', approvalError);
+        // Show warning but don't fail the entire operation
+        info(
+          'Auction Scheduled (Approval Warning)',
+          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nON-CHAIN approval failed: ${approvalError.message}\n\nPlease approve marketplace manually using your admin wallet.`,
+          12000
+        );
+      }
+
+      // Refresh dashboard and close modal
       await fetchAdminDashboardData();
       setShowAuctionSchedulingModal(false);
       setSelectedAsset(null);
-
-      success(
-        'Auction Scheduled!',
-        `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}`,
-        8000
-      );
     } catch (error: any) {
       console.error('❌ Failed to schedule auction:', error);
       showError('Scheduling Failed', error.message || 'An error occurred while scheduling the auction.');
