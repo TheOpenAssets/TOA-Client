@@ -236,8 +236,8 @@ const ListingsPage = () => {
                    {clearingInfo.priceBreakdown.map((point, i) => (
                     <div key={i} className="text-xs flex justify-between">
                       <span className="font-mono">${(Number(point.price) / 1e6).toFixed(2)}</span>
-                      <span>{(Number(point.totalTokens) / 1e18).toLocaleString()} tokens</span>
-                      <span>{point.bidCount} bids</span>
+                      <span>{(Number(point.cumulativeTokens) / 1e18).toLocaleString()} tokens</span>
+                      <span>{point.bidsCount} bids</span>
                     </div>
                   ))}
                 </div>

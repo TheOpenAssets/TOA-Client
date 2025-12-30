@@ -308,8 +308,8 @@ export interface AuctionBid {
 
 export interface AuctionPricePoint {
   price: string;
-  totalTokens: string;
-  bidCount: number;
+  cumulativeTokens: string;
+  bidsCount: number;
 }
 
 export interface AuctionClearingPriceInfo {
