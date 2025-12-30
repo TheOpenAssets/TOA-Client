@@ -128,7 +128,7 @@ export function useSubmitBid() {
             assetId: lastBidParamsRef.current.assetId,
             tokenAmount: tokenAmountWei.toString(),
             price: priceWei.toString(),
-            blockNumber: bidReceipt.blockNumber.toString(),
+            blockNumber: Number(bidReceipt.blockNumber),
           });
 
           console.log('✅ Backend notified successfully');
@@ -360,7 +360,7 @@ export function useSettleBid() {
             assetId: lastSettleParamsRef.current.assetId,
             bidIndex: lastSettleParamsRef.current.bidIndex,
             txHash,
-            blockNumber: receipt.blockNumber,
+            blockNumber: Number(receipt.blockNumber),
             });
 
           notificationSentRef.current = txHash;

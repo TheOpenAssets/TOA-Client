@@ -350,7 +350,7 @@ class MarketplaceService extends BaseService {
     assetId: string;
     tokenAmount: string;
     price: string;
-    blockNumber: string;
+    blockNumber: number;
   }): Promise<any> {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/bids/notify`, {
