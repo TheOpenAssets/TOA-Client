@@ -30,7 +30,7 @@ Tokenize. Invest. Borrow. Earn. - All in one unified execution layer.          <
 
             <Button
               size="lg"
-              className="cta-button"
+              className="cta-button hover:scale-[1.02] transition-transform"
               
               onClick={handleGetStarted}
               disabled={isAuthenticating}
@@ -41,7 +41,7 @@ Tokenize. Invest. Borrow. Earn. - All in one unified execution layer.          <
                     size="lg"
                     onClick={handleIssuerGetStarted}
                     disabled={isAuthenticating}
-                    className="cta-button"
+                    className="cta-button hover:scale-[1.02] transition-transform"
              
                   >
                     Become an Issuer

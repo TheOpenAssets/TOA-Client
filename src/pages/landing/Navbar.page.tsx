@@ -52,7 +52,7 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
         <Button
             onClick={handleGetUsdcClick}
-            variant="outline"
+            className="cta-button hover:scale-[1.02] transition-transform"
           >
             Get USDC
           </Button>

@@ -632,10 +632,29 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             <input
               type="number"
               value={formData.maxRaisePercentage}
-              onChange={(e) => updateField('maxRaisePercentage', e.target.value)}
-              placeholder="95"
+              onChange={(e) => {
+              const value = e.target.value;
+              const numValue = parseFloat(value);
+              
+              // Strict gatekeeping: never allow > 95
+              if (value === '' || (numValue >= 0 && numValue <= 98.5)) {
+                updateField('maxRaisePercentage', value);
+              } else if (numValue > 98.5) {
+                updateField('maxRaisePercentage', '98.5');
+              }
+              }}
+              onKeyDown={(e) => {
+              // Prevent arrow up if already at 95
+              if (e.key === 'ArrowUp') {
+                const currentValue = parseFloat(formData.maxRaisePercentage) || 0;
+                if (currentValue >= 98.5) {
+                e.preventDefault();
+                }
+              }
+              }}
+              placeholder="98.5"
               min="0"
-              max="95"
+              max="98.5"
               className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="font-antic text-xs text-gray-500 mt-1">
