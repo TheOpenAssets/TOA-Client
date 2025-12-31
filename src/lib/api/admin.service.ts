@@ -321,6 +321,27 @@ class AdminService extends BaseService {
     }
   }
 
+  async endAuctionOnChain(assetId: string, clearingPrice: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/assets/${assetId}/end-auction-onchain`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ clearingPrice }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to end auction');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error ending auction:', error);
+      throw error;
+    }
+  }
+
   async getAuctionClearingPriceInfo(assetId: string): Promise<AuctionClearingPriceInfo> {
     try {
       const response = await fetch(`${this.baseURL}/admin/compliance/auction-clearing-price/${assetId}`, {
