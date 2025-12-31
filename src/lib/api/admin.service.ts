@@ -342,6 +342,26 @@ class AdminService extends BaseService {
     }
   }
 
+  async approveMarketplaceForAsset(assetId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/admin/assets/${assetId}/approve-marketplace`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Failed to approve marketplace for asset');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error approving marketplace for asset:', error);
+      throw error;
+    }
+  }
+
   async getAuctionClearingPriceInfo(assetId: string): Promise<AuctionClearingPriceInfo> {
     try {
       const response = await fetch(`${this.baseURL}/admin/compliance/auction-clearing-price/${assetId}`, {
