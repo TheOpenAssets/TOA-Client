@@ -63,6 +63,8 @@ const PortfolioPage = () => {
     return numValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+
+
     const handlelogout = () => {
       authService.logout();
       disconnect();
@@ -90,6 +92,11 @@ const PortfolioPage = () => {
       'Finance': '💰',
     };
     return icons[industry] || '📄';
+  };
+
+
+  const handleauctiondetailsnavigate = (assetId: string | undefined) => {
+    navigate(`/marketplace/auction/${assetId}`);
   };
 
   const getBidStatusStyle = (status: BidStatus) => {
@@ -612,6 +619,7 @@ const PortfolioPage = () => {
                             <div
                               key={bid.bidId}
                               className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors"
+                              onClick={() => handleauctiondetailsnavigate(bid.assetId)}
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
