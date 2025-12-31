@@ -1,7 +1,7 @@
 // src/pages/marketplace/asset/AssetDetails.page.tsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui
 import { LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
+import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
 
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -26,6 +27,17 @@ const AssetDetailsPage = () => {
   
   // Leverage State
   const [leverageAmount, setLeverageAmount] = useState('');
+  const [isApproving, setIsApproving] = useState(false);
+
+  // Wagmi Hooks for Approval
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: LEVERAGE_CONTRACTS.MockMETH,
+    abi: METH_ABI,
+    functionName: 'allowance',
+    args: address ? [address, LEVERAGE_CONTRACTS.LeverageVault] : undefined,
+  });
+
+  const { writeContractAsync: approveMeth } = useWriteContract();
 
   useEffect(() => {
     if (assetId) {
@@ -45,6 +57,7 @@ const AssetDetailsPage = () => {
     try {
       const balance = await contractService.checkUSDCBalance(address);
       setUsdcBalance(balance);
+      refetchAllowance();
     } catch (error) {
       console.error('Error loading wallet data:', error);
     }
@@ -66,17 +79,39 @@ const AssetDetailsPage = () => {
      if (!address || !asset || !leverageAmount || !activeQuote) return;
 
     try {
-      const mETHCollateral = parseUnits(leverageAmount, 18).toString();
+      const mETHCollateral = parseUnits(leverageAmount, 18);
       const tokenAmount = parseUnits(leverageEstimatedTokens.toString(), 18).toString(); 
       // Ensure price is passed as USDC WEI (6 decimals)
       const pricePerToken = asset.tokenParams.pricePerToken; 
+
+      // Check Allowance
+      if (!allowance || allowance < mETHCollateral) {
+        setIsApproving(true);
+        try {
+          const txHash = await approveMeth({
+            address: LEVERAGE_CONTRACTS.MockMETH,
+            abi: METH_ABI,
+            functionName: 'approve',
+            args: [LEVERAGE_CONTRACTS.LeverageVault, mETHCollateral],
+          });
+          console.log('Approval Tx:', txHash);
+          alert('Approval submitted! Wait for confirmation and click again.');
+          refetchAllowance();
+          setIsApproving(false);
+          return; 
+        } catch (err) {
+          console.error('Approval failed:', err);
+          setIsApproving(false);
+          return;
+        }
+      }
 
       await createPosition({
         assetId: asset.assetId,
         tokenAddress: asset.token?.address || '',
         tokenAmount: tokenAmount,
         pricePerToken: pricePerToken,
-        mETHCollateral: mETHCollateral
+        mETHCollateral: mETHCollateral.toString()
       });
       
       setLeverageAmount('');
@@ -85,6 +120,10 @@ const AssetDetailsPage = () => {
       alert(`Failed to create position: ${error.message}`);
     }
   };
+
+  const needsApproval = allowance && leverageAmount 
+    ? allowance < parseUnits(leverageAmount, 18) 
+    : true;
 
   if (isLoadingAsset) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -503,10 +542,10 @@ const AssetDetailsPage = () => {
 
                         <Button 
                            onClick={handleOpenLeveragePosition}
-                           disabled={isLeverageLoading || !leverageAmount || !address}
+                           disabled={isLeverageLoading || !leverageAmount || !address || isApproving}
                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                           {isLeverageLoading ? 'Processing...' : 'Open Leveraged Position'}
+                           {isApproving ? 'Approving mETH...' : isLeverageLoading ? 'Processing...' : needsApproval ? 'Approve mETH' : 'Open Leveraged Position'}
                         </Button>
                      </div>
                   </TabsContent>

@@ -13,6 +13,7 @@ interface FaucetResult {
   amount: string;
   transactionHash: string;
   explorerUrl: string;
+  symbol?: string;
 }
 
 const FaucetPage = () => {
@@ -34,7 +35,7 @@ const FaucetPage = () => {
     try {
       const response = await faucetService.getUsdcFromFaucet(address);
       success('USDC Received!', `${response.amount} USDC sent to your wallet.`);
-      setFaucetResult(response);
+      setFaucetResult({ ...response, symbol: 'USDC' });
     } catch (err: unknown) {
       const error = err as Error;
       toastError('Faucet Error', error.message);
@@ -43,11 +44,25 @@ const FaucetPage = () => {
     }
   };
 
-  const handleGetMeth = () => {
-    // As per instructions, this button is not functional yet.
+  const handleGetMeth = async () => {
+    if (!address) {
+      toastError('Wallet not connected', 'Please connect your wallet to use the faucet.');
+      return;
+    }
+
     setIsLoadingMeth(true);
-    info('METH Faucet', 'This faucet is not yet available.');
-    setTimeout(() => setIsLoadingMeth(false), 1000);
+    setFaucetResult(null); // Clear previous result
+    info('Requesting mETH...', 'The faucet is processing your request.');
+    try {
+      const response = await faucetService.getMethFromFaucet(address);
+      success('mETH Received!', `${response.amount} mETH sent to your wallet.`);
+      setFaucetResult({ ...response, symbol: 'mETH' });
+    } catch (err: unknown) {
+      const error = err as Error;
+      toastError('Faucet Error', error.message);
+    } finally {
+      setIsLoadingMeth(false);
+    }
   };
 
   return (
@@ -82,7 +97,7 @@ const FaucetPage = () => {
                   'Get 1,000 USDC'
                 )}
               </Button>
-              {faucetResult && (
+              {faucetResult && faucetResult.symbol === 'USDC' && (
                 <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
@@ -103,18 +118,30 @@ const FaucetPage = () => {
             <CardHeader>
               <CardTitle>METH Faucet</CardTitle>
               <CardDescription>
-                Receive 0.1 testnet METH for gas fees. (Coming Soon)
+                Receive 10 testnet mETH for gas fees.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleGetMeth} disabled={true} className="cta-button w-full">
+              <Button onClick={handleGetMeth} disabled={isLoadingMeth || !address} className="cta-button w-full">
                 {isLoadingMeth ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait...</>
                 ) : (
-                  'Get 0.1 METH'
+                  'Get 10 mETH'
                 )}
               </Button>
-               <p className="text-xs text-center text-muted-foreground mt-2">This faucet is currently disabled.</p>
+              {faucetResult && faucetResult.symbol === 'mETH' && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <p className="font-semibold text-green-800">{faucetResult.message}</p>
+                  </div>
+                  <p><span className="font-medium">Amount:</span> {faucetResult.amount} mETH</p>
+                  <p className="truncate"><span className="font-medium">TX Hash:</span> {faucetResult.transactionHash}</p>
+                  <a href={faucetResult.explorerUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-green-700 hover:text-green-800 font-medium">
+                    View on Explorer <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
