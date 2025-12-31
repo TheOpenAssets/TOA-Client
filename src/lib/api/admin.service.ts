@@ -75,6 +75,21 @@ class AdminService extends BaseService {
     return response.json();
   }
 
+  async approveMarketplace(assetId: string): Promise<any> {
+    const response = await fetch(`${this.baseURL}/admin/assets/${assetId}/approve-marketplace`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.message || data.error || 'Failed to approve marketplace');
+    }
+
+    return data;
+  }
+
   async registerAsset(assetId: string): Promise<any> {
     const response = await fetch(`${this.baseURL}/admin/assets/${assetId}/register`, {
       method: 'POST',

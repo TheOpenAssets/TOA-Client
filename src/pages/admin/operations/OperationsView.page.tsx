@@ -226,7 +226,7 @@ const OperationsViewPage = () => {
       }
 
       try {
-        const approvalResult = await contractService.approveMarketplaceForRWAToken(tokenAddress);
+        const approvalResult = await contractService.approveMarketplaceForRWAToken(selectedAsset.assetId);
 
         if (!approvalResult.success) {
           throw new Error(approvalResult.error || 'Approval failed');
@@ -310,7 +310,7 @@ const OperationsViewPage = () => {
       }
 
       try {
-        const approvalResult = await contractService.approveMarketplaceForRWAToken(tokenAddress);
+        const approvalResult = await contractService.approveMarketplaceForRWAToken(selectedAsset.assetId);
 
         if (!approvalResult.success) {
           throw new Error(approvalResult.error || 'Approval failed');
