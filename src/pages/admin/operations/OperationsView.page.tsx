@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
-import { contractService } from '../../../lib/api/contract.service';
 import { Button } from '../../../components/ui/button';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
