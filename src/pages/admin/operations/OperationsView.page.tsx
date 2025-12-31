@@ -583,7 +583,7 @@ const OperationsViewPage = () => {
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Token Price</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          ${parseFloat(asset.tokenParams.pricePerToken).toFixed(6)}
+                          ${parseFloat(asset.tokenParams.pricePerToken)/1e6}
                         </p>
                       </div>
                       <div>
