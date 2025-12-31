@@ -10,6 +10,7 @@ import { Input } from '../../../components/ui/input';
 import { Clock, Users, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { useSubmitBid, useCheckKYC } from '../../../hooks/useAuctionContracts';
 import { contractService } from '../../../lib/api/contract.service';
+import { marketplaceService } from '../../../lib/api/marketplace.service';
 
 const AuctionDetailPage = () => {
   const { auctionId } = useParams<{ auctionId: string }>();
@@ -26,6 +27,7 @@ const AuctionDetailPage = () => {
   const [bidParams, setBidParams] = useState<{assetId: string; tokenAmount: string; pricePerToken: string} | null>(null);
   const [isApprovingForBid, setIsApprovingForBid] = useState(false);
   const [usdcBalance, setUsdcBalance] = useState('0');
+  const [hasAlreadyBidded, setHasAlreadyBidded] = useState(false);
 
   // Fetch auction details
   useEffect(() => {
@@ -33,6 +35,22 @@ const AuctionDetailPage = () => {
       fetchAuctionByAssetId(auctionId);
     }
   }, [auctionId, fetchAuctionByAssetId]);
+
+  // Check for existing bids
+  useEffect(() => {
+    if (address && auctionId) {
+      const checkForExistingBids = async () => {
+        try {
+          const myBids = await marketplaceService.getUserBids();
+          const hasBid = myBids.some(bid => bid.assetId === auctionId && bid.status === 'PENDING');
+          setHasAlreadyBidded(hasBid);
+        } catch (error) {
+          console.error('Failed to check for existing bids:', error);
+        }
+      };
+      checkForExistingBids();
+    }
+  }, [address, auctionId]);
 
     // Fetch USDC balance
     useEffect(() => {
@@ -538,7 +556,7 @@ const AuctionDetailPage = () => {
                     {/* Submit Button */}
                     <Button
                       onClick={handleSubmitBid}
-                      disabled={isLoading || !address || !isKYCVerified}
+                      disabled={isLoading || !address || !isKYCVerified || hasAlreadyBidded}
                       className="w-full bg-black text-white rounded-xl h-14 text-base font-medium font-antic disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isApproving
@@ -549,7 +567,9 @@ const AuctionDetailPage = () => {
                         ? 'Connect Wallet'
                         : !isKYCVerified
                         ? 'KYC Required'
-                        : 'Plac Bid'}
+                        : hasAlreadyBidded
+                        ? 'Already Bidded'
+                        : 'Place Bid'}
                     </Button>
 
                     {/* Info Note */}

@@ -8,6 +8,7 @@ import type {
   Bid,
   UserBidsResponse,
   SubmitBidPayload,
+  TrendingAsset,
 } from '@/types/marketplace.types';
 import BaseService from './base.service';
 
@@ -528,7 +529,7 @@ class MarketplaceService extends BaseService {
    *
    * Used by: Marketplace page for "Trending Assets" section (sorted by percentageSold)
    */
-  async getTopGrossingAssets(limit: number = 3): Promise<any[]> {
+  async getTopGrossingAssets(limit: number = 3): Promise<TrendingAsset[]> {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/top-grossing?limit=${limit}`, {
         method: 'GET',

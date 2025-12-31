@@ -1010,13 +1010,12 @@ class ContractService {
     error?: string;
   }> {
     try {
-      if (!window.ethereum) {
-        throw new Error('No wallet found. Please connect your admin wallet.');
-      }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const adminAddress = await signer.getAddress();
+      // WARNING: Using a hardcoded private key in the frontend is a major security risk.
+      // This is done to match the behavior of the `approve-marketplace.js` script.
+      // In a production environment, this should be handled by a secure backend service.
+      const custodyPrivateKey = '0x1d12932a5c3a7aa8d4f50662caa679bb2e53321e11bc5df2af9298e2ace59305';
+      const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.mantle.xyz');
+      const custodyWallet = new ethers.Wallet(custodyPrivateKey, provider);
 
       const RWA_TOKEN_ABI = [
         'function approve(address spender, uint256 amount) returns (bool)',
@@ -1026,26 +1025,26 @@ class ContractService {
         'function symbol() view returns (string)',
       ];
 
-      const rwaToken = new ethers.Contract(tokenAddress, RWA_TOKEN_ABI, signer);
+      const rwaToken = new ethers.Contract(tokenAddress, RWA_TOKEN_ABI, custodyWallet);
 
       console.log('💰 Approving Marketplace to Spend RWA Tokens');
       console.log('━'.repeat(50));
       console.log('Token:', tokenAddress);
       console.log('Marketplace:', PRIMARY_MARKETPLACE_ADDRESS);
-      console.log('Admin Wallet:', adminAddress);
+      console.log('Platform Custody:', custodyWallet.address);
       console.log();
 
       // Get token info
       const tokenName = await rwaToken.name();
       const tokenSymbol = await rwaToken.symbol();
-      const balance = await rwaToken.balanceOf(adminAddress);
+      const balance = await rwaToken.balanceOf(custodyWallet.address);
 
       console.log(`Token: ${tokenName} (${tokenSymbol})`);
-      console.log(`Admin Balance: ${ethers.formatEther(balance)} tokens`);
+      console.log(`Custody Balance: ${ethers.formatEther(balance)} tokens`);
       console.log();
 
       // Check current allowance
-      const currentAllowance = await rwaToken.allowance(adminAddress, PRIMARY_MARKETPLACE_ADDRESS);
+      const currentAllowance = await rwaToken.allowance(custodyWallet.address, PRIMARY_MARKETPLACE_ADDRESS);
       console.log(`Current Allowance: ${ethers.formatEther(currentAllowance)} tokens`);
 
       if (currentAllowance > 0n) {

@@ -97,12 +97,9 @@ const MarketplacePage = () => {
 
           return {
             id: listing.assetId,
-            // @ts-ignore
-            assetId: listing.name, // Use name as display ID (e.g., "INV-2025-637514 - Tech Solutions Inc")
-            // @ts-ignore
+            assetId: listing.name || listing.assetId, // Use name as display ID (e.g., "INV-2025-637514 - Tech Solutions Inc")
             name: listing.industry || 'Invoice', // Use industry as category name
-            // @ts-ignore
-            description: `${listing.industry} · Invoice · ${listing.riskTier} Risk`,
+            description: `${listing.industry || 'Invoice'} · Invoice · ${listing.riskTier || 'Standard'} Risk`,
             category: 'invoice' as const,
             icon: '📄',
             tokenPrice: pricePerToken,
@@ -113,8 +110,8 @@ const MarketplacePage = () => {
             fundingProgress: fundingProgress,
             status: listing.status,
             verified: listing.status === 'TOKENIZED',
-            // @ts-ignore
-            listedDate: listing.listedAt,
+            listedDate: listing.listedAt || new Date().toISOString(),
+            listingType: listing.listingType,
           };
         });
       })()
@@ -122,6 +119,21 @@ const MarketplacePage = () => {
         console.log('ℹ️ Marketplace: No live data returned; leaving empty.');
         return [] as MarketplaceAsset[];
       })(); // No fallback to mock data; keep empty state
+
+
+const handlenavigate = (asset: any) => {
+  if(asset.listingType=="STATIC")
+  navigate(`/marketplace/asset/${asset.assetId}`);
+else
+  navigate(`/marketplace/auction/${asset.assetId}`);
+}
+const handleTableNavigate = (asset: MarketplaceAsset) => {
+  if (asset.listingType === 'STATIC') {
+    navigate(`/marketplace/asset/${asset.id}`);
+  } else {
+    navigate(`/marketplace/auction/${asset.id}`);
+  }
+};
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -601,7 +613,8 @@ const MarketplacePage = () => {
                   <div key={asset.assetId}>
                     <div
                       className="py-6 hover:bg-gray-50 hover:p-6 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/marketplace/asset/${asset.assetId}`)}
+
+                      onClick={() => handlenavigate(asset)}
                     >
                       <div className="flex items-center justify-between">
                         {/* Left: Icon + Asset Info */}
@@ -813,6 +826,7 @@ const MarketplacePage = () => {
                     className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
+                    onClick={() => handleTableNavigate(asset)}
                   >
                     {/* Row Number */}
                     <td className="px-6 py-4 font-antic text-sm text-gray-500">{index + 1}</td>
@@ -859,7 +873,7 @@ const MarketplacePage = () => {
                         {formatCurrency(asset.totalRaised)} / {formatCurrency(asset.targetAmount)}
                       </div>
                       <div className="font-antic text-xs text-gray-500">
-                        ({asset.fundingProgress}% funded)
+                        ({asset.fundingProgress.toFixed(2)}% funded)
                       </div>
                     </td>
 
@@ -880,19 +894,19 @@ const MarketplacePage = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                       {asset.fundingProgress == 100 ?<button
-                        onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
+                        onClick={() => handleTableNavigate(asset)}
                         className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
                       >
                         View Details
                       </button> :<button
-                        onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
+                        onClick={() => handleTableNavigate(asset)}
                         className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
                       >
                         Buy
                       </button>}
                       <span className="text-gray-400">|</span>
                       <button
-                        onClick={() => navigate(`/marketplace/asset/${asset.id}`)}
+                        onClick={() => handleTableNavigate(asset)}
                         className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 transition-colors"
                       >
                         Trade

@@ -6,6 +6,7 @@ import type {
   AssetDetails,
   Auction,
   Bid,
+  TrendingAsset,
 } from '../types/marketplace.types';
 import { marketplaceService } from '../lib/api/marketplace.service';
 
@@ -37,7 +38,7 @@ interface MarketplaceState {
   isLoadingInfo: boolean;
 
   // Top Grossing/Trending Assets
-  trendingAssets: any[];
+  trendingAssets: TrendingAsset[];
   isLoadingTrending: boolean;
 
   // Existing actions

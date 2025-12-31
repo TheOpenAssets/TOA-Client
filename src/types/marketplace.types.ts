@@ -78,6 +78,12 @@ export interface MarketplaceListing {
   status: AssetStatus;
   metadata: AssetMetadata;
   tokenParams: TokenParams;
+  listingType?: 'AUCTION' | 'STATIC';
+  // Additional fields for UI compatibility
+  name?: string;
+  industry?: string;
+  riskTier?: string;
+  listedAt?: string;
 }
 
 export interface AssetDetails {
@@ -142,6 +148,31 @@ export interface MarketplaceAsset {
   status: string;
   verified: boolean;
   listedDate: string;
+  listingType?: 'AUCTION' | 'STATIC';
+}
+
+export interface TrendingAsset {
+  assetId: string;
+  tokenAddress: string;
+  name: string;
+  industry: string;
+  faceValue: string;
+  currency: string;
+  riskTier: string;
+  dueDate: string;
+  totalSupply: string;
+  sold: string;
+  percentageSold: number;
+  minInvestment: string;
+  listingType: 'AUCTION' | 'STATIC';
+  listedAt: string;
+  status: string;
+  activityMetrics: {
+    purchaseCount: number;
+    bidCount: number;
+    totalActivity: number;
+  };
+  pricePerToken?: string; // only for STATIC
 }
 
 export interface PlatformMetrics {
