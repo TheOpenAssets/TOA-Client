@@ -18,6 +18,7 @@ import { Button } from '../../../components/ui/button';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
+import { authService } from '../../../lib/api/auth.service';
 
 const ComplianceViewPage = () => {
   const { assetsForCompliance, isLoading, error, fetchAdminDashboardData } = useAdminStore();
@@ -32,7 +33,11 @@ const ComplianceViewPage = () => {
 
   useEffect(() => {
     fetchAdminDashboardData();
-  }, [fetchAdminDashboardData]);
+     if (!user) {
+      authService.logout();
+      return;
+    }
+  }, [fetchAdminDashboardData, user]);
 
   // Get risk badge
   const getRiskBadge = (level: RiskLevel) => {
@@ -100,8 +105,7 @@ const ComplianceViewPage = () => {
     }
 
     if (!user) {
-      console.error('No user found in auth store');
-      showError('Authentication Required', 'Please login again to continue.');
+      authService.logout();
       return;
     }
 

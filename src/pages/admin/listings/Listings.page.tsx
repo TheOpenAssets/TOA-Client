@@ -231,16 +231,7 @@ const ListingsPage = () => {
                   ))}
                 </div>
                 
-                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-md p-2">
-                   <h4 className="font-semibold">Price Breakdown</h4>
-                   {clearingInfo.priceBreakdown.map((point, i) => (
-                    <div key={i} className="text-xs flex justify-between">
-                      <span className="font-mono">${(Number(point.price) / 1e6).toFixed(2)}</span>
-                      <span>{(Number(point.cumulativeTokens) / 1e18).toLocaleString()} tokens</span>
-                      <span>{point.bidsCount} bids</span>
-                    </div>
-                  ))}
-                </div>
+                
 
               </div>
             )}
