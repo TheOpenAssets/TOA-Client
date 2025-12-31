@@ -25,10 +25,9 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
-    if (asset?.listing?.phase === 'BIDDING' && asset?.listing?.listedAt && asset?.listing?.duration) {
+    if ((asset?.status === 'LISTED') && asset?.listing?.scheduledEndTime) {
       const interval = setInterval(() => {
-        // duration is in seconds from API, convert to milliseconds
-        const endTime = new Date(asset.listing.listedAt).getTime() + (asset.listing.duration * 1000);
+        const endTime = new Date(asset.listing.scheduledEndTime).getTime();
         const now = new Date().getTime();
         const distance = endTime - now;
 
@@ -48,7 +47,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
 
       return () => clearInterval(interval);
     }
-  }, [asset]);
+  }, [asset?.status, asset?.listing?.scheduledEndTime]);
 
   const formatCurrency = (amount: string | number): string => {
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -89,7 +88,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
       );
     }
 
-    if (asset?.listing?.phase === 'BIDDING' && timeLeft) {
+    if ((asset?.status === 'LISTED') && timeLeft) {
         return (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
                 <Clock className="w-12 h-12 mx-auto mb-3 text-blue-500" />
