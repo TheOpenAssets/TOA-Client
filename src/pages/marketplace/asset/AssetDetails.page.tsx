@@ -17,7 +17,7 @@ const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const { address } = useAccount();
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
-  const { methPrice, activeQuote, getQuote, createPosition, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
+  const { methPrice, createPosition, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
 
   const [timeRange, setTimeRange] = useState('1M');
   const [tokensToBuy, setTokensToBuy] = useState('');
@@ -26,8 +26,27 @@ const AssetDetailsPage = () => {
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
   
   // Leverage State
-  const [leverageAmount, setLeverageAmount] = useState('');
+  const [leverageTokenInput, setLeverageTokenInput] = useState('');
   const [isApproving, setIsApproving] = useState(false);
+
+  // Calculate required mETH based on token input
+  // Formula: Required mETH = (Tokens * TokenPrice * 1.5) / mETHPrice
+  // 1.5 (150%) is the required collateralization ratio (backend validation)
+  const calculatedMethAmount = (() => {
+    if (!leverageTokenInput || !asset?.tokenParams?.pricePerToken || !methPrice) return 0;
+    const tokens = parseFloat(leverageTokenInput);
+    const tokenPrice = parseFloat(asset.tokenParams.pricePerToken); // USDC Wei (6 decimals)
+    const methPriceVal = methPrice; // USDC Wei (6 decimals)
+    
+    // Total Value in USDC Wei = Tokens * TokenPrice
+    // Required Collateral Value = Total Value * 1.5
+    // Required mETH = Required Collateral Value / mETHPrice
+    
+    const meth = (tokens * tokenPrice * 1.5) / methPriceVal;
+    return meth;
+  })();
+
+  const calculatedMethString = calculatedMethAmount > 0 ? calculatedMethAmount.toFixed(6) : '';
 
   // Wagmi Hooks for Approval
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -44,6 +63,12 @@ const AssetDetailsPage = () => {
       fetchAssetDetails(assetId);
     }
     fetchMethPrice();
+
+    // Auto-refresh mETH price every 30 seconds
+    const interval = setInterval(() => {
+      fetchMethPrice();
+    }, 30000);
+    return () => clearInterval(interval);
   }, [assetId, fetchAssetDetails, fetchMethPrice]);
 
   useEffect(() => {
@@ -63,24 +88,19 @@ const AssetDetailsPage = () => {
     }
   };
 
-  const handleLeverageAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setLeverageAmount(val);
-    getQuote(val); 
+  const handleLeverageTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLeverageTokenInput(e.target.value);
   };
 
-  // Leverage derived values
-  const borrowableUSDC = activeQuote ? parseFloat(activeQuote.expectedUSDC) / 1e6 : 0;
-  const leverageEstimatedTokens = asset && asset.tokenParams.pricePerToken 
-    ? borrowableUSDC / (parseFloat(asset.tokenParams.pricePerToken) / 1e6)
-    : 0;
-
   const handleOpenLeveragePosition = async () => {
-     if (!address || !asset || !leverageAmount || !activeQuote) return;
+     if (!address || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
 
     try {
-      const mETHCollateral = parseUnits(leverageAmount, 18);
-      const tokenAmount = parseUnits(leverageEstimatedTokens.toString(), 18).toString(); 
+      // Fetch latest price right before transaction
+      await fetchMethPrice();
+      
+      const mETHCollateral = parseUnits(calculatedMethString, 18);
+      const tokenAmount = parseUnits(leverageTokenInput, 18).toString(); 
       // Ensure price is passed as USDC WEI (6 decimals)
       const pricePerToken = asset.tokenParams.pricePerToken; 
 
@@ -114,15 +134,15 @@ const AssetDetailsPage = () => {
         mETHCollateral: mETHCollateral.toString()
       });
       
-      setLeverageAmount('');
+      setLeverageTokenInput('');
       alert('Leveraged Position created successfully!');
     } catch (error: any) {
       alert(`Failed to create position: ${error.message}`);
     }
   };
 
-  const needsApproval = allowance && leverageAmount 
-    ? allowance < parseUnits(leverageAmount, 18) 
+  const needsApproval = allowance && calculatedMethAmount > 0
+    ? allowance < parseUnits(calculatedMethString, 18) 
     : true;
 
   if (isLoadingAsset) {
@@ -495,44 +515,53 @@ const AssetDetailsPage = () => {
                      <div className="space-y-6">
                         <div className="bg-[#F3F4F6] rounded-2xl p-4">
                           <label className="text-xs text-[#6B7280]">
-                            Collateral Amount (mETH)
+                            Tokens to buy
                           </label>
                           <div className="relative">
                             <Input
                               type="number"
-                              placeholder="0.00"
-                              value={leverageAmount}
-                              onChange={handleLeverageAmountChange}
+                              placeholder="0"
+                              value={leverageTokenInput}
+                              onChange={handleLeverageTokenChange}
                               className="bg-transparent border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                             />
                             <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">
-                              mETH
+                              Tokens
                             </span>
                           </div>
                           <p className="text-xs text-[#6B7280] mt-2">
-                             Price: ${methPrice.toLocaleString()} / mETH
+                             Price: {asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken)/1e6).toFixed(2) : 0} USDC / Token
                           </p>
                         </div>
                         
                         <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-gray-600">Buying Power (1.5x LTV)</span>
+                              <span className="text-xs text-gray-600">Required Collateral</span>
                               <span className="text-sm font-bold text-blue-700">
-                                 ${borrowableUSDC.toLocaleString(undefined, {maximumFractionDigits: 2})} USDC
+                                 {calculatedMethString || '0.00'} mETH
                               </span>
                            </div>
                            <div className="flex justify-between items-center">
-                              <span className="text-xs text-gray-600">Est. Tokens</span>
+                              <span className="text-xs text-gray-600">Buying Power</span>
                               <span className="text-lg font-bold text-[#111111]">
-                                 {leverageEstimatedTokens.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                                 {(() => {
+                                   if(!calculatedMethAmount) return '$0.00 USDC';
+                                   // With 150% collateral requirement, Buying Power = Collateral / 1.5
+                                   // This should match Tokens * TokenPrice
+                                   const bp = (calculatedMethAmount * methPrice) / (1.5 * 1e6);
+                                   return `$${bp.toLocaleString(undefined, {maximumFractionDigits: 2})} USDC`;
+                                 })()}
                               </span>
                            </div>
+                           <p className="text-[10px] text-gray-400 mt-2 text-right">
+                             mETH Price: ${(methPrice/1e6).toLocaleString(undefined, {maximumFractionDigits: 2})}
+                           </p>
                         </div>
 
                         <div className="text-xs text-[#6B7280] space-y-1">
                            <div className="flex justify-between">
                               <span>Health Factor</span>
-                              <span className="font-medium text-green-600">1.50 (Safe)</span>
+                              <span className="font-medium text-green-600">1.50 (Initial)</span>
                            </div>
                            <div className="flex justify-between">
                               <span>Liquidation Threshold</span>
@@ -542,7 +571,7 @@ const AssetDetailsPage = () => {
 
                         <Button 
                            onClick={handleOpenLeveragePosition}
-                           disabled={isLeverageLoading || !leverageAmount || !address || isApproving}
+                           disabled={isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0}
                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                            {isApproving ? 'Approving mETH...' : isLeverageLoading ? 'Processing...' : needsApproval ? 'Approve mETH' : 'Open Leveraged Position'}
