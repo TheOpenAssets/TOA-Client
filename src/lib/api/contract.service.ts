@@ -1,7 +1,6 @@
 // src/lib/api/contract.service.ts
 
 import { ethers } from 'ethers';
-import { adminService } from './admin.service';
 
 /**
  * Contract Service - Handles smart contract interactions for token purchase
@@ -13,7 +12,7 @@ import { adminService } from './admin.service';
 
 // Contract addresses - Updated to match deployed_contracts.json (2025-12-25)
 const USDC_ADDRESS = '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
-const PRIMARY_MARKETPLACE_ADDRESS = '0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C';
+const PRIMARY_MARKETPLACE_ADDRESS = '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504';
 const YIELD_VAULT_ADDRESS = '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7';
 
 // USDC ABI - Only the functions we need
@@ -991,13 +990,19 @@ class ContractService {
   /**
    * Approve PrimaryMarketplace to spend RWA tokens (Admin action after listing)
    *
-   * DELEGATED TO BACKEND:
-   * This now calls the backend API to perform the transaction via the admin wallet service.
+   * This is executed by the ADMIN wallet directly on-chain after listing an asset.
+   * Matches approve-marketplace.js script:
+   * - Checks current allowance first
+   * - Only approves if allowance is 0
+   * - Uses MaxUint256 for unlimited approval
    *
-   * @param assetId - The asset ID to approve
+   * Contract Addresses (Mantle Testnet):
+   * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
+   *
+   * @param tokenAddress - The RWA token address to approve
    * @returns { success, transactionHash, blockNumber, alreadyApproved }
    */
-  async approveMarketplaceForRWAToken(assetId: string): Promise<{
+  async approveMarketplaceForRWAToken(tokenAddress: string): Promise<{
     success: boolean;
     transactionHash?: string;
     blockNumber?: number;
@@ -1005,20 +1010,70 @@ class ContractService {
     error?: string;
   }> {
     try {
-      console.log('💰 Approving Marketplace (Delegating to Backend)...');
-      console.log('Asset ID:', assetId);
+      // WARNING: Using a hardcoded private key in the frontend is a major security risk.
+      // This is done to match the behavior of the `approve-marketplace.js` script.
+      // In a production environment, this should be handled by a secure backend service.
+      const custodyPrivateKey = '0x1d12932a5c3a7aa8d4f50662caa679bb2e53321e11bc5df2af9298e2ace59305';
+      const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.mantle.xyz');
+      const custodyWallet = new ethers.Wallet(custodyPrivateKey, provider);
 
-      const response = await adminService.approveMarketplace(assetId);
+      const RWA_TOKEN_ABI = [
+        'function approve(address spender, uint256 amount) returns (bool)',
+        'function allowance(address owner, address spender) view returns (uint256)',
+        'function balanceOf(address account) view returns (uint256)',
+        'function name() view returns (string)',
+        'function symbol() view returns (string)',
+      ];
 
-      console.log('✅ Marketplace approved via backend!');
-      console.log('TX:', response.transactionHash);
+      const rwaToken = new ethers.Contract(tokenAddress, RWA_TOKEN_ABI, custodyWallet);
+
+      console.log('💰 Approving Marketplace to Spend RWA Tokens');
+      console.log('━'.repeat(50));
+      console.log('Token:', tokenAddress);
+      console.log('Marketplace:', PRIMARY_MARKETPLACE_ADDRESS);
+      console.log('Platform Custody:', custodyWallet.address);
+      console.log();
+
+      // Get token info
+      const tokenName = await rwaToken.name();
+      const tokenSymbol = await rwaToken.symbol();
+      const balance = await rwaToken.balanceOf(custodyWallet.address);
+
+      console.log(`Token: ${tokenName} (${tokenSymbol})`);
+      console.log(`Custody Balance: ${ethers.formatEther(balance)} tokens`);
+      console.log();
+
+      // Check current allowance
+      const currentAllowance = await rwaToken.allowance(custodyWallet.address, PRIMARY_MARKETPLACE_ADDRESS);
+      console.log(`Current Allowance: ${ethers.formatEther(currentAllowance)} tokens`);
+
+      if (currentAllowance > 0n) {
+        console.log('✅ Marketplace already has approval!');
+        return {
+          success: true,
+          alreadyApproved: true,
+        };
+      }
+
+      // Approve max amount (unlimited approval for convenience)
+      const maxApproval = ethers.MaxUint256;
+
+      console.log('⏳ Approving marketplace (unlimited)...');
+      const tx = await rwaToken.approve(PRIMARY_MARKETPLACE_ADDRESS, maxApproval);
+      console.log('TX:', tx.hash);
+      console.log('⏳ Waiting for confirmation...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
+      console.log('✅ Marketplace approved!');
+      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log();
+      console.log('✅ Marketplace can now transfer tokens to buyers!');
 
       return {
         success: true,
-        transactionHash: response.transactionHash,
-        // Backend response structure might vary slightly, ensuring safe defaults
-        blockNumber: 0, 
-        alreadyApproved: response.message?.toLowerCase().includes('already approved'),
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
       console.error('❌ Error approving marketplace:', error);
