@@ -1,6 +1,6 @@
 /**
  * Global error handler for API errors
- * Handles specific error cases like verification errors
+ * Handles specific error cases like verification errors and 401 Unauthorized
  */
 
 export class APIError extends Error {
@@ -19,20 +19,49 @@ export class APIError extends Error {
   }
 }
 
+/**
+ * Handle 401 Unauthorized - Logout and redirect
+ */
+export const handle401Unauthorized = (): void => {
+  console.log('🔒 401 Unauthorized detected - Logging out user');
+
+  // Clear all auth-related data from localStorage
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('redirect_after_verification');
+
+  // Disconnect wallet by triggering a page reload to reset wagmi state
+  // This ensures the wallet connection is also cleared
+  window.location.href = '/';
+};
+
 export const handleAPIError = (error: any): never => {
+  // Check if it's a 401 Unauthorized error
+  if (error.statusCode === 401 || error.status === 401) {
+    handle401Unauthorized();
+    throw new APIError('Unauthorized. Please login again.', 401, 'UNAUTHORIZED');
+  }
+
+  // Check if error response contains 401
+  if (error.response?.status === 401) {
+    handle401Unauthorized();
+    throw new APIError('Unauthorized. Please login again.', 401, 'UNAUTHORIZED');
+  }
+
   // Check if it's the verification error
   if (
     error.message?.includes('Not a verified user') ||
     error.message?.includes('solve the challenge')
   ) {
-    // Store the current path to redirect back after verification
-    const currentPath = window.location.pathname;
-    if (currentPath !== '/verify-challenge' && currentPath !== '/auth') {
-      localStorage.setItem('redirect_after_verification', currentPath);
-    }
+    // Clear user session/auth data
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('redirect_after_verification');
 
-    // Redirect to verification page
-    window.location.href = '/verify-challenge';
+    // Redirect to auth page
+    window.location.href = '/';
     throw new APIError(error.message, 401, 'VERIFICATION_REQUIRED');
   }
 

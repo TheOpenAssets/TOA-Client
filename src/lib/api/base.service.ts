@@ -67,8 +67,9 @@ class BaseService {
   }
 
   /**
-   * Fetch with automatic timeout protection
+   * Fetch with automatic timeout protection and 401 handling
    * Wraps fetch with AbortController and timeout
+   * Automatically logs out user on 401 Unauthorized responses
    *
    * @param url - The URL to fetch
    * @param options - Fetch options (will be merged with timeout signal)
@@ -88,9 +89,35 @@ class BaseService {
         signal,
       });
       clear();
+
+      // Check for 401 Unauthorized response
+      if (response.status === 401) {
+        // Parse response to check the message
+        const errorData = await response.clone().json().catch(() => ({}));
+
+        // Check if it's an Unauthorized error
+        if (errorData.message === 'Unauthorized' || errorData.statusCode === 401) {
+          console.log('🔒 401 Unauthorized detected in API response - Triggering logout');
+
+          // Import and call the 401 handler
+          const { handle401Unauthorized } = await import('../utils/error-handler');
+          handle401Unauthorized();
+
+          // Throw error to stop execution
+          throw new Error('Unauthorized');
+        }
+      }
+
       return response;
     } catch (error: any) {
       clear();
+
+      // Check if the error itself indicates 401
+      if (error.message === 'Unauthorized' || error.status === 401 || error.statusCode === 401) {
+        const { handle401Unauthorized } = await import('../utils/error-handler');
+        handle401Unauthorized();
+      }
+
       if (error.name === 'AbortError') {
         throw new Error(`Request timeout after ${timeoutMs}ms`);
       }

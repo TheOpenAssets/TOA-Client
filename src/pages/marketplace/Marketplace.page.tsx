@@ -23,6 +23,8 @@ const MarketplacePage = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const [searchQuery, setSearchQuery] = useState('');
+    const { currentAsset: asset } = useMarketplaceStore();
+
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [sortBy, setSortBy] = useState<SortOption>('most-popular');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -559,7 +561,7 @@ const MarketplacePage = () => {
                             Bid Range
                           </div>
                           <div className="font-antic text-lg font-bold text-foreground mb-1">
-                            ${formatLargeNumber(auction.reservePrice)} - ${formatLargeNumber(((auction.reservePrice || 0) * 1.2))}
+                    ${asset?.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset?.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
                           </div>
                           <div className="flex items-center justify-end gap-1 text-blue-600">
                             <Clock className="w-3 h-3" />

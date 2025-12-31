@@ -1,8 +1,18 @@
+import { useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import { useAuthActions } from "../../hooks/useAuthActions";
+import { useToast } from "../../hooks/useToast";
 
 const HeroSection = () => {
   const { error, isAuthenticating, handleGetStarted, handleIssuerGetStarted } = useAuthActions();
+  const { error: showError } = useToast();
+   
+  useEffect(() => {
+    if (error) {
+      showError("Authentication Error", error);
+    }
+  }, [error, showError]);
+
 
   return (
     <section id="hero" className="relative max-h-screen flex flex-col justify-center pt-20 pb-24 bg-transparent">
@@ -22,12 +32,7 @@ Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, is
 Tokenize. Invest. Borrow. Earn. - All in one unified execution layer.          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {error && (
-              <div className="w-full max-w-md p-3 bg-destructive/10 border border-destructive rounded-xl mb-2">
-                <p className="text-sm text-destructive font-inter text-center">{error}</p>
-              </div>
-            )}
-
+            
             <Button
               size="lg"
               className="cta-button hover:scale-[1.02] transition-transform"

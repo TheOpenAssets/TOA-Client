@@ -321,7 +321,7 @@ const PortfolioPage = () => {
     );
   }
 
-  if (!portfolio || !portfolio.portfolio || portfolio.portfolio.length === 0) {
+  if ((!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length) && userBids.length === 0) {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
@@ -471,7 +471,7 @@ const PortfolioPage = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                  <table className="w-full">
+                 {(!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length)!=0 && <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-gray-200 text-black">
                         <th className="px-6 py-3 text-left font-antic text-xs font-medium text-black-500 uppercase tracking-wider">
@@ -498,7 +498,7 @@ const PortfolioPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {portfolio.portfolio.map((asset, index) => (
+                      {portfolio?.portfolio.map((asset, index) => (
                         <tr
                           key={asset.assetId}
                           className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
@@ -578,7 +578,7 @@ const PortfolioPage = () => {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table>}
                 </div>
               </div>
 
