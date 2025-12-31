@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { adminService } from '../../../lib/api/admin.service';
-import { contractService } from '../../../lib/api/contract.service';
 import type { ApiAdminAsset, AuctionClearingPriceInfo } from '../../../types/admin.types';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';

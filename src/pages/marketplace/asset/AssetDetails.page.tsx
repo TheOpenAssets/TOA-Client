@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAccount } from 'wagmi';
+import { ethers } from 'ethers';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
@@ -132,7 +133,7 @@ const AssetDetailsPage = () => {
           const notifyPayload = {
             txHash: result.purchaseTxHash!,
             assetId: asset.assetId,
-            amount: (parseFloat(tokensToBuy) * 1e18).toString(),
+            amount: ethers.parseUnits(tokensToBuy, 18).toString(),
             blockNumber: result.blockNumber!.toString(),
           };
 
