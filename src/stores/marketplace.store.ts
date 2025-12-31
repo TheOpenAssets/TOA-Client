@@ -212,6 +212,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             metadata: {
               ...asset.metadata,
               invoiceNumber: announcement.metadata?.invoiceNumber,
+              priceRange: {
+                minPrice: announcement.metadata?.priceRange?.min || '0',
+                maxPrice: announcement.metadata?.priceRange?.max || '0',
+              },
               industry: announcement.metadata?.industry,
               riskTier: announcement.metadata?.riskTier,
               faceValue: announcement.metadata?.faceValue,
@@ -317,6 +321,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             metadata: {
               ...asset.metadata,
               invoiceNumber: announcement.metadata?.invoiceNumber,
+              priceRange: {
+                minPrice: announcement.metadata?.priceRange?.min || '0',
+                maxPrice: announcement.metadata?.priceRange?.max || '0',
+              },
               industry: announcement.metadata?.industry,
               riskTier: announcement.metadata?.riskTier,
               faceValue: announcement.metadata?.faceValue,

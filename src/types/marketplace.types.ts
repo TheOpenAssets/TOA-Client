@@ -1,5 +1,6 @@
 // src/types/marketplace.types.ts
 
+
 export type AssetCategory = 'invoice' | 'real-estate' | 'trade-finance' | 'equipment-lease';
 export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED';
 
@@ -47,10 +48,17 @@ interface Listing {
   clearingPrice?: string; // USDC with 6 decimals
 }
 
+
+export interface AssetPriceRange {
+  minPrice: string; // USDC with 6 decimals
+  maxPrice: string; // USDC with 6 decimals
+}
+
 export interface AssetMetadata {
   invoiceNumber: string;
   faceValue: string;
   currency: string;
+  priceRange: AssetPriceRange;
   issueDate: string;
   dueDate: string;
   buyerName: string;

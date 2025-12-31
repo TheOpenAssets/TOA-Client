@@ -321,7 +321,7 @@ const PortfolioPage = () => {
     );
   }
 
-  if ((!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length) && userBids.length === 0) {
+  if ((!portfolio || !portfolio?.portfolio || !portfolio?.portfolio.length) && !userBids.length) {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
@@ -338,10 +338,10 @@ const PortfolioPage = () => {
   }
 
   // Calculate total values
-  const totalAssetValue = portfolio.portfolio.reduce(
+  const totalAssetValue = portfolio?.portfolio?.reduce(
     (sum, asset) => sum + formatUSDCAmount(asset.totalInvested),
     0
-  );
+  ) || 0;
 
   return (
     <>
@@ -444,7 +444,7 @@ const PortfolioPage = () => {
                   ${formatCurrency(totalAssetValue)}
                 </p>
                 <p className="font-antic text-xs text-gray-500 mt-2">
-                  {portfolio.totalPurchases} purchase{portfolio.totalPurchases !== 1 ? 's' : ''}
+                  {portfolio?.totalPurchases} purchase{portfolio?.totalPurchases !== 1 ? 's' : ''}
                 </p>
               </div>
 
@@ -465,13 +465,13 @@ const PortfolioPage = () => {
             {/* Right Main Area - 3/4 width, full height with two equal sections */}
             <div className="lg:col-span-3 flex flex-col gap-6 h-full">
               {/* Owned Assets Table - Takes 50% height with internal scroll */}
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
+              {(!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length)!=0 && <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
                   <h2 className="font-antic text-xl font-semibold text-foreground">My Assets</h2>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                 {(!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length)!=0 && <table className="w-full">
+                 <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-gray-200 text-black">
                         <th className="px-6 py-3 text-left font-antic text-xs font-medium text-black-500 uppercase tracking-wider">
@@ -578,9 +578,9 @@ const PortfolioPage = () => {
                         </tr>
                       ))}
                     </tbody>
-                  </table>}
+                  </table>
                 </div>
-              </div>
+              </div>}
 
               {/* Pending Auction Bids Section - Takes 50% height with internal scroll */}
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
