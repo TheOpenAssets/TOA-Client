@@ -520,13 +520,7 @@ class ContractService {
       console.log('Payment >= MinInvestment?', payment >= minInvestment ? '✅ YES' : '❌ NO');
 
       // Check if payment meets minimum investment requirement
-      if (payment < minInvestment) {
-        const minTokensNeeded = (minInvestment * BigInt(10 ** 18)) / currentPrice;
-        throw new Error(
-          `Purchase amount (${ethers.formatUnits(payment, 6)} USDC) is below minimum investment (${ethers.formatUnits(minInvestment, 6)} USDC). ` +
-          `You need to buy at least ${ethers.formatUnits(minTokensNeeded, 18)} tokens to meet the minimum investment requirement.`
-        );
-      }
+     
 
       // Check USDC balance
       const usdcBalance = await usdcContract.balanceOf(userAddress);
