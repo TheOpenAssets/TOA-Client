@@ -7,13 +7,13 @@ import { ethers } from 'ethers';
  *
  * Smart Contracts (Updated: 2025-12-25):
  * - USDC: 0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238
- * - PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+ * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
  */
 
 // Contract addresses - Updated to match deployed_contracts.json (2025-12-25)
 const USDC_ADDRESS = '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
 const PRIMARY_MARKETPLACE_ADDRESS = '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504';
-const YIELD_VAULT_ADDRESS = '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7';
+const YIELD_VAULT_ADDRESS = '0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD';
 
 // USDC ABI - Only the functions we need
 const USDC_ABI = [
@@ -1003,7 +1003,7 @@ class ContractService {
    * - Uses MaxUint256 for unlimited approval
    *
    * Contract Addresses (Mantle Testnet):
-   * - PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+   * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
    *
    * @param tokenAddress - The RWA token address to approve
    * @returns { success, transactionHash, blockNumber, alreadyApproved }

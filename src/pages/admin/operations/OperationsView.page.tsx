@@ -206,7 +206,7 @@ const OperationsViewPage = () => {
 
       // Step 2: Approve marketplace to spend RWA tokens (ADMIN executes ON-CHAIN transaction)
       // Admin wallet directly calls: RWAToken.approve(PrimaryMarketplace, MaxUint256)
-      // PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+      // PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
       console.log('🔨 Step 2: Admin executing ON-CHAIN marketplace approval...');
 
       // Get token address from selected asset
