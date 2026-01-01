@@ -670,7 +670,7 @@ const AssetDetailsPage = () => {
                       disabled={isPurchasing || !address || (() => {
                         const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
                         const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        return soldTokens - totalSupply <= 0;
+                        return totalSupply - soldTokens <= 0; // Fixed: Check if remaining tokens <= 0
                       })() || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)}
                       className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -678,8 +678,8 @@ const AssetDetailsPage = () => {
                         const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
                         const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
                         console.log('Button State Check - Sold Tokens:', soldTokens, 'Total Supply:', totalSupply);
-                        if (soldTokens - totalSupply <= 0) return 'Sold Out';
-                        console.log("sold", soldTokens-totalSupply)
+                        if (totalSupply - soldTokens  <= 0) return 'Sold Out';
+                        console.log("sold", totalSupply-soldTokens);
                         if (isPurchasing) return 'Processing...';
                         if (!address) return 'Connect Wallet';
                         if( parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';

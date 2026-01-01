@@ -162,7 +162,7 @@ const ListingsPage = () => {
                   {new Date(asset.listing?.listedAt || asset.createdAt).toLocaleDateString()}
                 </div>
                 <div className="w-1/6 text-right">
-                  {asset.assetType === 'AUCTION' && ( asset.listing?.active === true) && (
+                  {asset.assetType === 'AUCTION' && asset.status === 'ENDED' && (
                     <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className='cta-button'>
                       Announce Clearance
                     </Button>
