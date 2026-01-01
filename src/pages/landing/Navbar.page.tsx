@@ -3,16 +3,60 @@ import { useNavigate } from "react-router-dom";
 import "../../styles/Navbar.css";
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { Button } from "../../components/ui/button.tsx";
+import { useAccount } from "wagmi";
+import { faucetService } from "../../lib/api/faucet.service";
+import { useToast } from "../../hooks/useToast";
+import { Loader2 } from "lucide-react";
 
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
+  const { address } = useAccount();
+  const { success, error: toastError, info } = useToast();
+  const [isFaucetLoading, setIsFaucetLoading] = useState(false);
+  const [activeFaucet, setActiveFaucet] = useState<'USDC' | 'mETH' | null>(null);
 
   const { isAuthenticating, handleGetStarted } = useAuthActions();
   
-  const handleGetUsdcClick = () => {
-    navigate('/faucet');
+  const handleGetUsdcClick = async () => {
+    if (!address) {
+      navigate('/faucet');
+      return;
+    }
+
+    setIsFaucetLoading(true);
+    setActiveFaucet('USDC');
+    info('Requesting USDC...', 'The faucet is processing your request.');
+    try {
+      const response = await faucetService.getUsdcFromFaucet(address);
+      success('USDC Received!', `${response.amount} USDC sent to your wallet.`);
+    } catch (err: any) {
+      toastError('Faucet Error', err.message || 'Failed to get USDC.');
+    } finally {
+      setIsFaucetLoading(false);
+      setActiveFaucet(null);
+    }
+  };
+
+  const handleGetMethClick = async () => {
+    if (!address) {
+      navigate('/faucet');
+      return;
+    }
+
+    setIsFaucetLoading(true);
+    setActiveFaucet('mETH');
+    info('Requesting mETH...', 'The faucet is processing your request.');
+    try {
+      const response = await faucetService.getMethFromFaucet(address);
+      success('mETH Received!', `${response.amount} mETH sent to your wallet.`);
+    } catch (err: any) {
+      toastError('Faucet Error', err.message || 'Failed to get mETH.');
+    } finally {
+      setIsFaucetLoading(false);
+      setActiveFaucet(null);
+    }
   };
 
   useEffect(() => {
@@ -51,10 +95,26 @@ const Navbar = () => {
         {/* CTA Button */}
         <div className="flex items-center gap-4">
         <Button
-            onClick={handleGetUsdcClick}
+            onClick={handleGetMethClick}
+            disabled={isFaucetLoading}
             className="cta-button hover:scale-[1.02] transition-transform"
           >
-            Get USDC
+            {isFaucetLoading && activeFaucet === 'mETH' ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> ...</>
+            ) : (
+              'Get mETH'
+            )}
+          </Button>
+        <Button
+            onClick={handleGetUsdcClick}
+            disabled={isFaucetLoading}
+            className="cta-button hover:scale-[1.02] transition-transform"
+          >
+            {isFaucetLoading && activeFaucet === 'USDC' ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> ...</>
+            ) : (
+              'Get USDC'
+            )}
           </Button>
          <Button
                      onClick={handleGetStarted}

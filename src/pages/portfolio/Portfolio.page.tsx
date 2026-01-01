@@ -13,6 +13,8 @@ import { ToastContainer } from '../../components/ui/toast';
 import HeroBackground from '../landing/HeroBackground';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
+import { PositionsTable } from '../../components/leverage/PositionsTable';
+import { useLeverageStore } from '../../stores/leverage.store';
 
 
 const PortfolioPage = () => {
@@ -20,6 +22,7 @@ const PortfolioPage = () => {
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
+  const { fetchMyPositions } = useLeverageStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
 
@@ -43,6 +46,7 @@ const PortfolioPage = () => {
   useEffect(() => {
     fetchPortfolio();
     fetchUserBids();
+    fetchMyPositions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -740,6 +744,18 @@ const PortfolioPage = () => {
                         })}
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Leveraged Positions Section */}
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
+                <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+                  <h2 className="font-antic text-xl font-semibold text-foreground">Leveraged Positions</h2>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-6">
+                    <PositionsTable />
                   </div>
                 </div>
               </div>

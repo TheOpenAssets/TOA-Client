@@ -23,6 +23,7 @@ import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
 import AssetDetailsPage from '../../pages/marketplace/asset/AssetDetails.page';
 import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.page';
+import BorrowPage from '../../pages/app/borrow/Borrow.page';
 
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
@@ -51,6 +52,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/marketplace/auction/:assetId',
     element: <AuctionDetailsPage />,
+  },
+  {
+    path: '/borrow',
+    element: <BorrowPage />,
   },
   {
     path: '/portfolio',
