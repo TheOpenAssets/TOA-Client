@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { LeverageForm } from '../../../components/leverage/LeverageForm';
 import { PositionsTable } from '../../../components/leverage/PositionsTable';
 import { PositionStats } from '../../../components/leverage/PositionStats';

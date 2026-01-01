@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Card, CardContent } from '../ui/card';
 import { Wallet, TrendingUp, AlertTriangle } from 'lucide-react';
 

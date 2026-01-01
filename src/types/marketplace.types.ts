@@ -175,6 +175,34 @@ export interface TrendingAsset {
   pricePerToken?: string; // only for STATIC
 }
 
+export interface Purchase {
+  buyer: string;
+  tokenAmount: string;
+  price: string;
+  totalPayment: string;
+  timestamp: string;
+  transactionHash: string;
+  type: "BID" | "BUY";
+}
+
+export interface ChartDataPoint {
+  timestamp: string;
+  tokensPurchased: string;
+  cumulativeTokens: string;
+  price: string;
+}
+
+export interface PurchaseHistoryResponse {
+  assetId: string;
+  assetType: "AUCTION" | "FIXED";
+  purchases: Purchase[];
+  chartData: ChartDataPoint[];
+  totalTokensSold: string;
+  totalUSDCRaised: string;
+  totalTransactions: number;
+}
+
+
 export interface PlatformMetrics {
   totalAssetsIssued: number;
   totalAssetsChange: number;

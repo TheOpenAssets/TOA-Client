@@ -2,13 +2,15 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { ethers } from 'ethers';
+import type { PurchaseHistoryResponse } from '../../../types/marketplace.types';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
+import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
@@ -24,7 +26,11 @@ const AssetDetailsPage = () => {
   const [usdcBalance, setUsdcBalance] = useState('0');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
-  
+  const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistoryResponse | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [formattedChartData, setFormattedChartData] = useState<any[]>([]);
+
   // Leverage State
   const [leverageTokenInput, setLeverageTokenInput] = useState('');
   const [isApproving, setIsApproving] = useState(false);
@@ -77,6 +83,83 @@ const AssetDetailsPage = () => {
     }
   }, [address]);
 
+  useEffect(() => {
+    if (assetId) {
+      const fetchPurchaseData = async () => {
+        setIsLoadingHistory(true);
+        setHistoryError(null);
+        try {
+          const history = await marketplaceService.getPurchaseHistory(assetId);
+          setPurchaseHistory(history);
+
+          if (history.chartData && history.chartData.length > 0) {
+            // Convert to 5-minute intervals
+            const INTERVAL_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+            // Get the first and last timestamps
+            const firstTimestamp = new Date(history.chartData[0].timestamp).getTime();
+            const lastTimestamp = new Date(history.chartData[history.chartData.length - 1].timestamp).getTime();
+
+            // Round first timestamp down to nearest 5-minute interval
+            const startInterval = Math.floor(firstTimestamp / INTERVAL_MS) * INTERVAL_MS;
+            const endInterval = Math.ceil(lastTimestamp / INTERVAL_MS) * INTERVAL_MS;
+
+            // Create array of 5-minute intervals
+            const intervals: number[] = [];
+            for (let time = startInterval; time <= endInterval; time += INTERVAL_MS) {
+              intervals.push(time);
+            }
+
+            // Count purchases per interval
+            const intervalData = new Map<number, { timestamp: number; purchaseCount: number; price: number }>();
+
+            history.chartData.forEach(d => {
+              const purchaseTime = new Date(d.timestamp).getTime();
+              const intervalTime = Math.floor(purchaseTime / INTERVAL_MS) * INTERVAL_MS;
+              const price = parseFloat(d.price) / 1e6;
+
+              if (intervalData.has(intervalTime)) {
+                const existing = intervalData.get(intervalTime)!;
+                existing.purchaseCount += 1;
+                existing.price = price; // Update to latest price in interval
+              } else {
+                intervalData.set(intervalTime, {
+                  timestamp: intervalTime,
+                  purchaseCount: 1,
+                  price: price,
+                });
+              }
+            });
+
+            // Fill in all intervals with purchase counts (0 if no purchases)
+            const formattedData: Array<{ timestamp: number; purchaseCount: number; price: number }> = [];
+
+            intervals.forEach(intervalTime => {
+              if (intervalData.has(intervalTime)) {
+                formattedData.push(intervalData.get(intervalTime)!);
+              } else if (intervalTime >= firstTimestamp) {
+                // Only add intervals after the first purchase
+                formattedData.push({
+                  timestamp: intervalTime,
+                  purchaseCount: 0,
+                  price: 0,
+                });
+              }
+            });
+
+            setFormattedChartData(formattedData);
+          }
+
+        } catch (err: any) {
+          setHistoryError(err.message || 'Failed to fetch purchase history');
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      };
+      fetchPurchaseData();
+    }
+  }, [assetId]);
+
   const loadWalletData = async () => {
     if (!address) return;
     try {
@@ -102,7 +185,7 @@ const AssetDetailsPage = () => {
       const mETHCollateral = parseUnits(calculatedMethString, 18);
       const tokenAmount = parseUnits(leverageTokenInput, 18).toString(); 
       // Ensure price is passed as USDC WEI (6 decimals)
-      const pricePerToken = asset.tokenParams.pricePerToken; 
+      const pricePerToken = asset.tokenParams.pricePerToken || '0'; 
 
       // Check Allowance
       if (!allowance || allowance < mETHCollateral) {
@@ -157,14 +240,7 @@ const AssetDetailsPage = () => {
     return <div className="flex items-center justify-center h-screen">Asset not found</div>;
   }
 
-  const chartData = [
-    { name: 'Jan', value: 98.2 },
-    { name: 'Feb', value: 98.5 },
-    { name: 'Mar', value: 99.1 },
-    { name: 'Apr', value: 99.3 },
-    { name: 'May', value: 99.8 },
-    { name: 'Jun', value: 100.0 },
-  ];
+
 
   const timeFilters = ['1D', '1W', '1M', '1Y', 'ALL'];
 
@@ -301,9 +377,9 @@ const AssetDetailsPage = () => {
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <p className="text-5xl font-semibold text-[#111111]">
-                          ${asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2) : 'N/A'}
+                          {purchaseHistory?.totalTransactions || 0}
                         </p>
-                        <p className="text-green-600 text-sm mt-1">Token Price (USDC)</p>
+                        <p className="text-green-600 text-sm mt-1">Total Purchases</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {timeFilters.map(filter => (
@@ -314,22 +390,37 @@ const AssetDetailsPage = () => {
                         ))}
                     </div>
                 </div>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                        <defs>
-                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#16A34A" stopOpacity={0.4}/>
-                                <stop offset="95%" stopColor="#16A34A" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}}/>
-                        <YAxis orientation="right" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} tickFormatter={(value) => `$${value}`}/>
-                        <Tooltip />
-                        <Area type="monotone" dataKey="value" stroke="#16A34A" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                {isLoadingHistory ? (
+                    <div className="h-[400px] flex items-center justify-center">
+                        <p>Loading chart data...</p>
+                    </div>
+                ) : historyError ? (
+                    <div className="h-[400px] flex items-center justify-center">
+                        <p className="text-red-500">Error loading chart data: {historyError}</p>
+                    </div>
+                ) : (formattedChartData.length > 0) ? (
+                    <div className="h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                <defs>
+                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#16A34A" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="#16A34A" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <XAxis dataKey="timestamp" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}}
+                                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}/>
+                                <YAxis orientation="right" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} tickFormatter={(count) => count.toString()} allowDecimals={false}/>
+                                <Tooltip formatter={(count: number | undefined) => (count !== undefined ? [count, 'Purchases'] : ['', ''])}/>
+                                <Area type="monotone" dataKey="purchaseCount" stroke="#16A34A" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-[400px] flex items-center justify-center">
+                        <p>No purchase activity yet.</p>
+                    </div>
+                )}
             </div>
 
             {/* Invoice Details */}

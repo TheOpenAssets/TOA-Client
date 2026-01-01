@@ -9,6 +9,7 @@ import type {
   UserBidsResponse,
   SubmitBidPayload,
   TrendingAsset,
+  PurchaseHistoryResponse,
 } from '@/types/marketplace.types';
 import BaseService from './base.service';
 
@@ -547,6 +548,26 @@ class MarketplaceService extends BaseService {
       return data.assets || [];
     } catch (error) {
       console.error('Error fetching top grossing assets:', error);
+      throw error;
+    }
+  }
+
+  async getPurchaseHistory(assetId: string): Promise<PurchaseHistoryResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/assets/${assetId}/purchase-history`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Failed to fetch purchase history for asset ID: ${assetId}`);
+      }
+
+      const data: PurchaseHistoryResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching purchase history for asset ID ${assetId}:`, error);
       throw error;
     }
   }

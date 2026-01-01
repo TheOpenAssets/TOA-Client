@@ -634,27 +634,28 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               value={formData.maxRaisePercentage}
               onChange={(e) => {
               const value = e.target.value;
-              const numValue = parseFloat(value);
+              const numValue = parseInt(value, 10);
               
-              // Strict gatekeeping: never allow > 95
-              if (value === '' || (numValue >= 0 && numValue <= 98.5)) {
-                updateField('maxRaisePercentage', value);
-              } else if (numValue > 98.5) {
-                updateField('maxRaisePercentage', '98.5');
+              // Only accept integers
+              if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 95)) {
+                updateField('maxRaisePercentage', value === '' ? '' : numValue.toString());
+              } else if (numValue > 95) {
+                updateField('maxRaisePercentage', '95');
               }
               }}
               onKeyDown={(e) => {
               // Prevent arrow up if already at 95
               if (e.key === 'ArrowUp') {
-                const currentValue = parseFloat(formData.maxRaisePercentage) || 0;
-                if (currentValue >= 98.5) {
+                const currentValue = parseInt(formData.maxRaisePercentage, 10) || 0;
+                if (currentValue >= 95) {
                 e.preventDefault();
                 }
               }
               }}
-              placeholder="98.5"
+              placeholder="95"
               min="0"
-              max="98.5"
+              max="95"
+              step="1"
               className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="font-antic text-xs text-gray-500 mt-1">
