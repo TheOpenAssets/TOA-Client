@@ -16,6 +16,7 @@ export interface PortfolioAsset {
     industry: string;
     riskTier: string;
   };
+  yield?: boolean;
 }
 
 export interface PortfolioResponse {

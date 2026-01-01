@@ -153,7 +153,7 @@ const ListingsPage = () => {
                   </Badge>
                 </div>
                 <div className="w-1/6">
-                  <Badge variant="outline">{asset.listing?.phase || asset.status}</Badge>
+                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && asset.listing?.active === true) ? 'Active' : 'Ended'}</Badge>
                 </div>
                 <div className="w-1/6">
                   {formatCurrency(asset.metadata.faceValue, asset.metadata.currency)}
@@ -162,7 +162,7 @@ const ListingsPage = () => {
                   {new Date(asset.listing?.listedAt || asset.createdAt).toLocaleDateString()}
                 </div>
                 <div className="w-1/6 text-right">
-                  {asset.assetType === 'AUCTION' && (asset.listing?.phase === 'ENDED' || asset.listing?.phase ==='BIDDING') && (
+                  {asset.assetType === 'AUCTION' && ( asset.listing?.active === true) && (
                     <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className='cta-button'>
                       Announce Clearance
                     </Button>

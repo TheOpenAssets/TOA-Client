@@ -29,6 +29,7 @@ const PortfolioPage = () => {
   // Contract interaction for settling bids (investor-settle.sh verified)
   const { settleBid, status: settleStatus, isLoading: isSettling, isSuccess } = useSettleBid();
   const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   // Yield claiming state (investor-claim-yield.sh burn-to-claim model)
   const [claimingAssetId, setClaimingAssetId] = useState<string | null>(null);
@@ -503,90 +504,92 @@ const PortfolioPage = () => {
                         <th className="px-6 py-3 text-center font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Risk Tier
                         </th>
-                        <th className="px-6 py-3 text-center font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {portfolio?.portfolio.map((asset, index) => (
-                        <tr
-                          key={asset.assetId}
-                          className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                            index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50/50'
-                          }`}
-                        >
-                          {/* Asset ID */}
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-lg flex-shrink-0">
-                                {getCategoryIcon(asset.metadata?.industry || 'Technology')}
-                              </div>
-                              <div>
-                                <div className="font-antic text-sm font-semibold text-foreground">
-                                  {asset.metadata?.assetName || asset.assetId.slice(0, 8)}
+                        <>
+                          <tr
+                            key={asset.assetId}
+                            className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                              index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50/50'
+                            }`}
+                            onMouseEnter={() => setHoveredRow(asset.assetId)}
+                            onMouseLeave={() => setHoveredRow(null)}
+                            onClick={() => navigate(`/marketplace/asset/${asset.assetId}`)}
+                          >
+                            {/* Asset ID */}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                                  {getCategoryIcon(asset.metadata?.industry || 'Technology')}
                                 </div>
-                                <div className="font-antic text-xs text-gray-500">
-                                  {asset.metadata?.industry || 'N/A'}
+                                <div>
+                                  <div className="font-antic text-sm font-semibold text-foreground">
+                                    {asset.metadata?.assetName || asset.assetId.slice(0, 8)}
+                                  </div>
+                                  <div className="font-antic text-xs text-gray-500">
+                                    {asset.metadata?.industry || 'N/A'}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Tokens Owned */}
-                          <td className="px-6 py-4 text-right">
-                            <div className="font-antic text-sm font-semibold text-foreground">
-                              {formatTokenAmount(asset.totalAmount)}
-                            </div>
-                          </td>
+                            {/* Tokens Owned */}
+                            <td className="px-6 py-4 text-right">
+                              <div className="font-antic text-sm font-semibold text-foreground">
+                                {formatTokenAmount(asset.totalAmount)}
+                              </div>
+                            </td>
 
-                          {/* Amount Invested */}
-                          <td className="px-6 py-4 text-right">
-                            <div className="font-antic text-sm font-semibold text-foreground">
-                              ${formatCurrency(formatUSDCAmount(asset.totalInvested))}
-                            </div>
-                          </td>
+                            {/* Amount Invested */}
+                            <td className="px-6 py-4 text-right">
+                              <div className="font-antic text-sm font-semibold text-foreground">
+                                ${formatCurrency(formatUSDCAmount(asset.totalInvested))}
+                              </div>
+                            </td>
 
-                          {/* Status */}
-                          <td className="px-6 py-4 text-center">
-                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-                              Active
-                            </span>
-                          </td>
+                            {/* Status */}
+                            <td className="px-6 py-4 text-center">
+                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                Active
+                              </span>
+                            </td>
 
-                          {/* Yield Earned */}
-                          <td className="px-6 py-4 text-right">
-                            <div className="font-antic text-sm font-semibold text-green-600">
-                              $0.00
-                            </div>
-                          </td>
+                            {/* Yield Earned */}
+                            <td className="px-6 py-4 text-right">
+                              <div className="font-antic text-sm font-semibold text-green-600">
+                                $0.00
+                              </div>
+                            </td>
 
-                          {/* Risk Tier */}
-                          <td className="px-6 py-4 text-center">
-                            <span className="font-antic text-sm text-foreground">
-                              {asset.metadata?.riskTier || 'N/A'}
-                            </span>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => navigate(`/marketplace/asset/${asset.assetId}`)}
-                                className="px-3 py-1 bg-blue-600 text-white rounded-lg font-antic text-xs font-medium hover:bg-blue-700 transition-colors"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleClaimYield(asset.assetId)}
-                                disabled={claimingAssetId === asset.assetId}
-                                className="px-3 py-1 bg-green-600 text-white rounded-lg font-antic text-xs font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {claimingAssetId === asset.assetId ? claimStatus : 'Claim'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                            {/* Risk Tier */}
+                            <td className="px-6 py-4 text-center">
+                              <span className="font-antic text-sm text-foreground">
+                                {asset.metadata?.riskTier || 'N/A'}
+                              </span>
+                            </td>
+                          </tr>
+                          {hoveredRow === asset.assetId && asset.yield && (
+                            <tr className={`bg-black-50 transition-all ${
+                              index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50/50'
+                            }`}>
+                              <td colSpan={7} className="px-6 py-2 text-center" onMouseEnter={() => setHoveredRow(asset.assetId)}
+                             onMouseLeave={() => setHoveredRow(null)}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClaimYield(asset.assetId);
+                                  }}
+                                  disabled={claimingAssetId === asset.assetId}
+                                  className="px-4 py-2 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {claimingAssetId === asset.assetId ? claimStatus : 'Claim Yield'}
+                                </button>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       ))}
                     </tbody>
                   </table>
