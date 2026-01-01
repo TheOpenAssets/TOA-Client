@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
-import { contractService } from '../../../lib/api/contract.service';
 import { Button } from '../../../components/ui/button';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
@@ -206,55 +205,28 @@ const OperationsViewPage = () => {
 
       // Step 2: Approve marketplace to spend RWA tokens (ADMIN executes ON-CHAIN transaction)
       // Admin wallet directly calls: RWAToken.approve(PrimaryMarketplace, MaxUint256)
-      // PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+      // PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
       console.log('🔨 Step 2: Admin executing ON-CHAIN marketplace approval...');
 
-      // Get token address from selected asset
-      const tokenAddress = selectedAsset.token?.address;
-
-      if (!tokenAddress) {
-        console.warn('⚠️ No token address found, skipping approval');
-        info(
-          'Listed Successfully!',
-          'Asset is listed on marketplace.\n\nWarning: No token address found. Please approve marketplace manually.',
-          8000
-        );
-        await fetchAdminDashboardData();
-        setShowListingModal(false);
-        setSelectedAsset(null);
-        return;
-      }
-
       try {
-        const approvalResult = await contractService.approveMarketplaceForRWAToken(tokenAddress);
+        const approvalResult = await adminService.approveMarketplaceForAsset(selectedAsset.assetId);
 
         if (!approvalResult.success) {
           throw new Error(approvalResult.error || 'Approval failed');
         }
 
-        if (approvalResult.alreadyApproved) {
-          console.log('ℹ️ Marketplace was already approved on-chain');
-          info(
-            'Listed Successfully!',
-            'Asset is now available on the marketplace.\n\nNote: Marketplace approval was already set on-chain.',
-            6000
-          );
-        } else {
-          console.log('✅ ON-CHAIN marketplace approval successful');
-          console.log('Transaction Hash:', approvalResult.transactionHash);
-          console.log('Block Number:', approvalResult.blockNumber);
-          success(
-            'Listed & Approved!',
-            `Asset is now available on the marketplace.\n\nON-CHAIN approval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${approvalResult.transactionHash}`,
-            10000
-          );
-        }
+        console.log('✅ Marketplace approval successful');
+        console.log('Transaction Hash:', approvalResult.transactionHash);
+        success(
+          'Listed & Approved!',
+          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: ${approvalResult.explorerUrl}`,
+          10000
+        );
       } catch (approvalError: any) {
-        console.error('⚠️ ON-CHAIN marketplace approval failed (non-critical):', approvalError);
-        // Show warning but don't fail the entire operation
+        console.error('⚠️ Marketplace approval failed:', approvalError);
         info(
           'Listed (Approval Warning)',
-          `Asset is listed on marketplace, but ON-CHAIN approval failed: ${approvalError.message}\n\nPlease approve marketplace manually using your admin wallet.`,
+          `Asset is listed on marketplace, but approval failed: ${approvalError.message}`,
           10000
         );
       }
@@ -293,52 +265,26 @@ const OperationsViewPage = () => {
       // Admin wallet directly calls: RWAToken.approve(PrimaryMarketplace, MaxUint256)
       console.log('🔨 Step 2: Admin executing ON-CHAIN marketplace approval...');
 
-      // Get token address from selected asset
-      const tokenAddress = selectedAsset.token?.address;
-
-      if (!tokenAddress) {
-        console.warn('⚠️ No token address found, skipping approval');
-        info(
-          'Auction Scheduled!',
-          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nWarning: No token address found. Please approve marketplace manually.`,
-          10000
-        );
-        await fetchAdminDashboardData();
-        setShowAuctionSchedulingModal(false);
-        setSelectedAsset(null);
-        return;
-      }
-
       try {
-        const approvalResult = await contractService.approveMarketplaceForRWAToken(tokenAddress);
+        const approvalResult = await adminService.approveMarketplaceForAsset(selectedAsset.assetId);
 
         if (!approvalResult.success) {
           throw new Error(approvalResult.error || 'Approval failed');
         }
 
-        if (approvalResult.alreadyApproved) {
-          console.log('ℹ️ Marketplace was already approved on-chain');
-          info(
-            'Auction Scheduled!',
-            `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nNote: Marketplace approval was already set on-chain.`,
-            8000
-          );
-        } else {
-          console.log('✅ ON-CHAIN marketplace approval successful');
-          console.log('Transaction Hash:', approvalResult.transactionHash);
-          console.log('Block Number:', approvalResult.blockNumber);
-          success(
-            'Auction Scheduled & Approved!',
-            `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nON-CHAIN approval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${approvalResult.transactionHash}`,
-            12000
-          );
-        }
+        console.log('✅ Marketplace approval successful');
+        console.log('Transaction Hash:', approvalResult.transactionHash);
+        success(
+          'Auction Scheduled & Approved!',
+          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: ${approvalResult.explorerUrl}`,
+          12000
+        );
+
       } catch (approvalError: any) {
-        console.error('⚠️ ON-CHAIN marketplace approval failed (non-critical):', approvalError);
-        // Show warning but don't fail the entire operation
+        console.error('⚠️ Marketplace approval failed:', approvalError);
         info(
           'Auction Scheduled (Approval Warning)',
-          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nON-CHAIN approval failed: ${approvalError.message}\n\nPlease approve marketplace manually using your admin wallet.`,
+          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nApproval failed: ${approvalError.message}`,
           12000
         );
       }
@@ -583,7 +529,7 @@ const OperationsViewPage = () => {
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Token Price</p>
                         <p className="font-antic text-base font-normal text-foreground">
-                          ${parseFloat(asset.tokenParams.pricePerToken).toFixed(6)}
+                          ${parseFloat(asset.tokenParams.pricePerToken)/1e6}
                         </p>
                       </div>
                       <div>

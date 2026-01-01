@@ -6,6 +6,7 @@ import type {
   AssetDetails,
   Auction,
   Bid,
+  TrendingAsset,
 } from '../types/marketplace.types';
 import { marketplaceService } from '../lib/api/marketplace.service';
 
@@ -37,7 +38,7 @@ interface MarketplaceState {
   isLoadingInfo: boolean;
 
   // Top Grossing/Trending Assets
-  trendingAssets: any[];
+  trendingAssets: TrendingAsset[];
   isLoadingTrending: boolean;
 
   // Existing actions
@@ -212,6 +213,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             metadata: {
               ...asset.metadata,
               invoiceNumber: announcement.metadata?.invoiceNumber,
+              priceRange: {
+                minPrice: announcement.metadata?.priceRange?.min || '0',
+                maxPrice: announcement.metadata?.priceRange?.max || '0',
+              },
               industry: announcement.metadata?.industry,
               riskTier: announcement.metadata?.riskTier,
               faceValue: announcement.metadata?.faceValue,
@@ -317,6 +322,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
             metadata: {
               ...asset.metadata,
               invoiceNumber: announcement.metadata?.invoiceNumber,
+              priceRange: {
+                minPrice: announcement.metadata?.priceRange?.min || '0',
+                maxPrice: announcement.metadata?.priceRange?.max || '0',
+              },
               industry: announcement.metadata?.industry,
               riskTier: announcement.metadata?.riskTier,
               faceValue: announcement.metadata?.faceValue,

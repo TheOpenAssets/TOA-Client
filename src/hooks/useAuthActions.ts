@@ -65,7 +65,6 @@ export const useAuthActions = () => {
     } catch (err: any) {
       console.error('Error during authentication:', err);
       setError(err.message || 'Authentication failed');
-      navigate('/auth');
     } finally {
       setIsAuthenticating(false);
       setLoading(false);
@@ -110,7 +109,6 @@ export const useAuthActions = () => {
     } catch (err: any) {
       console.error('Error during authentication:', err);
       setError(err.message || 'Authentication failed');
-      navigate('/auth');
     } finally {
       setIsAuthenticating(false);
       setLoading(false);

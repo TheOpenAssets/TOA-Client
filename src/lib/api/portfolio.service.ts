@@ -49,7 +49,7 @@ class PortfolioService extends BaseService {
   async getPortfolio(): Promise<PortfolioResponse> {
     try {
       console.log('📊 Fetching portfolio from API...');
-      
+
       const response = await fetch(`${this.baseURL}/marketplace/portfolio`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
@@ -57,6 +57,12 @@ class PortfolioService extends BaseService {
 
       if (!response.ok) {
         const error = await response.json();
+
+        // 401 will be handled by global fetch interceptor, but throw error anyway
+        if (response.status === 401) {
+          throw new Error('Unauthorized');
+        }
+
         throw new Error(error.message || 'Failed to fetch portfolio');
       }
 

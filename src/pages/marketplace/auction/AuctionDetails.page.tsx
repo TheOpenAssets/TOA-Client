@@ -7,6 +7,7 @@ import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { useSubmitBid } from '../../../hooks/useAuctionContracts';
 import { contractService } from '../../../lib/api/contract.service';
 import HeroBackground from '../../landing/HeroBackground';
+import { marketplaceService } from '../../../lib/api/marketplace.service';
 
 const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -17,6 +18,7 @@ const AuctionDetailsPage = () => {
   const [bidAmount, setBidAmount] = useState('');
   const [pricePerToken, setPricePerToken] = useState('');
   const [usdcBalance, setUsdcBalance] = useState('0');
+  const [hasAlreadyBidded, setHasAlreadyBidded] = useState(false);
 
   const { submitBid, status, error: bidError, isLoading, reset } = useSubmitBid();
 
@@ -48,6 +50,22 @@ const AuctionDetailsPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId, address]);
+
+  // Check for existing bids
+  useEffect(() => {
+    if (address && assetId) {
+      const checkForExistingBids = async () => {
+        try {
+          const myBids = await marketplaceService.getUserBids();
+          const hasBid = myBids.some(bid => bid.assetId === assetId && bid.status === 'PENDING');
+          setHasAlreadyBidded(hasBid);
+        } catch (error) {
+          console.error('Failed to check for existing bids:', error);
+        }
+      };
+      checkForExistingBids();
+    }
+  }, [address, assetId]);
 
   // Truncate wallet address
   const truncateAddress = (address: string): string => {
@@ -279,7 +297,7 @@ const AuctionDetailsPage = () => {
 
             {/* How Auction Works */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="font-antic text-xl font-semibold text-foreground mb-4">How This Auction Works</h2>
+              <h2 className="font-antic text-xl font-semibold text-foreground mb-4">Hw This Auction Works</h2>
               <div className="space-y-3 font-antic text-sm text-gray-600">
                 <p>
                   <strong className="text-foreground">1. Submit Your Bid:</strong> Enter the number of tokens you want and your maximum price per token.
@@ -488,6 +506,7 @@ const AuctionDetailsPage = () => {
                     disabled={
                       isLoading ||
                       !address ||
+                      hasAlreadyBidded ||
                       !!(
                         asset.listing?.scheduledEndTime &&
                         new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
@@ -502,6 +521,8 @@ const AuctionDetailsPage = () => {
                       ? 'Processing...'
                       : !address
                       ? 'Connect Wallet'
+                      : hasAlreadyBidded // Display 'Already Bidded' if true
+                      ? 'Already Bidded'
                       : asset.listing?.scheduledEndTime &&
                         new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
                       ? 'Auction Ended'

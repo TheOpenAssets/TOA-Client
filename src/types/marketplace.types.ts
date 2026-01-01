@@ -1,5 +1,6 @@
 // src/types/marketplace.types.ts
 
+
 export type AssetCategory = 'invoice' | 'real-estate' | 'trade-finance' | 'equipment-lease';
 export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED';
 
@@ -47,10 +48,17 @@ interface Listing {
   clearingPrice?: string; // USDC with 6 decimals
 }
 
+
+export interface AssetPriceRange {
+  minPrice: string; // USDC with 6 decimals
+  maxPrice: string; // USDC with 6 decimals
+}
+
 export interface AssetMetadata {
   invoiceNumber: string;
   faceValue: string;
   currency: string;
+  priceRange: AssetPriceRange;
   issueDate: string;
   dueDate: string;
   buyerName: string;
@@ -70,6 +78,12 @@ export interface MarketplaceListing {
   status: AssetStatus;
   metadata: AssetMetadata;
   tokenParams: TokenParams;
+  listingType?: 'AUCTION' | 'STATIC';
+  // Additional fields for UI compatibility
+  name?: string;
+  industry?: string;
+  riskTier?: string;
+  listedAt?: string;
 }
 
 export interface AssetDetails {
@@ -134,6 +148,31 @@ export interface MarketplaceAsset {
   status: string;
   verified: boolean;
   listedDate: string;
+  listingType?: 'AUCTION' | 'STATIC';
+}
+
+export interface TrendingAsset {
+  assetId: string;
+  tokenAddress: string;
+  name: string;
+  industry: string;
+  faceValue: string;
+  currency: string;
+  riskTier: string;
+  dueDate: string;
+  totalSupply: string;
+  sold: string;
+  percentageSold: number;
+  minInvestment: string;
+  listingType: 'AUCTION' | 'STATIC';
+  listedAt: string;
+  status: string;
+  activityMetrics: {
+    purchaseCount: number;
+    bidCount: number;
+    totalActivity: number;
+  };
+  pricePerToken?: string; // only for STATIC
 }
 
 export interface PlatformMetrics {

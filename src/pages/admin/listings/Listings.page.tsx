@@ -1,8 +1,8 @@
 // src/pages/admin/listings/Listings.page.tsx
 
 import { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
 import { adminService } from '../../../lib/api/admin.service';
-import { contractService } from '../../../lib/api/contract.service';
 import type { ApiAdminAsset, AuctionClearingPriceInfo } from '../../../types/admin.types';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -73,25 +73,18 @@ const ListingsPage = () => {
 
     setIsEndingAuction(true);
     try {
-      // Step 1: End auction on-chain
-      info('Step 1/2: Ending auction on-chain...', 'Please check your wallet and confirm the transaction.');
-      const onChainResult = await contractService.endAuctionOnChain(selectedAsset.assetId, clearingPrice);
-
-      if (!onChainResult.success || !onChainResult.transactionHash || !onChainResult.clearingPriceWei) {
-        throw new Error(onChainResult.error || 'Failed to end auction on-chain.');
-      }
+      // The clearing price from the input is in USDC, but the backend expects it in wei (6 decimals).
+      const clearingPriceWei = ethers.parseUnits(clearingPrice, 6).toString();
       
-      success('Step 1/2: Success!', `Auction ended on-chain. TX: ${onChainResult.transactionHash.slice(0, 10)}...`);
+      info('Ending auction...', 'This may take a moment. The backend is processing the on-chain transaction.');
+      
+      const result = await adminService.endAuctionOnChain(selectedAsset.assetId, clearingPriceWei);
 
-      // Step 2: Notify backend
-      info('Step 2/2: Notifying backend...', 'Syncing on-chain data with the backend.');
-      const backendResult = await adminService.notifyAuctionEnded(selectedAsset.assetId, onChainResult.clearingPriceWei, onChainResult.transactionHash);
-
-      if (!backendResult.success) {
-        throw new Error(backendResult.error || 'Backend notification failed.');
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to end auction.');
       }
 
-      success('Auction Ended Successfully', `${selectedAsset.metadata.invoiceNumber} has been successfully ended.`);
+      success('Auction Ended Successfully', `${selectedAsset.metadata.invoiceNumber} has been successfully ended. TX: ${result.transactionHash.slice(0,10)}...`);
 
       setIsModalOpen(false);
       fetchAssets(); // Refresh the list
@@ -231,16 +224,7 @@ const ListingsPage = () => {
                   ))}
                 </div>
                 
-                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-md p-2">
-                   <h4 className="font-semibold">Price Breakdown</h4>
-                   {clearingInfo.priceBreakdown.map((point, i) => (
-                    <div key={i} className="text-xs flex justify-between">
-                      <span className="font-mono">${(Number(point.price) / 1e6).toFixed(2)}</span>
-                      <span>{(Number(point.cumulativeTokens) / 1e18).toLocaleString()} tokens</span>
-                      <span>{point.bidsCount} bids</span>
-                    </div>
-                  ))}
-                </div>
+                
 
               </div>
             )}

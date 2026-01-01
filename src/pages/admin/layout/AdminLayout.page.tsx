@@ -15,27 +15,28 @@ import { NotificationBell } from '../../../components/notifications/Notification
 import { authService } from '../../../lib/api/auth.service';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../../stores/auth.store';
 
 const AdminLayout = () => {
   const location = useLocation();
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
+    const { user } = useAuthStore();
+  
 
    useEffect(() => {
     const verifyAuth = async () => {
       try {
         // Check if access token exists
-        if (!authService.isAuthenticated()) {
-          console.warn('No access token found. Redirecting to login...');
-          navigate('/', { replace: true });
-          return;
-        }
-
+        if (!user) {
+      authService.logout();
+      return;
+    }
         // Verify token with backend
-        const user = await authService.getCurrentUser();
+        const currentUser = await authService.getCurrentUser();
 
         // Check if user has ORIGINATOR role (issuer)
-        if (user.role !== 'ADMIN') {
+        if (currentUser.role !== 'ADMIN') {
           console.warn(`Unauthorized role: ${user.role}. Admin dashboard requires Admin role.`);
           setError('Unauthorized access. You do not have permission to access the admin dashboard.');
           setTimeout(() => {
@@ -44,7 +45,7 @@ const AdminLayout = () => {
           return;
         }
 
-        console.log('Authentication verified. User:', user);
+        console.log('Authentication verified. User:', currentUser);
       } catch (err: any) {
         console.error('Authentication verification failed:', err);
         setError(err.message || 'Authentication failed. Redirecting to login...');

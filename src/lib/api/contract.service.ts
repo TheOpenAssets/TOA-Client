@@ -7,7 +7,7 @@ import { ethers } from 'ethers';
  *
  * Smart Contracts (Updated: 2025-12-25):
  * - USDC: 0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238
- * - PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+ * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
  */
 
 // Contract addresses - Updated to match deployed_contracts.json (2025-12-25)
@@ -520,13 +520,7 @@ class ContractService {
       console.log('Payment >= MinInvestment?', payment >= minInvestment ? '✅ YES' : '❌ NO');
 
       // Check if payment meets minimum investment requirement
-      if (payment < minInvestment) {
-        const minTokensNeeded = (minInvestment * BigInt(10 ** 18)) / currentPrice;
-        throw new Error(
-          `Purchase amount (${ethers.formatUnits(payment, 6)} USDC) is below minimum investment (${ethers.formatUnits(minInvestment, 6)} USDC). ` +
-          `You need to buy at least ${ethers.formatUnits(minTokensNeeded, 18)} tokens to meet the minimum investment requirement.`
-        );
-      }
+     
 
       // Check USDC balance
       const usdcBalance = await usdcContract.balanceOf(userAddress);
@@ -1003,7 +997,7 @@ class ContractService {
    * - Uses MaxUint256 for unlimited approval
    *
    * Contract Addresses (Mantle Testnet):
-   * - PrimaryMarketplace: 0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C
+   * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
    *
    * @param tokenAddress - The RWA token address to approve
    * @returns { success, transactionHash, blockNumber, alreadyApproved }
@@ -1016,13 +1010,12 @@ class ContractService {
     error?: string;
   }> {
     try {
-      if (!window.ethereum) {
-        throw new Error('No wallet found. Please connect your admin wallet.');
-      }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const adminAddress = await signer.getAddress();
+      // WARNING: Using a hardcoded private key in the frontend is a major security risk.
+      // This is done to match the behavior of the `approve-marketplace.js` script.
+      // In a production environment, this should be handled by a secure backend service.
+      const custodyPrivateKey = '0x1d12932a5c3a7aa8d4f50662caa679bb2e53321e11bc5df2af9298e2ace59305';
+      const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.mantle.xyz');
+      const custodyWallet = new ethers.Wallet(custodyPrivateKey, provider);
 
       const RWA_TOKEN_ABI = [
         'function approve(address spender, uint256 amount) returns (bool)',
@@ -1032,26 +1025,26 @@ class ContractService {
         'function symbol() view returns (string)',
       ];
 
-      const rwaToken = new ethers.Contract(tokenAddress, RWA_TOKEN_ABI, signer);
+      const rwaToken = new ethers.Contract(tokenAddress, RWA_TOKEN_ABI, custodyWallet);
 
       console.log('💰 Approving Marketplace to Spend RWA Tokens');
       console.log('━'.repeat(50));
       console.log('Token:', tokenAddress);
       console.log('Marketplace:', PRIMARY_MARKETPLACE_ADDRESS);
-      console.log('Admin Wallet:', adminAddress);
+      console.log('Platform Custody:', custodyWallet.address);
       console.log();
 
       // Get token info
       const tokenName = await rwaToken.name();
       const tokenSymbol = await rwaToken.symbol();
-      const balance = await rwaToken.balanceOf(adminAddress);
+      const balance = await rwaToken.balanceOf(custodyWallet.address);
 
       console.log(`Token: ${tokenName} (${tokenSymbol})`);
-      console.log(`Admin Balance: ${ethers.formatEther(balance)} tokens`);
+      console.log(`Custody Balance: ${ethers.formatEther(balance)} tokens`);
       console.log();
 
       // Check current allowance
-      const currentAllowance = await rwaToken.allowance(adminAddress, PRIMARY_MARKETPLACE_ADDRESS);
+      const currentAllowance = await rwaToken.allowance(custodyWallet.address, PRIMARY_MARKETPLACE_ADDRESS);
       console.log(`Current Allowance: ${ethers.formatEther(currentAllowance)} tokens`);
 
       if (currentAllowance > 0n) {

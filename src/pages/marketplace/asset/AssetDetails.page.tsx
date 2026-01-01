@@ -235,7 +235,7 @@ const AssetDetailsPage = () => {
           const notifyPayload = {
             txHash: result.purchaseTxHash!,
             assetId: asset.assetId,
-            amount: (parseFloat(tokensToBuy) * 1e18).toString(),
+            amount: ethers.parseUnits(tokensToBuy, 18).toString(),
             blockNumber: result.blockNumber!.toString(),
           };
 

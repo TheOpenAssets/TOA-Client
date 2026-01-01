@@ -31,8 +31,33 @@ const FaucetPage = () => {
 
     setIsLoadingUsdc(true);
     setFaucetResult(null); // Clear previous result
-    info('Requesting USDC...', 'The faucet is processing your request.');
+    
     try {
+      // First, try to add the USDC token to the wallet
+      info('Adding USDC Token...', 'Please approve adding USDC to your wallet.');
+      
+      const usdcAddress = '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
+      
+      try {
+        await window.ethereum?.request({
+          method: 'wallet_watchAsset',
+          params: {
+            type: 'ERC20',
+            options: {
+              address: usdcAddress,
+              symbol: 'USDC',
+              decimals: 6,
+              image: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+            },
+          },
+        });
+      } catch (tokenError) {
+        // User rejected or token already added, continue anyway
+        console.log('Token add skipped:', tokenError);
+      }
+
+      // Now request from faucet
+      info('Requesting USDC...', 'The faucet is processing your request.');
       const response = await faucetService.getUsdcFromFaucet(address);
       success('USDC Received!', `${response.amount} USDC sent to your wallet.`);
       setFaucetResult({ ...response, symbol: 'USDC' });

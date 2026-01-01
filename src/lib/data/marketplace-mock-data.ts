@@ -331,12 +331,13 @@ export const getCategoryLabel = (category: AssetCategory): string => {
 };
 
 // Helper function to get category icon
-export const getCategoryIcon = (category: AssetCategory): string => {
-  const icons: Record<AssetCategory, string> = {
+export const getCategoryIcon = (category: AssetCategory | string): string => {
+  const icons: Record<string, string> = {
     'invoice': '📄',
     'real-estate': '🏢',
     'trade-finance': '🚢',
     'equipment-lease': '🏗️',
   };
-  return icons[category];
+  // Return matching icon or default to invoice icon for any unknown category
+  return icons[category.toLowerCase()] || icons['invoice'];
 };
