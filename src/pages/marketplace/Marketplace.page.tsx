@@ -62,63 +62,96 @@ const MarketplacePage = () => {
 
   // Convert backend listings to frontend format for display
   // Using REAL API data with sold percentage for progress bars
-  const displayAssets: MarketplaceAsset[] = listings.length > 0
-    ? (() => {
-        console.log('✅ Marketplace: Using REAL data from API', { count: listings.length });
-        return listings.map((listing) => {
-          // Calculate maturity days from dueDate
-          // @ts-ignore
-          const dueDate = new Date(listing.dueDate);
-          const today = new Date();
-          const maturityDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const displayAssets: MarketplaceAsset[] = (() => {
+    // Map ALL listings (both STATIC and AUCTION) from the flat API response
+    const mappedListings: MarketplaceAsset[] = listings.map((listing) => {
+      // Determine if this is STATIC or AUCTION
+      const isAuction = listing.listingType === 'AUCTION';
 
-          // Parse sold and totalSupply from wei (18 decimals)
-          // @ts-ignore
-          const soldWei = BigInt(listing.sold || '0');
-          // @ts-ignore
-          const totalSupplyWei = BigInt(listing.totalSupply || '0');
-          const sold = Number(soldWei) / 1e18;
-          const totalSupply = Number(totalSupplyWei) / 1e18;
+      // Calculate maturity days from dueDate
+      const dueDateStr = listing.dueDate || listing.metadata?.dueDate;
+      const dueDate = new Date(dueDateStr || 0);
+      const today = new Date();
+      const maturityDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-          // Calculate funding progress (sold percentage)
-          const fundingProgress = totalSupply > 0 ? (sold / totalSupply) * 100 : 0;
-
-          // Parse price per token (USDC 6 decimals)
-          // @ts-ignore
-          const pricePerTokenWei = BigInt(listing.pricePerToken || '0');
-          const pricePerToken = Number(pricePerTokenWei) / 1e6;
-
-          // Calculate total raised (sold * price per token)
-          const totalRaised = sold * pricePerToken;
-
-          // Target amount is face value
-          // @ts-ignore
-          const targetAmount = parseFloat(listing.faceValue || '0');
-
-          return {
-            id: listing.assetId,
-            assetId: listing.name || listing.assetId, // Use name as display ID (e.g., "INV-2025-637514 - Tech Solutions Inc")
-            name: listing.industry || 'Invoice', // Use industry as category name
-            description: `${listing.industry || 'Invoice'} · Invoice · ${listing.riskTier || 'Standard'} Risk`,
-            category: 'invoice' as const,
-            icon: '📄',
-            tokenPrice: pricePerToken,
-            yieldAPY: 8, // TODO: Backend needs to provide this - using default
-            maturityDays: maturityDays > 0 ? maturityDays : 90,
-            totalRaised: totalRaised,
-            targetAmount: targetAmount,
-            fundingProgress: fundingProgress,
-            status: listing.status,
-            verified: listing.status === 'TOKENIZED',
-            listedDate: listing.listedAt || new Date().toISOString(),
-            listingType: listing.listingType,
-          };
+      // Debug log for maturity tracking
+      const isMatured = maturityDays <= 0;
+      if (isMatured) {
+        console.log(`🔴 MATURED ASSET - ${listing.name}:`, {
+          assetId: listing.assetId,
+          dueDate: dueDateStr,
+          daysOverdue: Math.abs(maturityDays),
+          listingType: listing.listingType,
+          status: listing.status
         });
-      })()
-    : (() => {
-        console.log('ℹ️ Marketplace: No live data returned; leaving empty.');
-        return [] as MarketplaceAsset[];
-      })(); // No fallback to mock data; keep empty state
+      }
+
+      // Parse sold and total supply (18 decimals)
+      const soldWei = BigInt(listing.sold || '0');
+      const totalSupplyWei = BigInt(listing.totalSupply || '0');
+      const sold = Number(soldWei) / 1e18;
+      const totalSupply = Number(totalSupplyWei) / 1e18;
+      const fundingProgress = listing.percentageSold || (totalSupply > 0 ? (sold / totalSupply) * 100 : 0);
+
+      // Parse price (USDC with 6 decimals)
+      // For AUCTION: no price yet (reserve price comes from auction contract)
+      // For STATIC: use pricePerToken
+      const pricePerTokenWei = BigInt(listing.pricePerToken || '0');
+      const pricePerToken = Number(pricePerTokenWei) / 1e6;
+
+      const totalRaised = sold * pricePerToken;
+      const targetAmount = parseFloat(listing.faceValue || '0');
+
+      return {
+        id: listing.assetId,
+        assetId: listing.name || listing.assetId,
+        name: listing.industry || (isAuction ? 'Auction' : 'Invoice'),
+        description: `${listing.industry || 'Asset'} · ${isAuction ? 'Auction' : 'Invoice'} · ${listing.riskTier || 'Standard'} Risk`,
+        category: 'invoice' as const,
+        icon: isAuction ? '🔨' : '📄',
+        tokenPrice: pricePerToken,
+        yieldAPY: isAuction ? 0 : 8,
+        maturityDays: maturityDays > 0 ? maturityDays : (isAuction ? "Ended" : "Matured"),
+        totalRaised: totalRaised,
+        targetAmount: targetAmount,
+        fundingProgress: fundingProgress,
+        status: listing.status,
+        verified: listing.status === 'TOKENIZED' || listing.status === 'LISTED',
+        listedDate: listing.listedAt || new Date().toISOString(),
+        listingType: listing.listingType || 'STATIC',
+        endTime: isAuction ? dueDate.toISOString() : undefined,
+      };
+    });
+
+    const auctionAssets: MarketplaceAsset[] = auctions.map((auction) => {
+      const endTime = new Date(auction.endTime);
+      const today = new Date();
+      const maturityDays = Math.ceil((endTime.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      return {
+        id: auction.assetId,
+        assetId: auction.metadata?.invoiceNumber || auction.assetId,
+        name: auction.metadata?.industry || 'Auction',
+        description: `${auction.metadata?.industry || 'Auction'} · Auction · ${auction.metadata?.riskTier || 'Standard'} Risk`,
+        category: 'invoice' as const,
+        icon: '🔨',
+        tokenPrice: auction.reservePrice,
+        yieldAPY: 0, // Auctions don't have a fixed APY
+        maturityDays: maturityDays > 0 ? maturityDays : "Ended",
+        totalRaised: (auction.totalDemand || 0) * (auction.clearingPrice || auction.reservePrice),
+        targetAmount: auction.totalSupply * auction.reservePrice,
+        fundingProgress: (auction.totalDemand / auction.totalSupply) * 100,
+        status: auction.status,
+        verified: true,
+        listedDate: auction.startTime,
+        listingType: 'AUCTION',
+        endTime: auction.endTime,
+      };
+    });
+
+    // Combine all assets: mapped listings (STATIC + AUCTION) and auctions from announcements API
+    return [...mappedListings, ...auctionAssets];
+  })();
 
 
 const handlenavigate = (asset: any) => {
@@ -160,11 +193,8 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
     // Category filter
     if (activeFilter === 'all') return true;
     if (activeFilter === 'invoices') return asset.category === 'invoice';
-    if (activeFilter === 'real-estate') return asset.category === 'real-estate';
-    if (activeFilter === 'trade-finance') return asset.category === 'trade-finance';
-    if (activeFilter === 'equipment-lease') return asset.category === 'equipment-lease';
+  
     if (activeFilter === 'high-yield') return asset.yieldAPY >= 10;
-    if (activeFilter === 'short-term') return asset.maturityDays <= 180;
     if (activeFilter === 'verified') return asset.verified;
 
     return true;
@@ -175,11 +205,22 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
     { value: 'invoices', label: 'Invoices' },
     
     { value: 'high-yield', label: 'High Yield (>10%)' },
-    { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
   ];
 
-  const formatMaturity = (days: number): string => {
+  const formatMaturity = (asset: MarketplaceAsset): string => {
+    if (asset.listingType === 'AUCTION' && asset.endTime) {
+      return getAuctionTimeRemaining(asset.endTime);
+    }
+
+    const days = asset.maturityDays;
+    // If it's already a string (like "Matured" or "Ended"), return it
+    if (typeof days === 'string') return days;
+
+    // If days is 0 or negative, the asset has matured
+    if (days <= 0) return 'Matured';
+
+    // Format remaining time
     if (days < 30) return `${days} days`;
     if (days < 365) return `${Math.floor(days / 30)} months`;
     return `${Math.floor(days / 365)} years`;
@@ -863,7 +904,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                     {/* Maturity */}
                     <td className="px-6 py-4 text-right">
                       <div className="font-antic text-sm text-gray-600">
-                        {formatMaturity(asset.maturityDays)}
+                        {formatMaturity(asset)}
                       </div>
                     </td>
 

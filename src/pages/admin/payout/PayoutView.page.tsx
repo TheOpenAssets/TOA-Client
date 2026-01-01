@@ -49,7 +49,7 @@ const PayoutViewPage = () => {
           // Parse sold tokens
           const soldRaw = asset.listing?.sold || '0';
           const sold = typeof soldRaw === 'string'
-            ? (soldRaw.length > 18 ? parseFloat(soldRaw) / 1e18 : parseFloat(soldRaw))
+            ? (soldRaw.length >= 18 ? parseFloat(soldRaw) / 1e18 : parseFloat(soldRaw))
             : soldRaw;
 
           // Parse total supply
@@ -59,12 +59,28 @@ const PayoutViewPage = () => {
             : totalSupplyRaw;
 
           // Parse price (USDC with 6 decimals)
-          const priceRaw = asset.listing?.price || '0';
-          const price = typeof priceRaw === 'string'
-            ? (priceRaw.length > 6 ? parseFloat(priceRaw) / 1e6 : parseFloat(priceRaw))
-            : priceRaw;
+          // For STATIC assets: use listing.price
+          // For AUCTION assets: use listing.reservePrice
+          // Backend stores prices in 6 decimals (e.g., 30000 = $0.03, 150000 = $0.15)
+          const priceRaw = asset.assetType === 'AUCTION'
+            ? (asset.listing?.reservePrice || '0')
+            : (asset.listing?.price || asset.tokenParams?.pricePerToken || '0');
 
-          const totalRaised = sold * price;
+          // Always divide by 1e6 since backend stores in 6 decimals
+          const priceInUsdc = typeof priceRaw === 'string'
+            ? parseFloat(priceRaw) / 1e6
+            : priceRaw / 1e6;
+
+          // Calculate total raised (sold tokens * price per token in USDC)
+          const totalRaised = sold * priceInUsdc;
+
+          console.log(`Asset ${asset.assetId}:`, {
+            assetType: asset.assetType,
+            soldTokens: sold,
+            priceRaw,
+            priceInUsdc,
+            totalRaised
+          });
 
           return {
             assetId: asset.assetId,
@@ -72,7 +88,7 @@ const PayoutViewPage = () => {
             originator: asset.originator,
             totalSupply,
             sold,
-            price,
+            price: priceInUsdc, // Price per token in USDC (already divided by 1e6)
             totalRaised,
             status: asset.status,
             assetType: asset.assetType,

@@ -2,7 +2,7 @@
 
 
 export type AssetCategory = 'invoice' | 'real-estate' | 'trade-finance' | 'equipment-lease';
-export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED';
+export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED' | 'LISTED';
 
 interface Token {
   address: string;
@@ -30,8 +30,8 @@ interface Attestation {
 }
 
 interface Listing {
-  type: 'AUCTION' | 'DUTCH' | 'FIXED';
-  reservePrice: string; // USDC with 6 decimals
+  type: 'AUCTION' | 'DUTCH' | 'FIXED' | 'STATIC';
+  reservePrice?: string; // USDC with 6 decimals (for AUCTION)
   priceRange?: {
     min: string;
     max: string;
@@ -44,7 +44,7 @@ interface Listing {
   scheduledStartTime?: string;
   scheduledEndTime?: string;
   transactionHash?: string;
-  price?: string;
+  price?: string; // For STATIC listings
   clearingPrice?: string; // USDC with 6 decimals
 }
 
@@ -75,15 +75,32 @@ export interface TokenParams {
 
 export interface MarketplaceListing {
   assetId: string;
+  assetType?: 'STATIC' | 'AUCTION';
   status: AssetStatus;
-  metadata: AssetMetadata;
-  tokenParams: TokenParams;
+  metadata?: AssetMetadata;
+  tokenParams?: TokenParams;
+  listing?: Listing;
+  token?: Token;
   listingType?: 'AUCTION' | 'STATIC';
-  // Additional fields for UI compatibility
+  // Additional fields for UI compatibility (flattened from nested structure)
   name?: string;
   industry?: string;
   riskTier?: string;
   listedAt?: string;
+  endTime?: string;
+  dueDate?: string;
+  sold?: string;
+  totalSupply?: string;
+  pricePerToken?: string;
+  faceValue?: string;
+  reservePrice?: string;
+  phase?: 'BIDDING' | 'ENDED' | 'SETTLED';
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  percentageSold?: number;
+  tokenAddress?: string;
+  currency?: string;
+  minInvestment?: string;
 }
 
 export interface AssetDetails {
@@ -141,7 +158,7 @@ export interface MarketplaceAsset {
   icon: string;
   tokenPrice: number;
   yieldAPY: number;
-  maturityDays: number;
+  maturityDays: number | string;
   totalRaised: number;
   targetAmount: number;
   fundingProgress: number;
@@ -149,6 +166,7 @@ export interface MarketplaceAsset {
   verified: boolean;
   listedDate: string;
   listingType?: 'AUCTION' | 'STATIC';
+  endTime?: string;
 }
 
 export interface TrendingAsset {

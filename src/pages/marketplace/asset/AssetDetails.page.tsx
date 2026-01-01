@@ -93,61 +93,9 @@ const AssetDetailsPage = () => {
           setPurchaseHistory(history);
 
           if (history.chartData && history.chartData.length > 0) {
-            // Convert to 5-minute intervals
-            const INTERVAL_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-            // Get the first and last timestamps
-            const firstTimestamp = new Date(history.chartData[0].timestamp).getTime();
-            const lastTimestamp = new Date(history.chartData[history.chartData.length - 1].timestamp).getTime();
-
-            // Round first timestamp down to nearest 5-minute interval
-            const startInterval = Math.floor(firstTimestamp / INTERVAL_MS) * INTERVAL_MS;
-            const endInterval = Math.ceil(lastTimestamp / INTERVAL_MS) * INTERVAL_MS;
-
-            // Create array of 5-minute intervals
-            const intervals: number[] = [];
-            for (let time = startInterval; time <= endInterval; time += INTERVAL_MS) {
-              intervals.push(time);
-            }
-
-            // Count purchases per interval
-            const intervalData = new Map<number, { timestamp: number; purchaseCount: number; price: number }>();
-
-            history.chartData.forEach(d => {
-              const purchaseTime = new Date(d.timestamp).getTime();
-              const intervalTime = Math.floor(purchaseTime / INTERVAL_MS) * INTERVAL_MS;
-              const price = parseFloat(d.price) / 1e6;
-
-              if (intervalData.has(intervalTime)) {
-                const existing = intervalData.get(intervalTime)!;
-                existing.purchaseCount += 1;
-                existing.price = price; // Update to latest price in interval
-              } else {
-                intervalData.set(intervalTime, {
-                  timestamp: intervalTime,
-                  purchaseCount: 1,
-                  price: price,
-                });
-              }
-            });
-
-            // Fill in all intervals with purchase counts (0 if no purchases)
-            const formattedData: Array<{ timestamp: number; purchaseCount: number; price: number }> = [];
-
-            intervals.forEach(intervalTime => {
-              if (intervalData.has(intervalTime)) {
-                formattedData.push(intervalData.get(intervalTime)!);
-              } else if (intervalTime >= firstTimestamp) {
-                // Only add intervals after the first purchase
-                formattedData.push({
-                  timestamp: intervalTime,
-                  purchaseCount: 0,
-                  price: 0,
-                });
-              }
-            });
-
-            setFormattedChartData(formattedData);
+            // Aggregate purchases into 5-minute time blocks
+            const aggregatedData = aggregateIntoTimeBlocks(history.chartData, 5);
+            setFormattedChartData(aggregatedData);
           }
 
         } catch (err: any) {
@@ -159,6 +107,61 @@ const AssetDetailsPage = () => {
       fetchPurchaseData();
     }
   }, [assetId]);
+
+  /**
+   * Aggregate purchase data into time blocks
+   * @param chartData - Raw purchase data from API
+   * @param intervalMinutes - Time block interval in minutes (default 5)
+   * @returns Aggregated data with tokens purchased per time block
+   */
+  const aggregateIntoTimeBlocks = (chartData: any[], intervalMinutes: number = 5) => {
+    if (!chartData || chartData.length === 0) return [];
+
+    // Convert interval to milliseconds
+    const intervalMs = intervalMinutes * 60 * 1000;
+
+    // Find the earliest and latest timestamps
+    const timestamps = chartData.map(d => new Date(d.timestamp).getTime());
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+
+    // Create time blocks from min to max
+    const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number }> = new Map();
+
+    // Round down min time to nearest interval
+    const startBlock = Math.floor(minTime / intervalMs) * intervalMs;
+
+    // Initialize all time blocks from start to end
+    for (let blockTime = startBlock; blockTime <= maxTime; blockTime += intervalMs) {
+      blocks.set(blockTime, { timestamp: blockTime, tokensPurchased: 0, count: 0 });
+    }
+
+    // Aggregate purchases into time blocks
+    chartData.forEach(purchase => {
+      const purchaseTime = new Date(purchase.timestamp).getTime();
+      const blockTime = Math.floor(purchaseTime / intervalMs) * intervalMs;
+
+      const block = blocks.get(blockTime);
+      if (block) {
+        // Parse tokens purchased (18 decimals)
+        const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
+        block.tokensPurchased += tokensPurchased;
+        block.count += 1;
+      }
+    });
+
+    // Convert map to sorted array
+    const result = Array.from(blocks.values())
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(block => ({
+        timestamp: block.timestamp,
+        tokensPurchased: block.tokensPurchased,
+        purchaseCount: block.count,
+      }));
+
+    console.log(`📊 Chart data aggregated into ${intervalMinutes}-minute blocks:`, result);
+    return result;
+  };
 
   const loadWalletData = async () => {
     if (!address) return;
@@ -377,9 +380,9 @@ const AssetDetailsPage = () => {
                 <div className="flex justify-between items-start mb-4">
                     <div>
                         <p className="text-5xl font-semibold text-[#111111]">
-                          {purchaseHistory?.totalTransactions || 0}
+                          ${(purchaseHistory?.purchases && purchaseHistory.purchases.length > 0) ? (parseFloat(purchaseHistory.purchases[0].price) / 1e6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2) : 'N/A')}
                         </p>
-                        <p className="text-green-600 text-sm mt-1">Total Purchases</p>
+                        <p className="text-green-600 text-sm mt-1">Token Price (USDC)</p>
                     </div>
                     <div className="flex items-center gap-2">
                         {timeFilters.map(filter => (
@@ -401,18 +404,67 @@ const AssetDetailsPage = () => {
                 ) : (formattedChartData.length > 0) ? (
                     <div className="h-[400px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                            <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                                 <defs>
-                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#16A34A" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#16A34A" stopOpacity={0}/>
+                                    <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
-                                <XAxis dataKey="timestamp" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}}
-                                    tickFormatter={(timestamp) => new Date(timestamp).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}/>
-                                <YAxis orientation="right" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} tickFormatter={(count) => count.toString()} allowDecimals={false}/>
-                                <Tooltip formatter={(count: number | undefined) => (count !== undefined ? [count, 'Purchases'] : ['', ''])}/>
-                                <Area type="monotone" dataKey="purchaseCount" stroke="#16A34A" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+                                <XAxis
+                                    dataKey="timestamp"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{fill: '#6B7280', fontSize: 12}}
+                                    tickFormatter={(timestamp) => {
+                                        const date = new Date(timestamp);
+                                        return date.toLocaleString(undefined, {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    }}
+                                />
+                                <YAxis
+                                    orientation="right"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{fill: '#6B7280', fontSize: 12}}
+                                    tickFormatter={(tokens) => {
+                                        // Format large numbers with K, M suffix
+                                        if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
+                                        if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}K`;
+                                        return tokens.toFixed(0);
+                                    }}
+                                    label={{ value: 'Tokens Purchased', angle: -90, position: 'insideRight', style: { fill: '#6B7280', fontSize: 12 } }}
+                                />
+                                <Tooltip
+                                    formatter={(value: any) => {
+                                        if (typeof value === 'number') {
+                                            return [`${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`, ''];
+                                        }
+                                        return ['', ''];
+                                    }}
+                                    labelFormatter={(timestamp) => {
+                                        const date = new Date(timestamp);
+                                        return date.toLocaleString(undefined, {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        });
+                                    }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="tokensPurchased"
+                                    stroke="#3B82F6"
+                                    strokeWidth={2}
+                                    fillOpacity={1}
+                                    fill="url(#colorTokens)"
+                                />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -585,14 +637,16 @@ const AssetDetailsPage = () => {
                       disabled={isPurchasing || !address || (() => {
                         const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
                         const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        return soldTokens >= totalSupply;
+                        return soldTokens - totalSupply <= 0;
                       })() || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)}
                       className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                       {(() => {
                         const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
                         const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        if (soldTokens >= totalSupply) return 'Sold Out';
+                        console.log('Button State Check - Sold Tokens:', soldTokens, 'Total Supply:', totalSupply);
+                        if (soldTokens - totalSupply <= 0) return 'Sold Out';
+                        console.log("sold", soldTokens-totalSupply)
                         if (isPurchasing) return 'Processing...';
                         if (!address) return 'Connect Wallet';
                         if( parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
