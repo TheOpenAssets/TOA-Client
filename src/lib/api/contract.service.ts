@@ -90,13 +90,34 @@ class ContractService {
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await provider.getNetwork();
+
+      // Check if we're on Mantle Sepolia (chainId: 5003)
+      if (network.chainId !== 5003n) {
+        console.warn(`Wrong network: Connected to chainId ${network.chainId}, expected 5003 (Mantle Sepolia)`);
+        return '0';
+      }
+
       const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, provider);
+
+      // Check if contract exists by checking code at address
+      const code = await provider.getCode(USDC_ADDRESS);
+      if (code === '0x') {
+        console.warn(`USDC contract not found at ${USDC_ADDRESS} on network ${network.chainId}`);
+        return '0';
+      }
 
       const balance = await usdcContract.balanceOf(userAddress);
       return ethers.formatUnits(balance, 6); // USDC has 6 decimals
     } catch (error) {
       console.error('Error checking USDC balance:', error);
-      throw new Error('Failed to check USDC balance');
+      // Return 0 instead of throwing to prevent UI from breaking
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'BAD_DATA' || err.message?.includes('could not decode')) {
+        console.warn('USDC contract call failed, returning 0 balance');
+        return '0';
+      }
+      return '0';
     }
   }
 

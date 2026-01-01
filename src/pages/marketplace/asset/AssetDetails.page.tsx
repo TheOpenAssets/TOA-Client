@@ -1,8 +1,9 @@
 // src/pages/marketplace/asset/AssetDetails.page.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { ethers } from 'ethers';
+import { formatUnits } from 'viem';
 import type { PurchaseHistoryResponse } from '../../../types/marketplace.types';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
@@ -15,6 +16,20 @@ import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
 
+// USDC Contract Address
+const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
+
+// Minimal USDC ABI - just what we need
+const USDC_ABI = [
+  {
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const { address } = useAccount();
@@ -23,7 +38,6 @@ const AssetDetailsPage = () => {
 
   const [timeRange, setTimeRange] = useState('1M');
   const [tokensToBuy, setTokensToBuy] = useState('');
-  const [usdcBalance, setUsdcBalance] = useState('0');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistoryResponse | null>(null);
@@ -54,6 +68,20 @@ const AssetDetailsPage = () => {
 
   const calculatedMethString = calculatedMethAmount > 0 ? calculatedMethAmount.toFixed(6) : '';
 
+  // Read USDC Balance directly using Wagmi
+  const { data: usdcBalanceRaw, refetch: refetchUsdcBalance } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address, // Only run when address exists
+    }
+  });
+
+  // Format USDC balance (6 decimals)
+  const usdcBalance = usdcBalanceRaw ? formatUnits(usdcBalanceRaw, 6) : '0';
+
   // Wagmi Hooks for Approval
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: LEVERAGE_CONTRACTS.MockMETH,
@@ -64,24 +92,40 @@ const AssetDetailsPage = () => {
 
   const { writeContractAsync: approveMeth } = useWriteContract();
 
+  // Load wallet data (refetch balances and allowances)
+  const loadWalletData = useCallback(async () => {
+    if (!address) return;
+    try {
+      refetchUsdcBalance();
+      refetchAllowance();
+    } catch (error) {
+      console.error('Error loading wallet data:', error);
+    }
+  }, [address, refetchUsdcBalance, refetchAllowance]);
+
   useEffect(() => {
     if (assetId) {
       fetchAssetDetails(assetId);
     }
     fetchMethPrice();
 
+    // Load wallet data if already connected
+    if (address) {
+      loadWalletData();
+    }
+
     // Auto-refresh mETH price every 30 seconds
     const interval = setInterval(() => {
       fetchMethPrice();
     }, 30000);
     return () => clearInterval(interval);
-  }, [assetId, fetchAssetDetails, fetchMethPrice]);
+  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData]);
 
   useEffect(() => {
     if (address) {
       loadWalletData();
     }
-  }, [address]);
+  }, [address, loadWalletData]);
 
   useEffect(() => {
     if (assetId) {
@@ -161,17 +205,6 @@ const AssetDetailsPage = () => {
 
     console.log(`📊 Chart data aggregated into ${intervalMinutes}-minute blocks:`, result);
     return result;
-  };
-
-  const loadWalletData = async () => {
-    if (!address) return;
-    try {
-      const balance = await contractService.checkUSDCBalance(address);
-      setUsdcBalance(balance);
-      refetchAllowance();
-    } catch (error) {
-      console.error('Error loading wallet data:', error);
-    }
   };
 
   const handleLeverageTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
