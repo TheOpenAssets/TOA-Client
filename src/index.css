@@ -60,6 +60,16 @@
   }
 }
 
+@font-face {
+  font-family: 'Gellix';
+  src: url('/fonts/Gellix-TRIAL-Regular.otf') format('opentype');
+  /* Add more src lines for different weights (bold, light, etc.) */
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Helps with performance */
+}
+
+
 @layer base {
   body {
     font-family: 'Geist Sans', sans-serif;
@@ -323,15 +333,23 @@
 @layer utilities {
   /* Font Family Utilities */
   .font-geist {
-    font-family: 'Antic Didone', serif;
+    font-family: 'Geist Sans', sans-serif;
   }
-  
+
+  .font-gellix {
+    font-family: 'Gellix', sans-serif;
+  }
+
   .font-beau {
     font-family: 'Beau Rivage', cursive;
   }
-  
+
   .font-inter {
     font-family: 'Inter', sans-serif;
+  }
+
+  .font-antic {
+    font-family: 'Antic Didone', serif;
   }
 
   /* Animation Utilities */
