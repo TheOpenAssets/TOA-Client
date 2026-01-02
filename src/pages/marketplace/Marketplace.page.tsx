@@ -192,10 +192,12 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
     { value: 'verified', label: 'Verified' },
   ];
 
+
+  
   const formatMaturity = (days: number): string => {
     if (days < 30) return `${days} days`;
     if (days < 365) return `${Math.floor(days / 30)} months`;
-
+    return `Matured`;
   };
 
   // Calculate time remaining for auction

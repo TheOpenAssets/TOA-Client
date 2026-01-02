@@ -156,7 +156,7 @@ const AssetDetailsPage = () => {
    * Aggregate purchase data into time blocks
    * @param chartData - Raw purchase data from API
    * @param intervalMinutes - Time block interval in minutes (default 5)
-   * @returns Aggregated data with tokens purchased per time block
+   * @returns Aggregated data with tokens purchased per time block (only non-zero values)
    */
   const aggregateIntoTimeBlocks = (chartData: any[], intervalMinutes: number = 5) => {
     if (!chartData || chartData.length === 0) return [];
@@ -164,21 +164,8 @@ const AssetDetailsPage = () => {
     // Convert interval to milliseconds
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    // Find the earliest and latest timestamps
-    const timestamps = chartData.map(d => new Date(d.timestamp).getTime());
-    const minTime = Math.min(...timestamps);
-    const maxTime = Math.max(...timestamps);
-
-    // Create time blocks from min to max
+    // Create time blocks map
     const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number }> = new Map();
-
-    // Round down min time to nearest interval
-    const startBlock = Math.floor(minTime / intervalMs) * intervalMs;
-
-    // Initialize all time blocks from start to end
-    for (let blockTime = startBlock; blockTime <= maxTime; blockTime += intervalMs) {
-      blocks.set(blockTime, { timestamp: blockTime, tokensPurchased: 0, count: 0 });
-    }
 
     // Aggregate purchases into time blocks
     chartData.forEach(purchase => {
@@ -191,11 +178,20 @@ const AssetDetailsPage = () => {
         const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
         block.tokensPurchased += tokensPurchased;
         block.count += 1;
+      } else {
+        // Create new block for this time interval
+        const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
+        blocks.set(blockTime, {
+          timestamp: blockTime,
+          tokensPurchased: tokensPurchased,
+          count: 1
+        });
       }
     });
 
-    // Convert map to sorted array
+    // Convert map to sorted array - ONLY including blocks with purchases (non-zero)
     const result = Array.from(blocks.values())
+      .filter(block => block.tokensPurchased > 0) // Only keep non-zero purchases
       .sort((a, b) => a.timestamp - b.timestamp)
       .map(block => ({
         timestamp: block.timestamp,
@@ -203,7 +199,7 @@ const AssetDetailsPage = () => {
         purchaseCount: block.count,
       }));
 
-    console.log(`📊 Chart data aggregated into ${intervalMinutes}-minute blocks:`, result);
+    console.log(`📊 Chart data aggregated into ${intervalMinutes}-minute blocks (non-zero only):`, result);
     return result;
   };
 
