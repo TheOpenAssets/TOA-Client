@@ -18,12 +18,12 @@ const HeroSection = () => {
     <section id="hero" className="relative max-h-screen flex flex-col justify-center pt-20 pb-24 bg-transparent">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="font-geist text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
+          <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
            RWA Tokenization,
           </h1>
           <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Settlement
 </h1>
-          <h1 className="font-geist text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
+          <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
 & Cross Protocol Credit 
           </h1>
 

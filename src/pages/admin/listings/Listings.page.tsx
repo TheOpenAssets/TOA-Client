@@ -153,7 +153,7 @@ const ListingsPage = () => {
                   </Badge>
                 </div>
                 <div className="w-1/6">
-                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && asset.status === 'ENDED') ? 'Ended' : 'Active'}</Badge>
+                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && (asset.status === 'ENDED' || asset.status === 'AUCTION_DECLARED')) ? 'Ended' : 'Active'}</Badge>
                 </div>
                 <div className="w-1/6">
                   {formatCurrency(asset.metadata.faceValue, asset.metadata.currency)}
@@ -162,7 +162,7 @@ const ListingsPage = () => {
                   {new Date(asset.listing?.listedAt || asset.createdAt).toLocaleDateString()}
                 </div>
                 <div className="w-1/6 text-right">
-                  {asset.assetType === 'AUCTION' && (asset.status === 'ENDED' ) ? (
+                  {asset.assetType === 'AUCTION' && (asset.status === 'ENDED'  || asset.status === 'AUCTION_DECLARED') ? (
                     asset.listing?.clearingPrice ? (
                       <Badge variant="secondary" className="bg-green-100 text-green-700">
                         Announced: ${asset.listing.clearingPrice ? (parseFloat(asset.listing.clearingPrice) / 1e6).toFixed(2) : 'N/A'}

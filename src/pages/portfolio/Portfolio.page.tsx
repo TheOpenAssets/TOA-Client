@@ -483,7 +483,7 @@ const PortfolioPage = () => {
             </div>
 
             {/* Right Main Area - 3/4 width, full height with two equal sections */}
-            <div className="lg:col-span-3 flex flex-col gap-6 h-full">
+            <div className="lg:col-span-3 flex flex-col gap-6 max-h-[1200px]">
               {/* Owned Assets Table - Takes 50% height with internal scroll */}
               {(!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length)!=0 && <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
@@ -566,8 +566,12 @@ const PortfolioPage = () => {
 
                             {/* Yield Earned */}
                             <td className="px-6 py-4 text-right">
-                              <div className="font-geist text-sm font-semibold text-green-600">
-                                $0.00
+                              <div className={`font-geist text-sm font-semibold ${
+                                asset.yieldInfo?.settlementDistributed && parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
+                                  ? 'text-green-600'
+                                  : 'text-gray-400'
+                              }`}>
+                                {asset.yieldInfo?.claimableYieldFormatted || '$0.00'}
                               </div>
                             </td>
 
@@ -578,7 +582,9 @@ const PortfolioPage = () => {
                               </span>
                             </td>
                           </tr>
-                          {hoveredRow === asset.assetId && asset.yield && (
+                          {hoveredRow === asset.assetId &&
+                           asset.yieldInfo?.settlementDistributed === true &&
+                           parseFloat(asset.yieldInfo?.claimableYield || '0') > 0 && (
                             <tr className={`bg-black-50 transition-all ${
                               index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50/50'
                             }`}>
@@ -592,7 +598,7 @@ const PortfolioPage = () => {
                                   disabled={claimingAssetId === asset.assetId}
                                   className="px-4 py-2 bg-green-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {claimingAssetId === asset.assetId ? claimStatus : 'Claim Yield'}
+                                  {claimingAssetId === asset.assetId ? claimStatus : `Claim Yield (${asset.yieldInfo?.claimableYieldFormatted || '$0.00'})`}
                                 </button>
                               </td>
                             </tr>

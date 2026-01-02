@@ -16,7 +16,13 @@ export interface PortfolioAsset {
     industry: string;
     riskTier: string;
   };
-  yield?: boolean;
+  yieldInfo?: {
+    settlementDistributed: boolean;
+    claimableYield: string;
+    claimableYieldFormatted: string;
+    settlementDate?: string;
+    settlementId?: string;
+  };
 }
 
 export interface PortfolioResponse {

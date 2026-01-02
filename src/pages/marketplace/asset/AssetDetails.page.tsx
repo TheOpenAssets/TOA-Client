@@ -274,7 +274,6 @@ const AssetDetailsPage = () => {
 
 
 
-  const timeFilters = ['1D', '1W', '1M', '1Y', 'ALL'];
 
   // Calculate estimated total price (actual price will be fetched from contract during purchase)
   // Note: pricePerToken is in USDC (6 decimals), not wei (18 decimals)
@@ -413,14 +412,7 @@ const AssetDetailsPage = () => {
                         </p>
                         <p className="text-green-600 text-sm mt-1">Token Price (USDC)</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {timeFilters.map(filter => (
-                            <button key={filter} onClick={() => setTimeRange(filter)}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-full ${timeRange === filter ? 'bg-white text-black shadow-sm' : 'bg-transparent text-[#6B7280]'}`}>
-                                {filter}
-                            </button>
-                        ))}
-                    </div>
+                   
                 </div>
                 {isLoadingHistory ? (
                     <div className="h-[400px] flex items-center justify-center">
