@@ -9,14 +9,14 @@ import { parseUnits, formatUnits } from 'viem';
  * Source: packages/contracts/deployed_contracts.json
  */
 export const CONTRACTS = {
-  AttestationRegistry: process.env.VITE_ATTESTATION_REGISTRY || '0x03FE7d3736402D140659e7bD92B64808E31C3f51',
-  TrustedIssuersRegistry: process.env.VITE_TRUSTED_ISSUERS_REGISTRY || '0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2',
-  IdentityRegistry: process.env.VITE_IDENTITY_REGISTRY || '0x2E310C62A225033055E88B690F8d054ece8bcbC4',
-  YieldVault: process.env.VITE_YIELD_VAULT_ADDRESS || '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7',
-  TokenFactory: process.env.VITE_TOKEN_FACTORY || '0x7C75795Cf41ee32fB4FEB89964d7591F0a44BcfE',
-  PrimaryMarketplace: process.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504',
-  USDC: process.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238',
-  Faucet: process.env.VITE_FAUCET || '0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3',
+  AttestationRegistry: import.meta.env.VITE_ATTESTATION_REGISTRY || '0x03FE7d3736402D140659e7bD92B64808E31C3f51',
+  TrustedIssuersRegistry: import.meta.env.VITE_TRUSTED_ISSUERS_REGISTRY || '0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2',
+  IdentityRegistry: import.meta.env.VITE_IDENTITY_REGISTRY || '0x2E310C62A225033055E88B690F8d054ece8bcbC4',
+  YieldVault: import.meta.env.VITE_YIELD_VAULT_ADDRESS || '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7',
+  TokenFactory: import.meta.env.VITE_TOKEN_FACTORY || '0x7C75795Cf41ee32fB4FEB89964d7591F0a44BcfE',
+  PrimaryMarketplace: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504',
+  USDC: import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238',
+  Faucet: import.meta.env.VITE_FAUCET || '0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3',
 } as const;
 
 /*

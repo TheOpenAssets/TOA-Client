@@ -132,10 +132,10 @@ export function useSubmitBid() {
 
   // Read USDC allowance
   const { data: currentAllowance } = useReadContract({
-    address: CONTRACTS.USDC,
+    address: CONTRACTS.USDC as `0x${string}`,
     abi: USDC_ABI,
     functionName: 'allowance',
-    args: address ? [address, CONTRACTS.PrimaryMarketplace] : undefined,
+    args: address ? [address, CONTRACTS.PrimaryMarketplace as `0x${string}`] : undefined,
   });
 
   // Handle approval errors
@@ -204,7 +204,7 @@ export function useSubmitBid() {
 
       try {
         submitBidTx({
-          address: CONTRACTS.PrimaryMarketplace,
+          address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
           abi: MARKETPLACE_ABI,
           functionName: 'submitBid',
           args: [assetIdBytes32, tokenAmountWei, priceWei],
@@ -339,10 +339,10 @@ export function useSubmitBid() {
 
           try {
             approveUSDC({
-              address: CONTRACTS.USDC,
+              address: CONTRACTS.USDC as `0x${string}`,
               abi: USDC_ABI,
               functionName: 'approve',
-              args: [CONTRACTS.PrimaryMarketplace, depositNeeded],
+              args: [CONTRACTS.PrimaryMarketplace as `0x${string}`, depositNeeded],
             });
             console.log('✅ USDC approval transaction triggered');
             console.log('⏳ Waiting for approval confirmation... (useEffect will auto-submit bid)');
@@ -364,7 +364,7 @@ export function useSubmitBid() {
 
         try {
           submitBidTx({
-            address: CONTRACTS.PrimaryMarketplace,
+            address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
             abi: MARKETPLACE_ABI,
             functionName: 'submitBid',
             args: [assetIdBytes32, tokenAmountWei, priceWei],
@@ -517,7 +517,7 @@ export function useSettleBid() {
 
         // Call settleBid on contract (investor-settle.sh line 192)
         settleBidTx({
-          address: CONTRACTS.PrimaryMarketplace,
+          address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
           abi: MARKETPLACE_ABI,
           functionName: 'settleBid',
           args: [assetIdBytes32, BigInt(params.bidIndex)],
@@ -565,6 +565,7 @@ export function useSettleBid() {
             assetId: lastSettleParamsRef.current.assetId,
             bidIndex: lastSettleParamsRef.current.bidIndex,
             txHash,
+            blockNumber: receipt.blockNumber.toString(),
             });
 
           notificationSentRef.current = txHash;
@@ -668,7 +669,7 @@ export function useEndAuction() {
 
         // Call endAuction on contract (admin-endauction.sh line 205)
         endAuctionTx({
-          address: CONTRACTS.PrimaryMarketplace,
+          address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
           abi: MARKETPLACE_ABI,
           functionName: 'endAuction',
           args: [assetIdBytes32, clearingPriceWei],
@@ -716,7 +717,7 @@ export function useCheckKYC() {
   const { address } = useAccount();
 
   const { data: isVerified, isLoading } = useReadContract({
-    address: CONTRACTS.IdentityRegistry,
+    address: CONTRACTS.IdentityRegistry as `0x${string}`,
     abi: IDENTITY_REGISTRY_ABI,
     functionName: 'isVerified',
     args: address ? [address] : undefined,

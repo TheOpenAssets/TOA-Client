@@ -28,7 +28,7 @@ const PortfolioPage = () => {
 
   // Contract interaction for settling bids (investor-settle.sh verified)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { settleBid, status: settleStatus, error: settleError, isLoading: isSettling, isSuccess, reset: resetSettle } = useSettleBid();
+  const { settleBid, status: settleStatus, error: settleError, isLoading: isSettling, isSuccess } = useSettleBid();
   const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
@@ -727,15 +727,18 @@ const PortfolioPage = () => {
                                 </div>
 
                                 {/* Action Button */}
-                                {(bid.status === 'WON' || bid.status === 'LOST') && !bid.settledAt && (
-                                  <div className="ml-4 flex flex-col items-end gap-2">
+                                {bid.settledAt ? (
+                                  <div className="ml-4">
+                                    <span className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg font-antic text-sm font-medium">
+                                      Settled
+                                    </span>
+                                  </div>
+                                ) : (bid.status === 'WON' || bid.status === 'LOST') ? (
+                                  <div className="ml-4">
                                     <button
                                       onClick={(e) => {
-                                        e.preventDefault();
                                         e.stopPropagation();
-                                        resetSettle(); // Clear previous errors
                                         setSettlingBidId(bid.bidId);
-
                                         settleBid({
                                           assetId: bid.assetId || bid.auctionId,
                                           bidIndex: bid.bidIndex !== undefined ? bid.bidIndex : 0,
@@ -751,46 +754,8 @@ const PortfolioPage = () => {
                                         ? settleStatus
                                         : 'Refund USDC')}
                                     </button>
-
-                                    {/* Error Message */}
-                                    {settleError && (
-                                      <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 max-w-xs">
-                                        <span className="text-red-500 text-sm">⚠️</span>
-                                        <div className="flex-1">
-                                          <p className="text-xs font-antic text-red-800 font-semibold">Transaction Failed</p>
-                                          <p className="text-xs font-antic text-red-700 mt-0.5">{settleError}</p>
-                                          <button
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              resetSettle();
-                                              setSettlingBidId(bid.bidId);
-
-                                              settleBid({
-                                                assetId: bid.assetId || bid.auctionId,
-                                                bidIndex: bid.bidIndex !== undefined ? bid.bidIndex : 0,
-                                              });
-                                            }}
-                                            className="text-xs font-antic text-red-600 hover:text-red-800 underline mt-1"
-                                          >
-                                            Try Again
-                                          </button>
-                                        </div>
-                                        <button
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            resetSettle();
-                                            setSettlingBidId(null);
-                                          }}
-                                          className="text-red-400 hover:text-red-600 text-sm"
-                                        >
-                                          ✕
-                                        </button>
-                                      </div>
-                                    )}
                                   </div>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           );
