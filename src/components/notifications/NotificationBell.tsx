@@ -16,8 +16,8 @@ import {
 /**
  * Map notification types to Lucide icons
  */
-const getNotificationIcon = (type: NotificationType) => {
-  const iconMap: Record<NotificationType, any> = {
+const getNotificationIcon = (type: NotificationType | string) => {
+  const iconMap: Record<string, any> = {
     ASSET_STATUS: FileCheck,
     TOKEN_DEPLOYED: Coins,
     KYC_STATUS: UserCheck,
@@ -26,6 +26,7 @@ const getNotificationIcon = (type: NotificationType) => {
     BID_REFUNDED: XCircle,
     TOKEN_PURCHASED: TrendingUp,
     YIELD_DISTRIBUTED: DollarSign,
+    SYSTEM_ALERT: Bell,
   };
 
   return iconMap[type] || AlertCircle;
@@ -36,9 +37,13 @@ const getNotificationIcon = (type: NotificationType) => {
  */
 const getSeverityColor = (severity: string) => {
   const colorMap: Record<string, string> = {
+    success: 'text-green-600',
+    info: 'text-blue-600',
+    warning: 'text-orange-600',
+    error: 'text-red-600',
     SUCCESS: 'text-green-600',
     INFO: 'text-blue-600',
-    WARNING: 'text-yellow-600',
+    WARNING: 'text-orange-600',
     ERROR: 'text-red-600',
   };
 
@@ -62,6 +67,75 @@ const formatRelativeTime = (timestamp: string): string => {
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 
   return then.toLocaleDateString();
+};
+
+/**
+ * Component to render auction ended notification with bid details
+ */
+const AuctionEndedDetail = ({ notification }: { notification: BackendNotification }) => {
+  const metadata = notification.actionMetadata;
+
+  if (!metadata || !metadata.priceBreakdown || !metadata.suggestedClearingPrice) {
+    return <p className="text-xs font-inter text-foreground/60 line-clamp-2">{notification.detail}</p>;
+  }
+
+  // Extract asset name from header (e.g., "Auction Ended - Action Required" -> extract from detail)
+  const assetNameMatch = notification.detail.match(/Auction for (.+?) has ended/);
+  const assetName = assetNameMatch ? assetNameMatch[1] : 'Asset';
+
+  const suggestedPrice = parseFloat(metadata.suggestedClearingPrice) / 1e6;
+  const tokensAtPrice = parseFloat(metadata.tokensAtPrice || '0') / 1e18;
+  const percentageOfSupply = metadata.percentageOfSupply || 0;
+  const totalBids = metadata.totalBids || 0;
+
+  return (
+    <div className="space-y-2 text-xs font-inter">
+      {/* Asset Name */}
+      <div className="bg-blue-50 px-2 py-1 rounded">
+        <p className="text-blue-800 font-semibold text-[11px]">
+          📋 Invoice: {assetName}
+        </p>
+      </div>
+
+      {/* Suggested Clearing Price */}
+      <div className="bg-green-50 px-2 py-1.5 rounded">
+        <p className="text-green-800 font-semibold">
+          📊 Suggested: ${suggestedPrice.toFixed(2)}
+        </p>
+        <p className="text-green-700 text-[10px]">
+          → {tokensAtPrice.toLocaleString()} tokens ({percentageOfSupply}% supply)
+        </p>
+      </div>
+
+      {/* Bid Summary */}
+      <div className="space-y-1">
+        <p className="text-foreground/70 font-medium">📈 Bid Summary ({totalBids} bids):</p>
+        {metadata.priceBreakdown && metadata.priceBreakdown.slice(0, 3).map((breakdown: any, idx: number) => {
+          const price = parseFloat(breakdown.price) / 1e6;
+          const tokens = parseFloat(breakdown.cumulativeTokens) / 1e18;
+          const percentage = breakdown.percentage || 0;
+          const count = breakdown.bidsCount || 0;
+
+          return (
+            <div key={idx} className="flex justify-between text-[10px] text-foreground/60 pl-2">
+              <span className="font-medium">${price.toFixed(2)}</span>
+              <span>{count} bid{count > 1 ? 's' : ''} • {percentage}% • {tokens.toLocaleString()} tokens</span>
+            </div>
+          );
+        })}
+        {metadata.priceBreakdown && metadata.priceBreakdown.length > 3 && (
+          <p className="text-[10px] text-foreground/50 pl-2 italic">
+            +{metadata.priceBreakdown.length - 3} more price level{metadata.priceBreakdown.length - 3 > 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+
+      {/* Action Required */}
+      <div className="bg-orange-50 px-2 py-1.5 rounded border border-orange-200">
+        <p className="text-orange-700 font-semibold text-[10px]">⚠️ Action Required: Review & set clearing price</p>
+      </div>
+    </div>
+  );
 };
 
 interface NotificationBellProps {
@@ -248,7 +322,7 @@ export function NotificationBell({ role }: NotificationBellProps) {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[420px] p-0 bg-white/80 backdrop-blur-sm">
+      <PopoverContent className="w-[480px] p-0 bg-white/80 backdrop-blur-sm">
         {/* Header with Tabs + Mark All */}
         <Tabs value={tab} onValueChange={(value) => setTab(value as 'all' | 'unread')}>
           <div className="flex items-center justify-between border-b px-4 py-3 bg-white/40">
@@ -317,9 +391,14 @@ export function NotificationBell({ role }: NotificationBellProps) {
                       >
                         {notification.header}
                       </p>
-                      <p className="text-xs font-inter text-foreground/60 line-clamp-2">
-                        {notification.detail}
-                      </p>
+                      {/* Render auction ended notifications with special component */}
+                      {notification.type === 'SYSTEM_ALERT' && notification.header.includes('Auction Ended') ? (
+                        <AuctionEndedDetail notification={notification} />
+                      ) : (
+                        <p className="text-xs font-inter text-foreground/60 line-clamp-2">
+                          {notification.detail}
+                        </p>
+                      )}
                       <p className="text-xs font-inter text-foreground/50">
                         {formatRelativeTime(notification.receivedAt)}
                       </p>
