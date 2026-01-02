@@ -4,7 +4,6 @@ import "../../styles/Navbar.css";
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { Button } from "../../components/ui/button.tsx";
 
-import { Loader2 } from "lucide-react";
 
 
 const Navbar = () => {
