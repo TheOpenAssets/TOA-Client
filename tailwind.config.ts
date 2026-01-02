@@ -64,12 +64,12 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['"Geist Sans"', ...defaultTheme.fontFamily.sans],
-        mono: ['"Geist Mono"', ...defaultTheme.fontFamily.mono],
+        sans: ['Gellix', ...defaultTheme.fontFamily.sans], // Overrides the default sans stack
         inter: ['Inter', 'sans-serif'],
         antic: ['Antic Didone', 'serif'],
         beau: ['Beau Rivage', 'cursive'],
         jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+        gellix: ['Gellix', 'sans-serif'],
       },
       animation: {
         rainbow: "rainbow var(--speed, 2s) infinite linear",

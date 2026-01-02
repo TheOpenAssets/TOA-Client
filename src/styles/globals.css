@@ -326,7 +326,16 @@
   }
 }
 
-@layer utilities {
+
+  @font-face {
+  font-family: 'Gellix';
+  src: url('/fonts/Gellix-TRIAL-Regular.otf') format('opentype');
+  /* Add more src lines for different weights (bold, light, etc.) */
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Helps with performance */
+}
+
   /* Font Family Utilities */
   .font-antic {
     font-family: 'Antic Didone', serif;
@@ -382,7 +391,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
-}
+
 
 /* Animation Keyframes */
 @keyframes fade-in-up {
