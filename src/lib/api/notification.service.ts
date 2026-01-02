@@ -15,7 +15,8 @@ export type NotificationType =
   | 'AUCTION_WON'
   | 'BID_REFUNDED'
   | 'TOKEN_PURCHASED'
-  | 'YIELD_DISTRIBUTED';
+  | 'YIELD_DISTRIBUTED'
+  | 'SYSTEM_ALERT';
 
 /**
  * Notification severity levels
@@ -561,6 +562,7 @@ class NotificationService extends BaseService {
         'BID_REFUNDED',
         'TOKEN_PURCHASED',
         'YIELD_DISTRIBUTED',
+        'ASSET_STATUS'
       ],
       ADMIN: ['ASSET_STATUS', 'YIELD_DISTRIBUTED'],
     };

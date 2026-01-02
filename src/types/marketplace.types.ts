@@ -46,6 +46,8 @@ interface Listing {
   transactionHash?: string;
   price?: string; // For STATIC listings
   clearingPrice?: number ; // USDC with 6 decimals
+  endTransactionHash?: string;
+  endedAt?: string;
 }
 
 

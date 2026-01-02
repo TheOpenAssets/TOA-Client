@@ -423,18 +423,62 @@ export function useSettleBid() {
   const { address } = useAccount();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const lastSettleParamsRef = useRef<BidSettlementParams | null>(null);
   const notificationSentRef = useRef<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     writeContract: settleBidTx,
     data: txHash,
     isPending: isSubmitting,
+    error: submitError,
   } = useWriteContract();
 
-  const { isLoading: isPending, isSuccess, data: receipt } = useWaitForTransactionReceipt({
+  const {
+    isLoading: isPending,
+    isSuccess,
+    data: receipt,
+    error: receiptError
+  } = useWaitForTransactionReceipt({
     hash: txHash,
   });
+
+  // Handle submit errors
+  useEffect(() => {
+    if (submitError) {
+      const errorMsg = parseErrorMessage(submitError);
+      console.error('❌ Settlement Submission Error:', errorMsg);
+      setError(errorMsg);
+      setStatus('');
+      setIsLoading(false);
+      lastSettleParamsRef.current = null;
+
+      // Clear timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+  }, [submitError]);
+
+  // Handle receipt errors (transaction failed on-chain)
+  useEffect(() => {
+    if (receiptError) {
+      const errorMsg = parseErrorMessage(receiptError);
+      console.error('❌ Settlement Transaction Failed:', errorMsg);
+      setError(errorMsg);
+      setStatus('');
+      setIsLoading(false);
+      lastSettleParamsRef.current = null;
+
+      // Clear timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+  }, [receiptError]);
 
   const settleBid = useCallback(
     async (params: BidSettlementParams) => {
@@ -442,11 +486,24 @@ export function useSettleBid() {
         throw new Error('Wallet not connected');
       }
 
+      // Clear previous errors
+      setError(null);
       setIsLoading(true);
       setStatus('Settling bid on-chain...');
 
       // Store params for auto-notification after success
       lastSettleParamsRef.current = params;
+
+      // Set a timeout to prevent infinite loading (30 seconds)
+      timeoutRef.current = setTimeout(() => {
+        if (isLoading && !isSuccess) {
+          console.error('❌ Settlement transaction timeout');
+          setError('Transaction timeout. Please check your wallet and try again.');
+          setStatus('');
+          setIsLoading(false);
+          lastSettleParamsRef.current = null;
+        }
+      }, 30000);
 
       try {
         // Convert parameters
@@ -466,20 +523,35 @@ export function useSettleBid() {
           args: [assetIdBytes32, BigInt(params.bidIndex)],
         });
       } catch (error: any) {
-        console.error('Error settling bid:', error);
-        setStatus(`Error: ${error.message}`);
+        const errorMsg = parseErrorMessage(error);
+        console.error('❌ Error settling bid:', errorMsg);
+        setError(errorMsg);
+        setStatus('');
         setIsLoading(false);
         lastSettleParamsRef.current = null;
+
+        // Clear timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
         throw error;
       }
     },
-    [address, settleBidTx]
+    [address, settleBidTx, isLoading, isSuccess]
   );
 
   // CRITICAL: Auto-notify backend after settlement succeeds (investor-settle.sh line 264)
   useEffect(() => {
     const handleSettleSuccess = async () => {
       if (isSuccess && txHash && lastSettleParamsRef.current && receipt) {
+        // Clear timeout on success
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
         // Prevent duplicate notifications
         if (notificationSentRef.current === txHash) {
           return;
@@ -501,9 +573,15 @@ export function useSettleBid() {
           lastSettleParamsRef.current = null;
 
           console.log('✅ Backend notified successfully!');
+
+          // Refresh page after 2 seconds to show updated portfolio
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         } catch (error: any) {
           console.error('❌ Backend notification failed:', error);
-          setStatus(`Settlement complete, but backend notification failed: ${error.message}`);
+          setError(`Settlement complete, but backend notification failed: ${error.message}`);
+          setStatus('');
           setIsLoading(false);
         }
       }
@@ -512,12 +590,35 @@ export function useSettleBid() {
     handleSettleSuccess();
   }, [isSuccess, txHash, receipt]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset error and status
+  const reset = useCallback(() => {
+    setError(null);
+    setStatus('');
+    setIsLoading(false);
+    lastSettleParamsRef.current = null;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
   return {
     settleBid,
     status,
+    error,
     isLoading: isLoading || isSubmitting || isPending,
     isSuccess,
     txHash,
+    reset,
   };
 }
 

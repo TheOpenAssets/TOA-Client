@@ -193,10 +193,11 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
   ];
 
 
-  
-  const formatMaturity = (days: number): string => {
-    if (days < 30) return `${days} days`;
-    if (days < 365) return `${Math.floor(days / 30)} months`;
+
+  const formatMaturity = (days: number | string): string => {
+    const numDays = typeof days === 'string' ? parseFloat(days) : days;
+    if (numDays < 30) return `${numDays} days`;
+    if (numDays < 365) return `${Math.floor(numDays / 30)} months`;
     return `Matured`;
   };
 
