@@ -8,6 +8,7 @@ import { useSubmitBid } from '../../../hooks/useAuctionContracts';
 import { contractService } from '../../../lib/api/contract.service';
 import HeroBackground from '../../landing/HeroBackground';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
+import { Button } from '../../../components/ui/button';
 
 const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -58,6 +59,7 @@ const AuctionDetailsPage = () => {
         try {
           const myBids = await marketplaceService.getUserBids();
           const hasBid = myBids.some(bid => bid.assetId === assetId && bid.status === 'PENDING');
+          
           setHasAlreadyBidded(hasBid);
         } catch (error) {
           console.error('Failed to check for existing bids:', error);
@@ -135,9 +137,9 @@ const AuctionDetailsPage = () => {
 
   if (!asset) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
+      <div className="flex items-center justify-center h-screen bg-[#f6fbff]">
         <div className="text-center">
-          <div className="font-antic text-lg text-foreground mb-4">Auction not found</div>
+          <div className="text-lg text-foreground mb-4">Auction not found</div>
           <button
             onClick={() => navigate('/marketplace')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -148,6 +150,10 @@ const AuctionDetailsPage = () => {
       </div>
     );
   }
+
+  const isAuctionAnnounced = asset?.listing?.type === 'AUCTION' &&
+                             asset?.listing?.clearingPrice !== undefined &&
+                             asset?.listing?.clearingPrice !== null;
 
   return (
     <div className="min-h-screen bg-[#f6fbff]">
@@ -233,10 +239,10 @@ const AuctionDetailsPage = () => {
                     {asset.metadata?.industry} · {asset.metadata?.buyerName}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-lg">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                  <span className="font-antic text-sm font-medium text-orange-600">
-                    {asset.listing?.scheduledEndTime ? getTimeRemaining(asset.listing.scheduledEndTime) : 'N/A'} left
+                <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ${isAuctionAnnounced ? 'bg-red-100' : 'bg-orange-100'}`}>
+                  <Clock className={`w-4 h-4 ${isAuctionAnnounced ? 'text-red-600' : 'text-orange-600'}`} />
+                  <span className={`font-antic text-sm font-medium ${isAuctionAnnounced ? 'text-red-600' : 'text-orange-600'}`}>
+                    {isAuctionAnnounced ? 'Ended' : (asset.listing?.scheduledEndTime ? getTimeRemaining(asset.listing.scheduledEndTime) : 'N/A')} {!isAuctionAnnounced && 'left'}
                   </span>
                 </div>
               </div>
@@ -250,9 +256,13 @@ const AuctionDetailsPage = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="font-antic text-xs text-gray-500 mb-1">Reserve Price</p>
-                  <p className="font-antic text-lg font-semibold text-foreground">
-                    ${asset.listing?.reservePrice ? (Number(asset.listing.reservePrice) / 1e6).toFixed(2) : '0.00'}
+                  <p className="font-antic text-xs text-gray-500 mb-1">{isAuctionAnnounced ? 'Clearing Price' : 'Reserve Price'}</p>
+                  <p className={`font-antic text-lg font-semibold ${isAuctionAnnounced ? 'text-green-600' : 'text-foreground'}`}>
+                    ${isAuctionAnnounced && asset.listing?.clearingPrice
+                      ? (Number(asset.listing.clearingPrice) / 1e6).toFixed(2)
+                      : asset.listing?.reservePrice
+                      ? (Number(asset.listing.reservePrice) / 1e6).toFixed(2)
+                      : '0.00'}
                   </p>
                 </div>
                 <div>
@@ -262,6 +272,30 @@ const AuctionDetailsPage = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Auction Ended Banner */}
+              {isAuctionAnnounced && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-red-600 text-xl">⏰</span>
+                    <div className="flex-1">
+                      <p className="font-antic text-sm font-semibold text-red-800 mb-1">Auction Has Ended</p>
+                      <p className="font-antic text-xs text-red-700">
+                        This auction concluded on {asset.listing?.endedAt ? new Date(asset.listing.endedAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'N/A'}.
+                        {asset.listing?.clearingPrice && Number(asset.listing.clearingPrice) > 0
+                          ? ` Final clearing price: $${(Number(asset.listing.clearingPrice) / 1e6).toFixed(2)} per token.`
+                          : ' No tokens were sold.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Asset Information */}
@@ -315,7 +349,9 @@ const AuctionDetailsPage = () => {
           {/* Right: Bid Form (1/3 width) */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-8">
-              <h2 className="font-antic text-xl font-semibold text-foreground mb-6">Place a Bid</h2>
+              <h2 className="font-antic text-xl font-semibold text-foreground mb-6">
+                {isAuctionAnnounced ? 'Auction Ended' : 'Place a Bid'}
+              </h2>
 
                 <div className="space-y-4">
                   {/* Bid Amount Input */}
@@ -326,7 +362,7 @@ const AuctionDetailsPage = () => {
                     <input
                       type="number"
                       placeholder="0"
-                      disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
+                      disabled={isAuctionAnnounced || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                       value={bidAmount}
                       min={asset.tokenParams?.minInvestment ? (Number(asset.tokenParams.minInvestment) / 1e18).toString() : '0'}
                       max={asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toString() : '0'}
@@ -382,7 +418,7 @@ const AuctionDetailsPage = () => {
                       type="number"
                       placeholder="0.00"
                       value={pricePerToken}
-                      disabled={!!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
+                      disabled={isAuctionAnnounced || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                       min={asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toString() : '0'}
                       max={asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toString() : '0'}
                       step="0.01"
@@ -501,37 +537,40 @@ const AuctionDetailsPage = () => {
                     <span>Try Again</span>
                   </button>
                 ) : (
-                  <button
-                    onClick={handlePlaceBid}
-                    disabled={
-                      isLoading ||
-                      !address ||
-                      hasAlreadyBidded ||
-                      !!(
-                        asset.listing?.scheduledEndTime &&
-                        new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
-                      ) ||
-                      (parseFloat(bidAmount || '0') * parseFloat(pricePerToken || '0') > parseFloat(usdcBalance) &&
-                       parseFloat(bidAmount || '0') > 0 &&
-                       parseFloat(pricePerToken || '0') > 0)
-                    }
-                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading
-                      ? 'Processing...'
-                      : !address
-                      ? 'Connect Wallet'
-                      : hasAlreadyBidded // Display 'Already Bidded' if true
-                      ? 'Already Bidded'
-                      : asset.listing?.scheduledEndTime &&
-                        new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
-                      ? 'Auction Ended'
-                      : bidAmount &&
-                        pricePerToken &&
-                        parseFloat(bidAmount) * parseFloat(pricePerToken) > parseFloat(usdcBalance)
-                      ? 'Insufficient Balance'
-                      : 'Place Bid'}
-                  </button>
+                    <Button
+                      onClick={handlePlaceBid}
+                      disabled={
+                        isLoading ||
+                        !address ||
+                        hasAlreadyBidded ||
+                        isAuctionAnnounced || // Disable if auction is announced
+                        !!(
+                          asset.listing?.scheduledEndTime &&
+                          new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
+                        ) ||
+                        (parseFloat(bidAmount || '0') * parseFloat(pricePerToken || '0') > parseFloat(usdcBalance) &&
+                         parseFloat(bidAmount || '0') > 0 &&
+                         parseFloat(pricePerToken || '0') > 0)
+                      }
+                      className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading
+                        ? 'Processing...'
+                        : !address
+                        ? 'Connect Wallet'
+                        : isAuctionAnnounced // Display 'Auction Ended' if announced (check this FIRST)
+                        ? 'Auction Ended'
+                        : asset.listing?.scheduledEndTime &&
+                          new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
+                        ? 'Auction Ended'
+                        : hasAlreadyBidded // Display 'Already Bidded' if true (check this AFTER auction ended)
+                        ? 'Already Bidded'
+                        : bidAmount &&
+                          pricePerToken &&
+                          parseFloat(bidAmount) * parseFloat(pricePerToken) > parseFloat(usdcBalance)
+                        ? 'Insufficient Balance'
+                        : 'Place Bid'}
+                    </Button>
                 )}
               </div>
             </div>

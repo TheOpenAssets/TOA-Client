@@ -136,7 +136,7 @@ const ListingsPage = () => {
           <div className="w-1/6">Status</div>
           <div className="w-1/6">Face Value</div>
           <div className="w-1/6">Listed At</div>
-          <div className="w-1/6 text-right">Actions</div>
+          <div className="w-1/6 text-right">Results</div>
         </div>
         {/* Fake Table Body */}
         <div>
@@ -153,7 +153,7 @@ const ListingsPage = () => {
                   </Badge>
                 </div>
                 <div className="w-1/6">
-                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && asset.listing?.active === true) ? 'Active' : 'Ended'}</Badge>
+                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && ((asset.listing?.active === false && asset.status !== 'LISTED') || asset.status === 'Ended')) ? 'Active' : 'Ended'}</Badge>
                 </div>
                 <div className="w-1/6">
                   {formatCurrency(asset.metadata.faceValue, asset.metadata.currency)}
@@ -162,11 +162,18 @@ const ListingsPage = () => {
                   {new Date(asset.listing?.listedAt || asset.createdAt).toLocaleDateString()}
                 </div>
                 <div className="w-1/6 text-right">
-                  {asset.assetType === 'AUCTION' && asset.status === 'ENDED' && (
-                    <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className='cta-button'>
-                      Announce Clearance
-                    </Button>
-                  )}
+                  {asset.assetType === 'AUCTION' && (asset.status === 'ENDED' || asset.status === 'LISTED') ? (
+                    asset.listing?.clearingPrice ? (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                        Announced: ${asset.listing.clearingPrice ? (parseFloat(asset.listing.clearingPrice) / 1e6).toFixed(2) : 'N/A'}
+                      </Badge>
+                      
+                    ) : (
+                      <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className='cta-button'>
+                        Announce Clearance
+                      </Button>
+                    )
+                  ) : null}
                 </div>
               </div>
             ))

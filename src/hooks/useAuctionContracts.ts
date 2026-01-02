@@ -234,11 +234,11 @@ export function useSubmitBid() {
           return;
         }
 
-        console.log('✅ Bid transaction confirmed! Notifying backend...');
+        console.log('✅ Bid transaction confirmed!');
         console.log('📝 Bid hash:', bidHash);
 
         try {
-          setStatus('Notifying backend...');
+          setStatus('In progress..');
 
           const tokenAmountWei = parseTokenAmount(lastBidParamsRef.current.tokenAmount);
           const priceWei = parseUSDC(lastBidParamsRef.current.pricePerToken);

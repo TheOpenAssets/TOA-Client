@@ -22,6 +22,7 @@ interface MarketplaceState {
   auctions: Auction[]; // AUCTION_LIVE only
   scheduledAuctions: Auction[]; // AUCTION_SCHEDULED only
   auctionResults: Auction[]; // AUCTION_RESULTS_DECLARED only
+  endedAuctions: Auction[]; // AUCTION_ENDED only
   currentAuction: Auction | null;
   userBids: Bid[];
   isLoadingAuctions: boolean;
@@ -70,6 +71,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
   auctions: [], // AUCTION_LIVE only
   scheduledAuctions: [], // AUCTION_SCHEDULED only
   auctionResults: [], // AUCTION_RESULTS_DECLARED only
+  endedAuctions: [], // AUCTION_ENDED only
   currentAuction: null,
   userBids: [],
   isLoadingAuctions: false,
@@ -162,21 +164,19 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         }
       });
 
-      // Step 3: Filter out assets with AUCTION_ENDED as latest status
-      const latestAnnouncements = Array.from(assetAnnouncementsMap.values()).filter(
-        (announcement: any) => announcement.type !== 'AUCTION_ENDED'
-      );
+      // Step 3: Get all latest announcements (including AUCTION_ENDED)
+      const latestAnnouncements = Array.from(assetAnnouncementsMap.values());
 
-      // Step 4: Separate into LIVE, SCHEDULED, and RESULTS based on latest announcement type
+      // Step 4: Separate into LIVE, SCHEDULED, RESULTS, and ENDED based on latest announcement type
       const liveAnnouncements = latestAnnouncements.filter((a: any) => a.type === 'AUCTION_LIVE');
       const scheduledAnnouncements = latestAnnouncements.filter((a: any) => a.type === 'AUCTION_SCHEDULED');
       const resultsAnnouncements = latestAnnouncements.filter((a: any) => a.type === 'AUCTION_RESULTS_DECLARED');
-      const endedCount = assetAnnouncementsMap.size - latestAnnouncements.length;
+      const endedAnnouncements = latestAnnouncements.filter((a: any) => a.type === 'AUCTION_ENDED');
 
       console.log('🔨 AUCTION_LIVE count (latest status):', liveAnnouncements.length);
       console.log('📅 AUCTION_SCHEDULED count (latest status):', scheduledAnnouncements.length);
       console.log('🎯 AUCTION_RESULTS_DECLARED count (latest status):', resultsAnnouncements.length);
-      console.log('❌ AUCTION_ENDED excluded (latest status):', endedCount);
+      console.log('❌ AUCTION_ENDED count (latest status):', endedAnnouncements.length);
 
       // Step 5: Process AUCTION_LIVE announcements
       const liveAuctionPromises = liveAnnouncements.map(async (announcement: any) => {
@@ -339,24 +339,88 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         }
       });
 
+      // Step 6.75: Process AUCTION_ENDED announcements
+      const endedAuctionPromises = endedAnnouncements.map(async (announcement: any) => {
+        try {
+          console.log(`📡 Fetching ENDED auction: ${announcement.assetId}`);
+
+          // Get asset details from marketplace endpoint
+          const asset = await marketplaceService.getListingById(announcement.assetId);
+
+          // Parse totalSupply from announcement metadata
+          const totalSupplyWei = BigInt(announcement.metadata?.totalSupply || '0');
+          const totalSupply = Number(totalSupplyWei) / 1e18;
+
+          // Parse tokens sold and remaining from announcement metadata
+          const tokensSoldWei = BigInt(announcement.metadata?.tokensSold || '0');
+          const tokensSold = Number(tokensSoldWei) / 1e18;
+
+          const tokensRemainingWei = BigInt(announcement.metadata?.tokensRemaining || '0');
+          const tokensRemaining = Number(tokensRemainingWei) / 1e18;
+
+          // Parse clearing price from announcement metadata (USDC 6 decimals)
+          const clearingPriceWei = BigInt(announcement.metadata?.clearingPrice || '0');
+          const clearingPrice = Number(clearingPriceWei) / 1e6;
+
+          // Parse minimum investment from asset tokenParams (18 decimals)
+          const minInvestmentWei = BigInt(asset.tokenParams?.minInvestment || '0');
+          const minInvestmentTokens = Number(minInvestmentWei) / 1e18;
+
+          const auction = {
+            auctionId: announcement.assetId,
+            assetId: announcement.assetId,
+            minInvestmentTokens,
+            totalSupply,
+            reservePrice: clearingPrice || 0, // Use clearing price or 0
+            clearingPrice: clearingPrice || 0,
+            tokensSold,
+            tokensRemaining,
+            status: 'ENDED' as const,
+            startTime: announcement.metadata?.auctionStartTime || announcement.createdAt,
+            endTime: announcement.metadata?.auctionEndTime || announcement.createdAt,
+            totalBids: 0,
+            totalDemand: 0,
+            metadata: {
+              ...asset.metadata,
+              invoiceNumber: announcement.metadata?.invoiceNumber,
+              priceRange: {
+                minPrice: announcement.metadata?.priceRange?.min || '0',
+                maxPrice: announcement.metadata?.priceRange?.max || '0',
+              },
+              industry: announcement.metadata?.industry,
+              riskTier: announcement.metadata?.riskTier,
+              faceValue: announcement.metadata?.faceValue,
+            },
+          };
+
+          return auction;
+        } catch (error) {
+          console.error(`❌ Error fetching ended auction ${announcement.assetId}:`, error);
+          return null;
+        }
+      });
+
       // Step 7: Wait for all promises and filter out nulls
       const liveAuctions = (await Promise.all(liveAuctionPromises)).filter((a) => a !== null);
       const scheduledAuctions = (await Promise.all(scheduledAuctionPromises)).filter((a) => a !== null);
       const resultsAuctions = (await Promise.all(resultsAuctionPromises)).filter((a) => a !== null);
+      const endedAuctions = (await Promise.all(endedAuctionPromises)).filter((a) => a !== null);
 
       console.log('✅ Fetched LIVE auctions:', liveAuctions.length);
       console.log('✅ Fetched SCHEDULED auctions:', scheduledAuctions.length);
       console.log('✅ Fetched RESULTS auctions:', resultsAuctions.length);
+      console.log('✅ Fetched ENDED auctions:', endedAuctions.length);
 
       set({
         auctions: liveAuctions,
         scheduledAuctions: scheduledAuctions,
         auctionResults: resultsAuctions,
+        endedAuctions: endedAuctions,
         isLoadingAuctions: false
       });
     } catch (error: any) {
       console.error('Error fetching auctions:', error);
-      set({ auctionError: error.message, isLoadingAuctions: false, auctions: [], scheduledAuctions: [], auctionResults: [] });
+      set({ auctionError: error.message, isLoadingAuctions: false, auctions: [], scheduledAuctions: [], auctionResults: [], endedAuctions: [] });
     }
   },
 

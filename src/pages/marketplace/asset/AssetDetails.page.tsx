@@ -340,7 +340,7 @@ const AssetDetailsPage = () => {
         console.log('Transaction Hash:', result.purchaseTxHash);
         console.log('Block Number:', result.blockNumber);
 
-        setPurchaseStatus('Purchase successful! 🎉 Notifying backend...');
+        setPurchaseStatus('Purchase successful! 🎉');
 
         // Notify backend about the purchase (matching script output format)
         try {
