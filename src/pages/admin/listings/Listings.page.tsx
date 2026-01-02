@@ -153,7 +153,7 @@ const ListingsPage = () => {
                   </Badge>
                 </div>
                 <div className="w-1/6">
-                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && ((asset.listing?.active === false && asset.status !== 'LISTED') || asset.status === 'Ended')) ? 'Active' : 'Ended'}</Badge>
+                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && asset.status === 'ENDED') ? 'Ended' : 'Active'}</Badge>
                 </div>
                 <div className="w-1/6">
                   {formatCurrency(asset.metadata.faceValue, asset.metadata.currency)}
