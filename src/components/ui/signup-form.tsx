@@ -14,7 +14,7 @@ export default function SignupForm({
   setEmail: (email: string) => void;
 }) {
   return (
-    <div className="shadow-input w-full max-w-md rounded-none bg-white  md:rounded-2xl md:py-5 ">
+    <div className="shadow-input w-full max-w-md rounded-none bg-white  md:rounded-2xl md:py-4 ">
       <h2 className="text-xl font-bold text-neutral-800 ">
         Complete Verification
       </h2>
