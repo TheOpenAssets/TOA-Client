@@ -1,427 +1,231 @@
-// src/components/notifications/NotificationBell.tsx
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '../ui/badge';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Bell, FileCheck, Coins, Award, TrendingUp,
+  AlertCircle, DollarSign, UserCheck, XCircle
+} from 'lucide-react';
+
 import { Button } from '../ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
-import { Bell, FileCheck, Coins, Award, TrendingUp, AlertCircle, DollarSign, UserCheck, XCircle } from 'lucide-react';
+
 import {
   notificationService,
   type BackendNotification,
   type NotificationType,
 } from '../../lib/api/notification.service';
 
-/**
- * Map notification types to Lucide icons
- */
 const getNotificationIcon = (type: NotificationType | string) => {
   const iconMap: Record<string, any> = {
-    ASSET_STATUS: FileCheck,
-    TOKEN_DEPLOYED: Coins,
-    KYC_STATUS: UserCheck,
-    BID_PLACED: Award,
-    AUCTION_WON: Award,
-    BID_REFUNDED: XCircle,
-    TOKEN_PURCHASED: TrendingUp,
-    YIELD_DISTRIBUTED: DollarSign,
-    SYSTEM_ALERT: Bell,
+    ASSET_STATUS: FileCheck, TOKEN_DEPLOYED: Coins, KYC_STATUS: UserCheck,
+    BID_PLACED: Award, AUCTION_WON: Award, BID_REFUNDED: XCircle,
+    TOKEN_PURCHASED: TrendingUp, YIELD_DISTRIBUTED: DollarSign, SYSTEM_ALERT: Bell,
   };
-
   return iconMap[type] || AlertCircle;
 };
 
-/**
- * Get severity color classes
- */
-const getSeverityColor = (severity: string) => {
-  const colorMap: Record<string, string> = {
-    success: 'text-green-600',
-    info: 'text-blue-600',
-    warning: 'text-orange-600',
-    error: 'text-red-600',
-    SUCCESS: 'text-green-600',
-    INFO: 'text-blue-600',
-    WARNING: 'text-orange-600',
-    ERROR: 'text-red-600',
-  };
-
-  return colorMap[severity] || 'text-gray-600';
+// Muted colors for read items, bold for unread
+const getSeverityColor = (severity: string, isRead: boolean) => {
+  if (isRead) return 'text-slate-300';
+  return 'text-slate-900';
 };
 
-/**
- * Format timestamp to relative time
- */
 const formatRelativeTime = (timestamp: string): string => {
-  const now = new Date();
-  const then = new Date(timestamp);
-  const diffMs = now.getTime() - then.getTime();
+  const diffMs = new Date().getTime() - new Date(timestamp).getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-
-  return then.toLocaleDateString();
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`;
+  return `${Math.floor(diffMins / 1440)}d`;
 };
 
-/**
- * Component to render auction ended notification with bid details
- */
-const AuctionEndedDetail = ({ notification }: { notification: BackendNotification }) => {
+const AuctionEndedDetail = ({ notification, isRead }: { notification: BackendNotification, isRead: boolean }) => {
   const metadata = notification.actionMetadata;
-
-  if (!metadata || !metadata.priceBreakdown || !metadata.suggestedClearingPrice) {
-    return <p className="text-xs font-inter text-foreground/60 line-clamp-2">{notification.detail}</p>;
-  }
-
-  // Extract asset name from header (e.g., "Auction Ended - Action Required" -> extract from detail)
-  const assetNameMatch = notification.detail.match(/Auction for (.+?) has ended/);
-  const assetName = assetNameMatch ? assetNameMatch[1] : 'Asset';
-
-  const suggestedPrice = parseFloat(metadata.suggestedClearingPrice) / 1e6;
-  const tokensAtPrice = parseFloat(metadata.tokensAtPrice || '0') / 1e18;
-  const percentageOfSupply = metadata.percentageOfSupply || 0;
-  const totalBids = metadata.totalBids || 0;
+  if (!metadata?.suggestedClearingPrice) return <p className={`text-[11px] ${isRead ? 'text-slate-300' : 'text-slate-400'}`}>{notification.detail}</p>;
 
   return (
-    <div className="space-y-2 text-xs font-inter">
-      {/* Asset Name */}
-      <div className="bg-blue-50 px-2 py-1 rounded">
-        <p className="text-blue-800 font-semibold text-[11px]">
-          📋 Invoice: {assetName}
+    <div className={`mt-2 space-y-2 border-l ${isRead ? 'border-slate-100' : 'border-slate-200'} pl-3`}>
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight">
+        <span className={isRead ? 'text-slate-200' : 'text-slate-400'}>Target</span>
+        <span className={isRead ? 'text-slate-300' : 'text-slate-900'}>${(parseFloat(metadata.suggestedClearingPrice) / 1e6).toFixed(2)}</span>
+      </div>
+      {!isRead && (
+        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+          Review required
         </p>
-      </div>
-
-      {/* Suggested Clearing Price */}
-      <div className="bg-green-50 px-2 py-1.5 rounded">
-        <p className="text-green-800 font-semibold">
-          📊 Suggested: ${suggestedPrice.toFixed(2)}
-        </p>
-        <p className="text-green-700 text-[10px]">
-          → {tokensAtPrice.toLocaleString()} tokens ({percentageOfSupply}% supply)
-        </p>
-      </div>
-
-      {/* Bid Summary */}
-      <div className="space-y-1">
-        <p className="text-foreground/70 font-medium">📈 Bid Summary ({totalBids} bids):</p>
-        {metadata.priceBreakdown && metadata.priceBreakdown.slice(0, 3).map((breakdown: any, idx: number) => {
-          const price = parseFloat(breakdown.price) / 1e6;
-          const tokens = parseFloat(breakdown.cumulativeTokens) / 1e18;
-          const percentage = breakdown.percentage || 0;
-          const count = breakdown.bidsCount || 0;
-
-          return (
-            <div key={idx} className="flex justify-between text-[10px] text-foreground/60 pl-2">
-              <span className="font-medium">${price.toFixed(2)}</span>
-              <span>{count} bid{count > 1 ? 's' : ''} • {percentage}% • {tokens.toLocaleString()} tokens</span>
-            </div>
-          );
-        })}
-        {metadata.priceBreakdown && metadata.priceBreakdown.length > 3 && (
-          <p className="text-[10px] text-foreground/50 pl-2 italic">
-            +{metadata.priceBreakdown.length - 3} more price level{metadata.priceBreakdown.length - 3 > 1 ? 's' : ''}
-          </p>
-        )}
-      </div>
-
-      {/* Action Required */}
-      <div className="bg-orange-50 px-2 py-1.5 rounded border border-orange-200">
-        <p className="text-orange-700 font-semibold text-[10px]">⚠️ Action Required: Review & set clearing price</p>
-      </div>
+      )}
     </div>
   );
 };
 
-interface NotificationBellProps {
-  /**
-   * User role to filter notifications
-   */
-  role: 'ORIGINATOR' | 'INVESTOR' | 'ADMIN';
-}
-
-/**
- * NotificationBell - Reusable notification component for all roles
- *
- * Features:
- * - Real-time SSE notifications
- * - Unread count badge
- * - Mark as read / mark all as read
- * - Role-based filtering
- * - Action navigation
- */
-export function NotificationBell({ role }: NotificationBellProps) {
+export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | 'ADMIN' }) {
   const navigate = useNavigate();
-
   const [notifications, setNotifications] = useState<BackendNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [tab, setTab] = useState<'all' | 'unread'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Load notifications
   const loadNotifications = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await notificationService.getAllNotifications('all', 50, 0);
-
-      // Filter by role
-      const filteredNotifications = notificationService.filterNotificationsByRole(
-        response.notifications,
-        role
-      );
-
-      setNotifications(filteredNotifications);
-      setUnreadCount(filteredNotifications.filter((n) => !n.read).length);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
-      setIsLoading(false);
-    }
+      const filtered = notificationService.filterNotificationsByRole(response.notifications, role);
+      setNotifications(filtered);
+      setUnreadCount(filtered.filter((n) => !n.read).length);
+    } catch (error) { console.error(error); } finally { setIsLoading(false); }
   }, [role]);
 
-  // Load notifications on mount
+  useEffect(() => { loadNotifications(); }, [loadNotifications]);
+
   useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
-
-  // Subscribe to SSE for real-time notifications
-  useEffect(() => {
-    let unsubscribe: (() => void) | null = null;
-
-    const subscribeToRealTime = () => {
-      unsubscribe = notificationService.subscribeToNotifications((newNotification) => {
-        // Filter by role
-        const allowed = notificationService.filterNotificationsByRole([newNotification], role);
-        if (allowed.length === 0) return;
-
-        console.log('📬 New notification for', role, ':', newNotification);
-
-        // Add to notifications list
-        setNotifications((prev) => [newNotification, ...prev]);
-        if (!newNotification.read) {
-          setUnreadCount((prev) => prev + 1);
-        }
-
-        // Show browser notification if supported
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification(newNotification.header, {
-            body: newNotification.detail,
-            icon: '/logo.png',
-          });
-        }
-      });
-    };
-
-    subscribeToRealTime();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    const unsubscribe = notificationService.subscribeToNotifications((newNotification) => {
+      const allowed = notificationService.filterNotificationsByRole([newNotification], role);
+      if (allowed.length === 0) return;
+      setNotifications((prev) => [newNotification, ...prev]);
+      if (!newNotification.read) setUnreadCount((prev) => prev + 1);
+    });
+    return () => { if (unsubscribe) unsubscribe(); };
   }, [role]);
 
-  // Request notification permission
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+  const handleNotificationClick = async (n: BackendNotification) => {
+    if (!n.read) {
+      await notificationService.markAsRead(n._id);
+      setNotifications((prev) => prev.map((item) => item._id === n._id ? { ...item, read: true } : item));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     }
-  }, []);
-
-  // Handle notification click - navigate based on action
-  const handleNotificationClick = async (notification: BackendNotification) => {
-    // Mark as read
-    if (!notification.read) {
-      try {
-        await notificationService.markAsRead(notification._id);
-        setNotifications((prev) =>
-          prev.map((n) => (n._id === notification._id ? { ...n, read: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
+    if (n.action && n.action !== 'NONE') {
+      const metadata = n.actionMetadata || {};
+      if (n.action === 'VIEW_ASSET' && metadata.assetId) {
+        navigate(role === 'ORIGINATOR' ? `/issuer/asset/${metadata.assetId}` : role === 'ADMIN' ? `/admin/operations` : `/marketplace/asset/${metadata.assetId}`);
       }
-    }
-
-    // Navigate based on action
-    if (notification.action && notification.action !== 'NONE') {
-      const metadata = notification.actionMetadata || {};
-
-      switch (notification.action) {
-        case 'VIEW_ASSET':
-          if (metadata.assetId) {
-            if (role === 'ORIGINATOR') {
-              navigate(`/issuer/asset/${metadata.assetId}`);
-            } else if (role === 'ADMIN') {
-              navigate(`/admin/operations`); // Admin views assets in operations page
-            } else {
-              navigate(`/marketplace/asset/${metadata.assetId}`);
-            }
-          }
-          break;
-
-        case 'VIEW_PORTFOLIO':
-          navigate('/portfolio');
-          break;
-
-        case 'VIEW_MARKETPLACE':
-          navigate('/marketplace');
-          break;
-
-        case 'CLAIM_YIELD':
-          navigate('/portfolio'); // Yield claiming happens in portfolio
-          break;
-
-        case 'VIEW_KYC':
-          navigate('/onboarding'); // KYC page
-          break;
-
-        default:
-          break;
-      }
-
-      // Close popover after navigation
       setIsOpen(false);
     }
   };
 
-  // Mark all as read
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
-  // Filter notifications based on tab
-  const filteredNotifications = tab === 'unread'
-    ? notifications.filter((n) => !n.read)
-    : notifications;
+  const filteredNotifications = tab === 'unread' ? notifications.filter((n) => !n.read) : notifications;
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          size="icon"
-          variant="outline"
-          className="relative"
-          aria-label="Open notifications"
-        >
-          <Bell size={16} strokeWidth={2} aria-hidden="true" />
-          {unreadCount > 0 && (
-            <Badge className="absolute -top-2 left-full min-w-3  -translate-x-1/2 px-1 bg-purple-500 rounded-full w-1 h-3 flex items-center justify-center" />
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[480px] p-0 bg-white/80 backdrop-blur-sm">
-        {/* Header with Tabs + Mark All */}
-        <Tabs value={tab} onValueChange={(value) => setTab(value as 'all' | 'unread')}>
-          <div className="flex items-center justify-between border-b px-4 py-3 bg-white/40">
-            <TabsList className="bg-transparent">
-              <TabsTrigger value="all" className="text-sm font-inter">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="unread" className="text-sm font-inter">
-                Unread
-                {unreadCount > 0 && (
-                  <Badge className="ml-2 bg-purple-500 text-white">{unreadCount}</Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllAsRead}
-                className="text-xs font-medium font-inter text-foreground/70 hover:text-foreground hover:underline"
-              >
-                Mark all as read
-              </button>
-            )}
-          </div>
-
-          {/* Notifications List */}
-          <div className="max-h-[480px] overflow-y-auto">
-            {isLoading ? (
-              <div className="px-4 py-8 text-center">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-                <p className="mt-3 text-sm font-inter text-foreground/70">
-                  Loading notifications...
-                </p>
-              </div>
-            ) : filteredNotifications.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <Bell className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-sm font-inter text-foreground/70">
-                  {tab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
-                </p>
-              </div>
-            ) : (
-              filteredNotifications.map((notification) => {
-                const Icon = getNotificationIcon(notification.type);
-                const severityColor = getSeverityColor(notification.severity);
-
-                return (
-                  <button
-                    key={notification._id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors ${
-                      notification.read
-                        ? 'hover:bg-gray-50/50'
-                        : 'bg-blue-50/30 hover:bg-blue-50/50'
-                    } ${notification.action !== 'NONE' ? 'cursor-pointer' : 'cursor-default'}`}
-                  >
-                    <div className={`mt-1 ${severityColor}`}>
-                      <Icon size={20} />
-                    </div>
-                    <div className="flex-1 space-y-1 min-w-0">
-                      <p
-                        className={`text-sm font-inter ${
-                          notification.read
-                            ? 'text-foreground/80 font-normal'
-                            : 'text-foreground font-semibold'
-                        }`}
-                      >
-                        {notification.header}
-                      </p>
-                      {/* Render auction ended notifications with special component */}
-                      {notification.type === 'SYSTEM_ALERT' && notification.header.includes('Auction Ended') ? (
-                        <AuctionEndedDetail notification={notification} />
-                      ) : (
-                        <p className="text-xs font-inter text-foreground/60 line-clamp-2">
-                          {notification.detail}
-                        </p>
-                      )}
-                      <p className="text-xs font-inter text-foreground/50">
-                        {formatRelativeTime(notification.receivedAt)}
-                      </p>
-                    </div>
-                    {!notification.read && (
-                      <span className="mt-2 inline-block w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </Tabs>
-
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <div className="px-4 py-3 text-center border-t bg-white/40">
-            <p className="text-xs font-inter text-foreground/60">
-              {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-white/40 backdrop-blur-md z-[40]"
+            onClick={() => setIsOpen(false)}
+          />
         )}
-      </PopoverContent>
-    </Popover>
+      </AnimatePresence>
+
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="relative h-10 w-10 border border-gray-200 rounded-full hover:bg-gray-200 transition-colors z-[50]"
+          >
+            <Bell size={18} className="text-slate-600" />
+            {unreadCount > 0 && (
+              <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-slate-900 rounded-full border border-white" />
+            )}
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent
+          align="end"
+          sideOffset={12}
+          className="w-[380px] p-0 overflow-hidden rounded-2xl border border-slate-100 shadow-2xl bg-white z-[50]"
+        >
+          <div className="flex flex-col h-[500px]">
+            <div className="px-6 py-5 border-b border-slate-50">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Activity Feed</h2>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={() => notificationService.markAllAsRead()}
+                    className="text-[10px] font-bold text-slate-900 uppercase opacity-30 hover:opacity-100 transition-opacity"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+                <TabsList className="bg-slate-50 p-1 rounded-lg w-full flex border border-slate-100">
+                  <TabsTrigger value="all" className="flex-1 text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-slate-900 text-slate-400 transition-all">
+                    All
+                  </TabsTrigger>
+                  <TabsTrigger value="unread" className="flex-1 text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-slate-900 text-slate-400 transition-all gap-2 flex items-center justify-center">
+                    Unread
+                    {unreadCount > 0 && (
+                      <span className="bg-slate-900 text-white px-1.5 py-0.5 rounded text-[8px] min-w-[14px]">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-200 uppercase tracking-widest">
+                  Syncing
+                </div>
+              ) : filteredNotifications.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-200 uppercase tracking-widest">
+                  No Updates
+                </div>
+              ) : (
+                filteredNotifications.map((n) => {
+                  const Icon = getNotificationIcon(n.type);
+                  return (
+                    <motion.button
+                      key={n._id}
+                      whileHover={{ x: 2, backgroundColor: "rgba(241, 245, 249, 0.4)" }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => handleNotificationClick(n)}
+                      className={`flex w-full items-start gap-4 p-4 rounded-xl transition-colors text-left mb-0.5 
+                        ${!n.read ? 'bg-slate-90/80 shadow-sm border border-slate-100/50' : 'bg-transparent opacity-60'}`}
+                    >
+                      <div className={`mt-0.5 ${getSeverityColor(n.severity, n.read)}`}>
+                        <Icon size={14} strokeWidth={!n.read ? 2.5 : 2} />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline mb-0.5">
+                          <p className={`text-[12px] tracking-tight ${n.read ? 'text-slate-800 font-medium' : 'text-slate-900 font-bold'}`}>
+                            {n.header}
+                          </p>
+                          <span className={`text-[9px] font-bold uppercase ml-2 flex-shrink-0 ${n.read ? 'text-slate-500' : 'text-slate-700'}`}>
+                            {formatRelativeTime(n.receivedAt)}
+                          </span>
+                        </div>
+
+                        {n.type === 'SYSTEM_ALERT' && n.header.includes('Auction Ended') ? (
+                          <AuctionEndedDetail notification={n} isRead={n.read} />
+                        ) : (
+                          <p className={`text-[11px] leading-snug line-clamp-2 ${n.read ? 'text-slate-500 font-normal' : 'text-slate-700 font-medium'}`}>
+                            {n.detail}
+                          </p>
+                        )}
+                      </div>
+                    </motion.button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-50 text-center">
+              <span className="text-[9px] font-bold text-slate-700 uppercase tracking-widest">
+                {filteredNotifications.length} items
+              </span>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </>
   );
 }

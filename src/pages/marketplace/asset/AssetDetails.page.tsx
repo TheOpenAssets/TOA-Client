@@ -47,6 +47,7 @@ const AssetDetailsPage = () => {
   // Leverage State
   const [leverageTokenInput, setLeverageTokenInput] = useState('');
   const [isApproving, setIsApproving] = useState(false);
+  const [leveragePurchaseStatus, setLeveragePurchaseStatus] = useState<string | null>(null);
 
   // Calculate required mETH based on token input
   // Formula: Required mETH = (Tokens * TokenPrice * 1.5) / mETHPrice
@@ -56,11 +57,11 @@ const AssetDetailsPage = () => {
     const tokens = parseFloat(leverageTokenInput);
     const tokenPrice = parseFloat(asset.tokenParams.pricePerToken); // USDC Wei (6 decimals)
     const methPriceVal = methPrice; // USDC Wei (6 decimals)
-    
+
     // Total Value in USDC Wei = Tokens * TokenPrice
     // Required Collateral Value = Total Value * 1.5
     // Required mETH = Required Collateral Value / mETHPrice
-    
+
     const meth = (tokens * tokenPrice * 1.5) / methPriceVal;
     return meth;
   })();
@@ -207,20 +208,23 @@ const AssetDetailsPage = () => {
   };
 
   const handleOpenLeveragePosition = async () => {
-     if (!address || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
+    if (!address || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
+
+    setLeveragePurchaseStatus(null);
 
     try {
       // Fetch latest price right before transaction
       await fetchMethPrice();
-      
+
       const mETHCollateral = parseUnits(calculatedMethString, 18);
-      const tokenAmount = parseUnits(leverageTokenInput, 18).toString(); 
+      const tokenAmount = parseUnits(leverageTokenInput, 18).toString();
       // Ensure price is passed as USDC WEI (6 decimals)
-      const pricePerToken = asset.tokenParams.pricePerToken || '0'; 
+      const pricePerToken = asset.tokenParams.pricePerToken || '0';
 
       // Check Allowance
       if (!allowance || allowance < mETHCollateral) {
         setIsApproving(true);
+        setLeveragePurchaseStatus('Approving mETH usage...');
         try {
           const txHash = await approveMeth({
             address: LEVERAGE_CONTRACTS.MockMETH,
@@ -229,17 +233,19 @@ const AssetDetailsPage = () => {
             args: [LEVERAGE_CONTRACTS.LeverageVault, mETHCollateral],
           });
           console.log('Approval Tx:', txHash);
-          alert('Approval submitted! Wait for confirmation and click again.');
+          setLeveragePurchaseStatus('Approval submitted! Wait for confirmation and click again.');
           refetchAllowance();
           setIsApproving(false);
-          return; 
-        } catch (err) {
+          return;
+        } catch (err: any) {
           console.error('Approval failed:', err);
+          setLeveragePurchaseStatus(`Approval failed: ${err.message || 'Unknown error'}`);
           setIsApproving(false);
           return;
         }
       }
 
+      setLeveragePurchaseStatus('Creating leveraged position...');
       await createPosition({
         assetId: asset.assetId,
         tokenAddress: asset.token?.address || '',
@@ -247,16 +253,18 @@ const AssetDetailsPage = () => {
         pricePerToken: pricePerToken,
         mETHCollateral: mETHCollateral.toString()
       });
-      
+
       setLeverageTokenInput('');
-      alert('Leveraged Position created successfully!');
+      setLeveragePurchaseStatus('Leveraged Position created successfully! 🎉');
+      // Reload wallet data
+      await loadWalletData();
     } catch (error: any) {
-      alert(`Failed to create position: ${error.message}`);
+      setLeveragePurchaseStatus(`Failed to create position: ${error.message}`);
     }
   };
 
   const needsApproval = allowance && calculatedMethAmount > 0
-    ? allowance < parseUnits(calculatedMethString, 18) 
+    ? allowance < parseUnits(calculatedMethString, 18)
     : true;
 
   if (isLoadingAsset) {
@@ -271,15 +279,19 @@ const AssetDetailsPage = () => {
     return <div className="flex items-center justify-center h-screen">Asset not found</div>;
   }
 
-
+  // Calculate token availability and limits
+  const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+  const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+  const availableTokens = totalSupply - soldTokens;
+  const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
 
 
   // Calculate estimated total price (actual price will be fetched from contract during purchase)
   // Note: pricePerToken is in USDC (6 decimals), not wei (18 decimals)
   const estimatedTotalPrice = tokensToBuy && asset.tokenParams.pricePerToken
-    ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken))/1e6).toFixed(2)
+    ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken)) / 1e6).toFixed(2)
     : '0.00';
-    
+
 
   const handleBuyTokens = async () => {
     if (!address) {
@@ -301,7 +313,7 @@ const AssetDetailsPage = () => {
       return;
     }
 
-    const minInvestment = parseFloat(asset.tokenParams.minInvestment)/1e18;
+    const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
     const requestedAmount = parseFloat(tokensToBuy);
 
     if (requestedAmount < minInvestment) {
@@ -384,115 +396,122 @@ const AssetDetailsPage = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#f6fbff]">
-      <div className="max-w-screen-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white/5 max-w-[90vw] mx-auto p-10">
+      <div className="">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Header */}
-            <div>
-              <h1 className="text-4xl font-semibold text-[#111111]">
-                Invoice #{asset.metadata.invoiceNumber}
-              </h1>
-              <p className="text-md text-[#6B7280]">
-                {asset.metadata.buyerName} - {asset.metadata.industry}
-              </p>
-              <p className="text-sm text-[#6B7280]">
-                Status: <span className="font-semibold">{asset.status}</span>
+            <div className='flex flex-row  items-center justify-between'>
+              <div className='flex flex-row gap-4'>
+                <a href="/marketplace" className="inline-flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                </a>
+                <h1 className="text-3xl font-medium text-[#111111]">
+                  Invoice {asset.metadata.invoiceNumber}
+                </h1>
+                <div>
+                </div>
+              </div>
+              <p className="text-sm text-[#4f5258]">
+                Status: <span className="font-medium">{asset.status}</span>
               </p>
             </div>
 
             {/* Chart Section */}
             <div className="bg-[#EBF0E8] rounded-3xl p-6">
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <p className="text-5xl font-semibold text-[#111111]">
-                          ${(purchaseHistory?.purchases && purchaseHistory.purchases.length > 0) ? (parseFloat(purchaseHistory.purchases[0].price) / 1e6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2) : 'N/A')}
-                        </p>
-                        <p className="text-green-600 text-sm mt-1">Token Price (USDC)</p>
-                    </div>
-                   
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-5xl font-semibold text-[#111111]">
+                    ${(purchaseHistory?.purchases && purchaseHistory.purchases.length > 0) ? (parseFloat(purchaseHistory.purchases[0].price) / 1e6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2) : 'N/A')}
+                  </p>
+                  <p className="text-green-800 text-sm mt-1">Token Price (USDC)</p>
                 </div>
-                {isLoadingHistory ? (
-                    <div className="h-[400px] flex items-center justify-center">
-                        <p>Loading chart data...</p>
-                    </div>
-                ) : historyError ? (
-                    <div className="h-[400px] flex items-center justify-center">
-                        <p className="text-red-500">Error loading chart data: {historyError}</p>
-                    </div>
-                ) : (formattedChartData.length > 0) ? (
-                    <div className="h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                                <defs>
-                                    <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <XAxis
-                                    dataKey="timestamp"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{fill: '#6B7280', fontSize: 12}}
-                                    tickFormatter={(timestamp) => {
-                                        const date = new Date(timestamp);
-                                        return date.toLocaleString(undefined, {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                    }}
-                                />
-                                <YAxis
-                                    orientation="right"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{fill: '#6B7280', fontSize: 12}}
-                                    tickFormatter={(tokens) => {
-                                        // Format large numbers with K, M suffix
-                                        if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
-                                        if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}K`;
-                                        return tokens.toFixed(0);
-                                    }}
-                                    label={{ value: 'Tokens Purchased', angle: -90, position: 'insideRight', style: { fill: '#6B7280', fontSize: 12 } }}
-                                />
-                                <Tooltip
-                                    formatter={(value: any) => {
-                                        if (typeof value === 'number') {
-                                            return [`${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`, ''];
-                                        }
-                                        return ['', ''];
-                                    }}
-                                    labelFormatter={(timestamp) => {
-                                        const date = new Date(timestamp);
-                                        return date.toLocaleString(undefined, {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                    }}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="tokensPurchased"
-                                    stroke="#3B82F6"
-                                    strokeWidth={2}
-                                    fillOpacity={1}
-                                    fill="url(#colorTokens)"
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                ) : (
-                    <div className="h-[400px] flex items-center justify-center">
-                        <p>No purchase activity yet.</p>
-                    </div>
-                )}
+
+              </div>
+              {isLoadingHistory ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <p>Loading chart data...</p>
+                </div>
+              ) : historyError ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <p className="text-red-500">Error loading chart data: {historyError}</p>
+                </div>
+              ) : (formattedChartData.length > 0) ? (
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="timestamp"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                        tickFormatter={(timestamp) => {
+                          const date = new Date(timestamp);
+                          return date.toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+                        }}
+                      />
+                      <YAxis
+                        orientation="right"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                        tickFormatter={(tokens) => {
+                          // Format large numbers with K, M suffix
+                          if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
+                          if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}K`;
+                          return tokens.toFixed(0);
+                        }}
+                        label={{ value: 'Tokens Purchased', angle: -90, position: 'insideRight', style: { fill: '#6B7280', fontSize: 12 } }}
+                      />
+                      <Tooltip
+                        formatter={(value: any) => {
+                          if (typeof value === 'number') {
+                            return [`${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`, ''];
+                          }
+                          return ['', ''];
+                        }}
+                        labelFormatter={(timestamp) => {
+                          const date = new Date(timestamp);
+                          return date.toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="tokensPurchased"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorTokens)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[400px] flex items-center justify-center">
+                  <p>No purchase activity yet.</p>
+                </div>
+              )}
             </div>
 
             {/* Invoice Details */}
@@ -529,7 +548,7 @@ const AssetDetailsPage = () => {
                     {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
                   </p>
                 </div>
-                 <div className="space-y-1">
+                <div className="space-y-1">
                   <p className="text-[#6B7280]">Sold Tokens</p>
                   <p className="font-medium text-[#111111]">
                     {(parseFloat(asset.listing?.sold || '0') / 1e18).toLocaleString()} tokens
@@ -570,10 +589,11 @@ const AssetDetailsPage = () => {
             </div>
           </div>
 
+
           {/* Right Column - Sticky Buy Panel */}
           <div className="relative">
-            <div className="sticky top-12">
-              <div className="bg-white rounded-3xl p-6 shadow-sm">
+            <div className="sticky top-30">
+              <div className="bg-transparent rounded-3xl p-6 shadow-md border border-gray-100">
                 <Tabs defaultValue="standard" className="w-full">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-semibold text-[#111111]">Buy Tokens</h2>
@@ -585,163 +605,168 @@ const AssetDetailsPage = () => {
 
                   <TabsContent value="standard">
                     <div className="space-y-6">
-                        <div className="bg-[#F3F4F6] rounded-2xl p-4">
+                      <div className="bg-[#F3F4F6] rounded-2xl p-4">
                         <label htmlFor="tokens-to-buy" className="text-xs text-[#6B7280]">
-                        Tokens to buy
+                          Tokens to buy
                         </label>
                         <Input
-                        id="tokens-to-buy"
-                        type="number"
-                        placeholder="0"
-                        value={tokensToBuy}
-                        onChange={(e) => {
-                        const inputValue = e.target.value;
-                        setTokensToBuy(inputValue);
-                        }}
-                        min={(() => {
-                        const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-                        const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        const availableTokens = totalSupply - soldTokens;
-                        const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
-                        return availableTokens < minInvestment ? availableTokens : minInvestment;
-                        })()}
-                        className="bg-transparent border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                          id="tokens-to-buy"
+                          type="number"
+                          placeholder="0"
+                          value={tokensToBuy}
+                          onChange={(e) => {
+                            const inputValue = e.target.value;
+                            setTokensToBuy(inputValue);
+                          }}
+                          min={(() => {
+                            const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                            const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                            const availableTokens = totalSupply - soldTokens;
+                            const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
+                            return availableTokens < minInvestment ? availableTokens : minInvestment;
+                          })()}
+                          className=" border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         <p className="text-xs text-[#6B7280] mt-2">
-                        Available: {(() => {
-                        const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-                        const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        return (totalSupply - soldTokens).toLocaleString();
-                        })()} tokens
+                          Available: {(() => {
+                            const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
+                            const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                            return (totalSupply - soldTokens).toLocaleString();
+                          })()} tokens
                         </p>
-                        </div>
-                      <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                      <label htmlFor="total-price" className="text-xs text-[#6B7280]">
-                        Estimated Total Price
-                      </label>
-                      <p id="total-price" className="text-2xl font-medium text-[#111111]">
-                        ${estimatedTotalPrice} USDC
-                      </p>
-                      <p className="text-xs text-[#6B7280] mt-1">
-                        (Final price fetched from contract)
-                      </p>
+                      </div>
+                      <div className="bg-[#F3F4F6] rounded-2xl p-4 gap-2">
+                        <label htmlFor="total-price" className="text-xs text-[#6B7280] ">
+                          Estimated Total Price
+                        </label>
+                        <p id="total-price" className="text-2xl font-medium text-[#111111]">
+                          ${estimatedTotalPrice} USDC
+                        </p>
                       </div>
                       <div className="text-xs text-[#6B7280] space-y-1">
-                      <div className="flex justify-between">
-                        <span>Your USDC Balance</span>
-                        <span className="font-medium text-[#111111]">
-                        {parseFloat(usdcBalance).toFixed(2)} USDC
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span>Min Investment</span>
-                        <span className="font-medium text-[#111111]">
-                        {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
-                        </span>
-                      </div>
+                        <div className="flex justify-between">
+                          <span>Your USDC Balance</span>
+                          <span className="font-medium text-[#111111]">
+                            {parseFloat(usdcBalance).toFixed(2)} USDC
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between">
+                          <span>Min Investment</span>
+                          <span className="font-medium text-[#111111]">
+                            {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
+                          </span>
+                        </div>
                       </div>
                       {purchaseStatus && (
-                      <div className={`text-sm p-3 rounded-lg ${
-                        purchaseStatus.includes('successful')
-                        ? 'bg-green-100 text-green-800'
-                        : purchaseStatus.includes('Error') || purchaseStatus.includes('failed')
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {purchaseStatus}
-                      </div>
+                        <div className={`text-sm p-3 rounded-lg ${purchaseStatus.includes('successful')
+                          ? 'bg-green-100 text-green-800'
+                          : purchaseStatus.includes('Error') || purchaseStatus.includes('failed')
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {purchaseStatus}
+                        </div>
                       )}
                       <Button
-                      onClick={handleBuyTokens}
-                      disabled={isPurchasing || !address || (() => {
-                        const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-                        const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        return totalSupply - soldTokens <= 0; // Fixed: Check if remaining tokens <= 0
-                      })() || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)}
-                      className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleBuyTokens}
+                        disabled={isPurchasing || !address || availableTokens <= 0 || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice) || (availableTokens >= minInvestment && parseFloat(tokensToBuy || '0') < minInvestment) || parseFloat(tokensToBuy || '0') > availableTokens}
+                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                      {(() => {
-                        const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-                        const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                        console.log('Button State Check - Sold Tokens:', soldTokens, 'Total Supply:', totalSupply);
-                        if (totalSupply - soldTokens  <= 0) return 'Sold Out';
-                        console.log("sold", totalSupply-soldTokens);
-                        if (isPurchasing) return 'Processing...';
-                        if (!address) return 'Connect Wallet';
-                        if( parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
-                        return 'Buy Tokens';
-                      })()}
+                        {(() => {
+                          const enteredAmount = parseFloat(tokensToBuy || '0');
+                          if (availableTokens <= 0) return 'Sold Out';
+                          if (isPurchasing) return 'Processing...';
+                          if (!address) return 'Connect Wallet';
+                          if (parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
+                          if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
+                          if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
+                          return 'Buy Tokens';
+                        })()}
                       </Button>
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="leverage">
-                     <div className="space-y-6">
-                        <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                          <label className="text-xs text-[#6B7280]">
-                            Tokens to buy
-                          </label>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              value={leverageTokenInput}
-                              onChange={handleLeverageTokenChange}
-                              className="bg-transparent border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                            />
-                            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">
-                              Tokens
-                            </span>
-                          </div>
-                          <p className="text-xs text-[#6B7280] mt-2">
-                             Price: {asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken)/1e6).toFixed(2) : 0} USDC / Token
+                    <div className="space-y-6">
+                      <div className="bg-[#F3F4F6] rounded-2xl p-4">
+                        <label className="text-xs text-[#6B7280]">
+                          Tokens to buy
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={leverageTokenInput}
+                            onChange={handleLeverageTokenChange}
+                            className=" border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                        </div>
+
+                      </div>
+
+                      <div className="bg-[#F3F4F6] rounded-2xl p-4 space-y-3">
+                        <div>
+                          <p className="text-xs text-[#6B7280] mb-1">Required Collateral</p>
+                          <p className="text-2xl font-medium text-[#111111]">
+                            {calculatedMethString || '0.00'} mETH
                           </p>
                         </div>
-                        
-                        <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
-                           <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-gray-600">Required Collateral</span>
-                              <span className="text-sm font-bold text-blue-700">
-                                 {calculatedMethString || '0.00'} mETH
-                              </span>
-                           </div>
-                           <div className="flex justify-between items-center">
-                              <span className="text-xs text-gray-600">Buying Power</span>
-                              <span className="text-lg font-bold text-[#111111]">
-                                 {(() => {
-                                   if(!calculatedMethAmount) return '$0.00 USDC';
-                                   // With 150% collateral requirement, Buying Power = Collateral / 1.5
-                                   // This should match Tokens * TokenPrice
-                                   const bp = (calculatedMethAmount * methPrice) / (1.5 * 1e6);
-                                   return `$${bp.toLocaleString(undefined, {maximumFractionDigits: 2})} USDC`;
-                                 })()}
-                              </span>
-                           </div>
-                           <p className="text-[10px] text-gray-400 mt-2 text-right">
-                             mETH Price: ${(methPrice/1e6).toLocaleString(undefined, {maximumFractionDigits: 2})}
-                           </p>
+                        <div className="pt-3 border-t border-gray-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-[#6B7280]">Buying Power</span>
+                            <span className="text-sm font-medium text-[#111111]">
+                              {(() => {
+                                if (!calculatedMethAmount) return '$0.00 USDC';
+                                const bp = (calculatedMethAmount * methPrice) / (1.5 * 1e6);
+                                return `$${bp.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC`;
+                              })()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-xs text-[#6B7280]">mETH Price</span>
+                            <span className="text-sm font-medium text-[#111111]">
+                              ${(methPrice / 1e6).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
                         </div>
+                      </div>
 
-                        <div className="text-xs text-[#6B7280] space-y-1">
-                           <div className="flex justify-between">
-                              <span>Health Factor</span>
-                              <span className="font-medium text-green-600">1.50 (Initial)</span>
-                           </div>
-                           <div className="flex justify-between">
-                              <span>Liquidation Threshold</span>
-                              <span className="font-medium text-red-500">1.10</span>
-                           </div>
+                      <div className="text-xs text-[#6B7280] space-y-1">
+                        <div className="flex justify-between">
+                          <span>Health Factor</span>
+                          <span className="font-medium text-green-600">1.50 (Initial)</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span>Liquidation Threshold</span>
+                          <span className="font-medium text-red-500">1.10</span>
+                        </div>
+                      </div>
 
-                        <Button 
-                           onClick={handleOpenLeveragePosition}
-                           disabled={isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0}
-                           className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                           {isApproving ? 'Approving mETH...' : isLeverageLoading ? 'Processing...' : needsApproval ? 'Approve mETH' : 'Open Leveraged Position'}
-                        </Button>
-                     </div>
+                      {leveragePurchaseStatus && (
+                        <div className={`text-sm p-3 rounded-lg ${leveragePurchaseStatus.includes('successfully') || leveragePurchaseStatus.includes('submitted')
+                          ? 'bg-green-100 text-green-800'
+                          : leveragePurchaseStatus.includes('failed') || leveragePurchaseStatus.includes('Error')
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {leveragePurchaseStatus}
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={handleOpenLeveragePosition}
+                        disabled={isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
+                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {(() => {
+                          const enteredAmount = parseFloat(leverageTokenInput || '0');
+                          if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
+                          if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
+                          return isApproving ? 'Approving mETH...' : isLeverageLoading ? 'Processing...' : needsApproval ? 'Approve mETH' : 'Open Leveraged Position';
+                        })()}
+                      </Button>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>
