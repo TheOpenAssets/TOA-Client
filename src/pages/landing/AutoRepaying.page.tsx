@@ -55,7 +55,7 @@ const AutoRepayingSection = () => {
       icon: <IconCoin />,
     },
     {
-      title: "OAID — Universal Credit Identity",
+      title: "OAID - Universal Credit Identity",
       description:
       "OAID is a wallet-bound credit identity that aggregates collateral, credit limits, and active loans into a single source of truth, enabling users to borrow across multiple protocols without moving or re-posting collateral.",
       icon: <IconAdjustmentsBolt />,

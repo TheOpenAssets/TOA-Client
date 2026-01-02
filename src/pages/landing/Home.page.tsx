@@ -9,7 +9,7 @@ import HeroBackground from "./HeroBackground";
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-[#f6fbff]">
+    <div className="min-h-screen ">
       <main className="h-screen overflow-y-scroll snap-y snap-mandatory overflow-x-hidden">
         <div className="snap-start">
           <HeroBackground />

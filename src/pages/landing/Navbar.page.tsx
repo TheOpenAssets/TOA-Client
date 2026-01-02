@@ -55,6 +55,11 @@ const Navbar = () => {
 <a href="/" className="nav-link underline-animation underline-animation-purple">
   About
 </a>
+<a href="/" className="nav-link underline-animation underline-animation-purple">
+  How it works 
+</a>
+<a href="/" className="nav-link underline-animation underline-animation-purple">
+Features</a>
 
         </nav>
 
