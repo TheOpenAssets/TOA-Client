@@ -37,6 +37,7 @@ const MarketplacePage = () => {
     auctions, // AUCTION_LIVE only
     scheduledAuctions, // AUCTION_SCHEDULED only
     auctionResults, // AUCTION_RESULTS_DECLARED only
+    endedAuctions, // AUCTION_ENDED only
     isLoadingAuctions,
     fetchActiveAuctions,
     marketplaceInfo,
@@ -62,96 +63,78 @@ const MarketplacePage = () => {
 
   // Convert backend listings to frontend format for display
   // Using REAL API data with sold percentage for progress bars
-  const displayAssets: MarketplaceAsset[] = (() => {
-    // Map ALL listings (both STATIC and AUCTION) from the flat API response
-    const mappedListings: MarketplaceAsset[] = listings.map((listing) => {
-      // Determine if this is STATIC or AUCTION
-      const isAuction = listing.listingType === 'AUCTION';
+  const displayAssets: MarketplaceAsset[] = listings.length > 0
+    ? (() => {
+        console.log('✅ Marketplace: Using REAL data from API', { count: listings.length });
+        return listings.map((listing) => {
+          // Calculate maturity days from dueDate (from metadata)
+          // @ts-ignore
+          const dueDateStr = listing.metadata?.dueDate || listing.dueDate;
+          const dueDate = new Date(dueDateStr || 0);
+          const today = new Date();
+          const calculatedMaturityDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Calculate maturity days from dueDate
-      const dueDateStr = listing.dueDate || listing.metadata?.dueDate;
-      const dueDate = new Date(dueDateStr || 0);
-      const today = new Date();
-      const maturityDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          // Validate the date and maturity calculation
+          const isValidDate = !isNaN(dueDate.getTime());
+          const maturityDays = isValidDate && calculatedMaturityDays > 0 ? calculatedMaturityDays : "Matured";
 
-      // Debug log for maturity tracking
-      const isMatured = maturityDays <= 0;
-      if (isMatured) {
-        console.log(`🔴 MATURED ASSET - ${listing.name}:`, {
-          assetId: listing.assetId,
-          dueDate: dueDateStr,
-          daysOverdue: Math.abs(maturityDays),
-          listingType: listing.listingType,
-          status: listing.status
+          // Debug log for maturity calculation
+          if (!isValidDate || calculatedMaturityDays <= 0) {
+            console.log(`⚠️ Maturity fallback for ${listing.assetId}:`, {
+              dueDateStr,
+              isValidDate,
+              calculatedMaturityDays,
+              fallbackTo: "Matured",
+            });
+          }
+
+          // Parse sold and totalSupply from wei (18 decimals)
+          // @ts-ignore
+          const soldWei = BigInt(listing.sold || '0');
+          // @ts-ignore
+          const totalSupplyWei = BigInt(listing.totalSupply || '0');
+          const sold = Number(soldWei) / 1e18;
+          const totalSupply = Number(totalSupplyWei) / 1e18;
+
+          // Calculate funding progress (sold percentage)
+          const fundingProgress = totalSupply > 0 ? (sold / totalSupply) * 100 : 0;
+
+          // Parse price per token (USDC 6 decimals)
+          // @ts-ignore
+          const pricePerTokenWei = BigInt(listing.pricePerToken || '0');
+          const pricePerToken = Number(pricePerTokenWei) / 1e6;
+
+          // Calculate total raised (sold * price per token)
+          const totalRaised = sold * pricePerToken;
+
+          // Target amount is face value
+          // @ts-ignore
+          const targetAmount = parseFloat(listing.metadata?.faceValue || listing.faceValue || '0');
+
+          return {
+            id: listing.assetId,
+            assetId: listing.name || listing.assetId, // Use name as display ID (e.g., "INV-2025-637514 - Tech Solutions Inc")
+            name: listing.industry || 'Invoice', // Use industry as category name
+            description: `${listing.industry || 'Invoice'} · Invoice · ${listing.riskTier || 'Standard'} Risk`,
+            category: 'invoice' as const,
+            icon: '📄',
+            tokenPrice: pricePerToken,
+            yieldAPY: 8, // TODO: Backend needs to provide this - using default
+            maturityDays: maturityDays || "Matured", // Already validated with fallback to "Matured" above
+            totalRaised: totalRaised,
+            targetAmount: targetAmount,
+            fundingProgress: fundingProgress,
+            status: listing.status,
+            verified: listing.status === 'TOKENIZED',
+            listedDate: listing.listedAt || new Date().toISOString(),
+            listingType: listing.listingType,
+          };
         });
-      }
-
-      // Parse sold and total supply (18 decimals)
-      const soldWei = BigInt(listing.sold || '0');
-      const totalSupplyWei = BigInt(listing.totalSupply || '0');
-      const sold = Number(soldWei) / 1e18;
-      const totalSupply = Number(totalSupplyWei) / 1e18;
-      const fundingProgress = listing.percentageSold || (totalSupply > 0 ? (sold / totalSupply) * 100 : 0);
-
-      // Parse price (USDC with 6 decimals)
-      // For AUCTION: no price yet (reserve price comes from auction contract)
-      // For STATIC: use pricePerToken
-      const pricePerTokenWei = BigInt(listing.pricePerToken || '0');
-      const pricePerToken = Number(pricePerTokenWei) / 1e6;
-
-      const totalRaised = sold * pricePerToken;
-      const targetAmount = parseFloat(listing.faceValue || '0');
-
-      return {
-        id: listing.assetId,
-        assetId: listing.name || listing.assetId,
-        name: listing.industry || (isAuction ? 'Auction' : 'Invoice'),
-        description: `${listing.industry || 'Asset'} · ${isAuction ? 'Auction' : 'Invoice'} · ${listing.riskTier || 'Standard'} Risk`,
-        category: 'invoice' as const,
-        icon: isAuction ? '🔨' : '📄',
-        tokenPrice: pricePerToken,
-        yieldAPY: isAuction ? 0 : 8,
-        maturityDays: maturityDays > 0 ? maturityDays : (isAuction ? "Ended" : "Matured"),
-        totalRaised: totalRaised,
-        targetAmount: targetAmount,
-        fundingProgress: fundingProgress,
-        status: listing.status,
-        verified: listing.status === 'TOKENIZED' || listing.status === 'LISTED',
-        listedDate: listing.listedAt || new Date().toISOString(),
-        listingType: listing.listingType || 'STATIC',
-        endTime: isAuction ? dueDate.toISOString() : undefined,
-      };
-    });
-
-    const auctionAssets: MarketplaceAsset[] = auctions.map((auction) => {
-      const endTime = new Date(auction.endTime);
-      const today = new Date();
-      const maturityDays = Math.ceil((endTime.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-      return {
-        id: auction.assetId,
-        assetId: auction.metadata?.invoiceNumber || auction.assetId,
-        name: auction.metadata?.industry || 'Auction',
-        description: `${auction.metadata?.industry || 'Auction'} · Auction · ${auction.metadata?.riskTier || 'Standard'} Risk`,
-        category: 'invoice' as const,
-        icon: '🔨',
-        tokenPrice: auction.reservePrice,
-        yieldAPY: 0, // Auctions don't have a fixed APY
-        maturityDays: maturityDays > 0 ? maturityDays : "Ended",
-        totalRaised: (auction.totalDemand || 0) * (auction.clearingPrice || auction.reservePrice),
-        targetAmount: auction.totalSupply * auction.reservePrice,
-        fundingProgress: (auction.totalDemand / auction.totalSupply) * 100,
-        status: auction.status,
-        verified: true,
-        listedDate: auction.startTime,
-        listingType: 'AUCTION',
-        endTime: auction.endTime,
-      };
-    });
-
-    // Combine all assets: mapped listings (STATIC + AUCTION) and auctions from announcements API
-    return [...mappedListings, ...auctionAssets];
-  })();
+      })()
+    : (() => {
+        console.log('ℹ️ Marketplace: No live data returned; leaving empty.');
+        return [] as MarketplaceAsset[];
+      })(); // No fallback to mock data; keep empty state
 
 
 const handlenavigate = (asset: any) => {
@@ -205,25 +188,14 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
     { value: 'invoices', label: 'Invoices' },
     
     { value: 'high-yield', label: 'High Yield (>10%)' },
+    { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
   ];
 
-  const formatMaturity = (asset: MarketplaceAsset): string => {
-    if (asset.listingType === 'AUCTION' && asset.endTime) {
-      return getAuctionTimeRemaining(asset.endTime);
-    }
-
-    const days = asset.maturityDays;
-    // If it's already a string (like "Matured" or "Ended"), return it
-    if (typeof days === 'string') return days;
-
-    // If days is 0 or negative, the asset has matured
-    if (days <= 0) return 'Matured';
-
-    // Format remaining time
+  const formatMaturity = (days: number): string => {
     if (days < 30) return `${days} days`;
     if (days < 365) return `${Math.floor(days / 30)} months`;
-    return `${Math.floor(days / 365)} years`;
+
   };
 
   // Calculate time remaining for auction
@@ -438,13 +410,13 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
         `}</style>
 
         <div className="max-w-full mx-auto px-6 py-1">
-          {(scheduledAuctions.length > 0 || auctionResults.length > 0) ? (
+          {(scheduledAuctions.length > 0 || auctionResults.length > 0 || endedAuctions.length > 0) ? (
             <div className="flex items-center overflow-hidden">
               <div className="carousel-track flex items-center gap-6">
-                {/* First set - Scheduled auctions */}
+                {/* Scheduled auctions */}
                 {scheduledAuctions.map((auction) => (
                   <div
-                    key={`first-scheduled-${auction.auctionId}`}
+                    key={`scheduled-${auction.auctionId}`}
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
@@ -469,10 +441,10 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                   </div>
                 ))}
 
-                {/* First set - Auction results */}
+                {/* Auction results */}
                 {auctionResults.map((auction) => (
                   <div
-                    key={`first-results-${auction.auctionId}`}
+                    key={`results-${auction.auctionId}`}
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-green-200"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
@@ -497,58 +469,32 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                   </div>
                 ))}
 
-                {/* Duplicate set for seamless loop - Scheduled */}
-                {scheduledAuctions.map((auction) => (
+                {/* Ended auctions */}
+                {endedAuctions.map((auction) => (
                   <div
-                    key={`second-scheduled-${auction.auctionId}`}
-                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
+                    key={`ended-${auction.auctionId}`}
+                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-red-50 to-gray-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-red-200"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
-                    <span className="font-antic text-xs text-purple-600 font-semibold">
-                      📅 SCHEDULED
+                    <span className="font-antic text-xs text-red-600 font-semibold">
+                      ❌ ENDED
                     </span>
                     <span className="font-antic text-xs font-bold text-foreground">
                       {auction.metadata?.invoiceNumber || auction.assetId}
                     </span>
                     <span className="text-gray-300">|</span>
                     <span className="font-antic text-xs text-gray-600">
-                      {auction.totalSupply ? auction.totalSupply.toLocaleString() : '0'} tokens
+                      {auction.totalSupply?.toLocaleString() || '0'} tokens
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-green-600 font-medium">
-                      ${formatLargeNumber(auction.reservePrice)} - ${formatLargeNumber((auction.reservePrice || 0) * 1.2)}
+                    <span className="font-antic text-xs text-gray-500 font-medium">
+                      {auction.tokensSold && auction.tokensSold > 0
+                        ? `✓ Sold: ${auction.tokensSold.toLocaleString()} @ $${formatLargeNumber(auction.clearingPrice || 0)}`
+                        : 'No tokens sold'}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-orange-600 font-medium">
-                      🕐 Starts: {new Date(auction.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                ))}
-
-                {/* Duplicate set for seamless loop - Results */}
-                {auctionResults.map((auction) => (
-                  <div
-                    key={`second-results-${auction.auctionId}`}
-                    className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-green-200"
-                    onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
-                  >
-                    <span className="font-antic text-xs text-green-600 font-semibold">
-                      🎯 RESULTS
-                    </span>
-                    <span className="font-antic text-xs font-bold text-foreground">
-                      {auction.metadata?.invoiceNumber || auction.assetId}
-                    </span>
-                    <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-blue-600 font-medium">
-                      Clearing: ${formatLargeNumber(auction.clearingPrice || 0)}/token
-                    </span>
-                    <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-green-600 font-medium">
-                      ✓ Sold: {auction.tokensSold?.toLocaleString() || '0'}
-                    </span>
-                    <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-orange-600 font-medium">
-                      📦 Available: {auction.tokensRemaining?.toLocaleString() || '0'} @ ${formatLargeNumber(auction.clearingPrice || 0)}
+                    <span className="font-antic text-xs text-gray-500">
+                      🕐 Ended: {new Date(auction.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 ))}
@@ -904,7 +850,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                     {/* Maturity */}
                     <td className="px-6 py-4 text-right">
                       <div className="font-antic text-sm text-gray-600">
-                        {formatMaturity(asset)}
+                        {formatMaturity(asset.maturityDays)}
                       </div>
                     </td>
 

@@ -2,7 +2,7 @@
 
 
 export type AssetCategory = 'invoice' | 'real-estate' | 'trade-finance' | 'equipment-lease';
-export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED' | 'LISTED';
+export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED' | 'LISTED' |'ENDED';
 
 interface Token {
   address: string;
@@ -45,7 +45,7 @@ interface Listing {
   scheduledEndTime?: string;
   transactionHash?: string;
   price?: string; // For STATIC listings
-  clearingPrice?: string; // USDC with 6 decimals
+  clearingPrice?: number ; // USDC with 6 decimals
 }
 
 

@@ -270,6 +270,7 @@ export interface ApiAdminAsset {
       max: string;
     };
     duration?: number;
+    clearingPrice?: string;
     sold: string;
     active: boolean;
     listedAt: string;
