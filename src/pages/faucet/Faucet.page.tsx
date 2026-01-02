@@ -143,7 +143,7 @@ const FaucetPage = () => {
             <CardHeader>
               <CardTitle>METH Faucet</CardTitle>
               <CardDescription>
-                Receive 10 testnet mETH for gas fees.
+                Receive 10 testnet mETH for for leveraged meth buy.
               </CardDescription>
             </CardHeader>
             <CardContent>

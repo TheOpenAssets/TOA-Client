@@ -7,9 +7,8 @@ export const NotFoundPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-[#f6fbff] relative overflow-hidden">
+    <div className="w-full min-h-screen flex items-center justify-center bg-[#000000] relative overflow-hidden">
       {/* Particle Text Effect Background */}
-      <HeroBackground />
       <ParticleTextEffect
         text="404"
         className="absolute top-0 left-0"
@@ -23,7 +22,7 @@ export const NotFoundPage = () => {
       <div className="absolute top-8 left-8 z-10">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-3 px-8 py-3.5 cta-button rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+          className="flex items-center gap-3 px-8 py-3.5 cta-button rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Return Home</span>
