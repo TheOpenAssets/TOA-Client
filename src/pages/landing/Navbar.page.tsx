@@ -28,15 +28,7 @@ const Navbar = () => {
     setIsFaucetLoading(true);
     setActiveFaucet('USDC');
     info('Requesting USDC...', 'The faucet is processing your request.');
-    try {
-      const response = await faucetService.getUsdcFromFaucet(address);
-      success('USDC Received!', `${response.amount} USDC sent to your wallet.`);
-    } catch (err: any) {
-      toastError('Faucet Error', err.message || 'Failed to get USDC.');
-    } finally {
-      setIsFaucetLoading(false);
-      setActiveFaucet(null);
-    }
+    
   };
 
   const handleGetMethClick = async () => {

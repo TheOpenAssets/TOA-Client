@@ -2,7 +2,7 @@
 
 
 export type AssetCategory = 'invoice' | 'real-estate' | 'trade-finance' | 'equipment-lease';
-export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED' | 'LISTED' |'ENDED';
+export type AssetStatus = 'TOKENIZED' | 'FUNDING' | 'ACTIVE' | 'SETTLED' | 'LISTED' | 'ENDED' | 'PAYOUT_COMPLETE';
 
 interface Token {
   address: string;

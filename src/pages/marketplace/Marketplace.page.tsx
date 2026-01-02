@@ -173,10 +173,17 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
 
     if (!matchesSearch) return false;
 
+    // PAYOUT_COMPLETE assets: only show if matured
+    if (asset.status === 'PAYOUT_COMPLETE') {
+      const isMatured = asset.maturityDays === "Matured" ||
+                        (typeof asset.maturityDays === 'number' && asset.maturityDays <= 0);
+      if (!isMatured) return false;
+    }
+
     // Category filter
     if (activeFilter === 'all') return true;
     if (activeFilter === 'invoices') return asset.category === 'invoice';
-  
+
     if (activeFilter === 'high-yield') return asset.yieldAPY >= 10;
     if (activeFilter === 'verified') return asset.verified;
 
@@ -883,17 +890,28 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                      {asset.fundingProgress == 100 ?<button
-                        onClick={() => handleTableNavigate(asset)}
-                        className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
-                      >
-                        View Details
-                      </button> :<button
-                        onClick={() => handleTableNavigate(asset)}
-                        className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
-                      >
-                        Buy
-                      </button>}
+                      {(() => {
+                        // Check if asset is matured
+                        const isMatured = asset.maturityDays === "Matured" ||
+                                          (typeof asset.maturityDays === 'number' && asset.maturityDays <= 0) ||
+                                          asset.fundingProgress === 100;
+
+                        return isMatured ? (
+                          <button
+                            onClick={() => handleTableNavigate(asset)}
+                            className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
+                          >
+                            View Details
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleTableNavigate(asset)}
+                            className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 transition-colors"
+                          >
+                            Buy
+                          </button>
+                        );
+                      })()}
                       <span className="text-gray-400">|</span>
                       <button
                         onClick={() => handleTableNavigate(asset)}

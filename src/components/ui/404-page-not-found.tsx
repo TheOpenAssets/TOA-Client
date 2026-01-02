@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { ParticleTextEffect } from "./interactive-text-particle";
-import HeroBackground from "../../pages/landing/HeroBackground";
 
 export const NotFoundPage = () => {
   const navigate = useNavigate();

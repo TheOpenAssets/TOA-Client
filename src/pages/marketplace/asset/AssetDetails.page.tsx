@@ -36,7 +36,6 @@ const AssetDetailsPage = () => {
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
   const { methPrice, createPosition, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
 
-  const [timeRange, setTimeRange] = useState('1M');
   const [tokensToBuy, setTokensToBuy] = useState('');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState<string | null>(null);
