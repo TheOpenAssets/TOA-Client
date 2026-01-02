@@ -9,15 +9,32 @@ import { parseUnits, formatUnits } from 'viem';
  * Source: packages/contracts/deployed_contracts.json
  */
 export const CONTRACTS = {
-  AttestationRegistry: '0x03FE7d3736402D140659e7bD92B64808E31C3f51',
-  TrustedIssuersRegistry: '0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2',
-  IdentityRegistry: '0x2E310C62A225033055E88B690F8d054ece8bcbC4',
-  YieldVault: '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7',
-  TokenFactory: '0x7C75795Cf41ee32fB4FEB89964d7591F0a44BcfE',
-  PrimaryMarketplace: '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504',
-  USDC: '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238',
-  Faucet: '0x643b8c16F894B39399506cC921efa68d61A14905',
+  AttestationRegistry: process.env.VITE_ATTESTATION_REGISTRY || '0x03FE7d3736402D140659e7bD92B64808E31C3f51',
+  TrustedIssuersRegistry: process.env.VITE_TRUSTED_ISSUERS_REGISTRY || '0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2',
+  IdentityRegistry: process.env.VITE_IDENTITY_REGISTRY || '0x2E310C62A225033055E88B690F8d054ece8bcbC4',
+  YieldVault: process.env.VITE_YIELD_VAULT_ADDRESS || '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7',
+  TokenFactory: process.env.VITE_TOKEN_FACTORY || '0x7C75795Cf41ee32fB4FEB89964d7591F0a44BcfE',
+  PrimaryMarketplace: process.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504',
+  USDC: process.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238',
+  Faucet: process.env.VITE_FAUCET || '0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3',
 } as const;
+
+/*
+ "AttestationRegistry": "0x03FE7d3736402D140659e7bD92B64808E31C3f51",
+    "TrustedIssuersRegistry": "0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2",
+    "IdentityRegistry": "0x2E310C62A225033055E88B690F8d054ece8bcbC4",
+    "YieldVault": "0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7",
+    "TokenFactory": "0x7C75795Cf41ee32fB4FEB89964d7591F0a44BcfE",
+    "PrimaryMarketplace": "0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504",
+    "USDC": "0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238",
+    "MockMETH": "0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6",
+    "METHFaucet": "0xB50d0AC5D59E456C1f3EdB66403fd27eEbd155dB",
+    "MockFluxionDEX": "0x882eA0d81d445CF9e696869af4D007008281892D",
+    "SeniorPool": "0xc0AbF06aC81285C64de5e130682824B9828b1FAC",
+    "FluxionIntegration": "0x7351C8b33e9e5AE3cCf5a5380ec27e90fc8B82c7",
+    "LeverageVault": "0x202266854D99F96A98157ea51E8319E4a54e50d8",
+    "Faucet": "0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3" */
+
 
 /**
  * Contract ABIs (Minimal - Only Required Functions)

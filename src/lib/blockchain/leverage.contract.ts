@@ -5,10 +5,10 @@
  * Deployed on: 2025-12-31
  */
 export const LEVERAGE_CONTRACTS = {
-  LeverageVault: '0x67682FfFb86793635050a3d0bCdD95983659660B',
-  MockMETH: '0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6',
-  MockFluxionDEX: '0x882eA0d81d445CF9e696869af4D007008281892D',
-  SeniorPool: '0x98da55a2B4281d6872D17F90119d48A5C19341b1',
+  LeverageVault: import.meta.env.VITE_LEVERAGE_VAULT,
+  MockMETH: import.meta.env.VITE_MOCK_METH,
+  MockFluxionDEX: import.meta.env.VITE_MOCK_FLUXION_DEX,
+  SeniorPool: import.meta.env.VITE_SENIOR_POOL,
 } as const;
 
 /**
