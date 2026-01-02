@@ -206,7 +206,7 @@ const SettlementViewPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#f0f8ffe6]">
-        <div className="text-lg font-antic text-foreground">Loading settlements...</div>
+        <div className="text-lg font-geist text-foreground">Loading settlements...</div>
       </div>
     );
   }
@@ -214,7 +214,7 @@ const SettlementViewPage = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#f0f8ffe6]">
-        <div className="text-lg text-red-600 font-antic">Error: {error}</div>
+        <div className="text-lg text-red-600 font-geist">Error: {error}</div>
       </div>
     );
   }
@@ -223,7 +223,7 @@ const SettlementViewPage = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-antic text-3xl font-normal text-foreground mb-2">
+        <h2 className="font-geist text-3xl font-normal text-foreground mb-2">
           Settlements & Yield Manager
         </h2>
         <p className="font-inter text-sm text-foreground/70">
@@ -243,7 +243,7 @@ const SettlementViewPage = () => {
             <Coins className="w-5 h-5 text-blue-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Ready for Yield</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {payoutCompleteAssets?.length || 0}
               </p>
             </div>
@@ -260,7 +260,7 @@ const SettlementViewPage = () => {
             <TrendingUp className="w-5 h-5 text-green-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Total Settlements</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {allSettlements.length}
               </p>
             </div>
@@ -277,7 +277,7 @@ const SettlementViewPage = () => {
             <DollarSign className="w-5 h-5 text-purple-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Total Distributed</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {formatCurrency(
                   allSettlements
                     .filter(s => s.status === 'DISTRIBUTED')
@@ -295,7 +295,7 @@ const SettlementViewPage = () => {
         style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
       >
         <div className="mb-6">
-          <h3 className="font-antic text-2xl font-normal text-foreground mb-1">
+          <h3 className="font-geist text-2xl font-normal text-foreground mb-1">
             Assets Ready for Yield Distribution
           </h3>
           <p className="font-inter text-sm text-foreground/70">
@@ -306,7 +306,7 @@ const SettlementViewPage = () => {
         {!payoutCompleteAssets || payoutCompleteAssets.length === 0 ? (
           <div className="p-12 text-center">
             <Coins className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+            <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
               No Assets Ready
             </h3>
             <p className="font-inter text-sm text-foreground/60">
@@ -324,7 +324,7 @@ const SettlementViewPage = () => {
                         <Coins className="w-6 h-6 text-foreground/60" />
                       </div>
                       <div>
-                        <h4 className="font-antic text-lg font-normal text-foreground">
+                        <h4 className="font-geist text-lg font-normal text-foreground">
                           Invoice #{asset.metadata.invoiceNumber}
                         </h4>
                         <p className="font-inter text-xs text-foreground/60">
@@ -336,13 +336,13 @@ const SettlementViewPage = () => {
                     <div className="grid grid-cols-4 gap-4">
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Face Value</p>
-                        <p className="font-antic text-base font-normal text-foreground">
+                        <p className="font-geist text-base font-normal text-foreground">
                           {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
-                        <p className="font-antic text-base font-normal text-foreground">
+                        <p className="font-geist text-base font-normal text-foreground">
                           {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
                       </div>
@@ -415,7 +415,7 @@ const SettlementViewPage = () => {
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
         >
           <div className="mb-6">
-            <h3 className="font-antic text-2xl font-normal text-foreground mb-1">
+            <h3 className="font-geist text-2xl font-normal text-foreground mb-1">
               All Settlements
             </h3>
             <p className="font-inter text-sm text-foreground/70">
@@ -427,22 +427,22 @@ const SettlementViewPage = () => {
             <table className="w-full">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Settlement Date
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Asset ID
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Settlement Amount
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Platform Fee (1.5%)
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Net Distribution
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Status
                   </th>
                 </tr>
@@ -461,17 +461,17 @@ const SettlementViewPage = () => {
                       </p>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="font-antic text-sm font-semibold text-foreground">
+                      <p className="font-geist text-sm font-semibold text-foreground">
                         ${settlement.settlementAmount.toLocaleString()}
                       </p>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="font-antic text-sm text-red-600">
+                      <p className="font-geist text-sm text-red-600">
                         -${settlement.platformFee.toLocaleString()}
                       </p>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="font-antic text-sm font-semibold text-green-600">
+                      <p className="font-geist text-sm font-semibold text-green-600">
                         ${settlement.netDistribution.toLocaleString()}
                       </p>
                     </td>
@@ -509,7 +509,7 @@ const SettlementViewPage = () => {
                 <Coins className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-antic text-2xl font-normal text-foreground">
+                <h3 className="font-geist text-2xl font-normal text-foreground">
                   Yield Settlement
                 </h3>
                 <p className="font-inter text-sm text-foreground/70">
@@ -567,7 +567,7 @@ const SettlementViewPage = () => {
             {currentStep === 'VERIFY_ASSET' && (
               <div className="space-y-6">
                 <div className="bg-white rounded-xl p-6">
-                  <h4 className="font-antic text-lg font-semibold text-foreground mb-4">
+                  <h4 className="font-geist text-lg font-semibold text-foreground mb-4">
                     Asset Details
                   </h4>
                   <div className="grid grid-cols-2 gap-4 font-inter text-sm">
@@ -739,7 +739,7 @@ const SettlementViewPage = () => {
             {currentStep === 'CONFIRM_USDC' && (
               <div className="space-y-6">
                 <div className="bg-white rounded-xl p-6">
-                  <h4 className="font-antic text-lg font-semibold text-foreground mb-4">
+                  <h4 className="font-geist text-lg font-semibold text-foreground mb-4">
                     Settlement Recorded Successfully
                   </h4>
                   <div className="grid grid-cols-2 gap-4 font-inter text-sm">
@@ -822,7 +822,7 @@ const SettlementViewPage = () => {
             {currentStep === 'DISTRIBUTE' && (
               <div className="space-y-6">
                 <div className="bg-white rounded-xl p-6">
-                  <h4 className="font-antic text-lg font-semibold text-foreground mb-4">
+                  <h4 className="font-geist text-lg font-semibold text-foreground mb-4">
                     Ready for On-Chain Distribution
                   </h4>
                   <div className="grid grid-cols-2 gap-4 font-inter text-sm mb-4">
@@ -898,7 +898,7 @@ const SettlementViewPage = () => {
                       <Check className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <h4 className="font-antic text-xl font-semibold text-green-900">
+                      <h4 className="font-geist text-xl font-semibold text-green-900">
                         Yield Distribution Complete!
                       </h4>
                       <p className="font-inter text-sm text-green-700">
@@ -909,7 +909,7 @@ const SettlementViewPage = () => {
                 </div>
 
                 <div className="bg-white rounded-xl p-6">
-                  <h4 className="font-antic text-lg font-semibold text-foreground mb-4">
+                  <h4 className="font-geist text-lg font-semibold text-foreground mb-4">
                     Distribution Results
                   </h4>
                   <div className="grid grid-cols-2 gap-4 font-inter text-sm">

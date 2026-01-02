@@ -55,7 +55,7 @@ const AssetDetailsWrapper = () => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="font-antic text-2xl font-bold text-foreground mb-2">
+          <h2 className="font-geist text-2xl font-bold text-foreground mb-2">
             {error || 'Asset Not Found'}
           </h2>
           <p className="font-inter text-muted-foreground mb-6">

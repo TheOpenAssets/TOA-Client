@@ -32,7 +32,7 @@ const ComponentShowcasePage = () => {
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Header */}
         <div>
-          <h1 className="font-antic text-4xl font-normal text-foreground mb-2">
+          <h1 className="font-geist text-4xl font-normal text-foreground mb-2">
             Component Showcase
           </h1>
           <p className="font-inter text-sm text-foreground/70">
@@ -45,7 +45,7 @@ const ComponentShowcasePage = () => {
           className="rounded-2xl p-8"
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
         >
-          <h2 className="font-antic text-2xl font-normal text-foreground mb-6">
+          <h2 className="font-geist text-2xl font-normal text-foreground mb-6">
             Gradient Buttons
           </h2>
 
@@ -129,7 +129,7 @@ const ComponentShowcasePage = () => {
           className="rounded-2xl p-8"
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
         >
-          <h2 className="font-antic text-2xl font-normal text-foreground mb-6">
+          <h2 className="font-geist text-2xl font-normal text-foreground mb-6">
             Animated Loaders
           </h2>
 
@@ -179,7 +179,7 @@ const ComponentShowcasePage = () => {
           className="rounded-2xl p-8"
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
         >
-          <h2 className="font-antic text-2xl font-normal text-foreground mb-6">
+          <h2 className="font-geist text-2xl font-normal text-foreground mb-6">
             Usage Examples
           </h2>
 

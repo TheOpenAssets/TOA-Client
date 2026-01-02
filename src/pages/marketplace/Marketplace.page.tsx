@@ -229,7 +229,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg font-antic text-foreground">Loading marketplace...</div>
+          <div className="text-lg font-geist text-foreground">Loading marketplace...</div>
         </div>
       </div>
     );
@@ -270,7 +270,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                   placeholder="Search assets"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -279,17 +279,17 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
             <nav className="flex items-center gap-8">
               <button
                 onClick={() => navigate('/portfolio')}
-                className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
               >
                 Portfolio
               </button>
               <button
                 onClick={() => navigate('/marketplace')}
-                className="font-antic text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
               >
                 Trade
               </button>
-              <button className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors">
+              <button className="font-geist text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors">
                 Borrow
               </button>
             </nav>
@@ -305,7 +305,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                   {truncateAddress(address)}
                   </div>
                 <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-40">
-        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
+        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-geist text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
         
           Logout
         </button>
@@ -316,7 +316,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
               ) : (
                 <button
                   onClick={() => navigate('/auth')}
-                  className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-antic text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-geist text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                 >
                   Sign Up / Log In
                 </button>
@@ -331,61 +331,61 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
         <div className="max-w-[1400px] mx-auto px-6 py-4">
           {isLoadingInfo ? (
             <div className="flex items-center justify-center py-2">
-              <span className="font-antic text-xs text-gray-500">Loading metrics...</span>
+              <span className="font-geist text-xs text-gray-500">Loading metrics...</span>
             </div>
           ) : marketplaceInfo ? (
             <div className="flex items-center gap-8 overflow-x-auto">
               {/* Metric 1: Total Assets */}
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="font-antic text-xs text-gray-500">Total Assets </span>
-                <span className="font-antic text-sm font-semibold text-foreground">
+                <span className="font-geist text-xs text-gray-500">Total Assets </span>
+                <span className="font-geist text-sm font-semibold text-foreground">
                   {marketplaceInfo.totalAssets} Assets
                 </span>
                 <span className="flex items-center gap-1 text-green-600">
                   <TrendingUp className="w-3 h-3" />
-                  <span className="font-antic text-xs">Live</span>
+                  <span className="font-geist text-xs">Live</span>
                 </span>
               </div>
 
               {/* Metric 2: Total Value Tokenized */}
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="font-antic text-xs text-gray-500">Total Value Tokenized</span>
-                <span className="font-antic text-sm font-semibold text-foreground">
+                <span className="font-geist text-xs text-gray-500">Total Value Tokenized</span>
+                <span className="font-geist text-sm font-semibold text-foreground">
                   ${formatLargeNumber(marketplaceInfo.totalValueTokenized)}
                 </span>
                 <span className="flex items-center gap-1 text-green-600">
                   <TrendingUp className="w-3 h-3" />
-                  <span className="font-antic text-xs">USD</span>
+                  <span className="font-geist text-xs">USD</span>
                 </span>
               </div>
 
               {/* Metric 3: Active Users */}
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="font-antic text-xs text-gray-500">Active Users</span>
-                <span className="font-antic text-sm font-semibold text-foreground">
+                <span className="font-geist text-xs text-gray-500">Active Users</span>
+                <span className="font-geist text-sm font-semibold text-foreground">
                   {marketplaceInfo.activeUsers.toLocaleString()}
                 </span>
                 <span className="flex items-center gap-1 text-green-600">
                   <TrendingUp className="w-3 h-3" />
-                  <span className="font-antic text-xs">Investors</span>
+                  <span className="font-geist text-xs">Investors</span>
                 </span>
               </div>
 
               {/* Metric 4: Settlements Completed */}
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="font-antic text-xs text-gray-500">Total Settlements</span>
-                <span className="font-antic text-sm font-semibold text-foreground">
+                <span className="font-geist text-xs text-gray-500">Total Settlements</span>
+                <span className="font-geist text-sm font-semibold text-foreground">
                   {marketplaceInfo.totalSettlements.toLocaleString()}
                 </span>
                 <span className="flex items-center gap-1 text-green-600">
                   <TrendingUp className="w-3 h-3" />
-                  <span className="font-antic text-xs">Completed</span>
+                  <span className="font-geist text-xs">Completed</span>
                 </span>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-center py-2">
-              <span className="font-antic text-xs text-gray-500">Unable to load metrics</span>
+              <span className="font-geist text-xs text-gray-500">Unable to load metrics</span>
             </div>
           )}
         </div>
@@ -423,22 +423,22 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-2 rounded-full shadow-sm flex-shrink-0"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
-                    <span className="font-antic text-xs text-purple-600 font-semibold">
+                    <span className="font-geist text-xs text-purple-600 font-semibold">
                       📅 SCHEDULED
                     </span>
-                    <span className="font-antic text-xs font-bold text-foreground">
+                    <span className="font-geist text-xs font-bold text-foreground">
                       {auction.metadata?.invoiceNumber || auction.assetId}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-gray-600">
+                    <span className="font-geist text-xs text-gray-600">
                       {auction.totalSupply ? auction.totalSupply.toLocaleString() : '0'} tokens
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-green-600 font-medium">
+                    <span className="font-geist text-xs text-green-600 font-medium">
                       ${formatLargeNumber(auction.reservePrice)} - ${formatLargeNumber((auction.reservePrice || 0) * 1.2)}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-orange-600 font-medium">
+                    <span className="font-geist text-xs text-orange-600 font-medium">
                       🕐 Starts: {new Date(auction.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -451,22 +451,22 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-green-50 to-blue-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-green-200"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
-                    <span className="font-antic text-xs text-green-600 font-semibold">
+                    <span className="font-geist text-xs text-green-600 font-semibold">
                       🎯 RESULTS
                     </span>
-                    <span className="font-antic text-xs font-bold text-foreground">
+                    <span className="font-geist text-xs font-bold text-foreground">
                       {auction.metadata?.invoiceNumber || auction.assetId}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-blue-600 font-medium">
+                    <span className="font-geist text-xs text-blue-600 font-medium">
                       Clearing: ${formatLargeNumber(auction.clearingPrice || 0)}/token
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-green-600 font-medium">
+                    <span className="font-geist text-xs text-green-600 font-medium">
                       ✓ Sold: {auction.tokensSold?.toLocaleString() || '0'}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-orange-600 font-medium">
+                    <span className="font-geist text-xs text-orange-600 font-medium">
                       📦 Available: {auction.tokensRemaining?.toLocaleString() || '0'} @ ${formatLargeNumber(auction.clearingPrice || 0)}
                     </span>
                   </div>
@@ -479,24 +479,24 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                     className="flex items-center gap-3 whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity bg-gradient-to-r from-red-50 to-gray-50 px-4 py-2 rounded-full shadow-sm flex-shrink-0 border border-red-200"
                     onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
                   >
-                    <span className="font-antic text-xs text-red-600 font-semibold">
+                    <span className="font-geist text-xs text-red-600 font-semibold">
                       ❌ ENDED
                     </span>
-                    <span className="font-antic text-xs font-bold text-foreground">
+                    <span className="font-geist text-xs font-bold text-foreground">
                       {auction.metadata?.invoiceNumber || auction.assetId}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-gray-600">
+                    <span className="font-geist text-xs text-gray-600">
                       {auction.totalSupply?.toLocaleString() || '0'} tokens
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-gray-500 font-medium">
+                    <span className="font-geist text-xs text-gray-500 font-medium">
                       {auction.tokensSold && auction.tokensSold > 0
                         ? `✓ Sold: ${auction.tokensSold.toLocaleString()} @ $${formatLargeNumber(auction.clearingPrice || 0)}`
                         : 'No tokens sold'}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-antic text-xs text-gray-500">
+                    <span className="font-geist text-xs text-gray-500">
                       🕐 Ended: {new Date(auction.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -505,7 +505,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
             </div>
           ) : (
             <div className="flex items-center justify-center">
-              <span className="font-antic text-xs text-gray-400">
+              <span className="font-geist text-xs text-gray-400">
                 No auction announcements at the moment
               </span>
             </div>
@@ -520,17 +520,17 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
           {/* Section 1: Active Auctions (Replaced Featured Issuances) */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className=" text-2xl  text-foreground font-antic">
+              <h2 className=" text-2xl  text-foreground font-geist">
                 Active Auctions
               </h2>
             </div>
             <div className="border-t border-gray-200">
               {isLoadingAuctions ? (
-                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                <div className="py-6 text-center text-gray-500 font-geist text-sm">
                   Loading auctions...
                 </div>
               ) : auctions.length === 0 ? (
-                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                <div className="py-6 text-center text-gray-500 font-geist text-sm">
                   No active auctions
                 </div>
               ) : (
@@ -547,10 +547,10 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                             {auction.metadata ? getCategoryIcon('invoice') : '🔨'}
                           </div>
                           <div>
-                            <div className="font-antic text-lg font-bold text-foreground mb-1">
+                            <div className="font-geist text-lg font-bold text-foreground mb-1">
                               {auction.metadata?.invoiceNumber || auction.assetId}
                             </div>
-                            <div className="font-antic text-sm text-gray-500">
+                            <div className="font-geist text-sm text-gray-500">
                               {auction.totalSupply.toLocaleString()} tokens · ${formatLargeNumber(auction.reservePrice)} min
                             </div>
                           </div>
@@ -558,15 +558,15 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
 
                         {/* Right: Price Range + Time */}
                         <div className="text-right">
-                          <div className="font-antic text-sm text-gray-500 mb-1">
+                          <div className="font-geist text-sm text-gray-500 mb-1">
                             Bid Range
                           </div>
-                          <div className="font-antic text-lg font-bold text-foreground mb-1">
+                          <div className="font-geist text-lg font-bold text-foreground mb-1">
                     ${auction.metadata?.priceRange?.minPrice ? (Number(auction.metadata.priceRange.minPrice) / 1e6).toFixed(2) : '0.00'} - ${auction.metadata?.priceRange?.maxPrice ? (Number(auction.metadata.priceRange.maxPrice) / 1e6).toFixed(2) : '0.00'}
                           </div>
                           <div className="flex items-center justify-end gap-1 text-blue-600">
                             <Clock className="w-3 h-3" />
-                            <span className="font-antic text-xs font-medium">
+                            <span className="font-geist text-xs font-medium">
                               {getAuctionTimeRemaining(auction.endTime)}
                             </span>
                           </div>
@@ -585,17 +585,17 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
           {/* Section 2: Trending Assets (Highest Sold %) - Real Data from GET /marketplace/top-grossing */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="font-antic text-2xl  text-foreground">
+              <h2 className="font-geist text-2xl  text-foreground">
                 Trending Assets
               </h2>
             </div>
             <div className="border-t border-gray-200">
               {isLoadingTrending ? (
-                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                <div className="py-6 text-center text-gray-500 font-geist text-sm">
                   Loading trending assets...
                 </div>
               ) : trendingAssets.length === 0 ? (
-                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                <div className="py-6 text-center text-gray-500 font-geist text-sm">
                   No trending assets
                 </div>
               ) : (
@@ -613,10 +613,10 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                             {getCategoryIcon(asset.industry || 'invoice')}
                           </div>
                           <div>
-                            <div className="font-antic text-lg font-bold text-foreground mb-1">
+                            <div className="font-geist text-lg font-bold text-foreground mb-1">
                               {asset.name || asset.assetId}
                             </div>
-                            <div className="font-antic text-sm text-gray-500">
+                            <div className="font-geist text-sm text-gray-500">
                               {asset.industry} · {asset.activityMetrics?.totalActivity || 0} activities
                             </div>
                           </div>
@@ -624,12 +624,12 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
 
                         {/* Right: Sold % + Activity */}
                         <div className="text-right">
-                          <div className="font-antic text-lg font-bold text-green-600 mb-1">
+                          <div className="font-geist text-lg font-bold text-green-600 mb-1">
                             {asset.percentageSold?.toFixed(1) || 0}% Sold
                           </div>
                           <div className="flex items-center justify-end gap-1 text-gray-600">
                             <TrendingUp className="w-4 h-4" />
-                            <span className="font-antic text-sm">
+                            <span className="font-geist text-sm">
                               {asset.activityMetrics?.purchaseCount || 0} purchases
                             </span>
                           </div>
@@ -648,17 +648,17 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
           {/* Section 3: Recently Verified Assets - Real Data from GET /marketplace/listings (Top 3, sorted by newest) */}
           <div className="bg-transparent">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="font-antic text-2xl  text-foreground">
+              <h2 className="font-geist text-2xl  text-foreground">
                 Recently Verified
               </h2>
             </div>
             <div className="border-t border-gray-200">
               {isLoading ? (
-                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                <div className="py-6 text-center text-gray-500 font-geist text-sm">
                   Loading recent assets...
                 </div>
               ) : listings.length === 0 ? (
-                <div className="py-6 text-center text-gray-500 font-antic text-sm">
+                <div className="py-6 text-center text-gray-500 font-geist text-sm">
                   No verified assets
                 </div>
               ) : (
@@ -677,7 +677,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                           </div>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-antic text-lg font-bold text-foreground">
+                              <span className="font-geist text-lg font-bold text-foreground">
                                 {/* @ts-ignore */}
                                 {listing.name || listing.assetId}
                               </span>
@@ -686,7 +686,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                                 <span className="text-green-600 font-bold">✓</span>
                               )}
                             </div>
-                            <div className="font-antic text-sm text-gray-500">
+                            <div className="font-geist text-sm text-gray-500">
                               {/* @ts-ignore */}
                               {listing.industry} · {listing.listingType}
                             </div>
@@ -695,11 +695,11 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
 
                         {/* Right: Price */}
                         <div className="text-right">
-                          <div className="font-antic text-lg font-bold text-foreground">
+                          <div className="font-geist text-lg font-bold text-foreground">
                             {/* @ts-ignore */}
                             ${formatLargeNumber(parseFloat(listing.pricePerToken || '0') / 1e6)}
                           </div>
-                          <div className="font-antic text-xs text-gray-500">
+                          <div className="font-geist text-xs text-gray-500">
                             per token
                           </div>
                         </div>
@@ -720,7 +720,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
           {/* Table Header */}
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-antic text-xl font-semibold text-foreground">Explore Assets</h2>
+              <h2 className="font-geist text-xl font-semibold text-foreground">Explore Assets</h2>
             </div>
 
             {/* Filters and Controls */}
@@ -731,7 +731,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                   <button
                     key={filter.value}
                     onClick={() => setActiveFilter(filter.value)}
-                    className={`px-4 py-2 rounded-lg font-antic text-sm font-medium whitespace-nowrap transition-colors ${
+                    className={`px-4 py-2 rounded-lg font-geist text-sm font-medium whitespace-nowrap transition-colors ${
                       activeFilter === filter.value
                         ? 'bg-gray-900 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -766,7 +766,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-antic text-sm font-medium text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-geist text-sm font-medium text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="most-popular">Most Popular</option>
                   <option value="highest-yield">Highest Yield</option>
@@ -783,28 +783,28 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="px-6 py-3 text-left font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     #
                   </th>
-                  <th className="px-6 py-3 text-left font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Asset Name
                   </th>
-                  <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Token Price
                   </th>
-                  <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Yield
                   </th>
-                  <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Maturity
                   </th>
-                  <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total Raised
                   </th>
-                  <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Funding Progress
                   </th>
-                  <th className="px-6 py-3 text-center font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -819,7 +819,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                     onClick={() => handleTableNavigate(asset)}
                   >
                     {/* Row Number */}
-                    <td className="px-6 py-4 font-antic text-sm text-gray-500">{index + 1}</td>
+                    <td className="px-6 py-4 font-geist text-sm text-gray-500">{index + 1}</td>
 
                     {/* Asset Name */}
                     <td className="px-6 py-4">
@@ -828,41 +828,41 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                           {getCategoryIcon(asset.category)}
                         </div>
                         <div>
-                          <div className="font-antic text-sm font-semibold text-foreground">
+                          <div className="font-geist text-sm font-semibold text-foreground">
                             {asset.assetId}
                           </div>
-                          <div className="font-antic text-xs text-gray-500">{asset.name}</div>
+                          <div className="font-geist text-xs text-gray-500">{asset.name}</div>
                         </div>
                       </div>
                     </td>
 
                     {/* Token Price */}
                     <td className="px-6 py-4 text-right">
-                      <div className="font-antic text-sm font-semibold text-foreground">
+                      <div className="font-geist text-sm font-semibold text-foreground">
                         ${asset.tokenPrice.toFixed(2)}
                       </div>
                     </td>
 
                     {/* Yield */}
                     <td className="px-6 py-4 text-right">
-                      <div className="font-antic text-sm text-foreground">
+                      <div className="font-geist text-sm text-foreground">
                         {asset.yieldAPY}% APY
                       </div>
                     </td>
 
                     {/* Maturity */}
                     <td className="px-6 py-4 text-right">
-                      <div className="font-antic text-sm text-gray-600">
+                      <div className="font-geist text-sm text-gray-600">
                         {formatMaturity(asset.maturityDays)}
                       </div>
                     </td>
 
                     {/* Total Raised */}
                     <td className="px-6 py-4 text-right">
-                      <div className="font-antic text-sm text-foreground">
+                      <div className="font-geist text-sm text-foreground">
                         {formatCurrency(asset.totalRaised)} / {formatCurrency(asset.targetAmount)}
                       </div>
-                      <div className="font-antic text-xs text-gray-500">
+                      <div className="font-geist text-xs text-gray-500">
                         ({asset.fundingProgress.toFixed(2)}% funded)
                       </div>
                     </td>
@@ -874,7 +874,7 @@ const handleTableNavigate = (asset: MarketplaceAsset) => {
                           className="h-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center transition-all duration-300"
                           style={{ width: `${asset.fundingProgress}%` }}
                         >
-                          <span className="font-antic text-xs font-medium text-white">
+                          <span className="font-geist text-xs font-medium text-white">
                             {asset.fundingProgress}%
                           </span>
                         </div>

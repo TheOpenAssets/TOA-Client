@@ -203,7 +203,7 @@ const AuthPage = () => {
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-8">
           <div className="max-w-md space-y-8">
             <div>
-              <h1 className="text-4xl font-antic font-normal text-foreground mb-4 leading-tight">
+              <h1 className="text-4xl font-geist font-normal text-foreground mb-4 leading-tight">
                 Welcome to <span className="whitespace-nowrap font-beau font-bold">Open Assets</span>
               </h1>
               <p className="text-lg text-foreground/70 font-inter">
@@ -238,7 +238,7 @@ const AuthPage = () => {
             <div className="w-full space-y-8">
           {/* Header */}
           <div className="text-center">
-            <h2 className="text-3xl font-antic font-normal text-foreground">Get Started</h2>
+            <h2 className="text-3xl font-geist font-normal text-foreground">Get Started</h2>
             <p className="mt-2 text-sm text-foreground/70 font-inter">
               Connect your wallet to continue
             </p>
@@ -269,7 +269,7 @@ const AuthPage = () => {
             <div className="space-y-6">
               <div className="text-center space-y-2">
                 <WalletAddress address={address} />
-                <p className="text-lg font-antic font-normal text-foreground">Welcome back</p>
+                <p className="text-lg font-geist font-normal text-foreground">Welcome back</p>
                 <p className="text-sm text-foreground/70 font-inter">
                   Click below to sign in with your wallet
                 </p>

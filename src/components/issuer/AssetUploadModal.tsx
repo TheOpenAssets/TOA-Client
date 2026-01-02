@@ -319,7 +319,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                   )}
                 </div>
                 <span
-                  className={`font-antic text-xs mt-2 ${
+                  className={`font-geist text-xs mt-2 ${
                     isActive ? 'text-blue-600 font-semibold' : 'text-gray-500'
                   }`}
                 >
@@ -345,7 +345,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
     <div className="space-y-6">
       {/* File Upload */}
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+        <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
           Invoice File (PDF) <span className="text-red-500">*</span>
         </label>
         <div
@@ -371,10 +371,10 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             <div className="flex items-center justify-center gap-3">
               <FileText className="w-8 h-8 text-green-600" />
               <div className="text-left">
-                <p className="font-antic text-sm font-semibold text-green-700">
+                <p className="font-geist text-sm font-semibold text-green-700">
                   {formData.file.name}
                 </p>
-                <p className="font-antic text-xs text-gray-500">
+                <p className="font-geist text-xs text-gray-500">
                   {(formData.file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -388,12 +388,12 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           ) : (
             <div>
               <Upload className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-              <p className="font-antic text-sm text-gray-600 mb-2">
+              <p className="font-geist text-sm text-gray-600 mb-2">
                 Drag & drop your invoice PDF here
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm hover:bg-blue-700 transition-colors"
               >
                 Choose File
               </button>
@@ -405,7 +405,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       {/* Basic Information */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Invoice Number <span className="text-red-500">*</span>
           </label>
           <input
@@ -413,12 +413,12 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             value={formData.invoiceNumber}
             onChange={(e) => updateField('invoiceNumber', e.target.value)}
             placeholder="INV-2024-001"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Face Value <span className="text-red-500">*</span>
           </label>
           <input
@@ -426,18 +426,18 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             value={formData.faceValue}
             onChange={(e) => updateField('faceValue', e.target.value)}
             placeholder="100000"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Currency <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.currency}
             onChange={(e) => updateField('currency', e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="USD">USD</option>
             <option value="EUR">EUR</option>
@@ -446,26 +446,26 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         </div>
 
         <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Issue Date <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
             value={formData.issueDate}
             onChange={(e) => updateField('issueDate', e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div className="col-span-2">
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Due Date <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
             value={formData.dueDate}
             onChange={(e) => updateField('dueDate', e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -476,7 +476,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const renderStep2 = () => (
     <div className="space-y-6">
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+        <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
           Buyer Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -484,18 +484,18 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           value={formData.buyerName}
           onChange={(e) => updateField('buyerName', e.target.value)}
           placeholder="Acme Corporation"
-          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+        <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
           Industry <span className="text-red-500">*</span>
         </label>
         <select
           value={formData.industry}
           onChange={(e) => updateField('industry', e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Select Industry</option>
           <option value="Technology">Technology</option>
@@ -510,7 +510,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       </div>
 
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+        <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
           Risk Tier <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-3 gap-3">
@@ -518,7 +518,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             <button
               key={tier}
               onClick={() => updateField('riskTier', tier)}
-              className={`px-4 py-3 rounded-lg font-antic text-sm font-medium transition-all ${
+              className={`px-4 py-3 rounded-lg font-geist text-sm font-medium transition-all ${
                 formData.riskTier === tier
                   ? 'bg-blue-600 text-white border-2 border-blue-600'
                   : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-blue-400'
@@ -536,7 +536,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const renderStep3 = () => (
     <div className="space-y-6">
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+        <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
           Asset Type <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-2 gap-4">
@@ -544,7 +544,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             <button
               key={type}
               onClick={() => updateField('assetType', type)}
-              className={`px-6 py-4 rounded-lg font-antic text-sm font-medium transition-all ${
+              className={`px-6 py-4 rounded-lg font-geist text-sm font-medium transition-all ${
                 formData.assetType === type
                   ? 'bg-blue-600 text-white border-2 border-blue-600'
                   : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-blue-400'
@@ -564,7 +564,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Total Supply (Tokens) <span className="text-red-500">*</span>
           </label>
           <input
@@ -574,15 +574,15 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             placeholder="100000"
             min="0"
             step="1"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="font-antic text-xs text-gray-500 mt-1">
+          <p className="font-geist text-xs text-gray-500 mt-1">
             Number of tokens to issue (e.g., 100000 for 100,000 tokens)
           </p>
         </div>
 
         <div>
-          <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+          <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
             Minimum Investment (Tokens) <span className="text-red-500">*</span>
           </label>
           <input
@@ -592,9 +592,9 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             placeholder="1000"
             min="0"
             step="1"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="font-antic text-xs text-gray-500 mt-1">
+          <p className="font-geist text-xs text-gray-500 mt-1">
             Minimum tokens an investor must buy (e.g., 1000 tokens)
           </p>
         </div>
@@ -602,13 +602,13 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
       {/* Raise Percentages - Required for BOTH STATIC and AUCTION */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="font-antic text-sm text-blue-800 mb-4">
+        <p className="font-geist text-sm text-blue-800 mb-4">
           <strong>Raise Limits:</strong> Set minimum and maximum fundraise as % of face value.
           {formData.assetType === 'STATIC' && ' For static assets, 95% max leaves room for platform fees (1.5%) and investor yield.'}
         </p>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+            <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
               Min Raise % <span className="text-red-500">*</span>
             </label>
             <input
@@ -618,15 +618,15 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               placeholder="75"
               min="0"
               max="100"
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="font-antic text-xs text-gray-500 mt-1">
+            <p className="font-geist text-xs text-gray-500 mt-1">
               Minimum % of face value to raise
             </p>
           </div>
 
           <div>
-            <label className="block font-antic text-sm font-medium text-gray-700 mb-2">
+            <label className="block font-geist text-sm font-medium text-gray-700 mb-2">
               Max Raise % <span className="text-red-500">*</span>
             </label>
             <input
@@ -656,9 +656,9 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               min="0"
               max="95"
               step="1"
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="font-antic text-xs text-gray-500 mt-1">
+            <p className="font-geist text-xs text-gray-500 mt-1">
               Maximum % of face value to raise
             </p>
           </div>
@@ -671,23 +671,23 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const renderStep4 = () => (
     <div className="space-y-6">
       <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-        <p className="font-antic text-sm text-orange-800">
+        <p className="font-geist text-sm text-orange-800">
           <strong>🔨 Auction Configuration:</strong> Set the duration for competitive bidding.
           Raise percentages were already configured in Step 3.
         </p>
       </div>
 
       <div>
-        <label className="block font-antic text-sm font-medium text-gray-700 mb-3">
+        <label className="block font-geist text-sm font-medium text-gray-700 mb-3">
           Auction Duration <span className="text-red-500">*</span>
         </label>
-        <p className="font-antic text-xs text-gray-600 mb-3">
+        <p className="font-geist text-xs text-gray-600 mb-3">
           Set how long the auction will run. You can use any combination of time units.
         </p>
 
         <div className="grid grid-cols-4 gap-3">
           <div>
-            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+            <label className="block font-geist text-xs font-medium text-gray-600 mb-1">
               Days
             </label>
             <input
@@ -701,7 +701,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           </div>
 
           <div>
-            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+            <label className="block font-geist text-xs font-medium text-gray-600 mb-1">
               Hours
             </label>
             <input
@@ -716,7 +716,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           </div>
 
           <div>
-            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+            <label className="block font-geist text-xs font-medium text-gray-600 mb-1">
               Minutes
             </label>
             <input
@@ -731,7 +731,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           </div>
 
           <div>
-            <label className="block font-antic text-xs font-medium text-gray-600 mb-1">
+            <label className="block font-geist text-xs font-medium text-gray-600 mb-1">
               Seconds
             </label>
             <input
@@ -748,14 +748,14 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between">
-            <p className="font-antic text-sm font-medium text-blue-900">
+            <p className="font-geist text-sm font-medium text-blue-900">
               Total Duration:
             </p>
             <p className="font-mono text-lg font-semibold text-blue-700">
               {formData.auctionDays}d {formData.auctionHours}h {formData.auctionMinutes}m {formData.auctionSeconds}s
             </p>
           </div>
-          <p className="font-antic text-xs text-blue-700 mt-2">
+          <p className="font-geist text-xs text-blue-700 mt-2">
             = {formData.auctionDuration} seconds total
           </p>
         </div>
@@ -763,10 +763,10 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
       {/* Summary of configured raise percentages */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <p className="font-antic text-sm font-semibold text-gray-700 mb-2">
+        <p className="font-geist text-sm font-semibold text-gray-700 mb-2">
           Configured Raise Limits:
         </p>
-        <div className="grid grid-cols-2 gap-4 font-antic text-sm">
+        <div className="grid grid-cols-2 gap-4 font-geist text-sm">
           <div>
             <span className="text-gray-600">Min Raise:</span>
             <span className="font-semibold text-gray-800 ml-2">{formData.minRaisePercentage}%</span>
@@ -789,7 +789,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
-            <h3 className="font-antic text-2xl font-semibold text-foreground mb-2">
+            <h3 className="font-geist text-2xl font-semibold text-foreground mb-2">
               Asset Submitted Successfully!
             </h3>
             <p className="font-inter text-sm text-foreground/70">
@@ -803,10 +803,10 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between">
           <div>
-            <h2 className="font-antic text-2xl font-semibold text-foreground">
+            <h2 className="font-geist text-2xl font-semibold text-foreground">
               Upload New Asset
             </h2>
-            <p className="font-antic text-sm text-gray-500 mt-1">
+            <p className="font-geist text-sm text-gray-500 mt-1">
               Step {currentStep} of {totalSteps}
             </p>
           </div>
@@ -835,7 +835,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           {/* Error Message */}
           {error && (
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="font-antic text-sm text-red-700">{error}</p>
+              <p className="font-geist text-sm text-red-700">{error}</p>
             </div>
           )}
         </div>
@@ -845,7 +845,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           <button
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-antic text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-geist text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
             Previous
@@ -855,7 +855,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
             {currentStep < totalSteps ? (
               <button
                 onClick={handleNext}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
@@ -864,7 +864,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

@@ -230,13 +230,13 @@ const IssuerOnboardingPage = () => {
       {/* Left Side: Illustration */}
       <div className="hidden lg:flex lg:w-1/2 bg-cover bg-center items-center justify-center p-12" style={{backgroundImage: `url('https://images.unsplash.com/photo-1735660244565-9574ca46c57d?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`}}>
         <div className="max-w-md bg-black/40 backdrop-blur-sm p-8 rounded-lg">
-          <h1 className="text-4xl font-antic font-bold text-white mb-4">
+          <h1 className="text-4xl font-geist font-bold text-white mb-4">
             Welcome to 
           </h1>
           <h1 className="text-4xl font-beau font-bold text-white mb-6">
             Open Assets
           </h1>
-          <p className="text-lg text-white/80 font-antic">
+          <p className="text-lg text-white/80 font-geist">
             Complete your issuer onboarding to start tokenizing real-world assets.
           </p>
         </div>
@@ -247,7 +247,7 @@ const IssuerOnboardingPage = () => {
         <div className='bg-white/50 w-full max-w-lg p-10 rounded-xl shadow-lg backdrop-blur-sm'>
           <div className="w-full max-w-md space-y-8">
             {/* Header */}
-            <div className="text-center font-antic">
+            <div className="text-center font-geist">
               <h2 className="text-3xl font-bold text-foreground">Issuer Onboarding</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Complete verification to access your issuer dashboard
@@ -326,7 +326,7 @@ const IssuerOnboardingPage = () => {
             {/* STEP: Connect Wallet */}
             {step === 'connect_wallet' && issuerData && (
               <div className="space-y-6">
-                <div className="text-center space-y-2 font-antic">
+                <div className="text-center space-y-2 font-geist">
                   <div className="flex items-center justify-center gap-2 text-green-500 mb-4">
                     <CheckCircle2 className="w-5 h-5" />
                     <span className="text-sm font-medium">Email Verified</span>
@@ -350,7 +350,7 @@ const IssuerOnboardingPage = () => {
             {/* STEP: KYC Verification */}
             {step === 'kyc_verification' && address && (
               <div className="space-y-6">
-                <div className="text-center space-y-2 font-antic">
+                <div className="text-center space-y-2 font-geist">
                   <WalletAddress address={address} />
                   <div className="flex items-center justify-center gap-2 text-green-500">
                     <CheckCircle2 className="w-5 h-5" />
@@ -362,7 +362,7 @@ const IssuerOnboardingPage = () => {
                 </div>
 
                 {/* Email Input (pre-filled) */}
-                <div className="space-y-2 font-antic">
+                <div className="space-y-2 font-geist">
                   <label className="text-sm font-medium text-foreground">
                     Email Address
                   </label>
@@ -381,7 +381,7 @@ const IssuerOnboardingPage = () => {
 
                 <Button
                   onClick={handleOpenDocumentModal}
-                  className="w-full font-antic"
+                  className="w-full font-geist"
                   size="lg"
                   variant="link"
                 >

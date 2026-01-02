@@ -124,7 +124,7 @@ const AuctionManagementPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-antic text-3xl font-normal text-foreground">
+          <h2 className="font-geist text-3xl font-normal text-foreground">
             Auction Management
           </h2>
           <p className="font-inter text-sm text-foreground/70 mt-1">
@@ -151,7 +151,7 @@ const AuctionManagementPage = () => {
               Active Auctions
             </p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {auctions.filter((a) => a.status === 'BIDDING').length}
           </p>
         </div>
@@ -166,7 +166,7 @@ const AuctionManagementPage = () => {
               Ended Auctions
             </p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {auctions.filter((a) => a.status === 'ENDED').length}
           </p>
         </div>
@@ -181,7 +181,7 @@ const AuctionManagementPage = () => {
               Total Auctions
             </p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {auctions.length}
           </p>
         </div>
@@ -196,7 +196,7 @@ const AuctionManagementPage = () => {
               Total Bids
             </p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {auctions.reduce((sum, a) => sum + a.totalBids, 0)}
           </p>
         </div>
@@ -207,7 +207,7 @@ const AuctionManagementPage = () => {
         className="rounded-2xl p-8 shadow-lg"
         style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
       >
-        <h3 className="font-antic text-2xl font-normal text-foreground mb-6">All Auctions</h3>
+        <h3 className="font-geist text-2xl font-normal text-foreground mb-6">All Auctions</h3>
 
         {isLoadingAuctions ? (
           <div className="text-center py-8 text-foreground/60">Loading auctions...</div>
@@ -227,7 +227,7 @@ const AuctionManagementPage = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-antic text-lg font-medium text-foreground">
+                        <h4 className="font-geist text-lg font-medium text-foreground">
                           {auction.assetId}
                         </h4>
                         <span
@@ -314,7 +314,7 @@ const AuctionManagementPage = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h3 className="font-antic text-2xl font-semibold text-foreground mb-6">
+            <h3 className="font-geist text-2xl font-semibold text-foreground mb-6">
               Create New Auction
             </h3>
 
@@ -423,14 +423,14 @@ const AuctionManagementPage = () => {
       {showEndModal && selectedAuction && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h3 className="font-antic text-2xl font-semibold text-foreground mb-6">
+            <h3 className="font-geist text-2xl font-semibold text-foreground mb-6">
               End Auction
             </h3>
 
             <div className="space-y-4">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="font-inter text-sm text-foreground/70 mb-1">Auction ID</p>
-                <p className="font-antic text-lg font-medium text-foreground">
+                <p className="font-geist text-lg font-medium text-foreground">
                   {auctions.find((a) => a.auctionId === selectedAuction)?.assetId}
                 </p>
               </div>

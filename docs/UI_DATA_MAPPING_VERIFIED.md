@@ -60,17 +60,17 @@ const reservePrice = Number(reservePriceWei) / 1e6;  // → 0.80
 
 **What's Displayed:**
 ```tsx
-<div className="font-antic text-lg font-bold">
+<div className="font-geist text-lg font-bold">
   {auction.metadata?.invoiceNumber || auction.assetId}
   // ✅ Shows: "INV-AUCTION-742460" (not the UUID)
 </div>
 
-<div className="font-antic text-sm text-gray-500">
+<div className="font-geist text-sm text-gray-500">
   {auction.totalSupply.toLocaleString()} tokens · ${auction.reservePrice.toFixed(2)} min
   // ✅ Shows: "100,000 tokens · $0.80 min"
 </div>
 
-<div className="font-antic text-lg font-bold">
+<div className="font-geist text-lg font-bold">
   ${auction.reservePrice.toFixed(2)} - ${((auction.reservePrice || 0) * 1.2).toFixed(2)}
   // ✅ Shows: "$0.80 - $0.96"
 </div>

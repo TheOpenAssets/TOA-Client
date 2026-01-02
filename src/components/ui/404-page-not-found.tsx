@@ -17,7 +17,7 @@ export const NotFoundPage = () => {
         animationForce={80}
         particleDensity={4}
       />
-      <h1 className="absolute font-bold font-antic top-4/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-gray-700">Page not Found</h1>
+      <h1 className="absolute font-bold font-geist top-4/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-gray-700">Page not Found</h1>
 
       {/* Return Home Button */}
       <div className="absolute top-8 left-8 z-10">

@@ -115,7 +115,7 @@ const AdminLayout = () => {
           <div className="px-6 py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="font-antic text-3xl font-normal text-foreground">
+                <h1 className="font-geist text-3xl font-normal text-foreground">
                   Admin Dashboard
                 </h1>
                 <p className="font-inter text-sm text-foreground/70 mt-1">

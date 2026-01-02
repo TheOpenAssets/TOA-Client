@@ -192,7 +192,7 @@ const confirmAuctionScheduling = async () => {
 **In the asset cards (Step 3), add type badge:**
 ```typescript
 <div className="flex items-center gap-2">
-  <p className="font-antic text-lg font-normal text-foreground">
+  <p className="font-geist text-lg font-normal text-foreground">
     {asset.metadata.invoiceNumber}
   </p>
   {asset.assetType === 'AUCTION' && (

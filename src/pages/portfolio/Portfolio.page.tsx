@@ -319,7 +319,7 @@ const PortfolioPage = () => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <div className="font-antic text-lg text-foreground">Loading Portfolio...</div>
+          <div className="font-geist text-lg text-foreground">Loading Portfolio...</div>
         </div>
       </div>
     );
@@ -329,10 +329,10 @@ const PortfolioPage = () => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <div className="font-antic text-lg text-red-600 mb-4">Error: {error}</div>
+          <div className="font-geist text-lg text-red-600 mb-4">Error: {error}</div>
           <button
             onClick={() => fetchPortfolio()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Retry
           </button>
@@ -345,10 +345,10 @@ const PortfolioPage = () => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <div className="font-antic text-lg text-foreground mb-4">No assets in your portfolio yet.</div>
+          <div className="font-geist text-lg text-foreground mb-4">No assets in your portfolio yet.</div>
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Explore Marketplace
           </button>
@@ -387,7 +387,7 @@ const PortfolioPage = () => {
                 <input
                   type="text"
                   placeholder="Search assets"
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -396,19 +396,19 @@ const PortfolioPage = () => {
             <nav className="flex items-center gap-8">
               <button
                 onClick={() => navigate('/marketplace')}
-                className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
               >
                 Market
               </button>
               <button
                 onClick={() => navigate('/marketplace')}
-                className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
               >
                 Trade
               </button>
               <button
                 onClick={() => navigate('/portfolio')}
-                className="font-antic text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
               >
                 Portfolio
               </button>
@@ -423,7 +423,7 @@ const PortfolioPage = () => {
                     {truncateAddress(address)}
                   </div>
                  <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-80">
-        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-antic text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
+        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-geist text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
         
           Logout
         </button>
@@ -443,40 +443,40 @@ const PortfolioPage = () => {
             <div className="lg:col-span-1 flex flex-col gap-4 h-full">
               {/* Total Asset Value Card - flex-1 to take equal space */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col " style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}>
-                <h3 className="font-antic text-xs font-medium text-gray-500 mb-2">
+                <h3 className="font-geist text-xs font-medium text-gray-500 mb-2">
                   Total Asset Value
                 </h3>
-                <p className="font-antic text-3xl font-semibold text-foreground">
+                <p className="font-geist text-3xl font-semibold text-foreground">
                   ${formatCurrency(totalAssetValue)}
                 </p>
                 <div className="flex items-center gap-1 text-green-600 mt-2">
                   <TrendingUp className="w-3 h-3" />
-                  <span className="font-antic text-xs">+0.00%</span>
+                  <span className="font-geist text-xs">+0.00%</span>
                 </div>
               </div>
 
               {/* Total Value Spent Card - flex-1 to take equal space */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col " style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}>
-                <h3 className="font-antic text-xs font-medium text-gray-500 mb-2">
+                <h3 className="font-geist text-xs font-medium text-gray-500 mb-2">
                   Total Value Spent on Assets
                 </h3>
-                <p className="font-antic text-3xl font-semibold text-foreground">
+                <p className="font-geist text-3xl font-semibold text-foreground">
                   ${formatCurrency(totalAssetValue)}
                 </p>
-                <p className="font-antic text-xs text-gray-500 mt-2">
+                <p className="font-geist text-xs text-gray-500 mt-2">
                   {portfolio?.totalPurchases} purchase{portfolio?.totalPurchases !== 1 ? 's' : ''}
                 </p>
               </div>
 
               {/* Loan Taken/Pending Card - flex-1 to take equal space */}
               <div className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col " style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}>
-                <h3 className="font-antic text-xs font-medium text-gray-500 mb-2">
+                <h3 className="font-geist text-xs font-medium text-gray-500 mb-2">
                   Loan Taken/Pending
                 </h3>
-                <p className="font-antic text-3xl font-semibold text-foreground">
+                <p className="font-geist text-3xl font-semibold text-foreground">
                   $0.00
                 </p>
-                <p className="font-antic text-xs text-gray-500 mt-2">
+                <p className="font-geist text-xs text-gray-500 mt-2">
                   No active loans
                 </p>
               </div>
@@ -487,29 +487,29 @@ const PortfolioPage = () => {
               {/* Owned Assets Table - Takes 50% height with internal scroll */}
               {(!portfolio || !portfolio?.portfolio || portfolio?.portfolio.length)!=0 && <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-                  <h2 className="font-antic text-xl font-semibold text-foreground">My Assets</h2>
+                  <h2 className="font-geist text-xl font-semibold text-foreground">My Assets</h2>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
                  <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-gray-200 text-black">
-                        <th className="px-6 py-3 text-left font-antic text-xs font-medium text-black-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left font-geist text-xs font-medium text-black-500 uppercase tracking-wider">
                           Asset ID
                         </th>
-                        <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Tokens Owned
                         </th>
-                        <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Amount Invested
                         </th>
-                        <th className="px-6 py-3 text-center font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-center font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-right font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Yield Earned
                         </th>
-                        <th className="px-6 py-3 text-center font-antic text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-center font-geist text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Risk Tier
                         </th>
                       </tr>
@@ -533,10 +533,10 @@ const PortfolioPage = () => {
                                   {getCategoryIcon(asset.metadata?.industry || 'Technology')}
                                 </div>
                                 <div>
-                                  <div className="font-antic text-sm font-semibold text-foreground">
+                                  <div className="font-geist text-sm font-semibold text-foreground">
                                     {asset.metadata?.assetName || asset.assetId.slice(0, 8)}
                                   </div>
-                                  <div className="font-antic text-xs text-gray-500">
+                                  <div className="font-geist text-xs text-gray-500">
                                     {asset.metadata?.industry || 'N/A'}
                                   </div>
                                 </div>
@@ -545,14 +545,14 @@ const PortfolioPage = () => {
 
                             {/* Tokens Owned */}
                             <td className="px-6 py-4 text-right">
-                              <div className="font-antic text-sm font-semibold text-foreground">
+                              <div className="font-geist text-sm font-semibold text-foreground">
                                 {formatTokenAmount(asset.totalAmount)}
                               </div>
                             </td>
 
                             {/* Amount Invested */}
                             <td className="px-6 py-4 text-right">
-                              <div className="font-antic text-sm font-semibold text-foreground">
+                              <div className="font-geist text-sm font-semibold text-foreground">
                                 ${formatCurrency(formatUSDCAmount(asset.totalInvested))}
                               </div>
                             </td>
@@ -566,14 +566,14 @@ const PortfolioPage = () => {
 
                             {/* Yield Earned */}
                             <td className="px-6 py-4 text-right">
-                              <div className="font-antic text-sm font-semibold text-green-600">
+                              <div className="font-geist text-sm font-semibold text-green-600">
                                 $0.00
                               </div>
                             </td>
 
                             {/* Risk Tier */}
                             <td className="px-6 py-4 text-center">
-                              <span className="font-antic text-sm text-foreground">
+                              <span className="font-geist text-sm text-foreground">
                                 {asset.metadata?.riskTier || 'N/A'}
                               </span>
                             </td>
@@ -590,7 +590,7 @@ const PortfolioPage = () => {
                                     handleClaimYield(asset.assetId);
                                   }}
                                   disabled={claimingAssetId === asset.assetId}
-                                  className="px-4 py-2 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="px-4 py-2 bg-green-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {claimingAssetId === asset.assetId ? claimStatus : 'Claim Yield'}
                                 </button>
@@ -607,21 +607,21 @@ const PortfolioPage = () => {
               {/* Pending Auction Bids Section - Takes 50% height with internal scroll */}
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-                  <h2 className="font-antic text-xl font-semibold text-foreground">Active Bids</h2>
+                  <h2 className="font-geist text-xl font-semibold text-foreground">Active Bids</h2>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
                   <div className="p-6">
                     {isLoadingBids ? (
-                      <div className="text-center text-gray-500 font-antic text-sm py-8">
+                      <div className="text-center text-gray-500 font-geist text-sm py-8">
                         Loading bids...
                       </div>
                     ) : userBids.length === 0 ? (
                       <div className="text-center py-8">
-                        <p className="font-antic text-sm text-gray-500 mb-4">No auction bids yet</p>
+                        <p className="font-geist text-sm text-gray-500 mb-4">No auction bids yet</p>
                         <button
                           onClick={() => navigate('/marketplace')}
-                          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+                          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
                         >
                           Browse Auctions
                         </button>
@@ -639,7 +639,7 @@ const PortfolioPage = () => {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-3">
-                                    <p className="font-antic text-sm font-semibold text-foreground">
+                                    <p className="font-geist text-sm font-semibold text-foreground">
                                       Asset: {bid.assetId || bid.auctionId ? (bid.assetId || bid.auctionId).slice(0, 8) : 'Unknown'}...
                                     </p>
                                     <span
@@ -654,8 +654,8 @@ const PortfolioPage = () => {
                                     {/* Tokens Requested - from tokenAmount (wei) */}
                                     {bid.tokenAmount && (
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Tokens Requested</p>
-                                        <p className="font-antic text-sm font-semibold text-foreground">
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Tokens Requested</p>
+                                        <p className="font-geist text-sm font-semibold text-foreground">
                                           {(parseFloat(bid.tokenAmount) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                         </p>
                                       </div>
@@ -664,8 +664,8 @@ const PortfolioPage = () => {
                                     {/* Price per Token - from price (USDC 6 decimals) */}
                                     {bid.price && (
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Price per Token</p>
-                                        <p className="font-antic text-sm font-semibold text-foreground">
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Price per Token</p>
+                                        <p className="font-geist text-sm font-semibold text-foreground">
                                           ${(parseFloat(bid.price) / 1e6).toFixed(2)}
                                         </p>
                                       </div>
@@ -674,8 +674,8 @@ const PortfolioPage = () => {
                                     {/* Total Bid Amount - from usdcDeposited (USDC 6 decimals) */}
                                     {bid.usdcDeposited && (
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Total Bid Amount</p>
-                                        <p className="font-antic text-sm font-semibold text-blue-600">
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Total Bid Amount</p>
+                                        <p className="font-geist text-sm font-semibold text-blue-600">
                                           ${(parseFloat(bid.usdcDeposited) / 1e6).toFixed(2)} USDC
                                         </p>
                                       </div>
@@ -684,8 +684,8 @@ const PortfolioPage = () => {
                                     {/* Bid Date */}
                                     {bid.bidDate && (
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Bid Date</p>
-                                        <p className="font-antic text-sm font-semibold text-foreground">
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Bid Date</p>
+                                        <p className="font-geist text-sm font-semibold text-foreground">
                                           {new Date(bid.bidDate).toLocaleDateString()}
                                         </p>
                                       </div>
@@ -694,12 +694,12 @@ const PortfolioPage = () => {
                                     {/* Transaction Hash */}
                                     {bid.txHash && (
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Transaction</p>
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Transaction</p>
                                         <a
                                           href={`https://sepolia.mantlescan.xyz/tx/${bid.txHash}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="font-antic text-xs font-medium text-blue-600 hover:text-blue-800 underline"
+                                          className="font-geist text-xs font-medium text-blue-600 hover:text-blue-800 underline"
                                         >
                                           {bid.txHash.slice(0, 6)}...{bid.txHash.slice(-4)}
                                         </a>
@@ -711,14 +711,14 @@ const PortfolioPage = () => {
                                   {bid.tokensWon !== undefined && bid.actualPrice !== undefined && (
                                     <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-200">
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Tokens Won</p>
-                                        <p className="font-antic text-sm font-semibold text-green-600">
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Tokens Won</p>
+                                        <p className="font-geist text-sm font-semibold text-green-600">
                                           {bid.tokensWon.toLocaleString()}
                                         </p>
                                       </div>
                                       <div>
-                                        <p className="font-antic text-xs text-gray-500 mb-1">Clearing Price</p>
-                                        <p className="font-antic text-sm font-semibold text-foreground">
+                                        <p className="font-geist text-xs text-gray-500 mb-1">Clearing Price</p>
+                                        <p className="font-geist text-sm font-semibold text-foreground">
                                           ${bid.actualPrice.toFixed(2)}
                                         </p>
                                       </div>
@@ -729,7 +729,7 @@ const PortfolioPage = () => {
                                 {/* Action Button */}
                                 {bid.settledAt ? (
                                   <div className="ml-4">
-                                    <span className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg font-antic text-sm font-medium">
+                                    <span className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg font-geist text-sm font-medium">
                                       Settled
                                     </span>
                                   </div>
@@ -745,7 +745,7 @@ const PortfolioPage = () => {
                                         });
                                       }}
                                       disabled={isSettling && settlingBidId === bid.bidId}
-                                      className="px-4 py-2 bg-green-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="px-4 py-2 bg-green-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       {bid.status === 'WON' && (isSettling && settlingBidId === bid.bidId
                                         ? settleStatus
@@ -769,7 +769,7 @@ const PortfolioPage = () => {
               {/* Leveraged Positions Section */}
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1 flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-                  <h2 className="font-antic text-xl font-semibold text-foreground">Leveraged Positions</h2>
+                  <h2 className="font-geist text-xl font-semibold text-foreground">Leveraged Positions</h2>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   <div className="p-6">
@@ -794,7 +794,7 @@ const PortfolioPage = () => {
                 <span className="text-3xl">🔥</span>
               </div>
 
-              <h2 className="font-antic text-2xl font-semibold text-foreground mb-2">
+              <h2 className="font-geist text-2xl font-semibold text-foreground mb-2">
                 Burn Tokens to Claim Yield
               </h2>
 
@@ -805,13 +805,13 @@ const PortfolioPage = () => {
               <div className="bg-white rounded-xl p-6 mb-4 border border-gray-200">
                 <div className="mb-4">
                   <p className="font-inter text-xs text-gray-500 mb-2">Tokens to Burn</p>
-                  <p className="font-antic text-2xl font-semibold text-orange-600">
+                  <p className="font-geist text-2xl font-semibold text-orange-600">
                     {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
                   </p>
                 </div>
                 <div className="border-t border-gray-200 pt-4">
                   <p className="font-inter text-xs text-gray-500 mb-2">Expected USDC</p>
-                  <p className="font-antic text-3xl font-semibold text-green-600">
+                  <p className="font-geist text-3xl font-semibold text-green-600">
                     ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
                   </p>
                   <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>

@@ -141,10 +141,10 @@ const PayoutViewPage = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="font-antic text-3xl font-semibold text-foreground mb-2">
+        <h1 className="font-geist text-3xl font-semibold text-foreground mb-2">
           Asset Payouts
         </h1>
-        <p className="font-antic text-sm text-gray-500">
+        <p className="font-geist text-sm text-gray-500">
           Execute payouts to originators for sold tokens
         </p>
       </div>
@@ -155,14 +155,14 @@ const PayoutViewPage = () => {
           <div className="flex items-start gap-3">
             <Check className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-antic text-lg font-semibold text-green-800 mb-2">
+              <h3 className="font-geist text-lg font-semibold text-green-800 mb-2">
                 Payout Executed Successfully!
               </h3>
               <div className="space-y-1 text-sm">
-                <p className="font-antic text-green-700">
+                <p className="font-geist text-green-700">
                   Amount: <span className="font-semibold">{successMessage.amount}</span>
                 </p>
-                <p className="font-antic text-green-700 flex items-center gap-2">
+                <p className="font-geist text-green-700 flex items-center gap-2">
                   Transaction:{' '}
                   <a
                     href={`https://sepolia.mantlescan.xyz/tx/${successMessage.txHash}`}
@@ -189,7 +189,7 @@ const PayoutViewPage = () => {
       {/* Error Message */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-antic text-sm text-red-700">{error}</p>
+          <p className="font-geist text-sm text-red-700">{error}</p>
         </div>
       )}
 
@@ -197,7 +197,7 @@ const PayoutViewPage = () => {
       {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-foreground/60" />
-          <p className="ml-3 font-antic text-foreground/70">Loading assets...</p>
+          <p className="ml-3 font-geist text-foreground/70">Loading assets...</p>
         </div>
       )}
 
@@ -207,10 +207,10 @@ const PayoutViewPage = () => {
           {assets.length === 0 ? (
             <div className="p-12 text-center">
               <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+              <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
                 No Listed Assets
               </h3>
-              <p className="font-antic text-sm text-gray-500">
+              <p className="font-geist text-sm text-gray-500">
                 No listed assets found. Assets will appear here after listing.
               </p>
             </div>
@@ -218,22 +218,22 @@ const PayoutViewPage = () => {
             <table className="w-full">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Asset
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Originator
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Tokens Sold
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Total Raised
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider font-antic">
+                  <th className="px-6 py-4 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
                     Action
                   </th>
                 </tr>
@@ -243,10 +243,10 @@ const PayoutViewPage = () => {
                   <tr key={asset.assetId} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-5">
                       <div>
-                        <p className="font-antic text-sm font-semibold text-foreground">
+                        <p className="font-geist text-sm font-semibold text-foreground">
                           {asset.invoiceNumber}
                         </p>
-                        <p className="font-antic text-xs text-gray-500 mt-0.5">
+                        <p className="font-geist text-xs text-gray-500 mt-0.5">
                           {asset.assetType}
                         </p>
                       </div>
@@ -258,16 +258,16 @@ const PayoutViewPage = () => {
                     </td>
                     <td className="px-6 py-5">
                       <div>
-                        <p className="font-antic text-sm font-semibold text-foreground">
+                        <p className="font-geist text-sm font-semibold text-foreground">
                           {asset.sold.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </p>
-                        <p className="font-antic text-xs text-gray-500">
+                        <p className="font-geist text-xs text-gray-500">
                           of {asset.totalSupply.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </p>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="font-antic text-base font-semibold text-green-600">
+                      <p className="font-geist text-base font-semibold text-green-600">
                         ${asset.totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
                       </p>
                     </td>
@@ -284,14 +284,14 @@ const PayoutViewPage = () => {
                     </td>
                     <td className="px-6 py-5 text-right">
                       {asset.payoutExecuted ? (
-                        <span className="font-antic text-xs text-gray-500">Completed</span>
+                        <span className="font-geist text-xs text-gray-500">Completed</span>
                       ) : asset.sold === 0 ? (
-                        <span className="font-antic text-xs text-gray-400">No tokens sold yet</span>
+                        <span className="font-geist text-xs text-gray-400">No tokens sold yet</span>
                       ) : (
                         <button
                           onClick={() => handlePayout(asset.assetId)}
                           disabled={payingOut === asset.assetId}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ml-auto"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ml-auto"
                         >
                           {payingOut === asset.assetId ? (
                             <>

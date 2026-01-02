@@ -79,7 +79,7 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
           <Icon className={`w-5 h-5 ${style.iconColor}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-antic text-base font-normal text-foreground mb-1">
+          <h4 className="font-geist text-base font-normal text-foreground mb-1">
             {toast.title}
           </h4>
           {toast.message && (

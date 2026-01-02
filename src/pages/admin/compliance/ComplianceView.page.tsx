@@ -185,7 +185,7 @@ const ComplianceViewPage = () => {
       <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-antic text-3xl font-normal text-foreground mb-2">
+        <h2 className="font-geist text-3xl font-normal text-foreground mb-2">
           Compliance Queue
         </h2>
         <p className="font-inter text-sm text-foreground/70">
@@ -205,7 +205,7 @@ const ComplianceViewPage = () => {
             <AlertCircle className="w-5 h-5 text-orange-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Pending Review</p>
-              <p className="font-antic text-2xl font-normal text-foreground">{assetsForCompliance.length}</p>
+              <p className="font-geist text-2xl font-normal text-foreground">{assetsForCompliance.length}</p>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ const ComplianceViewPage = () => {
             <ShieldCheck className="w-5 h-5 text-green-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Low Risk Assets</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'a').length}
               </p>
             </div>
@@ -237,7 +237,7 @@ const ComplianceViewPage = () => {
             <ShieldAlert className="w-5 h-5 text-red-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">High Risk Assets</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'c').length}
               </p>
             </div>
@@ -285,7 +285,7 @@ const ComplianceViewPage = () => {
                   >
                     <td className="px-6 py-5">
                       <div>
-                        <div className="font-antic font-normal text-foreground text-base">
+                        <div className="font-geist font-normal text-foreground text-base">
                           Invoice #{asset.metadata.invoiceNumber}
                         </div>
                         <div className="font-inter text-xs text-foreground/60 mt-0.5">
@@ -305,7 +305,7 @@ const ComplianceViewPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="font-antic font-normal text-foreground text-base">
+                      <div className="font-geist font-normal text-foreground text-base">
                         {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                       </div>
                       <div className="font-inter text-xs text-foreground/60 mt-0.5">
@@ -352,7 +352,7 @@ const ComplianceViewPage = () => {
           {assetsForCompliance.length === 0 && (
             <div className="px-6 py-12 text-center">
               <CheckCircle2 className="w-16 h-16 mx-auto text-green-300 mb-4" />
-              <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+              <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
                 All Clear!
               </h3>
               <p className="font-inter text-sm text-foreground/60">
@@ -370,7 +370,7 @@ const ComplianceViewPage = () => {
             className="rounded-2xl p-8 max-w-lg w-full"
             style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
           >
-            <h3 className="font-antic text-2xl font-normal text-foreground mb-4">
+            <h3 className="font-geist text-2xl font-normal text-foreground mb-4">
               Trigger KYC Verification
             </h3>
             <p className="font-inter text-sm text-foreground/70 mb-6">
@@ -432,7 +432,7 @@ const ComplianceViewPage = () => {
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle2 className="w-6 h-6 text-green-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Approve Asset
               </h3>
             </div>
@@ -498,7 +498,7 @@ const ComplianceViewPage = () => {
               <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Reject Asset
               </h3>
             </div>

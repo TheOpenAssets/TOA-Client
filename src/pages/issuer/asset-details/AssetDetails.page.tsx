@@ -80,7 +80,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
       return (
         <div className="bg-green-100 border border-green-200 text-green-800 rounded-xl p-6 text-center">
           <CheckCircle className="w-12 h-12 mx-auto mb-3" />
-          <h3 className="font-antic text-xl font-semibold">Payout Complete</h3>
+          <h3 className="font-geist text-xl font-semibold">Payout Complete</h3>
           <p className="font-inter text-sm mt-1">
             The funds for this asset have been successfully paid out.
           </p>
@@ -92,7 +92,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
         return (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
                 <Clock className="w-12 h-12 mx-auto mb-3 text-blue-500" />
-                <h3 className="font-antic text-xl font-semibold text-blue-800">Auction in Progress</h3>
+                <h3 className="font-geist text-xl font-semibold text-blue-800">Auction in Progress</h3>
                 <p className="font-mono text-2xl text-blue-600 mt-2">{timeLeft}</p>
             </div>
         )
@@ -101,7 +101,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
     return (
         <div className="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center">
             <Tag className="w-12 h-12 mx-auto mb-3 text-gray-500" />
-            <h3 className="font-antic text-xl font-semibold text-gray-800">Status: {asset?.status}</h3>
+            <h3 className="font-geist text-xl font-semibold text-gray-800">Status: {asset?.status}</h3>
             <p className="font-inter text-sm mt-1">
                 Current phase of the asset.
             </p>
@@ -124,7 +124,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
               <ArrowLeft className="w-5 h-5 text-foreground/60" />
             </button>
             <div className="flex-1">
-              <h1 className="font-antic text-2xl font-normal text-foreground">
+              <h1 className="font-geist text-2xl font-normal text-foreground">
                 {asset?.metadata?.invoiceNumber ? `Invoice #${asset.metadata.invoiceNumber}` : "Asset Details"}
               </h1>
               <p className="font-inter text-sm text-foreground/60 mt-1 flex items-center gap-2">
@@ -178,7 +178,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                                     Total Supply
                                 </span>
                                 </div>
-                                <p className="font-antic text-3xl font-normal text-foreground">
+                                <p className="font-geist text-3xl font-normal text-foreground">
                                 {(parseInt(asset.tokenParams?.totalSupply || '0') / 1e18).toLocaleString()} Tokens
                                 </p>
                             </div>
@@ -189,7 +189,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                                     Face Value
                                 </span>
                                 </div>
-                                <p className="font-antic text-3xl font-normal text-foreground">
+                                <p className="font-geist text-3xl font-normal text-foreground">
                                 {formatCurrency(asset.metadata?.faceValue)}
                                 </p>
                             </div>
@@ -205,7 +205,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                             </div>
                             <div className="flex items-start justify-between py-3 border-b border-gray-100">
                                 <span className="font-inter text-sm text-gray-600">Face Value</span>
-                                <span className="font-antic font-bold text-foreground text-lg">{formatCurrency(asset.metadata?.faceValue)}</span>
+                                <span className="font-geist font-bold text-foreground text-lg">{formatCurrency(asset.metadata?.faceValue)}</span>
                             </div>
                             <div className="flex items-start justify-between py-3 border-b border-gray-100">
                                 <span className="font-inter text-sm text-gray-600">Issue Date</span>
@@ -243,7 +243,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
               className="rounded-2xl shadow-lg p-6 h-full z-20"
               style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
             >
-              <h3 className="font-antic font-normal text-xl mb-6 text-foreground">
+              <h3 className="font-geist font-normal text-xl mb-6 text-foreground">
                 Auction Progress
               </h3>
               <div className="space-y-5">
@@ -268,7 +268,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                     <span className="font-inter text-sm text-foreground/70 font-medium">
                       Sold Tokens
                     </span>
-                    <span className="font-antic font-normal text-foreground text-base">
+                    <span className="font-geist font-normal text-foreground text-base">
                       {(parseInt(asset.listing?.sold || '0')/1e18).toLocaleString()}
                     </span>
                   </div>
@@ -276,7 +276,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
                     <span className="font-inter text-sm text-foreground/70 font-medium">
                       Total Tokens
                     </span>
-                    <span className="font-antic font-normal text-foreground text-base">
+                    <span className="font-geist font-normal text-foreground text-base">
                       {(parseInt(asset.tokenParams?.totalSupply || '0')/1e18).toLocaleString()}
                     </span>
                   </div>

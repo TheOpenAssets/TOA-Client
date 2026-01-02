@@ -335,6 +335,14 @@
     font-family: 'Inter', sans-serif;
   }
 
+  .font-geist {
+    font-family: 'Geist Sans', sans-serif;
+  }
+
+  .font-moto{
+    font-family: 'Moto Sans', sans-serif;
+  }
+
   /* Animation Utilities */
   .animate-fade-in-up {
     animation: fade-in-up 0.6s cubic-bezier(0.44, 0, 0.56, 1) forwards;

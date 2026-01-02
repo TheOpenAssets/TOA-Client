@@ -252,7 +252,7 @@ const IssuerDashboardPage = () => {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-antic text-2xl md:text-3xl font-normal text-foreground">
+              <h1 className="font-geist text-2xl md:text-3xl font-normal text-foreground">
                 Issuer Dashboard
               </h1>
               <p className="font-inter text-sm text-muted-foreground mt-1">
@@ -292,7 +292,7 @@ const IssuerDashboardPage = () => {
             <Package className="w-5 h-5 text-foreground/60" />
             <p className="font-inter text-sm text-foreground/70 font-medium">Total Assets</p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {loading ? '...' : stats.totalAssets}
           </p>
         </div>
@@ -308,7 +308,7 @@ const IssuerDashboardPage = () => {
             <TrendingUp className="w-5 h-5 text-foreground/60" />
             <p className="font-inter text-sm text-foreground/70 font-medium">Funds Raised</p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {loading ? '...' : formatCurrency(stats.fundsRaised)}
           </p>
         </div>
@@ -324,7 +324,7 @@ const IssuerDashboardPage = () => {
             <Clock className="w-5 h-5 text-foreground/60" />
             <p className="font-inter text-sm text-foreground/70 font-medium">Assets Pending</p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {loading ? '...' : stats.assetsPending}
           </p>
         </div>
@@ -340,7 +340,7 @@ const IssuerDashboardPage = () => {
             <CheckCircle className="w-5 h-5 text-foreground/60" />
             <p className="font-inter text-sm text-foreground/70 font-medium">Settled Assets</p>
           </div>
-          <p className="font-antic text-4xl font-normal text-foreground">
+          <p className="font-geist text-4xl font-normal text-foreground">
             {loading ? '...' : stats.settledAssets}
           </p>
         </div>
@@ -350,7 +350,7 @@ const IssuerDashboardPage = () => {
         {/* My Assets Section */}
         <div className="bg-[#d8dfe5] rounded-2xl p-8 shadow-lg overflow-hidden z-20">
           <div className="mb-8">
-        <h2 className="font-antic text-3xl font-normal text-foreground">My Assets</h2>
+        <h2 className="font-geist text-3xl font-normal text-foreground">My Assets</h2>
         <p className="font-inter text-sm text-foreground/70 mt-2">
           Track and manage your tokenized assets portfolio
         </p>
@@ -437,7 +437,7 @@ const IssuerDashboardPage = () => {
                 <Package className="w-5 h-5 text-foreground/60" />
               </div>
               <div>
-                <div className="font-antic font-normal text-foreground text-base">
+                <div className="font-geist font-normal text-foreground text-base">
               {invoiceNumber}
                 </div>
                 <div className="font-inter text-xs text-foreground/60 mt-0.5">
@@ -469,7 +469,7 @@ const IssuerDashboardPage = () => {
               </td>
               
               <td className="px-6 py-5">
-            <div className="font-antic font-normal text-foreground text-base">
+            <div className="font-geist font-normal text-foreground text-base">
               {formatCurrency(faceValue)}
             </div>
             <div className="font-inter text-xs text-foreground/60 mt-0.5">
@@ -505,7 +505,7 @@ const IssuerDashboardPage = () => {
           {assets.length === 0 && (
             <div className="px-6 py-12 text-center">
           <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+          <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
             No assets yet
           </h3>
           <p className="font-inter text-sm text-muted-foreground mb-6">
@@ -531,7 +531,7 @@ const IssuerDashboardPage = () => {
         authService.logout();
         navigate('/');
           }}
-          className="bg-black/50 hover:bg-black/90 text-white font-antic rounded-xl px-6 py-3  font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+          className="bg-black/50 hover:bg-black/90 text-white font-geist rounded-xl px-6 py-3  font-medium shadow-lg hover:shadow-xl transition-all duration-200"
         >
           Logout
         </button>

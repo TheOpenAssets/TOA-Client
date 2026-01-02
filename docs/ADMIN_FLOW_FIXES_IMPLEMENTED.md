@@ -161,7 +161,7 @@ const confirmAuctionScheduling = async () => {
 **What Was Added:**
 ```typescript
 <div className="flex items-center gap-2">
-  <h4 className="font-antic text-lg font-normal text-foreground">
+  <h4 className="font-geist text-lg font-normal text-foreground">
     Invoice #{asset.metadata.invoiceNumber}
   </h4>
   {asset.assetType === 'AUCTION' && (

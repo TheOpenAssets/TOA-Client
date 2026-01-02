@@ -68,7 +68,7 @@ const AdminOverviewPage = () => {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h2 className="font-antic text-3xl font-normal text-foreground mb-2">
+        <h2 className="font-geist text-3xl font-normal text-foreground mb-2">
           Dashboard Overview
         </h2>
         <p className="font-inter text-sm text-foreground/70">
@@ -90,7 +90,7 @@ const AdminOverviewPage = () => {
                 Pending Compliance
               </p>
             </div>
-            <p className="font-antic text-4xl font-normal text-foreground">
+            <p className="font-geist text-4xl font-normal text-foreground">
               {stats?.pendingCompliance ?? 0}
             </p>
             <p className="font-inter text-xs text-foreground/60">
@@ -111,7 +111,7 @@ const AdminOverviewPage = () => {
                 Ready for Registry
               </p>
             </div>
-            <p className="font-antic text-4xl font-normal text-foreground">
+            <p className="font-geist text-4xl font-normal text-foreground">
               {stats?.complianceApproved ?? 0}
             </p>
             <p className="font-inter text-xs text-foreground/60">
@@ -132,7 +132,7 @@ const AdminOverviewPage = () => {
                 On-Chain Assets
               </p>
             </div>
-            <p className="font-antic text-4xl font-normal text-foreground">
+            <p className="font-geist text-4xl font-normal text-foreground">
               {stats?.onChainAssets ?? 0}
             </p>
             <p className="font-inter text-xs text-foreground/60">
@@ -153,7 +153,7 @@ const AdminOverviewPage = () => {
                 Yield Distributed
               </p>
             </div>
-            <p className="font-antic text-4xl font-normal text-foreground">
+            <p className="font-geist text-4xl font-normal text-foreground">
               {formatCurrency(stats?.totalYieldDistributed ?? 0)}
             </p>
             <p className="font-inter text-xs text-foreground/60">
@@ -169,7 +169,7 @@ const AdminOverviewPage = () => {
         style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
       >
         <div className="mb-6">
-          <h3 className="font-antic text-2xl font-normal text-foreground">Recent Activity</h3>
+          <h3 className="font-geist text-2xl font-normal text-foreground">Recent Activity</h3>
           <p className="font-inter text-sm text-foreground/70 mt-1">
             Latest platform operations and updates
           </p>
@@ -234,7 +234,7 @@ const AdminOverviewPage = () => {
           }}
         >
           <ShieldCheck className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-antic text-lg font-normal text-foreground mb-1">
+          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
             Review Compliance
           </h4>
           <p className="font-inter text-sm text-foreground/60">
@@ -259,7 +259,7 @@ const AdminOverviewPage = () => {
           }}
         >
           <Network className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-antic text-lg font-normal text-foreground mb-1">
+          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
             On-Chain Operations
           </h4>
           <p className="font-inter text-sm text-foreground/60">
@@ -284,7 +284,7 @@ const AdminOverviewPage = () => {
           }}
         >
           <TrendingUp className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-antic text-lg font-normal text-foreground mb-1">
+          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
             Record Settlements
           </h4>
           <p className="font-inter text-sm text-foreground/60">
@@ -309,7 +309,7 @@ const AdminOverviewPage = () => {
           }}
         >
           <Gavel className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-antic text-lg font-normal text-foreground mb-1">
+          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
             Manage Auctions
           </h4>
           <p className="font-inter text-sm text-foreground/60">

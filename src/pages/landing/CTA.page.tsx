@@ -58,7 +58,7 @@ const CTASection = () => {
               </div>
 
               {/* Heading */}
-              <h2 className="font-antic text-[#0e1c29] text-[44px] md:text-[52px] not-italic font-normal tracking-[-0.44px] leading-[1.1]">
+              <h2 className="font-geist text-[#0e1c29] text-[44px] md:text-[52px] not-italic font-normal tracking-[-0.44px] leading-[1.1]">
                 Ready to Protect and Monetize Your IP?
               </h2>
 

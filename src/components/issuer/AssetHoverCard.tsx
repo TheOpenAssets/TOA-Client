@@ -45,7 +45,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
     >
       {/* Header */}
       <div className="p-5 border-b border-gray-200">
-        <h3 className="font-antic font-normal text-xl leading-tight mb-2 text-foreground">
+        <h3 className="font-geist font-normal text-xl leading-tight mb-2 text-foreground">
           {asset.metadata?.buyerName}
         </h3>
 
@@ -76,7 +76,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
                 Invoice Value
               </span>
             </div>
-            <p className="font-antic font-normal text-foreground text-base">
+            <p className="font-geist font-normal text-foreground text-base">
               {formatCurrency(asset.metadata?.faceValue)}
             </p>
           </div>
@@ -87,7 +87,7 @@ export const AssetHoverCard = ({ asset, onViewMore, position }: AssetHoverCardPr
               <Calendar className="w-4 h-4 text-foreground/60" />
               <span className="text-xs font-medium text-foreground/70 font-inter">Due Date</span>
             </div>
-            <p className="font-antic font-normal text-foreground text-sm">
+            <p className="font-geist font-normal text-foreground text-sm">
               {formatDate(asset.metadata?.dueDate)}
             </p>
           </div>

@@ -315,7 +315,7 @@ const OperationsViewPage = () => {
       <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-antic text-3xl font-normal text-foreground mb-2">
+        <h2 className="font-geist text-3xl font-normal text-foreground mb-2">
           On-Chain Operations Center
         </h2>
         <p className="font-inter text-sm text-foreground/70">
@@ -335,7 +335,7 @@ const OperationsViewPage = () => {
             <Layers className="w-5 h-5 text-blue-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Ready for Registry</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {attestedAssets.length}
               </p>
             </div>
@@ -352,7 +352,7 @@ const OperationsViewPage = () => {
             <Network className="w-5 h-5 text-orange-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Ready for Tokenization</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {registeredAssets.length}
               </p>
             </div>
@@ -369,7 +369,7 @@ const OperationsViewPage = () => {
             <CheckCircle2 className="w-5 h-5 text-green-500" />
             <div>
               <p className="font-inter text-xs text-foreground/60">Tokenized Assets</p>
-              <p className="font-antic text-2xl font-normal text-foreground">
+              <p className="font-geist text-2xl font-normal text-foreground">
                 {tokenizedAssets.length}
               </p>
             </div>
@@ -388,7 +388,7 @@ const OperationsViewPage = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Layers className="w-5 h-5 text-blue-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Step 1: Register on Mantle
               </h3>
             </div>
@@ -410,7 +410,7 @@ const OperationsViewPage = () => {
                         <FileCode className="w-6 h-6 text-foreground/60" />
                       </div>
                       <div>
-                        <h4 className="font-antic text-lg font-normal text-foreground">
+                        <h4 className="font-geist text-lg font-normal text-foreground">
                           Invoice #{asset.metadata.invoiceNumber}
                         </h4>
                         <p className="font-inter text-xs text-foreground/60">
@@ -422,13 +422,13 @@ const OperationsViewPage = () => {
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Value</p>
-                        <p className="font-antic text-base font-normal text-foreground">
+                        <p className="font-geist text-base font-normal text-foreground">
                           {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Tokens</p>
-                        <p className="font-antic text-base font-normal text-foreground">
+                        <p className="font-geist text-base font-normal text-foreground">
                           {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
                       </div>
@@ -470,7 +470,7 @@ const OperationsViewPage = () => {
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Network className="w-5 h-5 text-orange-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Step 2: Deploy ERC-3643 Token
               </h3>
             </div>
@@ -492,7 +492,7 @@ const OperationsViewPage = () => {
                         <FileCode className="w-6 h-6 text-foreground/60" />
                       </div>
                       <div>
-                        <h4 className="font-antic text-lg font-normal text-foreground">
+                        <h4 className="font-geist text-lg font-normal text-foreground">
                           Invoice #{asset.metadata.invoiceNumber}
                         </h4>
                         <p className="font-inter text-xs text-foreground/60">
@@ -522,13 +522,13 @@ const OperationsViewPage = () => {
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
-                        <p className="font-antic text-base font-normal text-foreground">
+                        <p className="font-geist text-base font-normal text-foreground">
                           {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="font-inter text-xs text-foreground/60 mb-1">Token Price</p>
-                        <p className="font-antic text-base font-normal text-foreground">
+                        <p className="font-geist text-base font-normal text-foreground">
                           ${parseFloat(asset.tokenParams.pricePerToken)/1e6}
                         </p>
                       </div>
@@ -570,7 +570,7 @@ const OperationsViewPage = () => {
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Step 3: List on Marketplace
               </h3>
             </div>
@@ -593,7 +593,7 @@ const OperationsViewPage = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-antic text-lg font-normal text-foreground">
+                          <h4 className="font-geist text-lg font-normal text-foreground">
                             Invoice #{asset.metadata.invoiceNumber}
                           </h4>
                           {asset.assetType === 'AUCTION' && (
@@ -686,7 +686,7 @@ const OperationsViewPage = () => {
           style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
         >
           <Network className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="font-antic text-lg font-semibold text-foreground mb-2">
+          <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
             No Assets Ready
           </h3>
           <p className="font-inter text-sm text-foreground/60">
@@ -706,7 +706,7 @@ const OperationsViewPage = () => {
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Layers className="w-6 h-6 text-blue-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Register Asset on Mantle
               </h3>
             </div>
@@ -806,7 +806,7 @@ const OperationsViewPage = () => {
               <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Network className="w-6 h-6 text-orange-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Deploy ERC-3643 Token
               </h3>
             </div>
@@ -916,7 +916,7 @@ const OperationsViewPage = () => {
               <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Layers className="w-6 h-6 text-orange-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 Schedule Auction
               </h3>
             </div>
@@ -1036,7 +1036,7 @@ const OperationsViewPage = () => {
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Layers className="w-6 h-6 text-purple-600" />
               </div>
-              <h3 className="font-antic text-2xl font-normal text-foreground">
+              <h3 className="font-geist text-2xl font-normal text-foreground">
                 List Asset on Marketplace
               </h3>
             </div>

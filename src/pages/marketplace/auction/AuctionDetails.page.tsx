@@ -113,7 +113,7 @@ const AuctionDetailsPage = () => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <div className="font-antic text-lg text-foreground">Loading auction...</div>
+          <div className="font-geist text-lg text-foreground">Loading auction...</div>
         </div>
       </div>
     );
@@ -123,10 +123,10 @@ const AuctionDetailsPage = () => {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
-          <div className="font-antic text-lg text-red-600 mb-4">Error: {error}</div>
+          <div className="font-geist text-lg text-red-600 mb-4">Error: {error}</div>
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Back to Marketplace
           </button>
@@ -142,7 +142,7 @@ const AuctionDetailsPage = () => {
           <div className="text-lg text-foreground mb-4">Auction not found</div>
           <button
             onClick={() => navigate('/marketplace')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Back to Marketplace
           </button>
@@ -180,7 +180,7 @@ const AuctionDetailsPage = () => {
                 <input
                   type="text"
                   placeholder="Search assets"
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-antic text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-geist text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -189,17 +189,17 @@ const AuctionDetailsPage = () => {
             <nav className="flex items-center gap-8">
               <button
                 onClick={() => navigate('/portfolio')}
-                className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
               >
                 Portfolio
               </button>
               <button
                 onClick={() => navigate('/marketplace')}
-                className="font-antic text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
+                className="font-geist text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
               >
                 Trade
               </button>
-              <button className="font-antic text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors">
+              <button className="font-geist text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors">
                 Borrow
               </button>
             </nav>
@@ -213,7 +213,7 @@ const AuctionDetailsPage = () => {
               ) : (
                 <button
                   onClick={() => navigate('/auth')}
-                  className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-antic text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-geist text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                 >
                   Sign Up / Log In
                 </button>
@@ -232,17 +232,17 @@ const AuctionDetailsPage = () => {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="font-antic text-2xl font-semibold text-foreground mb-2">
+                  <h1 className="font-geist text-2xl font-semibold text-foreground mb-2">
                     Invoice #{asset.metadata?.invoiceNumber || asset.assetId}
                   </h1>
-                  <p className="font-antic text-sm text-gray-500">
+                  <p className="font-geist text-sm text-gray-500">
                     {asset.metadata?.industry} · {asset.metadata?.buyerName}
                   </p>
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ${isAuctionAnnounced ? 'bg-red-100' : 'bg-orange-100'}`}>
                   <Clock className={`w-4 h-4 ${isAuctionAnnounced ? 'text-red-600' : 'text-orange-600'}`} />
-                  <span className={`font-antic text-sm font-medium ${isAuctionAnnounced ? 'text-red-600' : 'text-orange-600'}`}>
-                    {isAuctionAnnounced ? 'Ended' : (asset.listing?.scheduledEndTime ? getTimeRemaining(asset.listing.scheduledEndTime) : 'N/A')} {!isAuctionAnnounced && 'left'}
+                  <span className={`font-geist text-sm font-medium ${isAuctionAnnounced ? 'text-red-600' : 'text-orange-600'}`}>
+                    {isAuctionAnnounced ? 'Ended' : `${asset.listing?.scheduledEndTime ? getTimeRemaining(asset.listing.scheduledEndTime) : 'N/A'}${asset.listing?.scheduledEndTime && getTimeRemaining(asset.listing.scheduledEndTime) !== 'Ended' ? ' left' : ''}`}
                   </span>
                 </div>
               </div>
@@ -250,14 +250,14 @@ const AuctionDetailsPage = () => {
               {/* Auction Metrics */}
               <div className="grid grid-cols-3 gap-6 pt-4 border-t border-gray-200">
                 <div>
-                  <p className="font-antic text-xs text-gray-500 mb-1">Total Supply</p>
-                  <p className="font-antic text-lg font-semibold text-foreground">
+                  <p className="font-geist text-xs text-gray-500 mb-1">Total Supply</p>
+                  <p className="font-geist text-lg font-semibold text-foreground">
                     {asset.tokenParams.totalSupply ? ((Number(asset.tokenParams.totalSupply) / 1e18).toLocaleString()) : '0'} tokens
                   </p>
                 </div>
                 <div>
-                  <p className="font-antic text-xs text-gray-500 mb-1">{isAuctionAnnounced ? 'Clearing Price' : 'Reserve Price'}</p>
-                  <p className={`font-antic text-lg font-semibold ${isAuctionAnnounced ? 'text-green-600' : 'text-foreground'}`}>
+                  <p className="font-geist text-xs text-gray-500 mb-1">{isAuctionAnnounced ? 'Clearing Price' : 'Reserve Price'}</p>
+                  <p className={`font-geist text-lg font-semibold ${isAuctionAnnounced ? 'text-green-600' : 'text-foreground'}`}>
                     ${isAuctionAnnounced && asset.listing?.clearingPrice
                       ? (Number(asset.listing.clearingPrice) / 1e6).toFixed(2)
                       : asset.listing?.reservePrice
@@ -266,8 +266,8 @@ const AuctionDetailsPage = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="font-antic text-xs text-gray-500 mb-1">Bid Range</p>
-                  <p className="font-antic text-lg font-semibold text-green-600">
+                  <p className="font-geist text-xs text-gray-500 mb-1">Bid Range</p>
+                  <p className="font-geist text-lg font-semibold text-green-600">
                     ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
                   </p>
                 </div>
@@ -279,8 +279,8 @@ const AuctionDetailsPage = () => {
                   <div className="flex items-start gap-3">
                     <span className="text-red-600 text-xl">⏰</span>
                     <div className="flex-1">
-                      <p className="font-antic text-sm font-semibold text-red-800 mb-1">Auction Has Ended</p>
-                      <p className="font-antic text-xs text-red-700">
+                      <p className="font-geist text-sm font-semibold text-red-800 mb-1">Auction Has Ended</p>
+                      <p className="font-geist text-xs text-red-700">
                         This auction concluded on {asset.listing?.endedAt ? new Date(asset.listing.endedAt).toLocaleString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -300,29 +300,29 @@ const AuctionDetailsPage = () => {
 
             {/* Asset Information */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="font-antic text-xl font-semibold text-foreground mb-4">Asset Information</h2>
+              <h2 className="font-geist text-xl font-semibold text-foreground mb-4">Asset Information</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="font-antic text-xs text-gray-500 mb-1">Industry</p>
-                  <p className="font-antic text-sm font-medium text-foreground">
+                  <p className="font-geist text-xs text-gray-500 mb-1">Industry</p>
+                  <p className="font-geist text-sm font-medium text-foreground">
                     {asset.metadata?.industry || 'N/A'}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="font-antic text-xs text-gray-500 mb-1">Buyer</p>
-                  <p className="font-antic text-sm font-medium text-foreground">
+                  <p className="font-geist text-xs text-gray-500 mb-1">Buyer</p>
+                  <p className="font-geist text-sm font-medium text-foreground">
                     {asset.metadata?.buyerName || 'N/A'}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="font-antic text-xs text-gray-500 mb-1">Risk Tier</p>
-                  <p className="font-antic text-sm font-medium text-foreground">
+                  <p className="font-geist text-xs text-gray-500 mb-1">Risk Tier</p>
+                  <p className="font-geist text-sm font-medium text-foreground">
                     {asset.metadata?.riskTier || 'N/A'}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="font-antic text-xs text-gray-500 mb-1">Invoice Number</p>
-                  <p className="font-antic text-sm font-medium text-foreground">
+                  <p className="font-geist text-xs text-gray-500 mb-1">Invoice Number</p>
+                  <p className="font-geist text-sm font-medium text-foreground">
                     {asset.metadata?.invoiceNumber || 'N/A'}
                   </p>
                 </div>
@@ -331,8 +331,8 @@ const AuctionDetailsPage = () => {
 
             {/* How Auction Works */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="font-antic text-xl font-semibold text-foreground mb-4">Hw This Auction Works</h2>
-              <div className="space-y-3 font-antic text-sm text-gray-600">
+              <h2 className="font-geist text-xl font-semibold text-foreground mb-4">Hw This Auction Works</h2>
+              <div className="space-y-3 font-geist text-sm text-gray-600">
                 <p>
                   <strong className="text-foreground">1. Submit Your Bid:</strong> Enter the number of tokens you want and your maximum price per token.
                 </p>
@@ -349,14 +349,14 @@ const AuctionDetailsPage = () => {
           {/* Right: Bid Form (1/3 width) */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-8">
-              <h2 className="font-antic text-xl font-semibold text-foreground mb-6">
+              <h2 className="font-geist text-xl font-semibold text-foreground mb-6">
                 {isAuctionAnnounced ? 'Auction Ended' : 'Place a Bid'}
               </h2>
 
                 <div className="space-y-4">
                   {/* Bid Amount Input */}
                   <div>
-                    <label className="block font-antic text-xs font-medium text-gray-500 mb-2">
+                    <label className="block font-geist text-xs font-medium text-gray-500 mb-2">
                       Amount of Tokens
                     </label>
                     <input
@@ -400,9 +400,9 @@ const AuctionDetailsPage = () => {
                           }
                         }
                       }}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <p className="font-antic text-xs text-gray-500 mt-1">
+                    <p className="font-geist text-xs text-gray-500 mt-1">
                       Min: {asset.tokenParams?.minInvestment && asset.tokenParams?.totalSupply 
                         ? Math.min(Number(asset.tokenParams.minInvestment) / 1e18, Number(asset.tokenParams.totalSupply) / 1e18).toFixed(2)
                         : '0.00'} · Available: {asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toFixed(2) : '0.00'}
@@ -411,7 +411,7 @@ const AuctionDetailsPage = () => {
 
                   {/* Price Per Token Input */}
                   <div>
-                    <label className="block font-antic text-xs font-medium text-gray-500 mb-2">
+                    <label className="block font-geist text-xs font-medium text-gray-500 mb-2">
                       Price per Token (USDC)
                     </label>
                     <input
@@ -454,9 +454,9 @@ const AuctionDetailsPage = () => {
                           }
                         }
                       }}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-antic text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-geist text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <p className="font-antic text-xs text-gray-500 mt-1">
+                    <p className="font-geist text-xs text-gray-500 mt-1">
                       Range: ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
                     </p>
                   </div>
@@ -474,8 +474,8 @@ const AuctionDetailsPage = () => {
                     <div className="flex items-start gap-2 pr-6">
                       <span className="text-red-500 text-lg mt-0.5">⚠️</span>
                       <div>
-                        <p className="font-antic text-sm font-semibold text-red-800 mb-1">Transaction Failed</p>
-                        <p className="font-antic text-xs text-red-700">{bidError}</p>
+                        <p className="font-geist text-sm font-semibold text-red-800 mb-1">Transaction Failed</p>
+                        <p className="font-geist text-xs text-red-700">{bidError}</p>
                         
                       </div>
                     </div>
@@ -495,7 +495,7 @@ const AuctionDetailsPage = () => {
                       ) : (
                         <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                       )}
-                      <p className={`font-antic text-xs ${
+                      <p className={`font-geist text-xs ${
                         status.includes('success') || status.includes('🎉')
                           ? 'text-green-800 font-semibold'
                           : 'text-blue-800'
@@ -510,14 +510,14 @@ const AuctionDetailsPage = () => {
                 {bidAmount && pricePerToken && (
                   <div className="pt-4 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-antic text-xs text-gray-500">Total Cost</span>
-                      <span className="font-antic text-sm font-semibold text-foreground">
+                      <span className="font-geist text-xs text-gray-500">Total Cost</span>
+                      <span className="font-geist text-sm font-semibold text-foreground">
                         ${(parseFloat(bidAmount) * parseFloat(pricePerToken)).toFixed(2)} USDC
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-antic text-xs text-gray-500">Your Balance</span>
-                      <span className="font-antic text-sm font-semibold text-foreground">
+                      <span className="font-geist text-xs text-gray-500">Your Balance</span>
+                      <span className="font-geist text-sm font-semibold text-foreground">
                         ${parseFloat(usdcBalance).toFixed(2)} USDC
                       </span>
                     </div>
@@ -531,7 +531,7 @@ const AuctionDetailsPage = () => {
                       reset();
                       handlePlaceBid();
                     }}
-                    className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <span>🔄</span>
                     <span>Try Again</span>
@@ -552,7 +552,7 @@ const AuctionDetailsPage = () => {
                          parseFloat(bidAmount || '0') > 0 &&
                          parseFloat(pricePerToken || '0') > 0)
                       }
-                      className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-antic text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading
                         ? 'Processing...'

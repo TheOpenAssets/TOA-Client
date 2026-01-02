@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
   content: [
@@ -58,6 +59,8 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
+        sans: ['"Geist Sans"', ...defaultTheme.fontFamily.sans],
+        mono: ['"Geist Mono"', ...defaultTheme.fontFamily.mono],
         inter: ['Inter', 'sans-serif'],
         antic: ['Antic Didone', 'serif'],
         beau: ['Beau Rivage', 'cursive'],

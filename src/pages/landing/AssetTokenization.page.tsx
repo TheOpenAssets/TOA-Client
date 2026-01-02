@@ -142,7 +142,7 @@ const AssetTokenizationSection = () => {
               </div>
 
               {/* Heading */}
-              <h2 className="font-antic text-white text-[44px] md:text-[52px] not-italic font-normal tracking-[-0.44px] leading-[1.1]">
+              <h2 className="font-geist text-white text-[44px] md:text-[52px] not-italic font-normal tracking-[-0.44px] leading-[1.1]">
                 True Cross-Chain RWAs, Natively on Mantle
               </h2>
 
@@ -258,7 +258,7 @@ const AssetTokenizationSection = () => {
       <Dialog open={showConnectModal} onOpenChange={setShowConnectModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-antic text-2xl">Connect Wallet</DialogTitle>
+            <DialogTitle className="font-geist text-2xl">Connect Wallet</DialogTitle>
             <DialogDescription className="font-inter">
               Connect your wallet to access your issuer dashboard
             </DialogDescription>

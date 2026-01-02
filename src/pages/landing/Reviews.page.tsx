@@ -66,7 +66,7 @@ const ReviewsSection = () => {
         />
       </div>
       
-      <div className="max-w-[1200px] mx-auto px-6 relative z-10 font-antic">
+      <div className="max-w-[1200px] mx-auto px-6 relative z-10 font-geist">
         <div className="text-center mb-16 opacity-0" data-scroll-reveal>
           <h2 className="font-jakarta text-5xl md:text-[56px] font-italic text-foreground mb-4">
             How You'll Experience The Platform

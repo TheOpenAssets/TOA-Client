@@ -40,9 +40,9 @@ export const DocumentUploadModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} >
-      <DialogContent className="sm:max-w-[500px] font-antic">
+      <DialogContent className="sm:max-w-[500px] font-geist">
         <DialogHeader>
-          <DialogTitle className="text-xl font-antic">Upload Identity Documents</DialogTitle>
+          <DialogTitle className="text-xl font-geist">Upload Identity Documents</DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Please upload your Aadhaar card for verification
           </DialogDescription>
