@@ -11,8 +11,8 @@
 @layer base {
   :root {
     /* Soft Premium Color Palette */
-    --background: 205 100% 97.5%;  /* #f6fbff */
-    --foreground: 206 55% 11%;     /* #0e1c29 */
+    --background: 255 100% 100%;  /* #f6fbff */
+    --foreground: 255 255% 100%;     /* #0e1c29 */
     --card: 205 100% 97.5%;         /* #f6fbff */
     --card-foreground: 206 55% 11%;
     --popover: 205 100% 97.5%;

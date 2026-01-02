@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Button } from "../../components/ui/button";
+import { ShimmerButton } from "../../components/ui/shimmer-button";
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { useToast } from "../../hooks/useToast";
 
@@ -33,27 +33,25 @@ Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, is
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             
-            <Button
-              size="lg"
-              className="cta-button hover:scale-[1.02] transition-transform"
+            <ShimmerButton
+              className="hover:scale-[1.02] transition-transform"
               
               onClick={handleGetStarted}
               disabled={isAuthenticating}
             >
               Get Started
-            </Button>
-             <Button
-                    size="lg"
+            </ShimmerButton>
+             <ShimmerButton
                     onClick={handleIssuerGetStarted}
                     disabled={isAuthenticating}
-                    className="cta-button hover:scale-[1.02] transition-transform"
+                    className="hover:scale-[1.02] transition-transform gap-2"
              
                   >
                     Become an Issuer
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 256 256">
                       <path d="M221.66,133.66l-72,72A8,8,0,0,1,136,200V136H40a8,8,0,0,1,0-16h96V56a8,8,0,0,1,13.66-5.66l72,72A8,8,0,0,1,221.66,133.66Z"/>
                     </svg>
-                  </Button>
+                  </ShimmerButton>
           </div>
         </div>
       </div>

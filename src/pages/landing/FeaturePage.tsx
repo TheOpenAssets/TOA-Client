@@ -57,21 +57,23 @@ const AutoRepayingSection = () => {
     {
       title: "OAID - Universal Credit Identity",
       description:
-      "OAID is a wallet-bound credit identity that aggregates collateral, credit limits, and active loans into a single source of truth, enabling users to borrow across multiple protocols without moving or re-posting collateral.",
+        "OAID is a wallet-bound credit identity that aggregates collateral, credit limits, and active loans into a single source of truth, enabling users to borrow across multiple protocols without moving or re-posting collateral.",
       icon: <IconAdjustmentsBolt />,
     },
 
   ];
   return (
-    
-    <div className="bg-transparent py-10 max-w-7xl mx-auto">
-      <h1 className="font-antic text-black text-[64px] text-center mb-8  relative z-50">Features</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 relative z-10">
-      {features.map((feature, index) => (
-        <Feature key={feature.title} {...feature} index={index} />
-      ))}
+    <>
+
+      <div className="bg-transparent py-10 max-w-7xl mx-auto">
+        <h1 className="font-antic text-black text-[64px] text-center mb-8  relative z-50">Features</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 relative z-10">
+          {features.map((feature, index) => (
+            <Feature key={feature.title} {...feature} index={index} />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -86,6 +88,18 @@ const Feature = ({
   icon: React.ReactNode;
   index: number;
 }) => {
+  const colors = [
+    { hover: "group-hover/feature:from-blue-50/50", accent: "group-hover/feature:bg-blue-500" },
+    { hover: "group-hover/feature:from-purple-50/50", accent: "group-hover/feature:bg-purple-500" },
+    { hover: "group-hover/feature:from-emerald-50/50", accent: "group-hover/feature:bg-emerald-500" },
+    { hover: "group-hover/feature:from-amber-50/50", accent: "group-hover/feature:bg-amber-500" },
+    { hover: "group-hover/feature:from-rose-50/50", accent: "group-hover/feature:bg-rose-500" },
+    { hover: "group-hover/feature:from-indigo-50/50", accent: "group-hover/feature:bg-indigo-500" },
+    { hover: "group-hover/feature:from-teal-50/50", accent: "group-hover/feature:bg-teal-500" },
+    { hover: "group-hover/feature:from-cyan-50/50", accent: "group-hover/feature:bg-cyan-500" },
+  ];
+  const color = colors[index % colors.length];
+
   return (
     <div
       className={cn(
@@ -95,17 +109,26 @@ const Feature = ({
       )}
     >
       {index < 4 && (
-        <div className="opacity-0 group-hover/feature:opacity-100 transition duration-200 absolute inset-0 h-full w-full bg-gradient-to-t from-neutral-100 to-transparent pointer-events-none" />
+        <div className={cn(
+          "opacity-0 group-hover/feature:opacity-100 transition duration-500 absolute inset-0 h-full w-full bg-linear-to-t to-transparent pointer-events-none",
+          color.hover
+        )} />
       )}
       {index >= 4 && (
-        <div className="opacity-0 group-hover/feature:opacity-100 transition duration-200 absolute inset-0 h-full w-full bg-gradient-to-b from-neutral-100 to-transparent pointer-events-none" />
+        <div className={cn(
+          "opacity-0 group-hover/feature:opacity-100 transition duration-500 absolute inset-0 h-full w-full bg-linear-to-b to-transparent pointer-events-none",
+          color.hover
+        )} />
       )}
       <div className="mb-4 relative z-10 px-10 text-neutral-600">
         {icon}
       </div>
       <div className="text-lg font-bold mb-2 relative z-10 px-10">
-        <div className="absolute left-0 inset-y-0 h-6 group-hover/feature:h-8 w-1 rounded-tr-full rounded-br-full bg-neutral-300 group-hover/feature:bg-blue-500 transition-all duration-200 origin-center" />
-        <span className="group-hover/feature:translate-x-2 transition duration-200 inline-block text-neutral-800">
+        <div className={cn(
+          "absolute left-0 inset-y-0 h-6 group-hover/feature:h-8 w-1 rounded-tr-full rounded-br-full bg-neutral-300 transition-all duration-500 origin-center",
+          color.accent
+        )} />
+        <span className="group-hover/feature:translate-x-2 transition duration-500 inline-block text-neutral-800">
           {title}
         </span>
       </div>

@@ -12,7 +12,7 @@
   }
   :root {
     /* Soft Premium Color Palette */
-    --background: 205 100% 97.5%;  /* #f6fbff */
+    --background: 255 100% 100%;  /* #f6fbff */
     --foreground: 206 55% 11%;     /* #0e1c29 */
     --card: 205 100% 97.5%;         /* #f6fbff */
     --card-foreground: 206 55% 11%;
@@ -32,6 +32,11 @@
     --input: 210 24% 87%;
     --ring: 262 68% 57%;
     --radius: 1rem;
+    --color-1: 0 100% 63%;
+    --color-2: 270 100% 63%;
+    --color-3: 210 100% 63%;
+    --color-4: 195 100% 63%;
+    --color-5: 90 100% 63%;
   }
 
   .dark {

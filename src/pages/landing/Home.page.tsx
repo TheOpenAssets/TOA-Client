@@ -3,29 +3,42 @@
 import HeroSection from "./Hero.page";
 import Navbar from "./Navbar.page";
 import Footer from "./Footer.page";
-// import FAQSection from "./FAQ.page";
-import AutoRepayingSection from "./AutoRepaying.page";
-import HeroBackground from "./HeroBackground";
+import AutoRepayingSection from "./FeaturePage";
+// import HeroBackground from "./HeroBackground";
+import FadeIn from "../../components/ui/fadein"; // Adjust path as needed
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen ">
-      <main className="h-screen overflow-y-scroll snap-y snap-mandatory overflow-x-hidden">
-        <div className="snap-start">
-          <HeroBackground />
-          <Navbar />
-          <HeroSection />
+    <main className="overflow-y-scroll snap-y snap-mandatory overflow-x-hidden h-screen">
+      {/* SECTION 1: HERO */}
+      <div className="snap-start min-h-screen relative">
+        {/* Background & Nav usually shouldn't fade in/out on scroll, they are structural */}
+        <Navbar />
+
+        {/* The actual Hero Content fades in */}
+        <div className="relative z-10 pt-20"> {/* Ensure content is above background */}
+          <FadeIn>
+            <HeroSection />
+          </FadeIn>
         </div>
-        <div className="snap-start">
-          <div className="p-20">
+      </div>
+
+      {/* SECTION 2: AUTO REPAYING */}
+      <div className="snap-start min-h-screen flex items-center justify-center">
+        {/* We use w-full to ensure the fade wrapper takes full width */}
+        <FadeIn className="w-full">
           <AutoRepayingSection />
-          </div>
-        </div>
-        <div className="snap-start">
+        </FadeIn>
+      </div>
+
+      {/* SECTION 3: FOOTER */}
+      <div className="snap-start min-h-screen flex items-end">
+        <FadeIn className="w-full">
           <Footer />
-        </div>
-      </main>
-    </div>
+        </FadeIn>
+      </div>
+    </main>
   );
 };
+
 export default HomePage;
