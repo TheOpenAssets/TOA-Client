@@ -38,18 +38,7 @@ const DialogContent = React.forwardRef<
         "fixed left-[50%] top-[50%] z-[10999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white/90 p-9  shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg",
         className
       )}
-      style={{
-                  background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
-                  boxShadow: `
-                    rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
-                    rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
-                    rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
-                    rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
-                    rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
-                    rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
-                    rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
-                  `
-                }}
+      
       {...props}
     >
       {children}

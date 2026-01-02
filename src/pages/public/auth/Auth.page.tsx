@@ -5,17 +5,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAccount, useSignMessage } from 'wagmi';
 import { ConnectWallet } from '../../../components/wallet/ConnectWallet';
 import { WalletAddress } from '../../../components/wallet/WalletAddress';
-import { DocumentUploadModal } from '../../../components/wallet/DocumentUploadModal';
+import { Input } from '../../../components/ui/input';
+import { FileUpload } from '../../../components/ui/file-upload';
 import { Button } from '../../../components/ui/button';
 
 import { authService } from '../../../lib/api/auth.service';
 import { kycService } from '../../../lib/api/kyc.service';
 import { useAuthStore } from '../../../stores/auth.store';
 import type { WalletStatusResponse } from '../../../types/auth.types';
-import SignupForm from '../../../components/ui/signup-form';
 
-import HeroBackground from '../../landing/HeroBackground';
-import ALogo from '../../../assets/ALogo-removebg-preview.png'; // Import the logo image
+
+
+
 
 type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' | 'authenticating' | 'kyc_submit';
 
@@ -31,7 +32,8 @@ const AuthPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [kycDocuments, setKycDocuments] = useState<{ aadhaar: File | null }>({ aadhaar: null });
   const [email, setEmail] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEmailValid, setIsEmailValid] = useState<boolean>(false);
+
 
   /**
    * Check if user is coming from Hero section after authentication
@@ -81,20 +83,8 @@ const AuthPage = () => {
    */
   const handleDocumentUpload = (documents: { aadhaar: File | null }) => {
     setKycDocuments(documents);
-    setStep('documents_uploaded');
   };
 
-  /**
-   * Open document upload modal
-   */
-  const handleOpenDocumentModal = () => {
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
-    setError(null);
-    setIsModalOpen(true);
-  };
 
   /**
    * STEP 7: AUTHENTICATION FLOW
@@ -188,16 +178,18 @@ const AuthPage = () => {
     await submitKYC();
   };
 
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setIsEmailValid(newEmail.includes('@') && newEmail.includes('.'));
+  };
+
   return (
     <div className="min-h-screen bg-[#ffffff] relative overflow-hidden">
       {/* Logo */}
-      <img
-        src={ALogo}
-        alt="App Logo"
-        className="absolute top-6 left-6 w-32 h-auto z-20"
-      />
+
       {/* Hero Background */}
-      <HeroBackground />
+<img src='./ALogo-removebg-preview.svg' alt="Logo" className="absolute top-4 left-4 w-32 h-auto z-20" />
 
       <div className="relative z-10 min-h-screen flex items-center">
         {/* Right Side: Authentication Panel */}
@@ -215,9 +207,7 @@ const AuthPage = () => {
           {/* Header */}
           <div className="text-start">
             <h3 className="text-2xl font-sans font-normal text-foreground">Get Started</h3>
-            <p className="mt-2 text-sm text-foreground/70 font-sans">
-              Connect your wallet to continue
-            </p>
+            
           </div>
 
           {/* Error Display */}
@@ -228,10 +218,10 @@ const AuthPage = () => {
           )}
 
           {/* STEP 3: Wallet Connection (First Action) */}
-          {step === 'connect' && (
+          { (
             <div className="space-y-4">
               <ConnectWallet onWalletConnected={checkWalletStatus} />
-              <p className="text-xs text-start text-foreground/60 font-sans">
+              <p className="text-xs text-start text-black/60 font-sans">
                 By connecting, you agree to our Terms of Service
               </p>
             </div>
@@ -267,21 +257,42 @@ const AuthPage = () => {
 
           {/* CASE B: New User - Show Email Input and Document Upload */}
           {step === 'new_user' && address && (
-            <div className="space-y-6">
-              <SignupForm
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleOpenDocumentModal();
-                }}
-                email={email}
-                setEmail={setEmail}
-              />
-              {/* Document Upload Modal */}
-              <DocumentUploadModal
-                open={isModalOpen}
-                onOpenChange={setIsModalOpen}
-                onComplete={handleDocumentUpload}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground font-sans">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    className="pl-10 font-sans rounded-xl"
+                  />
+                </div>
+              </div>
+
+              {isEmailValid && (
+                <>
+                  <FileUpload
+                    onChange={(files) => {
+                      if (files.length > 0) {
+                        handleDocumentUpload({ aadhaar: files[0] });
+                      }
+                    }}
+                  />
+
+                  <Button
+                    onClick={handleCompleteRegistration}
+                    disabled={!kycDocuments.aadhaar || !isEmailValid}
+                    className="group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-black to-neutral-600 font-medium text-white shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset] "
+                    type="submit"
+                  >
+                    Complete Registration
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
@@ -348,15 +359,7 @@ const AuthPage = () => {
             </div>
           )}
 
-          <div className="mt-6 text-center">
-            <Button
-              variant="link"
-              className="text-xs text-foreground/60 font-sans underline-offset-4 hover:underline"
-              onClick={() => navigate('/marketplace')}
-            >
-            skip to marketplace 
-              </Button>
-          </div>
+         
             </div>
           </div>
         </div>
