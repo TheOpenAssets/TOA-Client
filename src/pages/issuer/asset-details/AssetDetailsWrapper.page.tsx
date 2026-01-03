@@ -45,25 +45,25 @@ const AssetDetailsWrapper = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-purple-500" />
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
       </div>
     );
   }
 
   if (error || !asset) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="font-geist text-2xl font-bold text-foreground mb-2">
+          <h2 className="font-geist text-2xl font-semibold text-[#111111] mb-2">
             {error || 'Asset Not Found'}
           </h2>
-          <p className="font-inter text-muted-foreground mb-6">
+          <p className="font-geist text-[#6B7280] mb-6">
             The asset you're looking for doesn't exist or could not be loaded.
           </p>
           <a
             href="/issuer/dashboard"
-            className="inline-block px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-inter rounded-lg transition-colors"
+            className="inline-block px-6 py-3 bg-black hover:bg-black/90 text-white font-geist rounded-xl transition-all duration-200"
           >
             Back to Dashboard
           </a>
