@@ -7,7 +7,6 @@ import {
   Calendar,
   DollarSign,
   ExternalLink,
-  Plus,
   Check,
   Loader2,
   AlertCircle,
@@ -52,6 +51,7 @@ const SettlementViewPage = () => {
   const [currentStep, setCurrentStep] = useState<SettlementStep>('VERIFY_ASSET');
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // Settlement data
   const [settlementAmount, setSettlementAmount] = useState<number>(0);
@@ -233,52 +233,52 @@ const SettlementViewPage = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
+        <h2 className="font-gellix text-2xl font-semibold text-foreground mb-2">
           Settlements & Yield Manager
         </h2>
-        <p className="font-gellix text-sm text-foreground/70">
+        <p className="font-gellix text-sm text-gray-500">
           Record settlements and distribute yield to token holders (time-weighted)
         </p>
       </div>
 
       {/* Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-50 rounded-xl">
-              <Coins className="w-6 h-6 text-blue-600" />
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gray-100 rounded-xl">
+              <Coins className="w-6 h-6 text-gray-600" />
             </div>
             <div className="flex-1">
-              <p className="font-gellix text-sm text-foreground/60 mb-1">Ready for Yield</p>
-              <p className="font-gellix text-3xl font-semibold text-foreground">
+              <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">Ready for Yield</p>
+              <p className="font-gellix text-2xl font-semibold text-foreground">
                 {payoutCompleteAssets?.length || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-green-50 rounded-xl">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gray-100 rounded-xl">
+              <TrendingUp className="w-6 h-6 text-gray-600" />
             </div>
             <div className="flex-1">
-              <p className="font-gellix text-sm text-foreground/60 mb-1">Total Settlements</p>
-              <p className="font-gellix text-3xl font-semibold text-foreground">
+              <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">Total Settlements</p>
+              <p className="font-gellix text-2xl font-semibold text-foreground">
                 {allSettlements.length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-purple-50 rounded-xl">
-              <DollarSign className="w-6 h-6 text-purple-600" />
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gray-100 rounded-xl">
+              <DollarSign className="w-6 h-6 text-gray-600" />
             </div>
             <div className="flex-1">
-              <p className="font-gellix text-sm text-foreground/60 mb-1">Total Distributed</p>
-              <p className="font-gellix text-3xl font-semibold text-foreground">
+              <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">Total Distributed</p>
+              <p className="font-gellix text-2xl font-semibold text-foreground">
                 {formatCurrency(
                   allSettlements
                     .filter(s => s.status === 'DISTRIBUTED')
@@ -291,23 +291,13 @@ const SettlementViewPage = () => {
       </div>
 
       {/* Assets Ready for Yield Distribution */}
-      <div
-        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-        style={{
-          boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(150, 151, 151, 0.06),
-            12px 12px 36px rgba(92, 92, 93, 0.04),
-            16px 16px 48px rgba(45, 46, 47, 0.02)
-          `,
-        }}
-      >
-        <div className="p-8 border-b border-gray-200 bg-gray-50/50">
-          <h3 className="font-gellix text-2xl font-semibold text-foreground mb-2">
+      <div className="bg-white rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="font-gellix text-xl font-semibold text-foreground mb-1">
             Assets Ready for Yield Distribution
           </h3>
-          <p className="font-gellix text-sm text-foreground/70">
-            Assets with PAYOUT_COMPLETE status can receive yield settlements
+          <p className="font-gellix text-sm text-gray-500">
+            Assets with completed payout status can receive yield settlements
           </p>
         </div>
 
@@ -317,97 +307,137 @@ const SettlementViewPage = () => {
             <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               No Assets Ready
             </h3>
-            <p className="font-gellix text-sm text-foreground/60">
-              Assets must be in PAYOUT_COMPLETE status before yield can be distributed
+            <p className="font-gellix text-sm text-gray-500">
+              Assets must have its originator paid out before yield can be distributed
             </p>
           </div>
         ) : (
-          <div className="p-6 space-y-4">
-            {payoutCompleteAssets.map((asset) => (
-              <div key={asset.assetId} className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                        <Coins className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-gellix text-lg font-semibold text-foreground">
-                          Invoice #{asset.metadata.invoiceNumber}
-                        </h4>
-                        <p className="font-gellix text-xs text-foreground/60">
-                          {asset.metadata.industry} - {asset.metadata.buyerName}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Face Value</p>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-t border-gray-200">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invoice #
+                  </th>
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Industry & Buyer
+                  </th>
+                  <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Face Value
+                  </th>
+                  <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Token Supply
+                  </th>
+                  <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {payoutCompleteAssets.map((asset, index) => (
+                  <>
+                    <tr
+                      key={asset.assetId}
+                      className={`border-b border-gray-100 transition-all cursor-pointer ${expandedRow === asset.assetId ? 'bg-gray-50' : index % 2 === 0 ? 'bg-white hover:bg-gray-50/50' : 'bg-gray-50/30 hover:bg-gray-50'
+                        }`}
+                      onClick={() => setExpandedRow(expandedRow === asset.assetId ? null : asset.assetId)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">
+                            📄
+                          </div>
+                          <span className="font-gellix text-sm font-semibold text-foreground">
+                            {asset.metadata.invoiceNumber}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-gellix text-sm text-foreground font-medium">
+                            {asset.metadata.industry}
+                          </p>
+                          <p className="font-gellix text-xs text-gray-500">
+                            {asset.metadata.buyerName}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
                         <p className="font-gellix text-sm font-semibold text-foreground">
                           {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                         </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Total Supply</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
                         <p className="font-gellix text-sm font-semibold text-foreground">
                           {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Token Address</p>
-                        <p className="font-mono text-xs font-normal text-foreground">
-                          {asset.token?.address ? `${asset.token.address.slice(0, 6)}...${asset.token.address.slice(-4)}` : 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Status</p>
-                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${asset.status === 'PAYOUT_COMPLETE'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-700'
+                          }`}>
                           {asset.status}
                         </span>
-                      </div>
-                    </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartSettlement(asset);
+                          }}
+                          className="px-4 py-2 bg-black text-white rounded-lg font-gellix text-sm font-medium hover:bg-gray-800 transition-colors"
+                        >
+                          Record Settlement
+                        </button>
+                      </td>
+                    </tr>
 
-                    {/* Token Info */}
-                    {asset.token?.address && (
-                      <div className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-gellix text-xs text-foreground/60">Token:</span>
-                            <span className="font-mono text-xs text-foreground">
-                              {asset.token.address.slice(0, 10)}...{asset.token.address.slice(-8)}
-                            </span>
+                    {/* Expanded Row */}
+                    {expandedRow === asset.assetId && (
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <td colSpan={6} className="px-6 py-4">
+                          <div className="grid grid-cols-3 gap-6">
+                            <div>
+                              <p className="font-gellix text-xs text-gray-500 mb-1">Token Address</p>
+                              <p className="font-mono text-xs text-foreground">
+                                {asset.token?.address ? `${asset.token.address.slice(0, 16)}...${asset.token.address.slice(-16)}` : 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-gellix text-xs text-gray-500 mb-1">Token Symbol</p>
+                              <p className="font-gellix text-xs font-semibold text-foreground">
+                                {asset.token?.symbol || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="font-gellix text-xs text-gray-500 mb-1">Blockchain Explorer</p>
+                              {asset.token?.address ? (
+                                <a
+                                  href={`https://sepolia.mantlescan.xyz/address/${asset.token.address}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-gray-700 hover:text-gray-900 text-xs transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  View on Mantlescan
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              ) : (
+                                <span className="text-xs text-gray-400">Not deployed</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-gellix text-xs text-foreground/60">Symbol:</span>
-                            <span className="font-gellix text-xs font-semibold text-foreground">
-                              {asset.token.symbol || 'N/A'}
-                            </span>
-                          </div>
-                          <a
-                            href={`https://sepolia.mantlescan.xyz/address/${asset.token.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 font-gellix text-xs"
-                          >
-                            View on Explorer
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      </div>
+                        </td>
+                      </tr>
                     )}
-                  </div>
-
-                  <Button
-                    onClick={() => handleStartSettlement(asset)}
-                    className="font-gellix font-medium rounded-xl whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Record Yield Settlement
-                  </Button>
-                </div>
-              </div>
-            ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -481,13 +511,12 @@ const SettlementViewPage = () => {
                     </td>
                     <td className="px-6 py-5">
                       <span
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                          settlement.status === 'DISTRIBUTED'
-                            ? 'bg-green-100 text-green-700 border-green-200'
-                            : settlement.status === 'READY_FOR_DISTRIBUTION'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${settlement.status === 'DISTRIBUTED'
+                          ? 'bg-green-100 text-green-700 border-green-200'
+                          : settlement.status === 'READY_FOR_DISTRIBUTION'
                             ? 'bg-blue-100 text-blue-700 border-blue-200'
                             : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                        }`}
+                          }`}
                       >
                         {settlement.status}
                       </span>
@@ -506,14 +535,14 @@ const SettlementViewPage = () => {
           <div className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                <Coins className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Coins className="w-6 h-6 text-gray-600" />
               </div>
               <div>
-                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                <h3 className="font-gellix text-xl font-semibold text-foreground">
                   Yield Settlement
                 </h3>
-                <p className="font-gellix text-sm text-foreground/70">
+                <p className="font-gellix text-sm text-gray-500">
                   Invoice #{selectedAsset.metadata.invoiceNumber}
                 </p>
               </div>
@@ -531,17 +560,16 @@ const SettlementViewPage = () => {
                 <div key={step.key} className="flex items-center flex-1">
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-gellix text-sm font-semibold ${
-                        currentStep === step.key
-                          ? 'bg-blue-600 text-white'
-                          : ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(currentStep) >
-                            ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(step.key as SettlementStep)
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-gellix text-sm font-semibold ${currentStep === step.key
+                        ? 'bg-blue-600 text-white'
+                        : ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(currentStep) >
+                          ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(step.key as SettlementStep)
                           ? 'bg-green-600 text-white'
                           : 'bg-gray-300 text-gray-600'
-                      }`}
+                        }`}
                     >
                       {['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(currentStep) >
-                      ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(step.key as SettlementStep) ? (
+                        ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(step.key as SettlementStep) ? (
                         <Check className="w-5 h-5" />
                       ) : (
                         index + 1
@@ -595,15 +623,15 @@ const SettlementViewPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-inter text-sm text-blue-900 font-semibold mb-1">
                         Asset Ready for Yield Distribution
                       </p>
                       <p className="font-inter text-xs text-blue-700">
-                        This asset is in PAYOUT_COMPLETE status and can receive yield settlements.
+                        This asset is in completed payout status and can receive yield settlements.
                         Platform fee of 1.5% will be deducted from the settlement amount.
                       </p>
                     </div>
@@ -613,11 +641,7 @@ const SettlementViewPage = () => {
                 <div className="flex gap-3">
                   <Button
                     onClick={() => setCurrentStep('RECORD_SETTLEMENT')}
-                    className="flex-1 font-inter font-medium rounded-xl"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
-                    }}
+                    className="flex-1 font-inter font-medium rounded-2xl bg-black text-white hover:bg-gray-800 hover:scale-105 transition-all duration-200"
                   >
                     Continue to Record Settlement
                     <ChevronRight className="w-4 h-4 ml-1" />
@@ -675,26 +699,25 @@ const SettlementViewPage = () => {
                 {settlementAmount > 0 && (
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
                       <span className="font-inter text-sm font-semibold text-blue-900">
                         Distribution Preview
                       </span>
                     </div>
                     <div className="space-y-2 font-inter text-sm">
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Settlement Amount:</span>
-                        <span className="text-blue-900 font-medium">
+                        <span className="text-blue-600">Settlement Amount:</span>
+                        <span className="text-blue-700 font-medium">
                           ${settlementAmount.toLocaleString()} USD
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Platform Fee (1.5%):</span>
-                        <span className="text-red-600 font-medium">
+                        <span className="text-blue-600">Platform Fee (1.5%):</span>
+                        <span className="text-red-400 font-medium">
                           -${(settlementAmount * 0.015).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                         </span>
                       </div>
                       <div className="border-t border-blue-300 pt-2 flex justify-between">
-                        <span className="text-blue-900 font-semibold">Net Distribution:</span>
+                        <span className="text-blue-700 font-semibold">Net Distribution:</span>
                         <span className="text-green-600 font-semibold">
                           ${(settlementAmount * 0.985).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                         </span>
@@ -707,11 +730,7 @@ const SettlementViewPage = () => {
                   <Button
                     onClick={handleRecordSettlement}
                     disabled={processing || settlementAmount <= 0}
-                    className="flex-1 font-inter font-medium rounded-xl"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
-                    }}
+                    className="flex-1 font-inter font-medium rounded-2xl bg-black text-white hover:bg-gray-800 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     {processing ? (
                       <>
@@ -790,11 +809,7 @@ const SettlementViewPage = () => {
                   <Button
                     onClick={handleConfirmUSDC}
                     disabled={processing}
-                    className="flex-1 font-inter font-medium rounded-xl"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
-                    }}
+                    className="flex-1 font-inter font-medium rounded-2xl bg-black text-white hover:bg-gray-800 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     {processing ? (
                       <>
@@ -861,11 +876,7 @@ const SettlementViewPage = () => {
                   <Button
                     onClick={handleDistributeYield}
                     disabled={processing}
-                    className="flex-1 font-inter font-medium rounded-xl"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
-                    }}
+                    className="flex-1 font-inter font-medium rounded-2xl bg-black text-white hover:bg-gray-800 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     {processing ? (
                       <>
@@ -969,11 +980,7 @@ const SettlementViewPage = () => {
                 <div className="flex gap-3">
                   <Button
                     onClick={closeModal}
-                    className="flex-1 font-inter font-medium rounded-xl"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
-                    }}
+                    className="flex-1 font-inter font-medium rounded-2xl bg-black text-white hover:bg-gray-800 hover:scale-105 transition-all duration-200"
                   >
                     <Check className="w-4 h-4 mr-1" />
                     Done

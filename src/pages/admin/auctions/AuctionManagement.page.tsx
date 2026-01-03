@@ -29,6 +29,31 @@ const AuctionManagementPage = () => {
 
   useEffect(() => {
     // Fetch auctions based on view mode (SCRIPT-VERIFIED)
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
     console.log('🔍 Admin: Fetching auctions...');
     console.log('  → GET /announcements?type=AUCTION_LIVE&status=ACTIVE');
     console.log('  → Then GET /assets/:assetId for each');
@@ -208,7 +233,7 @@ const AuctionManagementPage = () => {
 
       {/* Auctions List */}
       <div
-        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+        className="bg-transparent rounded-2xl  overflow-hidden"
         style={{
           boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
@@ -218,7 +243,7 @@ const AuctionManagementPage = () => {
           `,
         }}
       >
-        <div className="p-8 border-b border-gray-200 bg-gray-50/50">
+        <div className="p-8 bg-gray-50/50">
           <h3 className="font-gellix text-2xl font-semibold text-foreground">All Auctions</h3>
         </div>
 
@@ -237,7 +262,7 @@ const AuctionManagementPage = () => {
               return (
                 <div
                   key={auction.auctionId}
-                  className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all"
+                  className="bg-gray-50/50 rounded-xl p-6 hover:border-gray-200 hover:bg-white transition-all"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -358,7 +383,7 @@ const AuctionManagementPage = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, totalSupply: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -374,7 +399,7 @@ const AuctionManagementPage = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, reservePrice: parseFloat(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2  rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -387,7 +412,7 @@ const AuctionManagementPage = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, duration: parseInt(e.target.value) })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2  rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value={86400}>24 hours</option>
                   <option value={172800}>48 hours</option>
@@ -416,7 +441,7 @@ const AuctionManagementPage = () => {
                     setShowCreateModal(false);
                     setCreateStatus(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2  rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                   disabled={isCreating}
                 >
                   Cancel
@@ -460,7 +485,7 @@ const AuctionManagementPage = () => {
                   placeholder="0.90"
                   value={clearingPrice}
                   onChange={(e) => setClearingPrice(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2  rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="font-gellix text-xs text-foreground/60 mt-1">
                   Price at which tokens will be allocated to winners
@@ -489,7 +514,7 @@ const AuctionManagementPage = () => {
                     setClearingPrice('');
                     setEndStatus(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2  rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                   disabled={isEnding}
                 >
                   Cancel

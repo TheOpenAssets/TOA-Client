@@ -5,10 +5,9 @@ import {
   Network,
   Layers,
   CheckCircle2,
-  ExternalLink,
   FileCode,
   Hash,
-  ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
@@ -49,23 +48,76 @@ const OperationsViewPage = () => {
 
   useEffect(() => {
     fetchAdminDashboardData();
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, [fetchAdminDashboardData]);
 
-  // Split assets based on STATUS (not checkpoints!)
-  // Step 1: Register on Mantle - show ATTESTED assets
-  const attestedAssets = assetsForOperations.filter(
-    (asset) => asset.status === 'ATTESTED'
-  );
+  // Stage filter state
+  const [stageFilter, setStageFilter] = useState<'all' | 1 | 2 | 3>('all');
 
-  // Step 2: Deploy Token - show REGISTERED assets
-  const registeredAssets = assetsForOperations.filter(
-    (asset) => asset.status === 'REGISTERED'
-  );
+  // Combine all assets with their stage information
+  type AssetWithStage = AdminAsset & { stage: 1 | 2 | 3; stageName: string };
 
-  // Step 3: List on Marketplace - show TOKENIZED assets that are NOT already listed
-  const tokenizedAssets = assetsForOperations.filter(
-    (asset) => (asset.status === 'TOKENIZED' || asset.status ==='SCHEDULED') && !asset.listing?.active
-  );
+  const allAssets: AssetWithStage[] = assetsForOperations
+    .filter((asset) => {
+      // Step 1: Register on Mantle - ATTESTED assets
+      if (asset.status === 'ATTESTED') return true;
+      // Step 2: Deploy Token - REGISTERED assets
+      if (asset.status === 'REGISTERED') return true;
+      // Step 3: List on Marketplace - TOKENIZED/SCHEDULED assets NOT already listed
+      if ((asset.status === 'TOKENIZED' || asset.status === 'SCHEDULED') && !asset.listing?.active) return true;
+      return false;
+    })
+    .map((asset) => {
+      let stage: 1 | 2 | 3;
+      let stageName: string;
+
+      if (asset.status === 'ATTESTED') {
+        stage = 1;
+        stageName = 'Register';
+      } else if (asset.status === 'REGISTERED') {
+        stage = 2;
+        stageName = 'Deploy Token';
+      } else {
+        stage = 3;
+        stageName = 'List';
+      }
+
+      return { ...asset, stage, stageName };
+    });
+
+  // Filter by stage
+  const filteredAssets = stageFilter === 'all'
+    ? allAssets
+    : allAssets.filter(asset => asset.stage === stageFilter);
+
+  // Count assets per stage
+  const stage1Count = allAssets.filter(a => a.stage === 1).length;
+  const stage2Count = allAssets.filter(a => a.stage === 2).length;
+  const stage3Count = allAssets.filter(a => a.stage === 3).length;
 
   // Handle Register
   const handleRegister = (asset: AdminAsset) => {
@@ -305,6 +357,7 @@ const OperationsViewPage = () => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
           <div className="font-gellix text-lg text-foreground">Loading operations...</div>
         </div>
       </div>
@@ -318,7 +371,7 @@ const OperationsViewPage = () => {
           <div className="font-gellix text-lg text-red-600 mb-4">Error: {error}</div>
           <button
             onClick={() => fetchAdminDashboardData()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-black text-white rounded-xl font-gellix text-sm font-medium hover:bg-black/90 transition-colors shadow-sm"
           >
             Retry
           </button>
@@ -331,764 +384,662 @@ const OperationsViewPage = () => {
     <>
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
-          On-Chain Operations Center
-        </h2>
-        <p className="font-gellix text-sm text-foreground/70">
-          Register assets on Mantle and deploy ERC-3643 tokens
-        </p>
-      </div>
-
-      {/* Stats Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-50 rounded-xl">
-              <Layers className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-gellix text-sm text-foreground/60 mb-1">Ready for Registry</p>
-              <p className="font-gellix text-3xl font-semibold text-foreground">
-                {attestedAssets.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-orange-50 rounded-xl">
-              <Network className="w-6 h-6 text-orange-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-gellix text-sm text-foreground/60 mb-1">Ready for Tokenization</p>
-              <p className="font-gellix text-3xl font-semibold text-foreground">
-                {registeredAssets.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-green-50 rounded-xl">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-gellix text-sm text-foreground/60 mb-1">Tokenized Assets</p>
-              <p className="font-gellix text-3xl font-semibold text-foreground">
-                {tokenizedAssets.length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Phase 1: Assets Ready for Registry */}
-      {attestedAssets.length > 0 && (
-        <div
-          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <div className="p-8 border-b border-gray-200 bg-gray-50/50">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-blue-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Step 1: Register on Mantle
-              </h3>
-            </div>
-            <p className="font-gellix text-sm text-foreground/70 ml-13">
-              Assets approved and ready for on-chain registration
-            </p>
-          </div>
-
-          <div className="p-6 space-y-4">
-            {attestedAssets.map((asset) => (
-              <div
-                key={asset.assetId}
-                className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                        <FileCode className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-gellix text-lg font-semibold text-foreground">
-                          Invoice #{asset.metadata.invoiceNumber}
-                        </h4>
-                        <p className="font-gellix text-xs text-foreground/60">
-                          {asset.metadata.industry}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Total Value</p>
-                        <p className="font-gellix text-sm font-semibold text-foreground">
-                          {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Total Tokens</p>
-                        <p className="font-gellix text-sm font-semibold text-foreground">
-                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Buyer</p>
-                        <p className="font-gellix text-sm font-semibold text-foreground">
-                          {asset.metadata.buyerName}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => handleRegister(asset)}
-                    className="font-gellix font-medium rounded-xl whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Register on Mantle
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Phase 2: Registered Assets Ready for Tokenization */}
-      {registeredAssets.length > 0 && (
-        <div
-          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <div className="p-8 border-b border-gray-200 bg-gray-50/50">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                <Network className="w-5 h-5 text-orange-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Step 2: Deploy ERC-3643 Token
-              </h3>
-            </div>
-            <p className="font-gellix text-sm text-foreground/70 ml-13">
-              Assets registered on Mantle, ready for tokenization
-            </p>
-          </div>
-
-          <div className="p-6 space-y-4">
-            {registeredAssets.map((asset) => (
-              <div
-                key={asset.assetId}
-                className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                        <FileCode className="w-6 h-6 text-orange-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-gellix text-lg font-semibold text-foreground">
-                          Invoice #{asset.metadata.invoiceNumber}
-                        </h4>
-                        <p className="font-gellix text-xs text-foreground/60">
-                          {asset.metadata.industry}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Registry Data */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-foreground/50" />
-                        <span className="font-gellix text-xs text-foreground/60">Transaction Hash:</span>
-                        <span className="font-mono text-xs text-foreground">
-                          {asset.registry?.transactionHash ? `${asset.registry.transactionHash.slice(0, 10)}...${asset.registry.transactionHash.slice(-8)}` : 'N/A'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-foreground/50" />
-                        <span className="font-gellix text-xs text-foreground/60">Block Number:</span>
-                        <span className="font-mono text-xs text-foreground">
-                          {asset.registry?.blockNumber || 'N/A'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Total Supply</p>
-                        <p className="font-gellix text-sm font-semibold text-foreground">
-                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Token Price</p>
-                        <p className="font-gellix text-sm font-semibold text-foreground">
-                          ${parseFloat(asset.tokenParams.pricePerToken)/1e6}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-gellix text-xs text-foreground/60 mb-1">Standard</p>
-                        <p className="font-gellix text-sm font-semibold text-foreground">
-                          ERC-3643
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => handleTokenize(asset)}
-                    className="font-gellix font-medium rounded-xl whitespace-nowrap bg-orange-600 hover:bg-orange-700 text-white"
-                  >
-                    Deploy Token
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tokenized Assets Overview */}
-      {tokenizedAssets.length > 0 && (
-        <div
-          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <div className="p-8 border-b border-gray-200 bg-gray-50/50">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Step 3: List on Marketplace
-              </h3>
-            </div>
-            <p className="font-gellix text-sm text-foreground/70 ml-13">
-              Tokenized assets ready for marketplace listing
-            </p>
-          </div>
-
-          <div className="p-6 space-y-4">
-            {tokenizedAssets.map((asset) => (
-              <div
-                key={asset.assetId}
-                className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-gellix text-lg font-semibold text-foreground">
-                            Invoice #{asset.metadata.invoiceNumber}
-                          </h4>
-                          {asset.assetType === 'AUCTION' && (
-                            <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
-                              🔨 AUCTION
-                            </span>
-                          )}
-                          {asset.assetType === 'STATIC' && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                              📊 STATIC
-                            </span>
-                          )}
-                        </div>
-                        <p className="font-gellix text-xs text-foreground/60">
-                          {asset.metadata.industry}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2 mb-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-gellix text-xs text-foreground/60">Token Address:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-foreground">
-                            {asset.token?.address ? `${asset.token.address.slice(0, 10)}...${asset.token.address.slice(-8)}` : 'N/A'}
-                          </span>
-                          {asset.token?.address && (
-                            <a
-                              href={`https://explorer.sepolia.mantle.xyz/address/${asset.token.address}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:text-blue-600"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-gellix text-xs text-foreground/60">Symbol:</span>
-                        <span className="font-gellix text-xs font-semibold text-foreground">
-                          {asset.token?.symbol || 'N/A'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-gellix text-xs text-foreground/60">Total Supply:</span>
-                        <span className="font-gellix text-xs font-semibold text-foreground">
-                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-gellix text-xs text-foreground/60">
-                          {asset.assetType === 'AUCTION' ? 'Auction Status:' : 'Listing Status:'}
-                        </span>
-                        <span className={`font-gellix text-xs font-semibold ${asset.listing?.active ? 'text-green-600' : 'text-orange-600'}`}>
-                          {asset.listing?.active ? '✓ Listed' : 'Not Listed'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {!asset.listing?.active && (
-                    <Button
-                      onClick={() => handleListOnMarketplace(asset)}
-                      className="font-gellix font-medium rounded-xl whitespace-nowrap bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {asset.assetType === 'AUCTION' ? 'Schedule Auction' : 'List on Marketplace'}
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  )}
-                  {asset.listing?.active && (
-                    <div className="px-4 py-2 bg-green-100 text-green-700 rounded-xl font-gellix text-sm font-medium">
-                      ✓ Active on Marketplace
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {attestedAssets.length === 0 && registeredAssets.length === 0 && tokenizedAssets.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-          <Network className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
-            No Assets Ready
-          </h3>
-          <p className="font-gellix text-sm text-foreground/60">
-            Assets must be compliance-approved before they can be registered on-chain
+        {/* Header */}
+        <div>
+          <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
+            On-Chain Operations Center
+          </h2>
+          <p className="font-gellix text-sm text-foreground/70">
+            Register assets on Mantle and deploy ERC-3643 tokens
           </p>
         </div>
-      )}
 
-      {/* Register Modal */}
-      {showRegisterModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Layers className="w-6 h-6 text-blue-600" />
+        {/* Stats Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gray-100 rounded-xl">
+                <Network className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Register Asset on Mantle
-              </h3>
-            </div>
-
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              This will register the asset on Mantle blockchain with BlobID and attestation hash.
-            </p>
-
-            {/* Asset Details */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-4">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Asset Details</h4>
-              <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
-                <div>
-                  <span className="text-foreground/60">Invoice Number:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.invoiceNumber}</p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Industry:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.industry}</p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Total Value:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.currency} {parseFloat(selectedAsset.metadata.faceValue).toLocaleString()}</p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Buyer:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.buyerName}</p>
-                </div>
+              <div className="flex-1">
+                <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">Total Assets</p>
+                <p className="font-gellix text-2xl font-semibold text-foreground">
+                  {allAssets.length}
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* On-Chain Data Preview */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-3">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">
-                On-Chain Data (Preview)
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Hash className="w-4 h-4 text-foreground/50 mt-1" />
-                  <div className="flex-1">
-                    <span className="font-gellix text-xs text-foreground/60">BlobID:</span>
-                    <p className="font-mono text-xs text-foreground break-all">{mockBlobId}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Hash className="w-4 h-4 text-foreground/50 mt-1" />
-                  <div className="flex-1">
-                    <span className="font-gellix text-xs text-foreground/60">Attestation Hash:</span>
-                    <p className="font-mono text-xs text-foreground break-all">{mockAttestationHash}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Network className="w-4 h-4 text-foreground/50 mt-1" />
-                  <div className="flex-1">
-                    <span className="font-gellix text-xs text-foreground/60">Registry Contract:</span>
-                    <p className="font-mono text-xs text-foreground">0x1234...7890</p>
-                  </div>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gray-100 rounded-xl">
+                <Layers className="w-6 h-6 text-gray-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">Register</p>
+                <p className="font-gellix text-2xl font-semibold text-foreground">
+                  {stage1Count}
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmRegister}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {processing ? 'Registering on Mantle...' : 'Confirm Registration'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowRegisterModal(false);
-                  setSelectedAsset(null);
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gray-100 rounded-xl">
+                <Network className="w-6 h-6 text-gray-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">Deploy</p>
+                <p className="font-gellix text-2xl font-semibold text-foreground">
+                  {stage2Count}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gray-100 rounded-xl">
+                <CheckCircle2 className="w-6 h-6 text-gray-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-gellix text-xs text-gray-500 uppercase tracking-wide mb-1">List</p>
+                <p className="font-gellix text-2xl font-semibold text-foreground">
+                  {stage3Count}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Tokenize Modal */}
-      {showTokenizeModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-                <Network className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Deploy ERC-3643 Token
-              </h3>
-            </div>
+        {/* Filter Tabs */}
+        <div className="flex flex-row justify-between gap-2">
+          <button
+            onClick={() => setStageFilter('all')}
+            className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-colors ${stageFilter === 'all'
+              ? 'bg-gray-100 text-black'
+              : 'text-gray-700 hover:bg-gray-100'
+              }`}
+          >
+            All Assets ({allAssets.length})
 
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              This will deploy a compliant ERC-3643 security token for the asset.
-            </p>
-
-            {/* Token Details */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-4">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Token Configuration</h4>
-              <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
-                <div>
-                  <span className="text-foreground/60">Token Name:</span>
-                  <p className="text-foreground font-semibold mt-1">Invoice {selectedAsset.metadata.invoiceNumber} RWA Token</p>
-                </div>
-                <div>
-                  <label className="block">
-                    <span className="text-foreground/60">Token Symbol: <span className="text-red-500">*</span></span>
-                    <input
-                      type="text"
-                      value={tokenSymbol}
-                      onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
-                      placeholder="e.g., INVTEST"
-                      maxLength={11}
-                      className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </label>
-                  <p className="text-xs text-foreground/50 mt-1">Max 11 characters, uppercase</p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Total Supply:</span>
-                  <p className="text-foreground font-semibold mt-1">{(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()}</p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Token Standard:</span>
-                  <p className="text-foreground font-semibold mt-1">ERC-3643</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Deployment Preview */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-3">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">
-                Deployment Details
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Network className="w-4 h-4 text-foreground/50 mt-1" />
-                  <div className="flex-1">
-                    <span className="font-gellix text-xs text-foreground/60">Network:</span>
-                    <p className="font-gellix text-xs text-foreground font-semibold">Mantle Network</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Hash className="w-4 h-4 text-foreground/50 mt-1" />
-                  <div className="flex-1">
-                    <span className="font-gellix text-xs text-foreground/60">Token Address (Preview):</span>
-                    <p className="font-mono text-xs text-foreground break-all">{mockTokenAddress}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <FileCode className="w-4 h-4 text-foreground/50 mt-1" />
-                  <div className="flex-1">
-                    <span className="font-gellix text-xs text-foreground/60">Contract Type:</span>
-                    <p className="font-gellix text-xs text-foreground font-semibold">ERC-3643 Compliant Security Token</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmTokenize}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                {processing ? 'Deploying Token...' : 'Deploy Token Contract'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowTokenizeModal(false);
-                  setSelectedAsset(null);
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
-            </div>
+          </button>
+          <div className='border border-gray-200 rounded-xl p-1'>
+            <button
+              onClick={() => setStageFilter(1)}
+              className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-colors ${stageFilter === 1
+                ? 'bg-gray-100 text-black'
+                : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              Register ({stage1Count})
+            </button>
+            <button
+              onClick={() => setStageFilter(2)}
+              className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-colors ${stageFilter === 2
+                ? 'bg-gray-100 text-black'
+                : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              Deploy ({stage2Count})
+            </button>
+            <button
+              onClick={() => setStageFilter(3)}
+              className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-colors ${stageFilter === 3
+                ? 'bg-gray-100 text-black'
+                : 'text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              List ({stage3Count})
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Auction Scheduling Modal */}
-      {showAuctionSchedulingModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-                <Layers className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Schedule Auction
-              </h3>
-            </div>
+        {/* Assets Table */}
+        {filteredAssets.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-t border-gray-200">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invoice #
+                  </th>
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Industry
+                  </th>
+                  <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Face Value
+                  </th>
+                  <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Token Supply
+                  </th>
+                  <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Current Stage
+                  </th>
+                  <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAssets.map((asset, index) => (
+                  <tr
+                    key={asset.assetId}
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                      }`}
+                  >
+                    {/* Invoice Number */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                          📄
+                        </div>
+                        <div>
+                          <div className="font-gellix text-sm font-semibold text-foreground">
+                            {asset.metadata.invoiceNumber}
+                          </div>
+                          {asset.assetType === 'AUCTION' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                              🔨 Auction
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
 
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              Schedule a Dutch auction for this asset. The auction will start at the specified time and run for the selected duration.
+                    {/* Industry */}
+                    <td className="px-6 py-4">
+                      <div className="font-gellix text-sm text-foreground">
+                        {asset.metadata.industry}
+                      </div>
+                      <div className="font-gellix text-xs text-gray-500">
+                        {asset.metadata.buyerName}
+                      </div>
+                    </td>
+
+                    {/* Face Value */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="font-gellix text-sm font-semibold text-foreground">
+                        {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
+                      </div>
+                    </td>
+
+                    {/* Token Supply */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="font-gellix text-sm text-foreground">
+                        {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
+                      </div>
+                      <div className="font-gellix text-xs text-gray-500">
+                        @ ${(parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2)}
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${asset.status === 'ATTESTED' ? 'bg-gray-100 text-gray-700' :
+                        asset.status === 'REGISTERED' ? 'bg-purple-50 text-purple-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                        {asset.status}
+                      </span>
+                    </td>
+
+                    {/* Current Stage */}
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-gellix text-sm font-bold ${asset.stage === 1 ? 'bg-gray-200 text-gray-700' :
+                          asset.stage === 2 ? 'bg-purple-100 text-purple-700' :
+                            'bg-gray-200 text-gray-700'
+                          }`}>
+                          {asset.stage}
+                        </div>
+                        <div className="font-gellix text-xs text-gray-500">
+                          {asset.stageName}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center">
+                        {asset.stage === 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRegister(asset);
+                            }}
+                            className="px-4 py-2 text-gray-700 font-gellix text-sm font-bold hover:text-gray-900 hover:scale-[1.05] transition-all border border-gray-300 rounded-2xl hover:border-gray-400 ."
+                          >
+                            Register
+                          </button>
+                        )}
+                        {asset.stage === 2 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTokenize(asset);
+                            }}
+                            className="px-4 py-2 text-purple-600 font-gellix text-sm font-bold hover:text-purple-700 hover:scale-[1.05] border border-gray-300 rounded-2xl transition-all"
+                          >
+                            Deploy
+                          </button>
+                        )}
+                        {asset.stage === 3 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleListOnMarketplace(asset);
+                            }}
+                            className="px-4 py-2 text-gray-700  font-gellix text-sm font-bold hover:text-gray-900 hover:scale-[1.05] border border-gray-300 rounded-2xl transition-all"
+                          >
+                            {asset.assetType === 'AUCTION' ? 'Schedule' : 'List'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+            <Network className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
+              {stageFilter === 'all' ? 'No Assets Ready' : `No Assets in Stage ${stageFilter}`}
+            </h3>
+            <p className="font-gellix text-sm text-foreground/60">
+              {stageFilter === 'all'
+                ? 'Assets must be compliance-approved before they can be registered on-chain'
+                : `Switch to "All Assets" to view assets in other stages`
+              }
             </p>
+          </div>
+        )}
 
-            {/* Asset Details */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-4">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Asset Details</h4>
-              <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
-                <div>
-                  <span className="text-foreground/60">Invoice Number:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.invoiceNumber}</p>
+        {/* Register Modal */}
+        {showRegisterModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Layers className="w-6 h-6 text-blue-600" />
                 </div>
-                <div>
-                  <span className="text-foreground/60">Token Address:</span>
-                  <p className="font-mono text-xs text-foreground mt-1">
-                    {selectedAsset.token?.address ? `${selectedAsset.token.address.slice(0, 10)}...${selectedAsset.token.address.slice(-8)}` : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Total Supply:</span>
-                  <p className="text-foreground font-semibold mt-1">
-                    {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
-                  </p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Reserve Price:</span>
-                  <p className="text-foreground font-semibold mt-1">
-                    ${(parseFloat(selectedAsset.listing?.reservePrice || '800000') / 1e6).toFixed(2)} USDC
-                  </p>
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                  Register Asset on Mantle
+                </h3>
+              </div>
+
+              <p className="font-gellix text-sm text-foreground/70 mb-6">
+                This will register the asset on Mantle blockchain with BlobID and attestation hash.
+              </p>
+
+              {/* Asset Details */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Asset Details</h4>
+                <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
+                  <div>
+                    <span className="text-foreground/60">Invoice Number:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.invoiceNumber}</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Industry:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.industry}</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Total Value:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.currency} {parseFloat(selectedAsset.metadata.faceValue).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Buyer:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.buyerName}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Auction Configuration */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-4">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">
-                Auction Scheduling
-              </h4>
+              {/* On-Chain Data Preview */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-3">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">
+                  On-Chain Data (Preview)
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Hash className="w-4 h-4 text-foreground/50 mt-1" />
+                    <div className="flex-1">
+                      <span className="font-gellix text-xs text-foreground/60">BlobID:</span>
+                      <p className="font-mono text-xs text-foreground break-all">{mockBlobId}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Hash className="w-4 h-4 text-foreground/50 mt-1" />
+                    <div className="flex-1">
+                      <span className="font-gellix text-xs text-foreground/60">Attestation Hash:</span>
+                      <p className="font-mono text-xs text-foreground break-all">{mockAttestationHash}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Network className="w-4 h-4 text-foreground/50 mt-1" />
+                    <div className="flex-1">
+                      <span className="font-gellix text-xs text-foreground/60">Registry Contract:</span>
+                      <p className="font-mono text-xs text-foreground">0x1234...7890</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-              <div>
-                <label className="block font-gellix text-sm font-medium text-foreground mb-2">
-                  Start Delay (minutes from now)
-                </label>
-                <select
-                  value={startDelayMinutes}
-                  onChange={(e) => setStartDelayMinutes(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-300 font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmRegister}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-black hover:bg-black/90 text-white shadow-sm"
                 >
-                  <option value="1">1 minute (testing)</option>
-                  <option value="5">5 minutes - Recommended</option>
-                  <option value="10">10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="30">30 minutes</option>
-                  <option value="60">1 hour</option>
-                  <option value="120">2 hours</option>
-                </select>
-                <p className="font-gellix text-xs text-foreground/60 mt-1">
-                  Auction will start automatically after this delay
-                </p>
+                  {processing ? 'Registering on Mantle...' : 'Confirm Registration'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowRegisterModal(false);
+                    setSelectedAsset(null);
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700"
+                >
+                  Cancel
+                </Button>
               </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="font-gellix text-xs text-blue-800">
-                  <strong>How it works:</strong> The auction will be scheduled to start in {startDelayMinutes} minute{startDelayMinutes !== '1' ? 's' : ''}.
-                  At the scheduled time, the system will:
-                </p>
-                <ul className="font-gellix text-xs text-blue-800 mt-2 ml-4 list-disc">
-                  <li>Activate the auction on-chain</li>
-                  <li>Create an AUCTION_LIVE announcement</li>
-                  <li>Allow investors to start submitting bids</li>
-                </ul>
-                <p className="font-gellix text-xs text-blue-800 mt-2">
-                  The auction will run for 15 minutes (configured in asset settings).
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmAuctionScheduling}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                {processing ? 'Scheduling Auction...' : 'Schedule Auction'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowAuctionSchedulingModal(false);
-                  setSelectedAsset(null);
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* List on Marketplace Modal */}
-      {showListingModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                <Layers className="w-6 h-6 text-green-600" />
+        {/* Tokenize Modal */}
+        {showTokenizeModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                  <Network className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                  Deploy ERC-3643 Token
+                </h3>
               </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                List Asset on Marketplace
-              </h3>
-            </div>
 
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              Configure listing parameters to make this asset available for investors on the primary marketplace.
-            </p>
+              <p className="font-gellix text-sm text-foreground/70 mb-6">
+                This will deploy a compliant ERC-3643 security token for the asset.
+              </p>
 
-            {/* Asset Details */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-6 space-y-4">
-              <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Asset Details</h4>
-              <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
-                <div>
-                  <span className="text-foreground/60">Invoice Number:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.invoiceNumber}</p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Token Address:</span>
-                  <p className="font-mono text-xs text-foreground mt-1">
-                    {selectedAsset.token?.address ? `${selectedAsset.token.address.slice(0, 10)}...${selectedAsset.token.address.slice(-8)}` : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Total Supply:</span>
-                  <p className="text-foreground font-semibold mt-1">
-                    {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
-                  </p>
-                </div>
-                <div>
-                  <span className="text-foreground/60">Token Symbol:</span>
-                  <p className="text-foreground font-semibold mt-1">{selectedAsset.token?.symbol || 'N/A'}</p>
+              {/* Token Details */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Token Configuration</h4>
+                <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
+                  <div>
+                    <span className="text-foreground/60">Token Name:</span>
+                    <p className="text-foreground font-semibold mt-1">Invoice {selectedAsset.metadata.invoiceNumber} RWA Token</p>
+                  </div>
+                  <div>
+                    <label className="block">
+                      <span className="text-foreground/60">Token Symbol: <span className="text-red-500">*</span></span>
+                      <input
+                        type="text"
+                        value={tokenSymbol}
+                        onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
+                        placeholder="e.g., INVTEST"
+                        maxLength={11}
+                        className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </label>
+                    <p className="text-xs text-foreground/50 mt-1">Max 11 characters, uppercase</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Total Supply:</span>
+                    <p className="text-foreground font-semibold mt-1">{(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Token Standard:</span>
+                    <p className="text-foreground font-semibold mt-1">ERC-3643</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Listing Configuration */}
-            
+              {/* Deployment Preview */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-3">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">
+                  Deployment Details
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Network className="w-4 h-4 text-foreground/50 mt-1" />
+                    <div className="flex-1">
+                      <span className="font-gellix text-xs text-foreground/60">Network:</span>
+                      <p className="font-gellix text-xs text-foreground font-semibold">Mantle Network</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Hash className="w-4 h-4 text-foreground/50 mt-1" />
+                    <div className="flex-1">
+                      <span className="font-gellix text-xs text-foreground/60">Token Address (Preview):</span>
+                      <p className="font-mono text-xs text-foreground break-all">{mockTokenAddress}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <FileCode className="w-4 h-4 text-foreground/50 mt-1" />
+                    <div className="flex-1">
+                      <span className="font-gellix text-xs text-foreground/60">Contract Type:</span>
+                      <p className="font-gellix text-xs text-foreground font-semibold">ERC-3643 Compliant Security Token</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmListing}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-green-600 hover:bg-green-700 text-white"
-              >
-                {processing ? 'Listing on Marketplace...' : 'Confirm Listing'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowListingModal(false);
-                  setSelectedAsset(null);
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-xl bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmTokenize}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-black hover:bg-black/90 text-white shadow-sm"
+                >
+                  {processing ? 'Deploying Token...' : 'Deploy Token Contract'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowTokenizeModal(false);
+                    setSelectedAsset(null);
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Auction Scheduling Modal */}
+        {showAuctionSchedulingModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                  <Layers className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                  Schedule Auction
+                </h3>
+              </div>
+
+              <p className="font-gellix text-sm text-foreground/70 mb-6">
+                Schedule a Dutch auction for this asset. The auction will start at the specified time and run for the selected duration.
+              </p>
+
+              {/* Asset Details */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Asset Details</h4>
+                <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
+                  <div>
+                    <span className="text-foreground/60">Invoice Number:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.invoiceNumber}</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Token Address:</span>
+                    <p className="font-mono text-xs text-foreground mt-1">
+                      {selectedAsset.token?.address ? `${selectedAsset.token.address.slice(0, 10)}...${selectedAsset.token.address.slice(-8)}` : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Total Supply:</span>
+                    <p className="text-foreground font-semibold mt-1">
+                      {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Reserve Price:</span>
+                    <p className="text-foreground font-semibold mt-1">
+                      ${(parseFloat(selectedAsset.listing?.reservePrice || '800000') / 1e6).toFixed(2)} USDC
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Auction Configuration */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">
+                  Auction Scheduling
+                </h4>
+
+                <div>
+                  <label className="block font-gellix text-sm font-medium text-foreground mb-2">
+                    Start Delay (minutes from now)
+                  </label>
+                  <select
+                    value={startDelayMinutes}
+                    onChange={(e) => setStartDelayMinutes(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-gray-300 font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="1">1 minute (testing)</option>
+                    <option value="5">5 minutes - Recommended</option>
+                    <option value="10">10 minutes</option>
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">1 hour</option>
+                    <option value="120">2 hours</option>
+                  </select>
+                  <p className="font-gellix text-xs text-foreground/60 mt-1">
+                    Auction will start automatically after this delay
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="font-gellix text-xs text-blue-800">
+                    <strong>How it works:</strong> The auction will be scheduled to start in {startDelayMinutes} minute{startDelayMinutes !== '1' ? 's' : ''}.
+                    At the scheduled time, the system will:
+                  </p>
+                  <ul className="font-gellix text-xs text-blue-800 mt-2 ml-4 list-disc">
+                    <li>Activate the auction on-chain</li>
+                    <li>Create an AUCTION_LIVE announcement</li>
+                    <li>Allow investors to start submitting bids</li>
+                  </ul>
+                  <p className="font-gellix text-xs text-blue-800 mt-2">
+                    The auction will run for 15 minutes (configured in asset settings).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmAuctionScheduling}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-black hover:bg-black/90 text-white shadow-sm"
+                >
+                  {processing ? 'Scheduling Auction...' : 'Schedule Auction'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowAuctionSchedulingModal(false);
+                    setSelectedAsset(null);
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* List on Marketplace Modal */}
+        {showListingModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                  <Layers className="w-6 h-6 text-green-600" />
+                </div>
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                  List Asset on Marketplace
+                </h3>
+              </div>
+
+              <p className="font-gellix text-sm text-foreground/70 mb-6">
+                Configure listing parameters to make this asset available for investors on the primary marketplace.
+              </p>
+
+              {/* Asset Details */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+                <h4 className="font-gellix text-sm font-semibold text-foreground mb-3">Asset Details</h4>
+                <div className="grid grid-cols-2 gap-4 font-gellix text-sm">
+                  <div>
+                    <span className="text-foreground/60">Invoice Number:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.metadata.invoiceNumber}</p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Token Address:</span>
+                    <p className="font-mono text-xs text-foreground mt-1">
+                      {selectedAsset.token?.address ? `${selectedAsset.token.address.slice(0, 10)}...${selectedAsset.token.address.slice(-8)}` : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Total Supply:</span>
+                    <p className="text-foreground font-semibold mt-1">
+                      {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-foreground/60">Token Symbol:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.token?.symbol || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Listing Configuration */}
+
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmListing}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-black hover:bg-black/90 text-white shadow-sm"
+                >
+                  {processing ? 'Listing on Marketplace...' : 'Confirm Listing'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowListingModal(false);
+                    setSelectedAsset(null);
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div >
     </>
   );
 };

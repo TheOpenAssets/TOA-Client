@@ -200,8 +200,8 @@ const PortfolioPage = () => {
   };
 
 
-  const handlenavigate=()=>{
-  navigate('/')
+  const handlenavigate = () => {
+    navigate('/')
   }
 
   /**
@@ -352,190 +352,187 @@ const PortfolioPage = () => {
 
       <div className="h-screen flex flex-col bg-[#ffffff] overflow-hidden">
 
-      {/* Top Navigation Bar - Fixed Height */}
-      <header className="bg-transparent  z-40 relative flex-shrink-0">
-        <div className="max-w-[1400px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Left: Logo + Search */}
-            <div className="flex items-center gap-6">
-               <div className="  top-0 left-0">
-                <div className="w-32 h-16 bg-foreground rounded-full  top-0 left-0">
-                  <span className="text-white font-bold text-lg top-0 left-0 "><img src="./ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
+        {/* Top Navigation Bar - Fixed Height */}
+        <header className="bg-transparent  z-40 relative flex-shrink-0">
+          <div className="max-w-[1400px] mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              {/* Left: Logo + Search */}
+              <div className="flex items-center gap-6">
+                <div className="  top-0 left-0">
+                  <div className="w-32 h-16 bg-foreground rounded-full  top-0 left-0">
+                    <span className="text-white font-bold text-lg top-0 left-0 "><img src="./ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
+                  </div>
+                </div>
+
+                <div className="relative w-[400px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search assets"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
               </div>
 
-              <div className="relative w-[400px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search assets"
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              {/* Center: Navigation */}
+              <nav className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/marketplace')}
+                  className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                >
+                  Marketplace
+                </button>
+                <button
+                  onClick={() => navigate('/trade')}
+                  className="font-geist border border-gray-200 text-sm font-medium text-foreground hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                >
+                  Trade
+                </button>
+                <button
+                  onClick={() => navigate('/borrow')}
+                  className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
+                  Borrow
+                </button>
+              </nav>
+
+              {/* Right: Wallet Display */}
+              <div className="flex items-center gap-3">
+                {address && (
+                  <>
+                    <NotificationBell role="INVESTOR" />
+                    <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
+                      {truncateAddress(address)}
+                    </div>
+                    <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-80">
+                      <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-gellix text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
+
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-
-            {/* Center: Navigation */}
-            <nav className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/marketplace')}
-              className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-            >
-              Marketplace
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="font-geist border border-gray-200 text-sm font-medium text-foreground hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-            >
-              Trade
-            </button>
-            <button className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
-              Borrow
-            </button>
-          </nav>
-
-            {/* Right: Wallet Display */}
-            <div className="flex items-center gap-3">
-              {address && (
-                <>
-                  <NotificationBell role="INVESTOR" />
-                  <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
-                    {truncateAddress(address)}
-                  </div>
-                 <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-80">
-        <button className='ml-2 px-4 py-2 bg-black text-white rounded-lg font-gellix text-sm font-medium hover:bg-black/80 transition-colors' onClick={handlelogout}>
-        
-          Logout
-        </button>
-      </div>
-                </>
-              )}
-            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content - Fills remaining height to make 100vh */}
-      <div className="flex-1 overflow-hidden">
-        <div className="max-w-[1600px] mx-auto px-6 py-6 h-full z-40 relative">
-          <div className="grid grid-cols-5 lg:grid-cols-4 gap-6 h-full">
-            {/* Left Sidebar - 1/4 width, stats cards */}
-            <div className="lg:col-span-1 h-full">
-              <PortfolioStats
-                totalAssetValue={totalAssetValue}
-                portfolioAssets={filteredAssets}
-              />
-            </div>
+        {/* Main Content - Fills remaining height to make 100vh */}
+        <div className="flex-1 overflow-hidden">
+          <div className="max-w-[1600px] mx-auto px-6 py-6 h-full z-40 relative">
+            <div className="grid grid-cols-5 lg:grid-cols-4 gap-6 h-full">
+              {/* Left Sidebar - 1/4 width, stats cards */}
+              <div className="lg:col-span-1 h-full">
+                <PortfolioStats
+                  totalAssetValue={totalAssetValue}
+                  portfolioAssets={filteredAssets}
+                />
+              </div>
 
-            {/* Right Main Area - 3/4 width, tabbed content */}
-            <div className="lg:col-span-3 h-full flex flex-col">
-              {/* Single Table Container with Tabs */}
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col" style={{
-          boxShadow: `
+              {/* Right Main Area - 3/4 width, tabbed content */}
+              <div className="lg:col-span-3 h-full flex flex-col">
+                {/* Single Table Container with Tabs */}
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col" style={{
+                  boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
             8px 8px 24px rgba(150, 151, 151, 0.06),
             12px 12px 36px rgba(92, 92, 93, 0.04),
             16px 16px 48px rgba(45, 46, 47, 0.02)
           `,
-        }}>
-                {/* Tab Header */}
-                <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setActiveTab('assets')}
-                      className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${
-                        activeTab === 'assets'
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      My Assets
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('bids')}
-                      className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${
-                        activeTab === 'bids'
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      My Bids
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('positions')}
-                      className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${
-                        activeTab === 'positions'
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Leveraged Positions
-                    </button>
+                }}>
+                  {/* Tab Header */}
+                  <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setActiveTab('assets')}
+                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'assets'
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        My Assets
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('bids')}
+                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'bids'
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        My Bids
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('positions')}
+                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'positions'
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        Leveraged Positions
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Tab Content - Smooth transition */}
-                <div className="flex-1 overflow-hidden relative">
-                  {/* My Assets Tab */}
-                  <div
-                    className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                      activeTab === 'assets'
-                        ? 'opacity-100 translate-x-0 z-10'
-                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
-                    }`}
-                  
-                  style={{
-          boxShadow: `
+                  {/* Tab Content - Smooth transition */}
+                  <div className="flex-1 overflow-hidden relative">
+                    {/* My Assets Tab */}
+                    <div
+                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'assets'
+                          ? 'opacity-100 translate-x-0 z-10'
+                          : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        }`}
+
+                      style={{
+                        boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
             8px 8px 24px rgba(173, 173, 173, 0.06),
             12px 12px 36px rgba(123, 123, 123, 0.04),
             16px 16px 48px rgba(57, 57, 57, 0.02)
           `,
-        }}>
-                    <div className="h-full flex flex-col"  >
-                      <MyAssetsTable
-                        assets={filteredAssets}
-                        onClaimYield={handleClaimYield}
-                        claimingAssetId={claimingAssetId}
-                        claimStatus={claimStatus}
-                      />
+                      }}>
+                      <div className="h-full flex flex-col"  >
+                        <MyAssetsTable
+                          assets={filteredAssets}
+                          onClaimYield={handleClaimYield}
+                          claimingAssetId={claimingAssetId}
+                          claimStatus={claimStatus}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Active Bids Tab */}
-                  <div
-                    className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                      activeTab === 'bids'
-                        ? 'opacity-100 translate-x-0 z-10'
-                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
-                    }`}
-                  >
-                    <div className="h-full flex flex-col">
-                      <ActiveBidsTable
-                        bids={filteredBids}
-                        isLoading={isLoadingBids}
-                        onSettleBid={(assetId, bidIndex, bidId) => {
-                          setSettlingBidId(bidId);
-                          settleBid({ assetId, bidIndex });
-                        }}
-                        isSettling={isSettling}
-                        settlingBidId={settlingBidId}
-                        settleStatus={settleStatus}
-                      />
+                    {/* Active Bids Tab */}
+                    <div
+                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'bids'
+                          ? 'opacity-100 translate-x-0 z-10'
+                          : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        }`}
+                    >
+                      <div className="h-full flex flex-col">
+                        <ActiveBidsTable
+                          bids={filteredBids}
+                          isLoading={isLoadingBids}
+                          onSettleBid={(assetId, bidIndex, bidId) => {
+                            setSettlingBidId(bidId);
+                            settleBid({ assetId, bidIndex });
+                          }}
+                          isSettling={isSettling}
+                          settlingBidId={settlingBidId}
+                          settleStatus={settleStatus}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Leveraged Positions Tab */}
-                  <div
-                    className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                      activeTab === 'positions'
-                        ? 'opacity-100 translate-x-0 z-10'
-                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
-                    }`}
-                  >
-                    <div className="h-full flex flex-col overflow-y-auto p-6">
-                      <PositionsTable positions={filteredPositions} isLoading={isLoadingPositions} />
+                    {/* Leveraged Positions Tab */}
+                    <div
+                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'positions'
+                          ? 'opacity-100 translate-x-0 z-10'
+                          : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        }`}
+                    >
+                      <div className="h-full flex flex-col overflow-y-auto p-6">
+                        <PositionsTable positions={filteredPositions} isLoading={isLoadingPositions} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -543,77 +540,76 @@ const PortfolioPage = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
-      {showClaimModal && selectedAssetForClaim && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="rounded-2xl p-8 max-w-md w-full"
-            style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-          >
-            <div className="text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🔥</span>
-              </div>
-
-              <h2 className="font-gellix text-2xl font-semibold text-foreground mb-2">
-                Burn Tokens to Claim Yield
-              </h2>
-
-              <p className="font-inter text-sm text-foreground/70 mb-6">
-                This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
-              </p>
-
-              <div className="bg-white rounded-xl p-6 mb-4 border border-gray-200">
-                <div className="mb-4">
-                  <p className="font-inter text-xs text-gray-500 mb-2">Tokens to Burn</p>
-                  <p className="font-gellix text-2xl font-semibold text-orange-600">
-                    {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
-                  </p>
+        {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
+        {showClaimModal && selectedAssetForClaim && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div
+              className="rounded-2xl p-8 max-w-md w-full"
+              style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🔥</span>
                 </div>
-                <div className="border-t border-gray-200 pt-4">
-                  <p className="font-inter text-xs text-gray-500 mb-2">Expected USDC</p>
-                  <p className="font-gellix text-3xl font-semibold text-green-600">
-                    ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
-                  </p>
-                  <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>
-                </div>
-              </div>
 
-              <div className="bg-orange-50 rounded-lg p-3 mb-6 border border-orange-200">
-                <p className="font-inter text-xs text-orange-800">
-                  ⚠️ <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
+                <h2 className="font-gellix text-2xl font-semibold text-foreground mb-2">
+                  Burn Tokens to Claim Yield
+                </h2>
+
+                <p className="font-inter text-sm text-foreground/70 mb-6">
+                  This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
                 </p>
-              </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowClaimModal(false);
-                    setSelectedAssetForClaim(null);
-                  }}
-                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-foreground rounded-xl font-inter font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={executeClaimYield}
-                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-inter font-medium transition-colors"
-                  style={{
-                    background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
-                    boxShadow: '0 4px 14px 0 rgba(22, 163, 74, 0.25)',
-                  }}
-                >
-                  Claim Now
-                </button>
+                <div className="bg-white rounded-xl p-6 mb-4 border border-gray-200">
+                  <div className="mb-4">
+                    <p className="font-inter text-xs text-gray-500 mb-2">Tokens to Burn</p>
+                    <p className="font-gellix text-2xl font-semibold text-orange-600">
+                      {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                    </p>
+                  </div>
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="font-inter text-xs text-gray-500 mb-2">Expected USDC</p>
+                    <p className="font-gellix text-3xl font-semibold text-green-600">
+                      ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
+                    </p>
+                    <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>
+                  </div>
+                </div>
+
+                <div className="bg-orange-50 rounded-lg p-3 mb-6 border border-orange-200">
+                  <p className="font-inter text-xs text-orange-800">
+                    ⚠️ <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowClaimModal(false);
+                      setSelectedAssetForClaim(null);
+                    }}
+                    className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-foreground rounded-xl font-inter font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={executeClaimYield}
+                    className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-inter font-medium transition-colors"
+                    style={{
+                      background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+                      boxShadow: '0 4px 14px 0 rgba(22, 163, 74, 0.25)',
+                    }}
+                  >
+                    Claim Now
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-      
-    </div>
+        )}
+
+      </div>
     </>
   );
 };

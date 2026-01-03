@@ -10,6 +10,7 @@ import {
   TrendingDown,
   TrendingUp,
   Minus,
+  Loader2,
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
@@ -28,15 +29,42 @@ const ComplianceViewPage = () => {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
+
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     fetchAdminDashboardData();
-     if (!user) {
+    if (!user) {
       authService.logout();
       return;
     }
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, [fetchAdminDashboardData, user]);
 
   // Get risk badge
@@ -64,7 +92,7 @@ const ComplianceViewPage = () => {
     const Icon = badge.icon;
 
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-normal ${badge.className}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium font-geist ${badge.className}`}>
         <Icon className="w-3.5 h-3.5" />
         {badge.label}
       </span>
@@ -165,7 +193,8 @@ const ComplianceViewPage = () => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="font-gellix text-lg text-foreground">Loading compliance queue...</div>
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
+          <div className="font-gellix text-sm text-foreground">Loading compliance queue...</div>
         </div>
       </div>
     );
@@ -178,7 +207,7 @@ const ComplianceViewPage = () => {
           <div className="font-gellix text-lg text-red-600 mb-4">Error: {error}</div>
           <button
             onClick={() => fetchAdminDashboardData()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-black text-white rounded-lg font-gellix text-sm font-medium hover:bg-black/90 transition-colors shadow-sm"
           >
             Retry
           </button>
@@ -203,65 +232,41 @@ const ComplianceViewPage = () => {
 
         {/* Stats Bar - Matching Portfolio Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div
-            className="bg-white rounded-2xl border border-gray-200 p-6"
-            style={{
-              boxShadow: `
-                4px 4px 12px rgba(243, 244, 245, 0.08),
-                8px 8px 24px rgba(150, 151, 151, 0.06),
-                12px 12px 36px rgba(92, 92, 93, 0.04),
-                16px 16px 48px rgba(45, 46, 47, 0.02)
-              `,
-            }}
-          >
+          <div className="bg-transparent rounded-2xl border border-gray-100 p-6 hover:bg-gray-50 hover:border-gray-200">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-orange-500" />
+              <div className="p-3 bg-orange-50 rounded-xl">
+                <AlertCircle className="w-5 h-5 text-orange-500" />
+              </div>
               <div>
-                <p className="font-gellix text-xs text-gray-500">Pending Review</p>
-                <p className="font-gellix text-2xl font-semibold text-foreground">{assetsForCompliance.length}</p>
+                <p className="font-gellix text-xs font-medium text-gray-500 uppercase tracking-wide">Pending Review</p>
+                <p className="font-gellix text-2xl font-bold text-foreground mt-1">{assetsForCompliance.length}</p>
               </div>
             </div>
           </div>
 
-          <div
-            className="bg-white rounded-2xl border border-gray-200 p-6"
-            style={{
-              boxShadow: `
-                4px 4px 12px rgba(243, 244, 245, 0.08),
-                8px 8px 24px rgba(150, 151, 151, 0.06),
-                12px 12px 36px rgba(92, 92, 93, 0.04),
-                16px 16px 48px rgba(45, 46, 47, 0.02)
-              `,
-            }}
-          >
+          <div className="bg-trasnparent rounded-2xl border border-gray-100 p-6 hover:bg-gray-50 hover:border-gray-200">
             <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-green-500" />
+              <div className="p-3 bg-green-50 rounded-xl">
+                <ShieldCheck className="w-5 h-5 text-green-500" />
+              </div>
               <div>
-                <p className="font-gellix text-xs text-gray-500">Low Risk Assets</p>
-                <p className="font-gellix text-2xl font-semibold text-foreground">
-                  {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'a').length}
+                <p className="font-gellix text-xs font-medium text-gray-500 uppercase tracking-wide">Low Risk Assets</p>
+                <p className="font-gellix text-2xl font-bold text-foreground mt-1">
+                  {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'a' || a.metadata?.riskTier?.toLowerCase() === 'low').length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div
-            className="bg-white rounded-2xl border border-gray-200 p-6"
-            style={{
-              boxShadow: `
-                4px 4px 12px rgba(243, 244, 245, 0.08),
-                8px 8px 24px rgba(150, 151, 151, 0.06),
-                12px 12px 36px rgba(92, 92, 93, 0.04),
-                16px 16px 48px rgba(45, 46, 47, 0.02)
-              `,
-            }}
-          >
+          <div className="bg-transarent rounded-2xl border border-gray-100 p-6 hover:bg-gray-50 hover:border-gray-200">
             <div className="flex items-center gap-3">
-              <ShieldAlert className="w-5 h-5 text-red-500" />
+              <div className="p-3 bg-red-50 rounded-xl">
+                <ShieldAlert className="w-5 h-5 text-red-500" />
+              </div>
               <div>
-                <p className="font-gellix text-xs text-gray-500">High Risk Assets</p>
-                <p className="font-gellix text-2xl font-semibold text-foreground">
-                  {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'c').length}
+                <p className="font-gellix text-xs font-medium text-gray-500 uppercase tracking-wide">High Risk Assets</p>
+                <p className="font-gellix text-2xl font-bold text-foreground mt-1">
+                  {assetsForCompliance.filter((a) => a.metadata?.riskTier?.toLowerCase() === 'c' || a.metadata?.riskTier?.toLowerCase() === 'high').length}
                 </p>
               </div>
             </div>
@@ -269,21 +274,11 @@ const ComplianceViewPage = () => {
         </div>
 
         {/* Assets Table - Matching Portfolio Table Style */}
-        <div
-          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
+        <div className="bg-white rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="sticky top-0 bg-white z-10">
-                <tr className="border-b border-gray-200">
+              <thead className="sticky top-0 z-10 bg-white">
+                <tr>
                   <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Asset Details
                   </th>
@@ -305,21 +300,19 @@ const ComplianceViewPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {assetsForCompliance.map((asset, index) => {
+                {assetsForCompliance.map((asset) => {
                   const uploadDate = new Date(asset.createdAt);
 
                   return (
                     <tr
                       key={asset.assetId}
-                      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                      }`}
+                      className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="font-gellix text-sm font-semibold text-foreground">
                           Invoice #{asset.metadata.invoiceNumber}
                         </div>
-                        <div className="font-gellix text-xs text-foreground/60 mt-0.5">
+                        <div className="font-gellix text-xs text-gray-500 mt-0.5">
                           {asset.metadata.industry}
                         </div>
                       </td>
@@ -327,7 +320,7 @@ const ComplianceViewPage = () => {
                         <div className="font-gellix text-sm font-medium text-foreground">
                           {asset.metadata.buyerName}
                         </div>
-                        <div className="font-mono text-xs text-foreground/60 mt-0.5">
+                        <div className="font-mono text-xs text-gray-400 mt-0.5">
                           {asset.originator.slice(0, 6)}...{asset.originator.slice(-4)}
                         </div>
                       </td>
@@ -335,7 +328,7 @@ const ComplianceViewPage = () => {
                         <div className="font-gellix text-sm font-semibold text-foreground">
                           {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                         </div>
-                        <div className="font-gellix text-xs text-foreground/60 mt-0.5">
+                        <div className="font-gellix text-xs text-gray-500 mt-0.5">
                           {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
                         </div>
                       </td>
@@ -343,7 +336,7 @@ const ComplianceViewPage = () => {
                         {getRiskBadge(asset.metadata.riskTier as RiskLevel)}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-gellix text-sm text-foreground">
+                        <div className="font-gellix text-sm text-gray-500">
                           {uploadDate.toLocaleDateString()}
                         </div>
                       </td>
@@ -351,13 +344,13 @@ const ComplianceViewPage = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleApprove(asset)}
-                            className="px-3 py-1.5 text-xs font-medium font-gellix text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            className="px-4 py-2 text-xs font-medium font-gellix text-white bg-black hover:bg-black/90 rounded-lg transition-colors shadow-sm"
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => handleReject(asset)}
-                            className="px-3 py-1.5 text-xs font-medium font-gellix text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            className="px-4 py-2 text-xs font-medium font-gellix text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                           >
                             Reject
                           </button>
@@ -370,12 +363,14 @@ const ComplianceViewPage = () => {
             </table>
 
             {assetsForCompliance.length === 0 && (
-              <div className="px-6 py-12 text-center">
-                <CheckCircle2 className="w-16 h-16 mx-auto text-green-300 mb-4" />
+              <div className="px-6 py-16 text-center bg-white">
+                <div className="w-16 h-16 mx-auto bg-green-50 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                </div>
                 <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
                   All Clear!
                 </h3>
-                <p className="font-gellix text-sm text-foreground/60">
+                <p className="font-gellix text-sm text-gray-500">
                   No assets pending compliance review
                 </p>
               </div>
@@ -383,187 +378,186 @@ const ComplianceViewPage = () => {
           </div>
         </div>
 
-      {/* KYC Modal */}
-      {showKycModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-lg w-full border border-gray-200">
-            <h3 className="font-gellix text-2xl font-semibold text-foreground mb-4">
-              Trigger KYC Verification
-            </h3>
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              This will send the asset data to the compliance engine for KYC verification.
-            </p>
-
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
-              <div className="space-y-2 font-gellix text-sm">
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Asset:</span>
-                  <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Buyer:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.metadata.buyerName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">KYC Provider:</span>
-                  <span className="text-foreground font-medium">Chainalysis</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmTriggerKYC}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {processing ? 'Triggering...' : 'Confirm'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowKycModal(false);
-                  setSelectedAsset(null);
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-lg bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Approve Modal */}
-      {showApproveModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-lg w-full border border-gray-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Approve Asset
+        {/* KYC Modal */}
+        {showKycModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-lg w-full">
+              <h3 className="font-gellix text-2xl font-semibold text-foreground mb-4">
+                Trigger KYC Verification
               </h3>
-            </div>
+              <p className="font-gellix text-sm text-gray-500 mb-6">
+                This will send the asset data to the compliance engine for KYC verification.
+              </p>
 
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              This asset will be marked as compliance-approved and ready for on-chain registration.
-            </p>
-
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
-              <div className="space-y-2 font-gellix text-sm">
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Asset:</span>
-                  <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Value:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.metadata.currency} {parseFloat(selectedAsset.metadata.faceValue).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Risk Tier:</span>
-                  <span className={`font-medium capitalize ${
-                    selectedAsset.metadata.riskTier.toLowerCase() === 'low' ? 'text-green-600' :
-                    selectedAsset.metadata.riskTier.toLowerCase() === 'medium' ? 'text-yellow-600' :
-                    'text-red-600'
-                  }`}>
-                    {selectedAsset.metadata.riskTier}
-                  </span>
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="space-y-3 font-gellix text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Asset:</span>
+                    <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Buyer:</span>
+                    <span className="text-foreground font-medium">{selectedAsset.metadata.buyerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">KYC Provider:</span>
+                    <span className="text-foreground font-medium">Chainalysis</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmApprove}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-lg bg-green-600 hover:bg-green-700 text-white"
-              >
-                {processing ? 'Approving...' : 'Approve Asset'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowApproveModal(false);
-                  setSelectedAsset(null);
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-lg bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmTriggerKYC}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-black hover:bg-black/90 text-white shadow-sm"
+                >
+                  {processing ? 'Triggering...' : 'Confirm'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowKycModal(false);
+                    setSelectedAsset(null);
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-foreground"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Reject Modal */}
-      {showRejectModal && selectedAsset && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-lg w-full border border-gray-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                Reject Asset
-              </h3>
-            </div>
-
-            <p className="font-gellix text-sm text-foreground/70 mb-6">
-              Please provide a reason for rejecting this asset. The originator will be notified.
-            </p>
-
-            <div className="bg-gray-50 rounded-xl p-4 mb-4">
-              <div className="space-y-2 font-gellix text-sm">
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Asset:</span>
-                  <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
+        {/* Approve Modal */}
+        {showApproveModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-lg w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-foreground/60">Buyer:</span>
-                  <span className="text-foreground font-medium">{selectedAsset.metadata.buyerName}</span>
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                  Approve Asset
+                </h3>
+              </div>
+
+              <p className="font-gellix text-sm text-gray-500 mb-6">
+                This asset will be marked as compliance-approved and ready for on-chain registration.
+              </p>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="space-y-3 font-gellix text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Asset:</span>
+                    <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Value:</span>
+                    <span className="text-foreground font-medium">{selectedAsset.metadata.currency} {parseFloat(selectedAsset.metadata.faceValue).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Risk Tier:</span>
+                    <span className={`font-medium capitalize ${selectedAsset.metadata.riskTier.toLowerCase() === 'low' ? 'text-green-600' :
+                      selectedAsset.metadata.riskTier.toLowerCase() === 'medium' ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                      {selectedAsset.metadata.riskTier}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mb-6">
-              <label className="block font-gellix text-sm font-medium text-foreground mb-2">
-                Rejection Reason
-              </label>
-              <textarea
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="e.g., Incomplete documentation, high risk factors, jurisdiction issues..."
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 font-gellix text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={confirmReject}
-                disabled={processing || !rejectionReason.trim()}
-                className="flex-1 font-gellix font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white"
-              >
-                {processing ? 'Rejecting...' : 'Reject Asset'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowRejectModal(false);
-                  setSelectedAsset(null);
-                  setRejectionReason('');
-                }}
-                disabled={processing}
-                className="flex-1 font-gellix font-medium rounded-lg bg-gray-200 hover:bg-gray-300 text-foreground"
-              >
-                Cancel
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmApprove}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                >
+                  {processing ? 'Approving...' : 'Approve Asset'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowApproveModal(false);
+                    setSelectedAsset(null);
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-foreground"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Reject Modal */}
+        {showRejectModal && selectedAsset && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-lg w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
+                  Reject Asset
+                </h3>
+              </div>
+
+              <p className="font-gellix text-sm text-gray-500 mb-6">
+                Please provide a reason for rejecting this asset. The originator will be notified.
+              </p>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="space-y-3 font-gellix text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Asset:</span>
+                    <span className="text-foreground font-medium">Invoice #{selectedAsset.metadata.invoiceNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Buyer:</span>
+                    <span className="text-foreground font-medium">{selectedAsset.metadata.buyerName}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block font-gellix text-sm font-medium text-foreground mb-2">
+                  Rejection Reason
+                </label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g., Incomplete documentation, high risk factors, jurisdiction issues..."
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 font-gellix text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmReject}
+                  disabled={processing || !rejectionReason.trim()}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm"
+                >
+                  {processing ? 'Rejecting...' : 'Reject Asset'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowRejectModal(false);
+                    setSelectedAsset(null);
+                    setRejectionReason('');
+                  }}
+                  disabled={processing}
+                  className="flex-1 font-gellix font-medium rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-foreground"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };

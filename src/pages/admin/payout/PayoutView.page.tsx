@@ -29,6 +29,31 @@ const PayoutViewPage = () => {
 
   useEffect(() => {
     fetchListedAssets();
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   const fetchListedAssets = async () => {
@@ -204,15 +229,7 @@ const PayoutViewPage = () => {
       {/* Assets Table */}
       {!loading && (
         <div
-          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
+          className="bg-transparent  overflow-hidden"
         >
           {assets.length === 0 ? (
             <div className="p-12 text-center">

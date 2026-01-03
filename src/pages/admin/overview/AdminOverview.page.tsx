@@ -9,6 +9,33 @@ const AdminOverviewPage = () => {
 
   useEffect(() => {
     fetchAdminDashboardData();
+
+    // Hide scrollbars globally for this page
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, [fetchAdminDashboardData]);
 
   // Format currency
@@ -98,15 +125,7 @@ const AdminOverviewPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Pending Compliance */}
         <div
-          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
+          className="bg-white rounded-2xl border border-gray-200 hover:bg-gray-50 hover:border-gray-200 p-6 flex flex-col relative overflow-hidden"
         >
           <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
             Pending Compliance
@@ -122,15 +141,7 @@ const AdminOverviewPage = () => {
 
         {/* Compliance Approved */}
         <div
-          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
+          className="bg-white rounded-2xl p-6 border border-gray-200 flex flex-col relative overflow-hidden hover:bg-gray-50 hover:border-gray-200"
         >
           <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
             Ready for Registry
@@ -146,15 +157,7 @@ const AdminOverviewPage = () => {
 
         {/* On-Chain Assets */}
         <div
-          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden hover:bg-gray-50 hover:border-gray-200 "
         >
           <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
             On-Chain Assets
@@ -170,15 +173,7 @@ const AdminOverviewPage = () => {
 
         {/* Total Yield */}
         <div
-          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative hover:bg-gray-50 hover:border-gray-200 overflow-hidden"
         >
           <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
             Yield Distributed
@@ -195,15 +190,7 @@ const AdminOverviewPage = () => {
 
       {/* Recent Activity - Matching Portfolio Table */}
       <div
-        className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
-        style={{
-          boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(150, 151, 151, 0.06),
-            12px 12px 36px rgba(92, 92, 93, 0.04),
-            16px 16px 48px rgba(45, 46, 47, 0.02)
-          `,
-        }}
+        className="bg-white rounded-2xl p-6 flex flex-col relative overflow-hidden border-t-2 border-gray-100"
       >
         <div className="mb-6">
           <h3 className="font-gellix text-2xl font-semibold text-foreground">Recent Activity</h3>
@@ -234,7 +221,7 @@ const AdminOverviewPage = () => {
                         {activity.details}
                       </p>
                       <p className="font-gellix text-xs text-foreground/60 mt-1">
-                        Minraise: {Number(activity.minraise)/1e6} USDC
+                        Minraise: {Number(activity.minraise) / 1e6} USDC
                       </p>
                       <p className="font-gellix text-xs text-foreground/50 mt-1">
                         By {activity.actor}
@@ -249,93 +236,6 @@ const AdminOverviewPage = () => {
             );
           })}
         </div>
-      </div>
-
-      {/* Quick Actions - Matching Portfolio Card Style */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <a
-          href="/admin/compliance"
-          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <ShieldCheck className="w-8 h-8 text-blue-600 mb-3" />
-          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
-            Review Compliance
-          </h4>
-          <p className="font-gellix text-sm text-foreground/60">
-            Process pending compliance requests
-          </p>
-        </a>
-
-        <a
-          href="/admin/operations"
-          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <Network className="w-8 h-8 text-green-600 mb-3" />
-          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
-            On-Chain Operations
-          </h4>
-          <p className="font-gellix text-sm text-foreground/60">
-            Register and tokenize assets
-          </p>
-        </a>
-
-        <a
-          href="/admin/settlements"
-          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <TrendingUp className="w-8 h-8 text-purple-600 mb-3" />
-          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
-            Record Settlements
-          </h4>
-          <p className="font-gellix text-sm text-foreground/60">
-            Manage yield distribution
-          </p>
-        </a>
-
-        <a
-          href="/admin/auctions"
-          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
-          style={{
-            boxShadow: `
-              4px 4px 12px rgba(243, 244, 245, 0.08),
-              8px 8px 24px rgba(150, 151, 151, 0.06),
-              12px 12px 36px rgba(92, 92, 93, 0.04),
-              16px 16px 48px rgba(45, 46, 47, 0.02)
-            `,
-          }}
-        >
-          <Gavel className="w-8 h-8 text-orange-600 mb-3" />
-          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
-            Manage Auctions
-          </h4>
-          <p className="font-gellix text-sm text-foreground/60">
-            Create and manage token auctions
-          </p>
-        </a>
       </div>
     </div>
   );
