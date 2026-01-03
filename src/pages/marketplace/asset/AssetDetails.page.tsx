@@ -154,7 +154,7 @@ const AssetDetailsPage = () => {
 
           if (history.chartData && history.chartData.length > 0) {
             // Aggregate purchases into 5-minute time blocks
-            const aggregatedData = aggregateIntoTimeBlocks(history.chartData, 5);
+            const aggregatedData = aggregateIntoTimeBlocks(history.chartData, 0.05);
             setFormattedChartData(aggregatedData);
           }
 
@@ -174,7 +174,7 @@ const AssetDetailsPage = () => {
    * @param intervalMinutes - Time block interval in minutes (default 5)
    * @returns Aggregated data with tokens purchased per time block (only non-zero values)
    */
-  const aggregateIntoTimeBlocks = (chartData: any[], intervalMinutes: number = 5) => {
+  const aggregateIntoTimeBlocks = (chartData: any[], intervalMinutes: number = 0.05) => {
     if (!chartData || chartData.length === 0) return [];
 
     // Convert interval to milliseconds

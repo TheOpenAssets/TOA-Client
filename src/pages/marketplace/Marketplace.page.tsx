@@ -79,7 +79,7 @@ const MarketplacePage = () => {
           const history = await marketplaceService.getPurchaseHistory(listing.assetId);
           if (history.chartData && history.chartData.length > 0) {
             // Aggregate into 5-minute time blocks (same as AssetDetails)
-            const aggregated = aggregateIntoTimeBlocks(history.chartData, 5);
+            const aggregated = aggregateIntoTimeBlocks(history.chartData, 0.05);
             chartDataMap[listing.assetId] = aggregated;
           } else {
             chartDataMap[listing.assetId] = [];

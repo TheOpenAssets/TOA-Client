@@ -7,6 +7,7 @@ export interface PortfolioAsset {
   assetId: string;
   tokenAddress: string;
   totalAmount: string;
+  status: string;
   totalInvested: string;
   purchaseCount: number;
   firstPurchase: string;
