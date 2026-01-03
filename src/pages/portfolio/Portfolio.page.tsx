@@ -12,6 +12,7 @@ import { ToastContainer } from '../../components/ui/toast';
 import HeroBackground from '../landing/HeroBackground';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
+import { marketplaceService } from '../../lib/api/marketplace.service';
 import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { useLeverageStore } from '../../stores/leverage.store';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
@@ -278,6 +279,22 @@ const PortfolioPage = () => {
       console.log('USDC Received:', usdcReceived, 'USDC');
       console.log('TX Hash:', claimResult.transactionHash);
       console.log();
+
+      // Notify backend
+      if (claimResult.transactionHash) {
+        try {
+          await marketplaceService.notifyYieldClaim({
+            txHash: claimResult.transactionHash,
+            assetId: assetId,
+            tokensBurned: claimResult.tokensBurned || '0',
+            usdcReceived: claimResult.usdcReceived || '0',
+          });
+          console.log('✅ Successfully notified backend of yield claim');
+        } catch (apiError) {
+          console.error('Failed to notify backend of yield claim:', apiError);
+          // Non-fatal, so we don't need to show an error to the user
+        }
+      }
 
       success(
         'Yield Claimed Successfully! 🎉',

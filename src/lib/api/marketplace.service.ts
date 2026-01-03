@@ -111,6 +111,31 @@ class MarketplaceService extends BaseService {
     }
   }
 
+  async notifyYieldClaim(payload: {
+    txHash: string;
+    assetId: string;
+    tokensBurned: string;
+    usdcReceived: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/yield-claim/notify`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify yield claim');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error notifying yield claim:', error);
+      throw error;
+    }
+  }
+
   // ============================================================================
   // AUCTION ENDPOINTS (100% Script-Verified from admin-approve.sh & investor-bidding.sh)
   // ============================================================================
