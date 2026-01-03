@@ -18,6 +18,8 @@ import { useLeverageStore } from '../../stores/leverage.store';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
+import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
+import type { LeveragePosition } from '../../types/leverage.types';
 
 
 const PortfolioPage = () => {
@@ -33,6 +35,9 @@ const PortfolioPage = () => {
   type PortfolioTab = 'assets' | 'bids' | 'positions';
   const [activeTab, setActiveTab] = useState<PortfolioTab>('assets');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Leverage position detail chart state
+  const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
 
   // Filtered data based on search term
   const filteredAssets = portfolio?.portfolio?.filter(asset =>
@@ -553,7 +558,11 @@ const PortfolioPage = () => {
                     }`}
                   >
                     <div className="h-full flex flex-col overflow-y-auto p-6">
-                      <PositionsTable positions={filteredPositions} isLoading={isLoadingPositions} />
+                      <PositionsTable
+                        positions={filteredPositions}
+                        isLoading={isLoadingPositions}
+                        onSelectPosition={setSelectedPosition}
+                      />
                     </div>
                   </div>
                 </div>
@@ -562,6 +571,15 @@ const PortfolioPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Leverage Position Detail Chart Modal */}
+      {selectedPosition && (
+        <PositionDetailChart
+          position={selectedPosition}
+          isOpen={!!selectedPosition}
+          onClose={() => setSelectedPosition(null)}
+        />
+      )}
 
       {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
       {showClaimModal && selectedAssetForClaim && (

@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { formatUnits } from 'viem';
 import type { LeveragePosition } from '../../types/leverage.types';
+import { PositionSparkline } from './PositionSparkline';
 
 interface PositionsTableProps {
   positions: LeveragePosition[];
   isLoading: boolean;
+  onSelectPosition: (position: LeveragePosition) => void;
 }
 
-export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) => {
+export const PositionsTable = ({ positions, isLoading, onSelectPosition }: PositionsTableProps) => {
   const navigate = useNavigate();
 
   const getHealthColor = (health: number) => {
@@ -56,8 +58,9 @@ export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) =>
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <table className="w-full">
+    <>
+      <div className="flex-1 overflow-y-auto">
+        <table className="w-full">
         <thead className="sticky top-0 bg-white z-10">
           <tr className="border-b border-gray-200 text-black">
             <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
@@ -75,8 +78,8 @@ export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) =>
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Status
             </th>
-            <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
-              Action
+            <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
+              Chart
             </th>
           </tr>
         </thead>
@@ -90,6 +93,7 @@ export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) =>
             return (
               <tr
                 key={pos.positionId}
+                onClick={() => onSelectPosition(pos)}
                 className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                   index % 2 === 0 ? 'bg-gray-10' : 'bg-gray-50/50'
                 }`}
@@ -134,11 +138,14 @@ export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) =>
                   </span>
                 </td>
 
-                {/* Action */}
-                <td className="px-6 py-4 text-center">
-                  <button className="font-gellix text-xs text-blue-600 hover:text-blue-800 underline">
-                    Details
-                  </button>
+                {/* Chart - Sparkline */}
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="w-full max-w-[200px] ml-auto">
+                    <PositionSparkline
+                      position={pos}
+                      healthStatus={pos.healthStatus}
+                    />
+                  </div>
                 </td>
               </tr>
             );
@@ -146,5 +153,6 @@ export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) =>
         </tbody>
       </table>
     </div>
+  </>
   );
 };
