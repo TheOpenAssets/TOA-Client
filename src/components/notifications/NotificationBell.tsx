@@ -26,7 +26,7 @@ const getNotificationIcon = (type: NotificationType | string) => {
 };
 
 // Muted colors for read items, bold for unread
-const getSeverityColor = (severity: string, isRead: boolean) => {
+const getSeverityColor = (_severity: string, isRead: boolean) => {
   if (isRead) return 'text-slate-300';
   return 'text-slate-900';
 };

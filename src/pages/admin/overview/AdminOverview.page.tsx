@@ -57,132 +57,169 @@ const AdminOverviewPage = () => {
   };
 
   if (isLoading) {
-    return <div>Loading admin overview...</div>
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="font-gellix text-lg text-foreground">Loading admin overview...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="font-gellix text-lg text-red-600 mb-4">Error: {error}</div>
+          <button
+            onClick={() => fetchAdminDashboardData()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h2 className="font-geist text-3xl font-normal text-foreground mb-2">
+        <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
           Dashboard Overview
         </h2>
-        <p className="font-inter text-sm text-foreground/70">
+        <p className="font-gellix text-sm text-foreground/70">
           Monitor and manage the complete asset lifecycle
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Matching Portfolio Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Pending Compliance */}
         <div
-          className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
+          style={{
+            boxShadow: `
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
+            `,
+          }}
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-foreground/60" />
-              <p className="font-inter text-sm text-foreground/70 font-medium">
-                Pending Compliance
-              </p>
-            </div>
-            <p className="font-geist text-4xl font-normal text-foreground">
-              {stats?.pendingCompliance ?? 0}
-            </p>
-            <p className="font-inter text-xs text-foreground/60">
-              Assets awaiting review
-            </p>
-          </div>
+          <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
+            Pending Compliance
+          </h3>
+          <p className="font-gellix text-3xl font-semibold text-foreground">
+            {stats?.pendingCompliance ?? 0}
+          </p>
+          <p className="font-gellix text-xs text-gray-500 mt-2">
+            Assets awaiting review
+          </p>
+          <ShieldCheck className="absolute bottom-4 right-4 w-8 h-8 text-gray-200" />
         </div>
 
         {/* Compliance Approved */}
         <div
-          className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
+          style={{
+            boxShadow: `
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
+            `,
+          }}
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Package className="w-5 h-5 text-foreground/60" />
-              <p className="font-inter text-sm text-foreground/70 font-medium">
-                Ready for Registry
-              </p>
-            </div>
-            <p className="font-geist text-4xl font-normal text-foreground">
-              {stats?.complianceApproved ?? 0}
-            </p>
-            <p className="font-inter text-xs text-foreground/60">
-              Assets approved for on-chain
-            </p>
-          </div>
+          <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
+            Ready for Registry
+          </h3>
+          <p className="font-gellix text-3xl font-semibold text-foreground">
+            {stats?.complianceApproved ?? 0}
+          </p>
+          <p className="font-gellix text-xs text-gray-500 mt-2">
+            Assets approved for on-chain
+          </p>
+          <Package className="absolute bottom-4 right-4 w-8 h-8 text-gray-200" />
         </div>
 
         {/* On-Chain Assets */}
         <div
-          className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
+          style={{
+            boxShadow: `
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
+            `,
+          }}
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Network className="w-5 h-5 text-foreground/60" />
-              <p className="font-inter text-sm text-foreground/70 font-medium">
-                On-Chain Assets
-              </p>
-            </div>
-            <p className="font-geist text-4xl font-normal text-foreground">
-              {stats?.onChainAssets ?? 0}
-            </p>
-            <p className="font-inter text-xs text-foreground/60">
-              Registered & tokenized
-            </p>
-          </div>
+          <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
+            On-Chain Assets
+          </h3>
+          <p className="font-gellix text-3xl font-semibold text-foreground">
+            {stats?.onChainAssets ?? 0}
+          </p>
+          <p className="font-gellix text-xs text-gray-500 mt-2">
+            Registered & tokenized
+          </p>
+          <Network className="absolute bottom-4 right-4 w-8 h-8 text-gray-200" />
         </div>
 
         {/* Total Yield */}
         <div
-          className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
+          style={{
+            boxShadow: `
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
+            `,
+          }}
         >
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-foreground/60" />
-              <p className="font-inter text-sm text-foreground/70 font-medium">
-                Yield Distributed
-              </p>
-            </div>
-            <p className="font-geist text-4xl font-normal text-foreground">
-              {formatCurrency(stats?.totalYieldDistributed ?? 0)}
-            </p>
-            <p className="font-inter text-xs text-foreground/60">
-              Total USDC distributed
-            </p>
-          </div>
+          <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
+            Yield Distributed
+          </h3>
+          <p className="font-gellix text-3xl font-semibold text-foreground">
+            {formatCurrency(stats?.totalYieldDistributed ?? 0)}
+          </p>
+          <p className="font-gellix text-xs text-gray-500 mt-2">
+            Total USDC distributed
+          </p>
+          <TrendingUp className="absolute bottom-4 right-4 w-8 h-8 text-gray-200" />
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity - Matching Portfolio Table */}
       <div
-        className="rounded-2xl p-8 shadow-lg"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+        className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col relative overflow-hidden"
+        style={{
+          boxShadow: `
+            4px 4px 12px rgba(243, 244, 245, 0.08),
+            8px 8px 24px rgba(150, 151, 151, 0.06),
+            12px 12px 36px rgba(92, 92, 93, 0.04),
+            16px 16px 48px rgba(45, 46, 47, 0.02)
+          `,
+        }}
       >
         <div className="mb-6">
-          <h3 className="font-geist text-2xl font-normal text-foreground">Recent Activity</h3>
-          <p className="font-inter text-sm text-foreground/70 mt-1">
+          <h3 className="font-gellix text-2xl font-semibold text-foreground">Recent Activity</h3>
+          <p className="font-gellix text-sm text-foreground/70 mt-1">
             Latest platform operations and updates
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {activities.map((activity) => {
             const { icon: Icon, color, bg } = getActivityStyle(activity.type);
 
             return (
               <div
                 key={activity.id}
-                className="flex items-start gap-4 p-4 bg-white rounded-xl hover:bg-white/80 transition-colors"
+                className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <div className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center flex-shrink-0`}>
                   <Icon className={`w-5 h-5 ${color}`} />
@@ -190,21 +227,20 @@ const AdminOverviewPage = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-inter text-sm font-medium text-foreground">
+                      <p className="font-gellix text-sm font-medium text-foreground">
                         {activity.assetName}
                       </p>
-                      <p className="font-inter text-xs text-foreground/60 mt-0.5">
+                      <p className="font-gellix text-xs text-foreground/60 mt-0.5">
                         {activity.details}
                       </p>
-                      <p className="font-inter text-xs text-foreground/60 mt-1">
+                      <p className="font-gellix text-xs text-foreground/60 mt-1">
                         Minraise: {Number(activity.minraise)/1e6} USDC
                       </p>
-                      <p className="font-inter text-xs text-foreground/50 mt-1">
+                      <p className="font-gellix text-xs text-foreground/50 mt-1">
                         By {activity.actor}
                       </p>
-
                     </div>
-                    <span className="font-inter text-xs text-foreground/50 whitespace-nowrap">
+                    <span className="font-gellix text-xs text-foreground/50 whitespace-nowrap">
                       {formatTime(activity.timestamp)}
                     </span>
                   </div>
@@ -215,104 +251,88 @@ const AdminOverviewPage = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Matching Portfolio Card Style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <a
           href="/admin/compliance"
-          className="block rounded-2xl p-6 transition-all duration-300 hover-lift"
+          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
           style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
             boxShadow: `
-              rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
-              rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
-              rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
-              rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
-              rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
-              rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
-              rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
             `,
           }}
         >
-          <ShieldCheck className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
+          <ShieldCheck className="w-8 h-8 text-blue-600 mb-3" />
+          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
             Review Compliance
           </h4>
-          <p className="font-inter text-sm text-foreground/60">
+          <p className="font-gellix text-sm text-foreground/60">
             Process pending compliance requests
           </p>
         </a>
 
         <a
           href="/admin/operations"
-          className="block rounded-2xl p-6 transition-all duration-300 hover-lift"
+          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
           style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
             boxShadow: `
-              rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
-              rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
-              rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
-              rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
-              rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
-              rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
-              rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
             `,
           }}
         >
-          <Network className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
+          <Network className="w-8 h-8 text-green-600 mb-3" />
+          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
             On-Chain Operations
           </h4>
-          <p className="font-inter text-sm text-foreground/60">
+          <p className="font-gellix text-sm text-foreground/60">
             Register and tokenize assets
           </p>
         </a>
 
         <a
           href="/admin/settlements"
-          className="block rounded-2xl p-6 transition-all duration-300 hover-lift"
+          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
           style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
             boxShadow: `
-              rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
-              rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
-              rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
-              rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
-              rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
-              rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
-              rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
             `,
           }}
         >
-          <TrendingUp className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
+          <TrendingUp className="w-8 h-8 text-purple-600 mb-3" />
+          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
             Record Settlements
           </h4>
-          <p className="font-inter text-sm text-foreground/60">
+          <p className="font-gellix text-sm text-foreground/60">
             Manage yield distribution
           </p>
         </a>
 
         <a
           href="/admin/auctions"
-          className="block rounded-2xl p-6 transition-all duration-300 hover-lift"
+          className="block bg-white rounded-2xl border border-gray-200 p-6 transition-all duration-300 hover:bg-gray-50"
           style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
             boxShadow: `
-              rgba(141, 194, 235, 0.25) 0px -3px 0px 2px inset,
-              rgba(16, 49, 77, 0.21) 0px 0.706592px 0.706592px -0.583333px,
-              rgba(16, 49, 77, 0.2) 0px 1.80656px 1.80656px -1.16667px,
-              rgba(16, 49, 77, 0.2) 0px 3.62176px 3.62176px -1.75px,
-              rgba(16, 49, 77, 0.18) 0px 6.8656px 6.8656px -2.33333px,
-              rgba(16, 49, 77, 0.16) 0px 13.6468px 13.6468px -2.91667px,
-              rgba(16, 49, 77, 0.09) 0px 30px 30px -3.5px
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
             `,
           }}
         >
-          <Gavel className="w-8 h-8 text-foreground/60 mb-3" />
-          <h4 className="font-geist text-lg font-normal text-foreground mb-1">
+          <Gavel className="w-8 h-8 text-orange-600 mb-3" />
+          <h4 className="font-gellix text-lg font-semibold text-foreground mb-1">
             Manage Auctions
           </h4>
-          <p className="font-inter text-sm text-foreground/60">
+          <p className="font-gellix text-sm text-foreground/60">
             Create and manage token auctions
           </p>
         </a>

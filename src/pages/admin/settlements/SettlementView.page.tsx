@@ -205,16 +205,26 @@ const SettlementViewPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#f0f8ffe6]">
-        <div className="text-lg font-geist text-foreground">Loading settlements...</div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="font-gellix text-lg text-foreground">Loading settlements...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#f0f8ffe6]">
-        <div className="text-lg text-red-600 font-geist">Error: {error}</div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="font-gellix text-lg text-red-600 mb-4">Error: {error}</div>
+          <button
+            onClick={() => fetchAdminDashboardData()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -223,61 +233,52 @@ const SettlementViewPage = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="font-geist text-3xl font-normal text-foreground mb-2">
+        <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
           Settlements & Yield Manager
         </h2>
-        <p className="font-inter text-sm text-foreground/70">
+        <p className="font-gellix text-sm text-foreground/70">
           Record settlements and distribute yield to token holders (time-weighted)
         </p>
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div
-          className="rounded-xl p-5"
-          style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <Coins className="w-5 h-5 text-blue-500" />
-            <div>
-              <p className="font-inter text-xs text-foreground/60">Ready for Yield</p>
-              <p className="font-geist text-2xl font-normal text-foreground">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-50 rounded-xl">
+              <Coins className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">Ready for Yield</p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
                 {payoutCompleteAssets?.length || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div
-          className="rounded-xl p-5"
-          style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-5 h-5 text-green-500" />
-            <div>
-              <p className="font-inter text-xs text-foreground/60">Total Settlements</p>
-              <p className="font-geist text-2xl font-normal text-foreground">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-green-50 rounded-xl">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">Total Settlements</p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
                 {allSettlements.length}
               </p>
             </div>
           </div>
         </div>
 
-        <div
-          className="rounded-xl p-5"
-          style={{
-            background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <DollarSign className="w-5 h-5 text-purple-500" />
-            <div>
-              <p className="font-inter text-xs text-foreground/60">Total Distributed</p>
-              <p className="font-geist text-2xl font-normal text-foreground">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-purple-50 rounded-xl">
+              <DollarSign className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">Total Distributed</p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
                 {formatCurrency(
                   allSettlements
                     .filter(s => s.status === 'DISTRIBUTED')
@@ -291,14 +292,21 @@ const SettlementViewPage = () => {
 
       {/* Assets Ready for Yield Distribution */}
       <div
-        className="rounded-2xl p-8 shadow-lg"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+        style={{
+          boxShadow: `
+            4px 4px 12px rgba(243, 244, 245, 0.08),
+            8px 8px 24px rgba(150, 151, 151, 0.06),
+            12px 12px 36px rgba(92, 92, 93, 0.04),
+            16px 16px 48px rgba(45, 46, 47, 0.02)
+          `,
+        }}
       >
-        <div className="mb-6">
-          <h3 className="font-geist text-2xl font-normal text-foreground mb-1">
+        <div className="p-8 border-b border-gray-200 bg-gray-50/50">
+          <h3 className="font-gellix text-2xl font-semibold text-foreground mb-2">
             Assets Ready for Yield Distribution
           </h3>
-          <p className="font-inter text-sm text-foreground/70">
+          <p className="font-gellix text-sm text-foreground/70">
             Assets with PAYOUT_COMPLETE status can receive yield settlements
           </p>
         </div>
@@ -306,55 +314,55 @@ const SettlementViewPage = () => {
         {!payoutCompleteAssets || payoutCompleteAssets.length === 0 ? (
           <div className="p-12 text-center">
             <Coins className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
+            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               No Assets Ready
             </h3>
-            <p className="font-inter text-sm text-foreground/60">
+            <p className="font-gellix text-sm text-foreground/60">
               Assets must be in PAYOUT_COMPLETE status before yield can be distributed
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="p-6 space-y-4">
             {payoutCompleteAssets.map((asset) => (
-              <div key={asset.assetId} className="bg-white rounded-xl p-6">
-                <div className="flex items-start justify-between gap-4 mb-6">
+              <div key={asset.assetId} className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all">
+                <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <Coins className="w-6 h-6 text-foreground/60" />
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
+                        <Coins className="w-6 h-6 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-geist text-lg font-normal text-foreground">
+                        <h4 className="font-gellix text-lg font-semibold text-foreground">
                           Invoice #{asset.metadata.invoiceNumber}
                         </h4>
-                        <p className="font-inter text-xs text-foreground/60">
+                        <p className="font-gellix text-xs text-foreground/60">
                           {asset.metadata.industry} - {asset.metadata.buyerName}
                         </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-4 mb-4">
                       <div>
-                        <p className="font-inter text-xs text-foreground/60 mb-1">Face Value</p>
-                        <p className="font-geist text-base font-normal text-foreground">
+                        <p className="font-gellix text-xs text-foreground/60 mb-1">Face Value</p>
+                        <p className="font-gellix text-sm font-semibold text-foreground">
                           {asset.metadata.currency} {parseFloat(asset.metadata.faceValue).toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="font-inter text-xs text-foreground/60 mb-1">Total Supply</p>
-                        <p className="font-geist text-base font-normal text-foreground">
+                        <p className="font-gellix text-xs text-foreground/60 mb-1">Total Supply</p>
+                        <p className="font-gellix text-sm font-semibold text-foreground">
                           {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="font-inter text-xs text-foreground/60 mb-1">Token Address</p>
+                        <p className="font-gellix text-xs text-foreground/60 mb-1">Token Address</p>
                         <p className="font-mono text-xs font-normal text-foreground">
                           {asset.token?.address ? `${asset.token.address.slice(0, 6)}...${asset.token.address.slice(-4)}` : 'N/A'}
                         </p>
                       </div>
                       <div>
-                        <p className="font-inter text-xs text-foreground/60 mb-1">Status</p>
-                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-green-100 text-green-700 border-green-200">
+                        <p className="font-gellix text-xs text-foreground/60 mb-1">Status</p>
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                           {asset.status}
                         </span>
                       </div>
@@ -362,17 +370,17 @@ const SettlementViewPage = () => {
 
                     {/* Token Info */}
                     {asset.token?.address && (
-                      <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                      <div className="bg-white border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-inter text-xs text-foreground/60">Token:</span>
+                            <span className="font-gellix text-xs text-foreground/60">Token:</span>
                             <span className="font-mono text-xs text-foreground">
                               {asset.token.address.slice(0, 10)}...{asset.token.address.slice(-8)}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-inter text-xs text-foreground/60">Symbol:</span>
-                            <span className="font-inter text-xs font-medium text-foreground">
+                            <span className="font-gellix text-xs text-foreground/60">Symbol:</span>
+                            <span className="font-gellix text-xs font-semibold text-foreground">
                               {asset.token.symbol || 'N/A'}
                             </span>
                           </div>
@@ -380,7 +388,7 @@ const SettlementViewPage = () => {
                             href={`https://sepolia.mantlescan.xyz/address/${asset.token.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 font-inter text-xs"
+                            className="flex items-center gap-1 text-blue-500 hover:text-blue-600 font-gellix text-xs"
                           >
                             View on Explorer
                             <ExternalLink className="w-3 h-3" />
@@ -392,11 +400,7 @@ const SettlementViewPage = () => {
 
                   <Button
                     onClick={() => handleStartSettlement(asset)}
-                    className="font-inter font-medium rounded-xl whitespace-nowrap"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(262 68% 57%) 0%, hsl(262 68% 67%) 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(119, 75, 229, 0.25)',
-                    }}
+                    className="font-gellix font-medium rounded-xl whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Record Yield Settlement
@@ -499,20 +503,17 @@ const SettlementViewPage = () => {
       {/* Settlement Modal - Multi-Step Flow */}
       {showSettlementModal && selectedAsset && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-            style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-          >
+          <div className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <Coins className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-geist text-2xl font-normal text-foreground">
+                <h3 className="font-gellix text-2xl font-semibold text-foreground">
                   Yield Settlement
                 </h3>
-                <p className="font-inter text-sm text-foreground/70">
+                <p className="font-gellix text-sm text-foreground/70">
                   Invoice #{selectedAsset.metadata.invoiceNumber}
                 </p>
               </div>
@@ -530,7 +531,7 @@ const SettlementViewPage = () => {
                 <div key={step.key} className="flex items-center flex-1">
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-inter text-sm font-semibold ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-gellix text-sm font-semibold ${
                         currentStep === step.key
                           ? 'bg-blue-600 text-white'
                           : ['VERIFY_ASSET', 'RECORD_SETTLEMENT', 'CONFIRM_USDC', 'DISTRIBUTE', 'COMPLETE'].indexOf(currentStep) >

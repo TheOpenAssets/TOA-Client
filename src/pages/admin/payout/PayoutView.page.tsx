@@ -139,30 +139,30 @@ const PayoutViewPage = () => {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="font-geist text-3xl font-semibold text-foreground mb-2">
+    <div className="space-y-8">
+      <div>
+        <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
           Asset Payouts
-        </h1>
-        <p className="font-geist text-sm text-gray-500">
+        </h2>
+        <p className="font-gellix text-sm text-foreground/70">
           Execute payouts to originators for sold tokens
         </p>
       </div>
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-xl">
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-6">
           <div className="flex items-start gap-3">
             <Check className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-geist text-lg font-semibold text-green-800 mb-2">
+              <h3 className="font-gellix text-lg font-semibold text-green-800 mb-2">
                 Payout Executed Successfully!
               </h3>
               <div className="space-y-1 text-sm">
-                <p className="font-geist text-green-700">
+                <p className="font-gellix text-green-700">
                   Amount: <span className="font-semibold">{successMessage.amount}</span>
                 </p>
-                <p className="font-geist text-green-700 flex items-center gap-2">
+                <p className="font-gellix text-green-700 flex items-center gap-2">
                   Transaction:{' '}
                   <a
                     href={`https://sepolia.mantlescan.xyz/tx/${successMessage.txHash}`}
@@ -178,7 +178,7 @@ const PayoutViewPage = () => {
             </div>
             <button
               onClick={() => setSuccessMessage(null)}
-              className="text-green-600 hover:text-green-800"
+              className="text-green-600 hover:text-green-800 text-xl leading-none"
             >
               ×
             </button>
@@ -188,110 +188,122 @@ const PayoutViewPage = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-geist text-sm text-red-700">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+          <p className="font-gellix text-sm text-red-700">{error}</p>
         </div>
       )}
 
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-foreground/60" />
-          <p className="ml-3 font-geist text-foreground/70">Loading assets...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-3" />
+          <p className="font-gellix text-foreground/70">Loading assets...</p>
         </div>
       )}
 
       {/* Assets Table */}
       {!loading && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div
+          className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+          style={{
+            boxShadow: `
+              4px 4px 12px rgba(243, 244, 245, 0.08),
+              8px 8px 24px rgba(150, 151, 151, 0.06),
+              12px 12px 36px rgba(92, 92, 93, 0.04),
+              16px 16px 48px rgba(45, 46, 47, 0.02)
+            `,
+          }}
+        >
           {assets.length === 0 ? (
             <div className="p-12 text-center">
               <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
+              <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
                 No Listed Assets
               </h3>
-              <p className="font-geist text-sm text-gray-500">
+              <p className="font-gellix text-sm text-foreground/60">
                 No listed assets found. Assets will appear here after listing.
               </p>
             </div>
           ) : (
             <table className="w-full">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
+              <thead className="sticky top-0 bg-white z-10">
+                <tr className="border-b border-gray-200">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Asset
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Originator
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Tokens Sold
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Total Raised
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
+                  <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-foreground/70 uppercase tracking-wider font-geist">
+                  <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {assets.map((asset) => (
-                  <tr key={asset.assetId} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-5">
+              <tbody>
+                {assets.map((asset, index) => (
+                  <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                  }`}>
+                    <td className="px-6 py-4">
                       <div>
-                        <p className="font-geist text-sm font-semibold text-foreground">
+                        <p className="font-gellix text-sm font-semibold text-foreground">
                           {asset.invoiceNumber}
                         </p>
-                        <p className="font-geist text-xs text-gray-500 mt-0.5">
+                        <p className="font-gellix text-xs text-foreground/60 mt-0.5">
                           {asset.assetType}
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-4">
                       <p className="font-mono text-sm text-foreground">
                         {truncateAddress(asset.originator)}
                       </p>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-4">
                       <div>
-                        <p className="font-geist text-sm font-semibold text-foreground">
+                        <p className="font-gellix text-sm font-semibold text-foreground">
                           {asset.sold.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </p>
-                        <p className="font-geist text-xs text-gray-500">
+                        <p className="font-gellix text-xs text-foreground/60">
                           of {asset.totalSupply.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <p className="font-geist text-base font-semibold text-green-600">
+                    <td className="px-6 py-4">
+                      <p className="font-gellix text-base font-semibold text-green-600">
                         ${asset.totalRaised.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
                       </p>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-4">
                       {asset.payoutExecuted ? (
-                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-green-100 text-green-700 border-green-200">
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                           Paid Out
                         </span>
                       ) : (
-                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-yellow-100 text-yellow-700 border-yellow-200">
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
                           Pending
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-5 text-right">
+                    <td className="px-6 py-4 text-right">
                       {asset.payoutExecuted ? (
-                        <span className="font-geist text-xs text-gray-500">Completed</span>
+                        <span className="font-gellix text-xs text-foreground/60">Completed</span>
                       ) : asset.sold === 0 ? (
-                        <span className="font-geist text-xs text-gray-400">No tokens sold yet</span>
+                        <span className="font-gellix text-xs text-foreground/40">No tokens sold yet</span>
                       ) : (
                         <button
                           onClick={() => handlePayout(asset.assetId)}
                           disabled={payingOut === asset.assetId}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ml-auto"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ml-auto"
                         >
                           {payingOut === asset.assetId ? (
                             <>

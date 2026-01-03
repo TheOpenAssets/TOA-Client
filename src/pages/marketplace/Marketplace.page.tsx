@@ -31,7 +31,7 @@ const MarketplacePage = () => {
   const {
     listings,
     isLoading,
-    error,
+    error: _error,
     fetchListings,
     auctions, // AUCTION_LIVE only
     scheduledAuctions, // AUCTION_SCHEDULED only

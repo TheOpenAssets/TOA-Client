@@ -124,16 +124,16 @@ const AuctionManagementPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-geist text-3xl font-normal text-foreground">
+          <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">
             Auction Management
           </h2>
-          <p className="font-inter text-sm text-foreground/70 mt-1">
+          <p className="font-gellix text-sm text-foreground/70">
             Create and manage RWA token auctions
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-foreground text-white rounded-xl font-inter text-sm font-medium hover:bg-foreground/90 transition-colors"
+          className="px-6 py-3 bg-blue-600 text-white rounded-xl font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           Create New Auction
         </button>
@@ -141,93 +141,108 @@ const AuctionManagementPage = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div
-          className="rounded-2xl p-6 shadow-lg"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">
-              Active Auctions
-            </p>
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-green-50 rounded-xl">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">
+                Active Auctions
+              </p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
+                {auctions.filter((a) => a.status === 'BIDDING').length}
+              </p>
+            </div>
           </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {auctions.filter((a) => a.status === 'BIDDING').length}
-          </p>
         </div>
 
-        <div
-          className="rounded-2xl p-6 shadow-lg"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">
-              Ended Auctions
-            </p>
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-yellow-50 rounded-xl">
+              <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">
+                Ended Auctions
+              </p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
+                {auctions.filter((a) => a.status === 'ENDED').length}
+              </p>
+            </div>
           </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {auctions.filter((a) => a.status === 'ENDED').length}
-          </p>
         </div>
 
-        <div
-          className="rounded-2xl p-6 shadow-lg"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <Package className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">
-              Total Auctions
-            </p>
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-50 rounded-xl">
+              <Package className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">
+                Total Auctions
+              </p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
+                {auctions.length}
+              </p>
+            </div>
           </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {auctions.length}
-          </p>
         </div>
 
-        <div
-          className="rounded-2xl p-6 shadow-lg"
-          style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">
-              Total Bids
-            </p>
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-purple-50 rounded-xl">
+              <DollarSign className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-gellix text-sm text-foreground/60 mb-1">
+                Total Bids
+              </p>
+              <p className="font-gellix text-3xl font-semibold text-foreground">
+                {auctions.reduce((sum, a) => sum + a.totalBids, 0)}
+              </p>
+            </div>
           </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {auctions.reduce((sum, a) => sum + a.totalBids, 0)}
-          </p>
         </div>
       </div>
 
       {/* Auctions List */}
       <div
-        className="rounded-2xl p-8 shadow-lg"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+        style={{
+          boxShadow: `
+            4px 4px 12px rgba(243, 244, 245, 0.08),
+            8px 8px 24px rgba(150, 151, 151, 0.06),
+            12px 12px 36px rgba(92, 92, 93, 0.04),
+            16px 16px 48px rgba(45, 46, 47, 0.02)
+          `,
+        }}
       >
-        <h3 className="font-geist text-2xl font-normal text-foreground mb-6">All Auctions</h3>
+        <div className="p-8 border-b border-gray-200 bg-gray-50/50">
+          <h3 className="font-gellix text-2xl font-semibold text-foreground">All Auctions</h3>
+        </div>
 
         {isLoadingAuctions ? (
-          <div className="text-center py-8 text-foreground/60">Loading auctions...</div>
+          <div className="p-12 text-center text-foreground/60">
+            <div className="font-gellix">Loading auctions...</div>
+          </div>
         ) : auctions.length === 0 ? (
-          <div className="text-center py-8 text-foreground/60">
-            No auctions created yet. Create your first auction above.
+          <div className="p-12 text-center text-foreground/60">
+            <div className="font-gellix">No auctions created yet. Create your first auction above.</div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="p-6 space-y-4">
             {auctions.map((auction) => {
               const statusStyle = getStatusStyle(auction.status);
               return (
                 <div
                   key={auction.auctionId}
-                  className="bg-white rounded-xl p-6 hover:bg-white/80 transition-colors"
+                  className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 hover:border-gray-200 hover:bg-white transition-all"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-geist text-lg font-medium text-foreground">
+                      <div className="flex items-center gap-3 mb-4">
+                        <h4 className="font-gellix text-lg font-semibold text-foreground">
                           {auction.assetId}
                         </h4>
                         <span
@@ -237,50 +252,50 @@ const AuctionManagementPage = () => {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-4 text-sm mt-4">
+                      <div className="grid grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p className="font-inter text-foreground/60 mb-1">Total Supply</p>
-                          <p className="font-inter font-medium text-foreground">
+                          <p className="font-gellix text-foreground/60 mb-1">Total Supply</p>
+                          <p className="font-gellix font-semibold text-foreground">
                             {auction.totalSupply.toLocaleString()} tokens
                           </p>
                         </div>
                         <div>
-                          <p className="font-inter text-foreground/60 mb-1">Reserve Price</p>
-                          <p className="font-inter font-medium text-foreground">
+                          <p className="font-gellix text-foreground/60 mb-1">Reserve Price</p>
+                          <p className="font-gellix font-semibold text-foreground">
                             ${auction.reservePrice.toFixed(2)}
                           </p>
                         </div>
                         {auction.clearingPrice && (
                           <div>
-                            <p className="font-inter text-foreground/60 mb-1">Clearing Price</p>
-                            <p className="font-inter font-medium text-green-600">
+                            <p className="font-gellix text-foreground/60 mb-1">Clearing Price</p>
+                            <p className="font-gellix font-semibold text-green-600">
                               ${auction.clearingPrice.toFixed(2)}
                             </p>
                           </div>
                         )}
                         <div>
-                          <p className="font-inter text-foreground/60 mb-1">Total Bids</p>
-                          <p className="font-inter font-medium text-foreground">
+                          <p className="font-gellix text-foreground/60 mb-1">Total Bids</p>
+                          <p className="font-gellix font-semibold text-foreground">
                             {auction.totalBids}
                           </p>
                         </div>
                         <div>
-                          <p className="font-inter text-foreground/60 mb-1">Total Demand</p>
-                          <p className="font-inter font-medium text-foreground">
+                          <p className="font-gellix text-foreground/60 mb-1">Total Demand</p>
+                          <p className="font-gellix font-semibold text-foreground">
                             {auction.totalDemand.toLocaleString()} tokens
                           </p>
                         </div>
                         <div>
-                          <p className="font-inter text-foreground/60 mb-1">Start Time</p>
-                          <p className="font-inter font-medium text-foreground text-xs">
+                          <p className="font-gellix text-foreground/60 mb-1">Start Time</p>
+                          <p className="font-gellix font-semibold text-foreground text-xs">
                             {formatTime(auction.startTime)}
                           </p>
                         </div>
                         <div>
-                          <p className="font-inter text-foreground/60 mb-1">
+                          <p className="font-gellix text-foreground/60 mb-1">
                             {auction.status === 'BIDDING' ? 'Time Remaining' : 'End Time'}
                           </p>
-                          <p className="font-inter font-medium text-foreground text-xs">
+                          <p className="font-gellix font-semibold text-foreground text-xs">
                             {auction.status === 'BIDDING'
                               ? getTimeRemaining(auction.endTime)
                               : formatTime(auction.endTime)}
@@ -296,7 +311,7 @@ const AuctionManagementPage = () => {
                             setSelectedAuction(auction.auctionId);
                             setShowEndModal(true);
                           }}
-                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-inter text-sm font-medium hover:bg-yellow-700 transition-colors"
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-yellow-700 transition-colors"
                         >
                           End Auction
                         </button>
@@ -314,13 +329,13 @@ const AuctionManagementPage = () => {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h3 className="font-geist text-2xl font-semibold text-foreground mb-6">
+            <h3 className="font-gellix text-2xl font-semibold text-foreground mb-6">
               Create New Auction
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="font-inter text-sm text-foreground/70 mb-1 block">
+                <label className="font-gellix text-sm text-foreground/70 mb-1 block">
                   Asset ID
                 </label>
                 <input
@@ -328,12 +343,12 @@ const AuctionManagementPage = () => {
                   placeholder="INV-001"
                   value={createForm.assetId}
                   onChange={(e) => setCreateForm({ ...createForm, assetId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="font-inter text-sm text-foreground/70 mb-1 block">
+                <label className="font-gellix text-sm text-foreground/70 mb-1 block">
                   Total Supply (tokens)
                 </label>
                 <input
@@ -343,12 +358,12 @@ const AuctionManagementPage = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, totalSupply: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="font-inter text-sm text-foreground/70 mb-1 block">
+                <label className="font-gellix text-sm text-foreground/70 mb-1 block">
                   Reserve Price ($)
                 </label>
                 <input
@@ -359,12 +374,12 @@ const AuctionManagementPage = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, reservePrice: parseFloat(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="font-inter text-sm text-foreground/70 mb-1 block">
+                <label className="font-gellix text-sm text-foreground/70 mb-1 block">
                   Duration (hours)
                 </label>
                 <select
@@ -372,7 +387,7 @@ const AuctionManagementPage = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, duration: parseInt(e.target.value) })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value={86400}>24 hours</option>
                   <option value={172800}>48 hours</option>
@@ -383,7 +398,7 @@ const AuctionManagementPage = () => {
 
               {createStatus && (
                 <div
-                  className={`text-sm p-3 rounded-lg font-inter ${
+                  className={`text-sm p-3 rounded-lg font-gellix ${
                     createStatus.includes('successfully')
                       ? 'bg-green-100 text-green-800'
                       : createStatus.includes('Error')
@@ -401,7 +416,7 @@ const AuctionManagementPage = () => {
                     setShowCreateModal(false);
                     setCreateStatus(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                   disabled={isCreating}
                 >
                   Cancel
@@ -409,7 +424,7 @@ const AuctionManagementPage = () => {
                 <button
                   onClick={handleCreateAuction}
                   disabled={isCreating}
-                  className="flex-1 px-4 py-2 bg-foreground text-white rounded-lg font-inter text-sm font-medium hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {isCreating ? 'Creating...' : 'Create Auction'}
                 </button>
@@ -423,20 +438,20 @@ const AuctionManagementPage = () => {
       {showEndModal && selectedAuction && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h3 className="font-geist text-2xl font-semibold text-foreground mb-6">
+            <h3 className="font-gellix text-2xl font-semibold text-foreground mb-6">
               End Auction
             </h3>
 
             <div className="space-y-4">
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="font-inter text-sm text-foreground/70 mb-1">Auction ID</p>
-                <p className="font-geist text-lg font-medium text-foreground">
+                <p className="font-gellix text-sm text-foreground/70 mb-1">Auction ID</p>
+                <p className="font-gellix text-lg font-semibold text-foreground">
                   {auctions.find((a) => a.auctionId === selectedAuction)?.assetId}
                 </p>
               </div>
 
               <div>
-                <label className="font-inter text-sm text-foreground/70 mb-1 block">
+                <label className="font-gellix text-sm text-foreground/70 mb-1 block">
                   Clearing Price ($)
                 </label>
                 <input
@@ -445,16 +460,16 @@ const AuctionManagementPage = () => {
                   placeholder="0.90"
                   value={clearingPrice}
                   onChange={(e) => setClearingPrice(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="font-inter text-xs text-foreground/60 mt-1">
+                <p className="font-gellix text-xs text-foreground/60 mt-1">
                   Price at which tokens will be allocated to winners
                 </p>
               </div>
 
               {endStatus && (
                 <div
-                  className={`text-sm p-3 rounded-lg font-inter ${
+                  className={`text-sm p-3 rounded-lg font-gellix ${
                     endStatus.includes('successfully')
                       ? 'bg-green-100 text-green-800'
                       : endStatus.includes('Error')
@@ -474,7 +489,7 @@ const AuctionManagementPage = () => {
                     setClearingPrice('');
                     setEndStatus(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-inter text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                   disabled={isEnding}
                 >
                   Cancel
@@ -482,7 +497,7 @@ const AuctionManagementPage = () => {
                 <button
                   onClick={handleEndAuction}
                   disabled={isEnding}
-                  className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg font-inter text-sm font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50"
                 >
                   {isEnding ? 'Ending...' : 'End Auction'}
                 </button>
