@@ -1,13 +1,16 @@
-
+import { useState } from 'react';
 import { LeverageForm } from '../../../components/leverage/LeverageForm';
 import { PositionsTable } from '../../../components/leverage/PositionsTable';
 import { PositionStats } from '../../../components/leverage/PositionStats';
 import HeroBackground from '../../landing/HeroBackground';
 import Navbar from '../../../components/common/Navbar';
 import { useLeverageStore } from '../../../stores/leverage.store';
+import type { LeveragePosition } from '../../../types/leverage.types';
+import { PositionDetailChart } from '../../../components/leverage/PositionDetailChart';
 
 const BorrowPage = () => {
   const { positions, isLoading } = useLeverageStore();
+  const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
 
   return (
     <div className="min-h-screen bg-[#f6fbff] overflow-x-hidden">
@@ -37,11 +40,24 @@ const BorrowPage = () => {
               <LeverageForm />
             </div>
             <div className="lg:col-span-2">
-              <PositionsTable positions={positions} isLoading={isLoading} />
+              <PositionsTable
+                positions={positions}
+                isLoading={isLoading}
+                onSelectPosition={setSelectedPosition}
+              />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Position Detail Modal */}
+      {selectedPosition && (
+        <PositionDetailChart
+          position={selectedPosition}
+          isOpen={!!selectedPosition}
+          onClose={() => setSelectedPosition(null)}
+        />
+      )}
     </div>
   );
 };

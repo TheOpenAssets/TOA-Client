@@ -879,7 +879,6 @@ const MarketplacePage = () => {
                     const chartData = assetChartData[asset.id] || [];
                     const assetColor = getAssetColor(asset.id);
                     const isAuction = asset.listingType === 'AUCTION';
-                    const assetWithSupply = asset as MarketplaceAsset & { totalSupply?: number };
 
                     return (
                       <div

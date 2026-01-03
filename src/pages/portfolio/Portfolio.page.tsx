@@ -9,7 +9,6 @@ import { useSettleBid } from '../../hooks/useAuctionContracts';
 import { contractService } from '../../lib/api/contract.service';
 import { useToast } from '../../hooks/useToast';
 import { ToastContainer } from '../../components/ui/toast';
-import HeroBackground from '../landing/HeroBackground';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';

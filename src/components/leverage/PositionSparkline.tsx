@@ -1,5 +1,4 @@
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
-import type { TooltipProps } from 'recharts';
 import type { HarvestEvent, PositionTimelineData, HealthStatus, LeveragePosition } from '../../types/leverage.types';
 import { formatUnits } from 'viem';
 
@@ -61,7 +60,6 @@ const HarvestTooltip = (props: any) => {
   if (!harvestEvent) return null;
 
   const mETHSwapped = (parseFloat(harvestEvent.mETHSwapped) / 1e18).toFixed(6);
-  const usdcReceived = (parseFloat(harvestEvent.usdcReceived) / 1e6).toFixed(4);
   const interestPaid = (parseFloat(harvestEvent.interestPaid) / 1e6).toFixed(4);
 
   return (

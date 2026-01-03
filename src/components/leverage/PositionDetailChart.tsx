@@ -10,7 +10,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import type { TooltipProps } from 'recharts';
 import { X } from 'lucide-react';
 import type { HarvestEvent, PositionTimelineData, LeveragePosition } from '../../types/leverage.types';
 import { formatUnits } from 'viem';
@@ -334,7 +333,6 @@ function buildTimelineFromHarvests(
   let remainingCollateral = initialCollateral;
 
   // Add starting point at position creation
-  const startTime = new Date(position.createdAt).getTime();
   const initialMETHValue = initialCollateral * ASSUMED_METH_PRICE;
 
   points.push({
