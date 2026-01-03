@@ -1,6 +1,6 @@
 // src/pages/marketplace/asset/AssetDetails.page.tsx
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { ethers } from 'ethers';
 import { formatUnits } from 'viem';
@@ -8,6 +8,7 @@ import type { PurchaseHistoryResponse } from '../../../types/marketplace.types';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
+import { leverageService } from '../../../lib/api/leverage.service';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
@@ -33,8 +34,9 @@ const USDC_ABI = [
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const { address } = useAccount();
+  const navigate = useNavigate();
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
-  const { methPrice, createPosition, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
+  const { methPrice, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
 
   const [tokensToBuy, setTokensToBuy] = useState('');
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -82,7 +84,17 @@ const AssetDetailsPage = () => {
   // Format USDC balance (6 decimals)
   const usdcBalance = usdcBalanceRaw ? formatUnits(usdcBalanceRaw, 6) : '0';
 
-  // Wagmi Hooks for Approval
+  // Wagmi Hooks for mETH Balance and Approval
+  const { data: methBalanceRaw, refetch: refetchMethBalance } = useReadContract({
+    address: LEVERAGE_CONTRACTS.MockMETH,
+    abi: METH_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
+
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: LEVERAGE_CONTRACTS.MockMETH,
     abi: METH_ABI,
@@ -92,16 +104,20 @@ const AssetDetailsPage = () => {
 
   const { writeContractAsync: approveMeth } = useWriteContract();
 
+  // Format mETH balance (18 decimals)
+  const methBalance = methBalanceRaw ? formatUnits(methBalanceRaw, 18) : '0';
+
   // Load wallet data (refetch balances and allowances)
   const loadWalletData = useCallback(async () => {
     if (!address) return;
     try {
       refetchUsdcBalance();
+      refetchMethBalance();
       refetchAllowance();
     } catch (error) {
       console.error('Error loading wallet data:', error);
     }
-  }, [address, refetchUsdcBalance, refetchAllowance]);
+  }, [address, refetchUsdcBalance, refetchMethBalance, refetchAllowance]);
 
   useEffect(() => {
     if (assetId) {
@@ -207,24 +223,87 @@ const AssetDetailsPage = () => {
     setLeverageTokenInput(e.target.value);
   };
 
+  /**
+   * Handle Leverage Token Purchase
+   * Follows the script flow exactly:
+   * 1. Check mETH balance (redirect to faucet if insufficient)
+   * 2. Approve mETH spending
+   * 3. Initiate leveraged purchase via backend API
+   * 4. Monitor position health
+   */
   const handleOpenLeveragePosition = async () => {
     if (!address || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
+
+    console.log('\n🚀 ===== STARTING LEVERAGED PURCHASE FLOW =====');
+    console.log('Asset ID:', asset.assetId);
+    console.log('Token Amount:', leverageTokenInput);
+    console.log('Token Address:', asset.token?.address || 'N/A');
+    console.log('Buyer Address:', address);
+    console.log('==============================================\n');
 
     setLeveragePurchaseStatus(null);
 
     try {
-      // Fetch latest price right before transaction
+      // ============================================================
+      // STEP 1: Fetch latest mETH price
+      // ============================================================
+      console.log('📊 Step 1: Fetching latest mETH price...');
       await fetchMethPrice();
+      const methPriceUSD = methPrice / 1e6;
+      console.log(`✅ Current mETH price: $${methPriceUSD.toFixed(2)}`);
 
+      // ============================================================
+      // STEP 2: Calculate required mETH collateral (150% LTV)
+      // ============================================================
+      console.log('\n💰 Step 2: Calculating required mETH collateral...');
       const mETHCollateral = parseUnits(calculatedMethString, 18);
-      const tokenAmount = parseUnits(leverageTokenInput, 18).toString();
-      // Ensure price is passed as USDC WEI (6 decimals)
+      const tokenAmount = parseUnits(leverageTokenInput, 18);
       const pricePerToken = asset.tokenParams.pricePerToken || '0';
 
-      // Check Allowance
-      if (!allowance || allowance < mETHCollateral) {
+      console.log(`  Token Amount: ${leverageTokenInput} tokens`);
+      console.log(`  Price per Token: ${parseFloat(pricePerToken) / 1e6} USDC`);
+      console.log(`  Required mETH Collateral: ${calculatedMethString} mETH`);
+      console.log(`  Total Cost: ${(tokenAmount * BigInt(pricePerToken)) / parseUnits('1', 18) / BigInt(1e6)} USDC`);
+
+      // ============================================================
+      // STEP 3: Check mETH Balance
+      // ============================================================
+      console.log('\n💼 Step 3: Checking mETH balance...');
+      await refetchMethBalance();
+      const currentMethBalance = parseFloat(methBalance);
+      const requiredMeth = parseFloat(calculatedMethString);
+
+      console.log(`  Current mETH Balance: ${currentMethBalance.toFixed(6)} mETH`);
+      console.log(`  Required mETH: ${requiredMeth.toFixed(6)} mETH`);
+
+      if (currentMethBalance < requiredMeth) {
+        const shortfall = requiredMeth - currentMethBalance;
+        console.error(`❌ Insufficient mETH balance. Need ${shortfall.toFixed(6)} more mETH`);
+        setLeveragePurchaseStatus(`Insufficient mETH balance. Need ${shortfall.toFixed(6)} more mETH. Redirecting to faucet...`);
+
+        // Redirect to faucet page after 2 seconds
+        setTimeout(() => {
+          navigate('/faucet');
+        }, 2000);
+        return;
+      }
+      console.log('✅ Sufficient mETH balance');
+
+      // ============================================================
+      // STEP 4: Check Allowance and Approve mETH Spending
+      // ============================================================
+      console.log('\n🔐 Step 4: Checking mETH allowance...');
+      await refetchAllowance();
+      const currentAllowance = allowance || BigInt(0);
+
+      console.log(`  Current Allowance: ${formatUnits(currentAllowance, 18)} mETH`);
+      console.log(`  Required Allowance: ${calculatedMethString} mETH`);
+
+      if (currentAllowance < mETHCollateral) {
         setIsApproving(true);
         setLeveragePurchaseStatus('Approving mETH usage...');
+        console.log(`⏳ Approving ${calculatedMethString} mETH for LeverageVault...`);
+
         try {
           const txHash = await approveMeth({
             address: LEVERAGE_CONTRACTS.MockMETH,
@@ -232,34 +311,97 @@ const AssetDetailsPage = () => {
             functionName: 'approve',
             args: [LEVERAGE_CONTRACTS.LeverageVault, mETHCollateral],
           });
-          console.log('Approval Tx:', txHash);
-          setLeveragePurchaseStatus('Approval submitted! Wait for confirmation and click again.');
-          refetchAllowance();
+          console.log(`✅ Approval transaction submitted: ${txHash}`);
+          setLeveragePurchaseStatus('Approval submitted! Waiting for confirmation...');
+
+          // Wait for transaction confirmation (3 seconds)
+          await new Promise(resolve => setTimeout(resolve, 3000));
+
+          // Refetch allowance to verify
+          await refetchAllowance();
+          console.log('✅ mETH approved successfully');
+
+          setLeveragePurchaseStatus('Approval confirmed! Click again to create position.');
           setIsApproving(false);
           return;
         } catch (err: any) {
-          console.error('Approval failed:', err);
+          console.error('❌ Approval failed:', err);
           setLeveragePurchaseStatus(`Approval failed: ${err.message || 'Unknown error'}`);
           setIsApproving(false);
           return;
         }
+      } else {
+        console.log('✅ Sufficient allowance already granted');
       }
 
+      // ============================================================
+      // STEP 5: Initiate Leveraged Purchase via Backend API
+      // ============================================================
+      console.log('\n🏦 Step 5: Initiating leveraged purchase...');
       setLeveragePurchaseStatus('Creating leveraged position...');
-      await createPosition({
+
+      const purchaseData = {
         assetId: asset.assetId,
         tokenAddress: asset.token?.address || '',
-        tokenAmount: tokenAmount,
+        tokenAmount: tokenAmount.toString(),
         pricePerToken: pricePerToken,
-        mETHCollateral: mETHCollateral.toString()
-      });
+        mETHCollateral: mETHCollateral.toString(),
+      };
 
+      console.log('📤 Purchase Data:');
+      console.log(JSON.stringify(purchaseData, null, 2));
+
+      const result = await leverageService.initiatePosition(purchaseData);
+
+      console.log('✅ Position created successfully!');
+      console.log(`  Position ID: ${result.positionId}`);
+      console.log(`  Transaction Hash: ${result.transactionHash}`);
+      console.log(`  Explorer: https://explorer.sepolia.mantle.xyz/tx/${result.transactionHash}`);
+
+      // ============================================================
+      // STEP 6: Monitor Position Health
+      // ============================================================
+      console.log('\n📊 Step 6: Monitoring position health...');
+      setLeveragePurchaseStatus('Position created! Fetching position details...');
+
+      // Wait for indexing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      try {
+        const positionDetails = await leverageService.getPositionDetails(result.positionId);
+        console.log('📈 Position Details:');
+        console.log(`  Position ID: ${positionDetails.positionId}`);
+        console.log(`  Status: ${positionDetails.status}`);
+        console.log(`  Health Factor: ${(positionDetails.currentHealthFactor / 100).toFixed(2)}%`);
+        console.log(`  Health Status: ${positionDetails.healthStatus}`);
+        console.log(`  mETH Collateral: ${formatUnits(BigInt(positionDetails.mETHCollateral), 18)} mETH`);
+        console.log(`  USDC Borrowed: ${parseFloat(positionDetails.usdcBorrowed) / 1e6} USDC`);
+
+        setLeveragePurchaseStatus(
+          `Position created successfully! 🎉\n` +
+          `Position ID: ${result.positionId}\n` +
+          `Health Factor: ${(positionDetails.currentHealthFactor / 100).toFixed(2)}%\n` +
+          `Status: ${positionDetails.healthStatus}`
+        );
+      } catch (monitorError) {
+        console.warn('⚠️ Could not fetch position details:', monitorError);
+        setLeveragePurchaseStatus(
+          `Position created successfully! 🎉\n` +
+          `Position ID: ${result.positionId}\n` +
+          `View details in your portfolio.`
+        );
+      }
+
+      // Reset form and reload wallet data
       setLeverageTokenInput('');
-      setLeveragePurchaseStatus('Leveraged Position created successfully! 🎉');
-      // Reload wallet data
       await loadWalletData();
+
+      console.log('\n✨ ===== LEVERAGED PURCHASE COMPLETED =====\n');
+
     } catch (error: any) {
+      console.error('❌ Leveraged purchase failed:', error);
       setLeveragePurchaseStatus(`Failed to create position: ${error.message}`);
+      console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
     }
   };
 

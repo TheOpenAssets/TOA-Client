@@ -78,16 +78,16 @@ export const MyAssetsTable = ({
             <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Asset ID
             </th>
-            <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
+            <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Tokens Owned
             </th>
-            <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
+            <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Amount Invested
             </th>
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Status
             </th>
-            <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
+            <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Yield Earned
             </th>
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
@@ -123,14 +123,14 @@ export const MyAssetsTable = ({
                 </td>
 
                 {/* Tokens Owned */}
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-center">
                   <div className="font-gellix text-sm font-normal text-foreground">
                     {formatTokenAmount(asset.totalAmount)}
                   </div>
                 </td>
 
                 {/* Amount Invested */}
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-center">
                   <div className="font-gellix text-sm font-normal text-foreground">
                     ${formatCurrency(formatUSDCAmount(asset.totalInvested))}
                   </div>
@@ -144,7 +144,7 @@ export const MyAssetsTable = ({
                 </td>
 
                 {/* Yield Earned */}
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-center">
                   <div className="flex flex-col gap-2">
                   {hoveredRow === asset.assetId &&
                   asset.yieldInfo?.claimableYieldFormatted &&
@@ -156,7 +156,7 @@ export const MyAssetsTable = ({
                       onClaimYield(asset.assetId);
                     }}
                     disabled={claimingAssetId === asset.assetId}
-                    className="px-4 py-2 bg-black  text-center text-white rounded-lg font-gellix text-sm font-normal hover:bg-black/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 py-2 bg-black  text-center text-white rounded-lg font-gellix text-sm font-normal hover:bg-black/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                     {claimingAssetId === asset.assetId
                       ? claimStatus

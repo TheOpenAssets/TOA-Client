@@ -380,10 +380,10 @@ const PortfolioPage = () => {
             {/* Center: Navigation */}
             <nav className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/portfolio')}
+              onClick={() => navigate('/marketplace')}
               className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
-              Portfolio
+              Marketplace
             </button>
             <button
               onClick={() => navigate('/marketplace')}
