@@ -351,7 +351,6 @@ const PortfolioPage = () => {
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       <div className="h-screen flex flex-col bg-[#ffffff] overflow-hidden">
-        <HeroBackground />
 
       {/* Top Navigation Bar - Fixed Height */}
       <header className="bg-transparent  z-40 relative flex-shrink-0">
@@ -380,13 +379,13 @@ const PortfolioPage = () => {
             {/* Center: Navigation */}
             <nav className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/portfolio')}
+              onClick={() => navigate('/marketplace')}
               className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
-              Portfolio
+              Marketplace
             </button>
             <button
-              onClick={() => navigate('/marketplace')}
+              onClick={() => navigate('/')}
               className="font-geist border border-gray-200 text-sm font-medium text-foreground hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
               Trade
