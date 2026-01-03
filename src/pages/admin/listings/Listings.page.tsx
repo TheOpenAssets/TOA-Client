@@ -46,6 +46,31 @@ const ListingsPage = () => {
 
   useEffect(() => {
     fetchAssets();
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   const handleEndAuctionClick = async (asset: ApiAdminAsset) => {
@@ -131,7 +156,7 @@ const ListingsPage = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 scrollbar-hide">
       <div>
         <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">Asset Listings</h2>
         <p className="font-gellix text-sm text-foreground/70">
@@ -140,7 +165,7 @@ const ListingsPage = () => {
       </div>
 
       <div
-        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+        className="bg-white rounded-2xl scrollbar-hide overflow-hidden"
         style={{
           boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),

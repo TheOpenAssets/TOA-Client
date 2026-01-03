@@ -1,31 +1,34 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { ParticleTextEffect } from "./interactive-text-particle";
+import { ShaderAnimation } from "./shimmer-lines";
+import { Button } from "./button";
 
 export const NotFoundPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-[#000000] relative overflow-hidden">
-      {/* Particle Text Effect Background */}
-      <ParticleTextEffect
-        text="404"
-        className="absolute top-0 left-0"
-        colors={['9333ea', 'a855f7', 'c084fc', '3b82f6', '60a5fa']}
-        animationForce={80}
-        particleDensity={4}
-      />
-      <h1 className="absolute font-bold font-geist top-4/5 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-gray-700">Page not Found</h1>
+    <div className="relative w-full h-screen overflow-hidden bg-black">
+      {/* Background Animation */}
+      <div className="absolute inset-0 z-0">
+        <ShaderAnimation />
+      </div>
 
-      {/* Return Home Button */}
-      <div className="absolute top-8 left-8 z-10">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-3 px-8 py-3.5 cta-button rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+      {/* Content Overlay */}
+      <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-center px-4">
+        <h1 className="text-[120px] md:text-[180px] font-bold text-white leading-none tracking-tighter select-none drop-shadow-2xl">
+          404
+        </h1>
+        <p className="text-xl md:text-2xl text-white/90 mb-10 font-light tracking-[0.2em] uppercase">
+         Looks like we have a curious wanderer !
+        </p>
+
+        <Button
+          onClick={() => navigate("/")}
+          variant="outline"
+          size="lg"
+          className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Return Home</span>
-        </button>
+          Let's get you back to home
+        </Button>
       </div>
     </div>
   );

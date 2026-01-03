@@ -23,6 +23,9 @@ import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
 import AssetDetailsPage from '../../pages/marketplace/asset/AssetDetails.page';
 import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.page';
+
+import SecondaryMarketplacePage from '../../pages/secondary-marketplace/SecondaryMarketplace.page';
+import TradingEnginePage from '../../pages/secondary-marketplace/TradingEngine.page';
 import BorrowPage from '../../pages/app/borrow/Borrow.page';
 
 // Portfolio
@@ -56,6 +59,14 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/borrow',
     element: <BorrowPage />,
+  },
+  {
+    path: '/trade',
+    element: <SecondaryMarketplacePage />,
+  },
+  {
+    path: '/trade/:assetId',
+    element: <TradingEnginePage />,
   },
   {
     path: '/portfolio',

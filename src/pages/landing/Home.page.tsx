@@ -6,12 +6,13 @@ import Footer from "./Footer.page";
 import AutoRepayingSection from "./FeaturePage";
 // import HeroBackground from "./HeroBackground";
 import FadeIn from "../../components/ui/fadein"; // Adjust path as needed
+// import { ShaderAnimation } from "../../components/ui/shader-animation";
 
 const HomePage = () => {
   return (
     <main className="overflow-y-scroll snap-y snap-mandatory overflow-x-hidden h-screen">
       {/* SECTION 1: HERO */}
-      <div className="snap-start min-h-screen relative">
+      <div className="snap-start min-h-screen">
         {/* Background & Nav usually shouldn't fade in/out on scroll, they are structural */}
         <Navbar />
 

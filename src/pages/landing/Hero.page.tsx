@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { ShimmerButton } from "../../components/ui/shimmer-button";
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { useToast } from "../../hooks/useToast";
+// import { ShaderAnimation } from "../../components/ui/shader-animation";
 
 const HeroSection = () => {
   const { error, isAuthenticating, handleGetStarted, handleIssuerGetStarted } = useAuthActions();

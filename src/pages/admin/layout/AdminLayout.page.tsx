@@ -23,6 +23,8 @@ const AdminLayout = () => {
   const { user } = useAuthStore();
 
   useEffect(() => {
+    
+
     const verifyAuth = async () => {
       try {
         // Check if access token exists
@@ -54,6 +56,32 @@ const AdminLayout = () => {
     };
 
     verifyAuth();
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for IE, Edge and Firefox */
+      * {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+      }
+      
+      /* Ensure scrolling still works */
+      html, body {
+        overflow: auto;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, [navigate, user]);
 
   const navigation = [
@@ -124,7 +152,7 @@ const AdminLayout = () => {
                       <img
                         src="./ALogo-removebg-preview.svg"
                         alt="Logo"
-                        onClick={() => navigate('/admin')}
+                        onClick={() => navigate('/')}
                         className='cursor-pointer'
                       />
                     </span>
@@ -173,7 +201,7 @@ const AdminLayout = () => {
         {/* Main Content - Full Width */}
         <div className="flex-1 overflow-hidden">
           <div className="max-w-[1600px] mx-auto px-6 py-6 h-full z-40 relative">
-            <main className="h-full overflow-y-auto">
+            <main className="h-full overflow-y-auto scollbar-hide">
               <Outlet />
             </main>
           </div>
