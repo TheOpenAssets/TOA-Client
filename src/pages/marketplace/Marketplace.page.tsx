@@ -1,6 +1,6 @@
 // src/pages/marketplace/Marketplace.page.tsx
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect } from 'wagmi';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
