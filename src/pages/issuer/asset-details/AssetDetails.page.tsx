@@ -2,26 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  FileText,
-  DollarSign,
-  Shield,
-  Package,
   CheckCircle,
   Clock,
   Tag,
-  BarChart2,
 } from 'lucide-react';
-import HeroBackground from '../../landing/HeroBackground';
 
 interface AssetDetailsPageProps {
   asset: any;
 }
 
-type TabType = 'overview' | 'invoice' | 'cryptography' | 'timeline';
-
 const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {

@@ -57,9 +57,6 @@ const IssuerDashboardPage = () => {
   const [assets, setAssets] = useState<IssuerAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
-  const [hoverPosition] = useState({ top: 0, left: 0 });
-  const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Verify authentication on component mount
@@ -119,17 +116,6 @@ const IssuerDashboardPage = () => {
   }, []);
 
   const stats = calculateStats(assets);
-
-  const handleCardMouseEnter = () => {
-    if (hideTimeoutId) {
-      clearTimeout(hideTimeoutId);
-      setHideTimeoutId(null);
-    }
-  };
-
-  const handleCardMouseLeave = () => {
-    setHoveredAssetId(null);
-  };
 
   // Open asset upload modal
   const openAssetOnboardingForm = () => {
