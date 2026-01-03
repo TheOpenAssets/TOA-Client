@@ -24,13 +24,33 @@ const PortfolioPage = () => {
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
-  const { fetchMyPositions } = useLeverageStore();
+  const { positions, fetchMyPositions, isLoading: isLoadingPositions } = useLeverageStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
 
   // Tab state for portfolio sections
   type PortfolioTab = 'assets' | 'bids' | 'positions';
   const [activeTab, setActiveTab] = useState<PortfolioTab>('assets');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filtered data based on search term
+  const filteredAssets = portfolio?.portfolio?.filter(asset =>
+    asset.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    asset.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  ) || [];
+
+  const filteredBids = userBids.filter(bid =>
+    bid.assetId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bid.auctionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  ) || [];
+
+  const filteredPositions = positions.filter(position =>
+    position.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    position.assetSymbol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  ) || [];
 
   // Contract interaction for settling bids (investor-settle.sh verified)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -178,6 +198,11 @@ const PortfolioPage = () => {
       setClaimStatus('');
     }
   };
+
+
+  const handlenavigate=()=>{
+  navigate('/')
+  }
 
   /**
    * Execute yield claim after user confirms
@@ -335,8 +360,8 @@ const PortfolioPage = () => {
             {/* Left: Logo + Search */}
             <div className="flex items-center gap-6">
                <div className="  top-0 left-0">
-                <div className="w-16 h-8 bg-foreground rounded-full  top-0 left-0">
-                  <span className="text-white font-bold text-lg top-0 left-0"><img src="./ALogo-removebg-preview.svg" alt="Logo" /></span>
+                <div className="w-32 h-16 bg-foreground rounded-full  top-0 left-0">
+                  <span className="text-white font-bold text-lg top-0 left-0 "><img src="./ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
                 </div>
               </div>
 
@@ -346,31 +371,30 @@ const PortfolioPage = () => {
                   type="text"
                   placeholder="Search assets"
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg font-gellix text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
 
             {/* Center: Navigation */}
-            <nav className="flex items-center gap-8">
-              <button
-                onClick={() => navigate('/marketplace')}
-                className="font-gellix text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
-              >
-                Market
-              </button>
-              <button
-                onClick={() => navigate('/marketplace')}
-                className="font-gellix text-sm font-medium text-foreground/70 hover:text-blue-600 transition-colors"
-              >
-                Trade
-              </button>
-              <button
-                onClick={() => navigate('/portfolio')}
-                className="font-gellix text-sm font-medium text-foreground hover:text-blue-600 transition-colors"
-              >
-                Portfolio
-              </button>
-            </nav>
+            <nav className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/portfolio')}
+              className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+            >
+              Portfolio
+            </button>
+            <button
+              onClick={() => navigate('/marketplace')}
+              className="font-geist border border-gray-200 text-sm font-medium text-foreground hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+            >
+              Trade
+            </button>
+            <button className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
+              Borrow
+            </button>
+          </nav>
 
             {/* Right: Wallet Display */}
             <div className="flex items-center gap-3">
@@ -401,7 +425,7 @@ const PortfolioPage = () => {
             <div className="lg:col-span-1 h-full">
               <PortfolioStats
                 totalAssetValue={totalAssetValue}
-                portfolioAssets={portfolio?.portfolio || []}
+                portfolioAssets={filteredAssets}
               />
             </div>
 
@@ -472,7 +496,7 @@ const PortfolioPage = () => {
         }}>
                     <div className="h-full flex flex-col"  >
                       <MyAssetsTable
-                        assets={portfolio?.portfolio || []}
+                        assets={filteredAssets}
                         onClaimYield={handleClaimYield}
                         claimingAssetId={claimingAssetId}
                         claimStatus={claimStatus}
@@ -490,7 +514,7 @@ const PortfolioPage = () => {
                   >
                     <div className="h-full flex flex-col">
                       <ActiveBidsTable
-                        bids={userBids}
+                        bids={filteredBids}
                         isLoading={isLoadingBids}
                         onSettleBid={(assetId, bidIndex, bidId) => {
                           setSettlingBidId(bidId);
@@ -512,7 +536,7 @@ const PortfolioPage = () => {
                     }`}
                   >
                     <div className="h-full flex flex-col overflow-y-auto p-6">
-                      <PositionsTable />
+                      <PositionsTable positions={filteredPositions} isLoading={isLoadingPositions} />
                     </div>
                   </div>
                 </div>

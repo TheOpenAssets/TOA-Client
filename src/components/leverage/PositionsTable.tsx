@@ -1,15 +1,14 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLeverageStore } from '../../stores/leverage.store';
 import { formatUnits } from 'viem';
+import type { LeveragePosition } from '../../types/leverage.types';
 
-export const PositionsTable = () => {
+interface PositionsTableProps {
+  positions: LeveragePosition[];
+  isLoading: boolean;
+}
+
+export const PositionsTable = ({ positions, isLoading }: PositionsTableProps) => {
   const navigate = useNavigate();
-  const { positions, fetchMyPositions, isLoading } = useLeverageStore();
-
-  useEffect(() => {
-    fetchMyPositions();
-  }, [fetchMyPositions]);
 
   const getHealthColor = (health: number) => {
     if (health >= 1.4) return 'text-green-600';

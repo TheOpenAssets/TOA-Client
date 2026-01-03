@@ -639,9 +639,16 @@ const AssetDetailsPage = () => {
                         <label htmlFor="total-price" className="text-xs text-[#6B7280] ">
                           Estimated Total Price
                         </label>
-                        <p id="total-price" className="text-2xl font-medium text-[#111111]">
-                          ${estimatedTotalPrice} USDC
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" 
+                            alt="USDC"
+                            className="w-6 h-6 rounded-full"
+                          />
+                          <p id="total-price" className="text-2xl font-medium text-[#111111]">
+                            ${estimatedTotalPrice} USDC
+                          </p>
+                        </div>
                       </div>
                       <div className="text-xs text-[#6B7280] space-y-1">
                         <div className="flex justify-between">
@@ -708,9 +715,16 @@ const AssetDetailsPage = () => {
                       <div className="bg-[#F3F4F6] rounded-2xl p-4 space-y-3">
                         <div>
                           <p className="text-xs text-[#6B7280] mb-1">Required Collateral</p>
-                          <p className="text-2xl font-medium text-[#111111]">
-                            {calculatedMethString || '0.00'} mETH
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src="/meth-crystal.svg" 
+                              alt="mETH"
+                              className="w-6 h-6 rounded-full"
+                            />
+                            <p className="text-2xl font-medium text-[#111111]">
+                              {calculatedMethString || '0.00'} mETH
+                            </p>
+                          </div>
                         </div>
                         <div className="pt-3 border-t border-gray-200">
                           <div className="flex justify-between items-center">

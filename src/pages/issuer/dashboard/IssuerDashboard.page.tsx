@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Plus, TrendingUp, Package, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { type IssuerAsset } from '../../../types/issuer.types';
-import { AssetHoverCard } from '../../../components/issuer/AssetHoverCard';
 import { AssetUploadModal } from '../../../components/issuer/AssetUploadModal';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
@@ -58,9 +57,6 @@ const IssuerDashboardPage = () => {
   const [assets, setAssets] = useState<IssuerAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
-  const [hoverPosition] = useState({ top: 0, left: 0 });
-  const [hideTimeoutId, setHideTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Verify authentication on component mount
@@ -120,17 +116,6 @@ const IssuerDashboardPage = () => {
   }, []);
 
   const stats = calculateStats(assets);
-
-  const handleCardMouseEnter = () => {
-    if (hideTimeoutId) {
-      clearTimeout(hideTimeoutId);
-      setHideTimeoutId(null);
-    }
-  };
-
-  const handleCardMouseLeave = () => {
-    setHoveredAssetId(null);
-  };
 
   // Open asset upload modal
   const openAssetOnboardingForm = () => {
@@ -195,7 +180,7 @@ const IssuerDashboardPage = () => {
       SCHEDULED: {
         label: 'Scheduled',
         className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-       },
+      },
       LISTED: {
         label: 'Listed',
         className: 'bg-green-100 text-green-700 border-green-200',
@@ -245,7 +230,7 @@ const IssuerDashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-            <HeroBackground />
+      <HeroBackground />
 
       {/* Header */}
       <header className=" bg-transparent border-b border-gray-200 relative top-0 z-40">
@@ -274,268 +259,246 @@ const IssuerDashboardPage = () => {
                 <Plus className="w-5 h-5" />
                 <span className="hidden sm:inline">Add New Asset</span>
               </Button>
+              <button
+                onClick={() => {
+                  authService.logout();
+                  navigate('/');
+                }}
+                className="bg-black hover:bg-black/90 text-white font-geist rounded-xl px-6 py-2.5 font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 overflow-hidden relative">
+      <main className="max-w-[85vw] mx-auto px-6 py-4 overflow-hidden relative">
         {/* Overview Section - Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 z-20 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 z-20 overflow-hidden">
           {/* Total Assets */}
-          <div
-        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-20"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-          >
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Package className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">Total Assets</p>
-          </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {loading ? '...' : stats.totalAssets}
-          </p>
-        </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 z-20">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+                <p className="font-geist text-sm text-[#6B7280] font-medium">Total Assets</p>
+              </div>
+              <p className="font-geist text-3xl font-semibold text-[#111111]">
+                {loading ? '...' : stats.totalAssets}
+              </p>
+            </div>
           </div>
 
           {/* Funds Raised */}
-          <div
-        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-20"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-          >
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">Funds Raised</p>
-          </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {loading ? '...' : formatCurrency(stats.fundsRaised)}
-          </p>
-        </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 z-20">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                </div>
+                <p className="font-geist text-sm text-[#6B7280] font-medium">Funds Raised</p>
+              </div>
+              <p className="font-geist text-3xl font-semibold text-[#111111]">
+                {loading ? '...' : formatCurrency(stats.fundsRaised / 1000000)}
+              </p>
+            </div>
           </div>
 
           {/* Assets Pending */}
-          <div
-        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-20"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-          >
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">Assets Pending</p>
-          </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {loading ? '...' : stats.assetsPending}
-          </p>
-        </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 z-20">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-yellow-50 rounded-lg">
+                  <Clock className="w-5 h-5 text-yellow-600" />
+                </div>
+                <p className="font-geist text-sm text-[#6B7280] font-medium">Assets Pending</p>
+              </div>
+              <p className="font-geist text-3xl font-semibold text-[#111111]">
+                {loading ? '...' : stats.assetsPending}
+              </p>
+            </div>
           </div>
 
           {/* Settled Assets */}
-          <div
-        className="rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
-          >
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-foreground/60" />
-            <p className="font-inter text-sm text-foreground/70 font-medium">Settled Assets</p>
-          </div>
-          <p className="font-geist text-4xl font-normal text-foreground">
-            {loading ? '...' : stats.settledAssets}
-          </p>
-        </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-purple-600" />
+                </div>
+                <p className="font-geist text-sm text-[#6B7280] font-medium">Settled Assets</p>
+              </div>
+              <p className="font-geist text-3xl font-semibold text-[#111111]">
+                {loading ? '...' : stats.settledAssets}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* My Assets Section */}
-        <div className="bg-[#d8dfe5] rounded-2xl p-8 shadow-lg overflow-hidden z-20">
-          <div className="mb-8">
-        <h2 className="font-geist text-3xl font-normal text-foreground">My Assets</h2>
-        <p className="font-inter text-sm text-foreground/70 mt-2">
-          Track and manage your tokenized assets portfolio
-        </p>
+        <div className="bg-transparent rounded-2xl p-8   overflow-hidden z-20">
+          <div className="mb-6">
+            <h2 className="font-geist text-2xl font-semibold text-[#111111]">My Assets</h2>
+            <p className="font-geist text-sm text-[#6B7280] mt-1">
+              Track and manage your tokenized assets portfolio
+            </p>
           </div>
 
           {/* Loading State */}
           {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-foreground/60" />
-          <p className="ml-3 font-inter text-foreground/70">Loading assets...</p>
-        </div>
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <p className="ml-3 font-geist text-[#6B7280]">Loading assets...</p>
+            </div>
           )}
 
           {/* Error State */}
           {error && !loading && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <p className="font-inter text-red-600 text-center">{error}</p>
-          <div className="mt-4 text-center">
-            <Button
-          onClick={() => window.location.reload()}
-          className="bg-foreground hover:bg-foreground/90 text-black font-inter"
-            >
-          Try Again
-            </Button>
-          </div>
-        </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+              <p className="font-geist text-red-600 text-center">{error}</p>
+              <div className="mt-4 text-center">
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="bg-black hover:bg-black/90 text-white font-geist"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
           )}
 
           {/* Assets Table */}
           {!loading && !error && (
-        <div className="overflow-x-auto bg-white rounded-xl">
-          <table className="w-full">
-            <thead className="border-b border-gray-200">
-          <tr>
-            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-              Asset Name
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-              Token Distribution
-            </th>
-           
-            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-              Invoice Amount
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-foreground/70 uppercase tracking-wider font-inter">
-              Status
-            </th>
-          </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-          {assets.map((asset: any) => {
-          // Map API response to display format
-          const invoiceNumber = asset.metadata?.invoiceNumber || asset.name || 'Unnamed Asset';
-          const assetType = asset.assetType || 'N/A';
+            <div className="overflow-x-auto rounded-lg">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider font-geist">
+                      Asset Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider font-geist">
+                      Token Distribution
+                    </th>
 
-          // Parse total supply from tokenParams (could be string or number, with/without decimals)
-          const totalSupplyRaw = asset.tokenParams?.totalSupply || '0';
-          const totalTokens = typeof totalSupplyRaw === 'string'
-            ? (totalSupplyRaw.length > 18 ? parseFloat(totalSupplyRaw) / 1e18 : parseFloat(totalSupplyRaw))
-            : totalSupplyRaw;
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider font-geist">
+                      Invoice Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider font-geist">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {assets.map((asset: any) => {
+                    // Map API response to display format
+                    const invoiceNumber = asset.metadata?.invoiceNumber || asset.name || 'Unnamed Asset';
+                    const assetType = asset.assetType || 'N/A';
 
-          // Get sold tokens from listing
-          const soldTokensRaw = asset.listing?.sold || '0';
-          const soldTokens = typeof soldTokensRaw === 'string'
-            ? (soldTokensRaw.length > 18 ? parseFloat(soldTokensRaw) / 1e18 : parseFloat(soldTokensRaw))
-            : soldTokensRaw;
+                    // Parse total supply from tokenParams (could be string or number, with/without decimals)
+                    const totalSupplyRaw = asset.tokenParams?.totalSupply || '0';
+                    const totalTokens = typeof totalSupplyRaw === 'string'
+                      ? (totalSupplyRaw.length > 18 ? parseFloat(totalSupplyRaw) / 1e18 : parseFloat(totalSupplyRaw))
+                      : totalSupplyRaw;
 
-          const soldPercentage = totalTokens > 0 ? (soldTokens / totalTokens) * 100 : 0;
+                    // Get sold tokens from listing
+                    const soldTokensRaw = asset.listing?.sold || '0';
+                    const soldTokens = typeof soldTokensRaw === 'string'
+                      ? (soldTokensRaw.length > 18 ? parseFloat(soldTokensRaw) / 1e18 : parseFloat(soldTokensRaw))
+                      : soldTokensRaw;
 
-          // Get invoice details from metadata
-          const faceValue = parseFloat(asset.metadata?.faceValue || '0');
-          const dueDate = asset.metadata?.dueDate;
+                    const soldPercentage = totalTokens > 0 ? (soldTokens / totalTokens) * 100 : 0;
 
-          return (
-            <tr
-              key={asset._id || asset.assetId}
-              className="hover:bg-gray-50/50 transition-all duration-200 cursor-pointer relative group"
-              
-              onClick={() => handleViewAssetDetails(asset.assetId)}
-            >
-              <td className="px-6 py-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <Package className="w-5 h-5 text-foreground/60" />
-              </div>
-              <div>
-                <div className="font-geist font-normal text-foreground text-base">
-              {invoiceNumber}
+                    // Get invoice details from metadata
+                    const faceValue = parseFloat(asset.metadata?.faceValue || '0');
+                    const dueDate = asset.metadata?.dueDate;
+
+                    return (
+                      <tr
+                        key={asset._id || asset.assetId}
+                        className="hover:bg-gray-50 transition-all duration-200 cursor-pointer relative group"
+
+                        onClick={() => handleViewAssetDetails(asset.assetId)}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <Package className="w-5 h-5 text-[#6B7280]" />
+                            </div>
+                            <div>
+                              <div className="font-geist font-medium text-[#111111] text-sm">
+                                {invoiceNumber}
+                              </div>
+                              <div className="font-geist text-xs text-[#6B7280] mt-0.5">
+                                {assetType}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-geist text-sm mb-2">
+                            <span className="font-semibold text-[#111111]">
+                              {soldTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </span>
+                            <span className="text-[#6B7280]">
+                              {' '}
+                              / {totalTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </span>
+                          </div>
+                          {/* Progress bar */}
+                          <div className="w-32 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-blue-600 to-blue-400 h-1.5 rounded-full transition-all duration-500"
+                              style={{ width: `${soldPercentage}%` }}
+                            />
+                          </div>
+                          <div className="font-geist text-xs text-[#6B7280] mt-1">
+                            {soldPercentage.toFixed(1)}% Sold
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="font-geist font-semibold text-[#111111] text-sm">
+                            {formatCurrency(faceValue)}
+                          </div>
+                          <div className="font-geist text-xs text-[#6B7280] mt-0.5">
+                            Due: {dueDate ? new Date(dueDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">{getStatusBadge(asset.status)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {/* Empty State (if no assets) */}
+              {assets.length === 0 && (
+                <div className="px-6 py-16 text-center">
+                  <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="font-geist text-lg font-semibold text-[#111111] mb-2">
+                    No assets yet
+                  </h3>
+                  <p className="font-geist text-sm text-[#6B7280] mb-6">
+                    Get started by creating your first tokenized asset
+                  </p>
+                  <Button
+                    onClick={openAssetOnboardingForm}
+                    className="bg-black hover:bg-black/90 text-white font-geist rounded-xl px-5 py-2.5 shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Asset
+                  </Button>
                 </div>
-                <div className="font-inter text-xs text-foreground/60 mt-0.5">
-              {assetType}
-                </div>
-              </div>
+              )}
             </div>
-              </td>
-              <td className="px-6 py-5">
-            <div className="font-inter text-sm mb-2">
-              <span className="font-semibold text-foreground text-base">
-                {soldTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </span>
-              <span className="text-foreground/60">
-                {' '}
-                / {totalTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </span>
-            </div>
-            {/* Progress bar */}
-            <div className="w-32 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-black h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${soldPercentage}%` }}
-              />
-            </div>
-            <div className="font-inter text-xs text-foreground/60 mt-1">
-              {soldPercentage.toFixed(1)}% Sold
-            </div>
-              </td>
-              
-              <td className="px-6 py-5">
-            <div className="font-geist font-normal text-foreground text-base">
-              {formatCurrency(faceValue)}
-            </div>
-            <div className="font-inter text-xs text-foreground/60 mt-0.5">
-              Due: {dueDate ? new Date(dueDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              }) : 'N/A'}
-            </div>
-              </td>
-              <td className="px-6 py-5">{getStatusBadge(asset.status)}</td>
-            </tr>
-          );
-            })}
-            </tbody>
-          </table>
-
-          {/* Render Hover Card Outside Table */}
-          {hoveredAssetId && (
-            <div
-          onMouseEnter={handleCardMouseEnter}
-          onMouseLeave={handleCardMouseLeave}
-            >
-          <AssetHoverCard
-            asset={assets.find((a: any) => a.assetId === hoveredAssetId)!}
-            onViewMore={() => handleViewAssetDetails(hoveredAssetId!)}
-            position={hoverPosition}
-          />
-            </div>
-          )}
-
-          {/* Empty State (if no assets) */}
-          {assets.length === 0 && (
-            <div className="px-6 py-12 text-center">
-          <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="font-geist text-lg font-semibold text-foreground mb-2">
-            No assets yet
-          </h3>
-          <p className="font-inter text-sm text-muted-foreground mb-6">
-            Get started by creating your first tokenized asset
-          </p>
-          <Button
-            onClick={openAssetOnboardingForm}
-            className="bg-purple-500 hover:bg-purple-600 text-white font-inter"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Asset
-          </Button>
-            </div>
-          )}
-        </div>
           )}
         </div>
       </main>
-      {/* Sticky Logout Button */}
-      <div className="fixed bottom-6 left-6 z-50">
-        <button
-          onClick={() => {
-        authService.logout();
-        navigate('/');
-          }}
-          className="bg-black/50 hover:bg-black/90 text-white font-geist rounded-xl px-6 py-3  font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          Logout
-        </button>
-      </div>
 
       {/* Asset Upload Modal */}
       <AssetUploadModal

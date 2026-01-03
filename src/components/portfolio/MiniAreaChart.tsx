@@ -22,7 +22,7 @@ export const MiniAreaChart = ({
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="absolute bottom-6 right-6 w-[300px] h-[150px] opacity-25 pointer-events-none">
+    <div className="absolute bottom-6 right-6 w-[350px] h-[150px] opacity-80 pointer-events-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}

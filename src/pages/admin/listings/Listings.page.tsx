@@ -73,11 +73,10 @@ const ListingsPage = () => {
 
     setIsEndingAuction(true);
     try {
-      // The clearing price from the input is in USDC, but the backend expects it in wei (6 decimals).
       const clearingPriceWei = ethers.parseUnits(clearingPrice, 6).toString();
-      
+
       info('Ending auction...', 'This may take a moment. The backend is processing the on-chain transaction.');
-      
+
       const result = await adminService.endAuctionOnChain(selectedAsset.assetId, clearingPriceWei);
 
       if (!result.success) {
@@ -87,7 +86,7 @@ const ListingsPage = () => {
       success('Auction Ended Successfully', `${selectedAsset.metadata.invoiceNumber} has been successfully ended. TX: ${result.transactionHash.slice(0,10)}...`);
 
       setIsModalOpen(false);
-      fetchAssets(); // Refresh the list
+      fetchAssets();
 
     } catch (err: unknown) {
       const error = err as Error;
@@ -107,8 +106,10 @@ const ListingsPage = () => {
   if (isLoading && assets.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">Loading listings...</span>
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
+          <span className="font-gellix text-sm text-foreground">Loading listings...</span>
+        </div>
       </div>
     );
   }
@@ -116,86 +117,115 @@ const ListingsPage = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-red-500">{error}</p>
+        <div className="text-center">
+          <div className="font-gellix text-lg text-red-600 mb-4">{error}</div>
+          <button
+            onClick={fetchAssets}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground">Asset Listings</h1>
-      <p className="text-muted-foreground mt-2 mb-6">
-        View and manage all static and auction listings on the marketplace.
-      </p>
+    <div className="space-y-8">
+      <div>
+        <h2 className="font-gellix text-3xl font-semibold text-foreground mb-2">Asset Listings</h2>
+        <p className="font-gellix text-sm text-foreground/70">
+          View and manage all static and auction listings on the marketplace.
+        </p>
+      </div>
 
-      <div className="bg-white rounded-lg border shadow-sm">
-        {/* Fake Table Header */}
-        <div className="flex p-4 border-b bg-gray-50 rounded-t-lg font-semibold text-sm text-muted-foreground">
-          <div className="w-1/4">Asset</div>
-          <div className="w-1/6">Type</div>
-          <div className="w-1/6">Status</div>
-          <div className="w-1/6">Face Value</div>
-          <div className="w-1/6">Listed At</div>
-          <div className="w-1/6 text-right">Results</div>
-        </div>
-        {/* Fake Table Body */}
-        <div>
-          {assets.length > 0 ? (
-            assets.map((asset) => (
-              <div key={asset.assetId} className="flex p-4 border-b items-center">
-                <div className="w-1/4">
-                  <div className="font-medium">{asset.metadata.invoiceNumber}</div>
-                  <div className="text-xs text-muted-foreground">{asset.assetId}</div>
-                </div>
-                <div className="w-1/6">
-                  <Badge variant={asset.assetType === 'AUCTION' ? 'destructive' : 'secondary'}>
-                    {asset.assetType}
-                  </Badge>
-                </div>
-                <div className="w-1/6">
-                  <Badge variant="outline">{(asset.assetType === 'AUCTION' && (asset.status === 'ENDED' || asset.status === 'AUCTION_DECLARED')) ? 'Ended' : 'Active'}</Badge>
-                </div>
-                <div className="w-1/6">
-                  {formatCurrency(asset.metadata.faceValue, asset.metadata.currency)}
-                </div>
-                <div className="w-1/6">
-                  {new Date(asset.listing?.listedAt || asset.createdAt).toLocaleDateString()}
-                </div>
-                <div className="w-1/6 text-right">
-                  {asset.assetType === 'AUCTION' && (asset.status === 'ENDED'  || asset.status === 'AUCTION_DECLARED') ? (
-                    asset.listing?.clearingPrice ? (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700">
-                        Announced: ${asset.listing.clearingPrice ? (parseFloat(asset.listing.clearingPrice) / 1e6).toFixed(2) : 'N/A'}
-                      </Badge>
-                      
-                    ) : (
-                      <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className='cta-button'>
-                        Announce Clearance
-                      </Button>
-                    )
-                  ) : null}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center h-24 flex items-center justify-center text-muted-foreground">
-              No listings found.
-            </div>
-          )}
-        </div>
+      <div
+        className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+        style={{
+          boxShadow: `
+            4px 4px 12px rgba(243, 244, 245, 0.08),
+            8px 8px 24px rgba(150, 151, 151, 0.06),
+            12px 12px 36px rgba(92, 92, 93, 0.04),
+            16px 16px 48px rgba(45, 46, 47, 0.02)
+          `,
+        }}
+      >
+        <table className="w-full">
+          <thead className="sticky top-0 bg-white z-10">
+            <tr className="border-b border-gray-200">
+              <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">Asset</th>
+              <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">Type</th>
+              <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">Face Value</th>
+              <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">Listed At</th>
+              <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">Results</th>
+            </tr>
+          </thead>
+          <tbody>
+            {assets.length > 0 ? (
+              assets.map((asset, index) => (
+                <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                }`}>
+                  <td className="px-6 py-4">
+                    <div className="font-gellix text-sm font-semibold text-foreground">{asset.metadata.invoiceNumber}</div>
+                    <div className="font-gellix text-xs text-foreground/60">{asset.assetId}</div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <Badge variant={asset.assetType === 'AUCTION' ? 'destructive' : 'secondary'}>
+                      {asset.assetType}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <Badge variant="outline">{(asset.assetType === 'AUCTION' && (asset.status === 'ENDED' || asset.status === 'AUCTION_DECLARED')) ? 'Ended' : 'Active'}</Badge>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="font-gellix text-sm font-semibold text-foreground">
+                      {formatCurrency(asset.metadata.faceValue, asset.metadata.currency)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="font-gellix text-sm text-foreground">
+                      {new Date(asset.listing?.listedAt || asset.createdAt).toLocaleDateString()}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {asset.assetType === 'AUCTION' && (asset.status === 'ENDED'  || asset.status === 'AUCTION_DECLARED') ? (
+                      asset.listing?.clearingPrice ? (
+                        <Badge variant="secondary" className="bg-green-100 text-green-700">
+                          Announced: ${asset.listing.clearingPrice ? (parseFloat(asset.listing.clearingPrice) / 1e6).toFixed(2) : 'N/A'}
+                        </Badge>
+                      ) : (
+                        <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                          Announce Clearance
+                        </Button>
+                      )
+                    ) : null}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center h-24 font-gellix text-sm text-foreground/60">
+                  No listings found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl bg-white rounded-2xl border border-gray-200">
           <DialogHeader>
-            <DialogTitle>End Auction for {selectedAsset?.metadata.invoiceNumber}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-gellix text-2xl font-semibold">End Auction for {selectedAsset?.metadata.invoiceNumber}</DialogTitle>
+            <DialogDescription className="font-gellix text-sm text-foreground/70">
               Enter the final clearing price in USDC. This action will execute a blockchain transaction and is irreversible.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-6 py-4">
             <div>
-              <label htmlFor="clearing-price" className="text-sm font-semibold">
+              <label htmlFor="clearing-price" className="font-gellix text-sm font-semibold text-foreground">
                 Clearing Price (USDC)
               </label>
               <div className="flex items-center gap-2">
@@ -208,7 +238,7 @@ const ListingsPage = () => {
                   placeholder="e.g., 0.85"
                 />
               </div>
-              {clearingInfo && <p className="text-xs text-muted-foreground mt-1">Suggested: ${(Number(clearingInfo.suggestedPrice) / 1e6).toFixed(2)}</p>}
+              {clearingInfo && <p className="font-gellix text-xs text-foreground/60 mt-1">Suggested: ${(Number(clearingInfo.suggestedPrice) / 1e6).toFixed(2)}</p>}
             </div>
             {isLoadingInfo ? (
               <div className="col-span-2 flex items-center justify-center h-48">
@@ -216,23 +246,20 @@ const ListingsPage = () => {
               </div>
             ) : clearingInfo && (
               <div className="col-span-2 space-y-4">
-                <div className="text-sm space-y-1">
+                <div className="font-gellix text-sm space-y-1">
                   <p><strong>{clearingInfo.totalBids} total bids</strong>, covering {clearingInfo.percentageOfSupply.toFixed(2)}% of supply.</p>
                 </div>
 
-                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-md p-2">
-                  <h4 className="font-semibold">All Bids</h4>
+                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
+                  <h4 className="font-gellix font-semibold">All Bids</h4>
                   {clearingInfo.allBids.map((bid, i) => (
-                    <div key={i} className="text-xs flex justify-between">
+                    <div key={i} className="font-gellix text-xs flex justify-between">
                       <span>{bid.bidder.slice(0, 10)}...</span>
                       <span>{(Number(bid.tokenAmount) / 1e18).toLocaleString()} tokens</span>
                       <span className="font-mono">${(Number(bid.price) / 1e6).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
-                
-                
-
               </div>
             )}
           </div>
@@ -240,7 +267,7 @@ const ListingsPage = () => {
             <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isEndingAuction}>
               Cancel
             </Button>
-            <Button onClick={handleConfirmEndAuction} disabled={isEndingAuction || !clearingPrice} className='cta-button'>
+            <Button onClick={handleConfirmEndAuction} disabled={isEndingAuction || !clearingPrice} className="bg-blue-600 hover:bg-blue-700 text-white">
               {isEndingAuction && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Declare results
             </Button>

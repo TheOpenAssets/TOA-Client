@@ -4,12 +4,15 @@ import { PositionsTable } from '../../../components/leverage/PositionsTable';
 import { PositionStats } from '../../../components/leverage/PositionStats';
 import HeroBackground from '../../landing/HeroBackground';
 import Navbar from '../../../components/common/Navbar';
+import { useLeverageStore } from '../../../stores/leverage.store';
 
 const BorrowPage = () => {
+  const { positions, isLoading } = useLeverageStore();
+
   return (
     <div className="min-h-screen bg-[#f6fbff] overflow-x-hidden">
       <HeroBackground />
-      
+
       {/* Navbar Container */}
       <div className="relative z-50 border-b border-gray-200 bg-white/50 backdrop-blur-sm">
         <div className="max-w-[1400px] mx-auto px-6">
@@ -34,7 +37,7 @@ const BorrowPage = () => {
               <LeverageForm />
             </div>
             <div className="lg:col-span-2">
-              <PositionsTable />
+              <PositionsTable positions={positions} isLoading={isLoading} />
             </div>
           </div>
         </div>

@@ -145,15 +145,35 @@ export const MyAssetsTable = ({
 
                 {/* Yield Earned */}
                 <td className="px-6 py-4 text-right">
-                  <div
+                  <div className="flex flex-col gap-2">
+                  {hoveredRow === asset.assetId &&
+                  asset.yieldInfo?.claimableYieldFormatted &&
+                  asset.yieldInfo.claimableYieldFormatted !== '$0.00' &&
+                  parseFloat(asset.yieldInfo.claimableYield || '0') > 0 ? (
+                    <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClaimYield(asset.assetId);
+                    }}
+                    disabled={claimingAssetId === asset.assetId}
+                    className="px-4 py-2 bg-black  text-center text-white rounded-lg font-gellix text-sm font-normal hover:bg-black/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                    {claimingAssetId === asset.assetId
+                      ? claimStatus
+                      : 'Claim Yield'}
+                    </button>
+                  ) : (
+                    <div
                     className={`font-gellix text-sm font-normal ${
                       asset.yieldInfo?.settlementDistributed &&
                       parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
-                        ? 'text-black-600'
-                        : 'text-gray-400'
+                      ? 'text-black-600'
+                      : 'text-gray-400'
                     }`}
-                  >
+                    >
                     {asset.yieldInfo?.claimableYieldFormatted || '$0.00'}
+                    </div>
+                  )}
                   </div>
                 </td>
 
@@ -164,35 +184,7 @@ export const MyAssetsTable = ({
                   </span>
                 </td>
               </tr>
-              {hoveredRow === asset.assetId &&
-                asset.yieldInfo?.settlementDistributed === true &&
-                parseFloat(asset.yieldInfo?.claimableYield || '0') > 0 && (
-                  <tr
-                    className={`bg-black-50 transition-all ${
-                      index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50/50'
-                    }`}
-                  >
-                    <td
-                      colSpan={7}
-                      className="px-6 py-2 text-center"
-                      onMouseEnter={() => setHoveredRow(asset.assetId)}
-                      onMouseLeave={() => setHoveredRow(null)}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onClaimYield(asset.assetId);
-                        }}
-                        disabled={claimingAssetId === asset.assetId}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-gellix text-sm font-normal hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {claimingAssetId === asset.assetId
-                          ? claimStatus
-                          : `Claim Yield (${asset.yieldInfo?.claimableYieldFormatted || '$0.00'})`}
-                      </button>
-                    </td>
-                  </tr>
-                )}
+              
             </>
           ))}
         </tbody>

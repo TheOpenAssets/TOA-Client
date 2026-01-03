@@ -1,41 +1,39 @@
 // src/pages/admin/layout/AdminLayout.page.tsx
 
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShieldCheck,
   Network,
   Coins,
-  Package,
   DollarSign,
   List,
+  LogOut,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
 import { authService } from '../../../lib/api/auth.service';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../stores/auth.store';
 
 const AdminLayout = () => {
   const location = useLocation();
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
-    const { user } = useAuthStore();
-  
+  const { user } = useAuthStore();
 
-   useEffect(() => {
+  useEffect(() => {
     const verifyAuth = async () => {
       try {
         // Check if access token exists
         if (!user) {
-      authService.logout();
-      return;
-    }
+          authService.logout();
+          return;
+        }
         // Verify token with backend
         const currentUser = await authService.getCurrentUser();
 
-        // Check if user has ORIGINATOR role (issuer)
+        // Check if user has ADMIN role
         if (currentUser.role !== 'ADMIN') {
           console.warn(`Unauthorized role: ${user.role}. Admin dashboard requires Admin role.`);
           setError('Unauthorized access. You do not have permission to access the admin dashboard.');
@@ -56,7 +54,7 @@ const AdminLayout = () => {
     };
 
     verifyAuth();
-  }, [navigate]);
+  }, [navigate, user]);
 
   const navigation = [
     {
@@ -70,13 +68,12 @@ const AdminLayout = () => {
       icon: List,
     },
     {
-      name: 'Compliance Queue',
+      name: 'Compliance',
       path: '/admin/compliance',
       icon: ShieldCheck,
-      
     },
     {
-      name: 'On-Chain Operations',
+      name: 'Operations',
       path: '/admin/operations',
       icon: Network,
     },
@@ -86,7 +83,7 @@ const AdminLayout = () => {
       icon: DollarSign,
     },
     {
-      name: 'Settlements & Yield',
+      name: 'Settlements',
       path: '/admin/settlements',
       icon: Coins,
     },
@@ -99,8 +96,13 @@ const AdminLayout = () => {
     return location.pathname.startsWith(path);
   };
 
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/');
+  };
+
   return (
-    <div className="min-h-screen bg-[#f6fbff]">
+    <div className="min-h-screen bg-[#ffffff]">
       <HeroBackground />
 
       {error && (
@@ -109,79 +111,72 @@ const AdminLayout = () => {
         </div>
       )}
 
-      <div className="relative z-10">
-        {/* Top Header */}
-        <header className="bg-white/70 rounded-3xl  sticky top-0 z-20 border-b border-gray-200 mt-4 mx-6 backdrop-blur-sm">
-          <div className="px-6 py-6">
+      <div className="h-screen flex flex-col overflow-hidden">
+        {/* Top Navigation Bar - Matching Portfolio/Marketplace */}
+        <header className="bg-transparent z-40 relative flex-shrink-0">
+          <div className="max-w-[1400px] mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="font-geist text-3xl font-normal text-foreground">
-                  Admin Dashboard
-                </h1>
-                <p className="font-inter text-sm text-foreground/70 mt-1">
-                  RWA Tokenization Platform Management
-                </p>
+              {/* Left: Logo */}
+              <div className="flex items-center gap-6">
+                <div className="top-0 left-0">
+                  <div className="w-32 h-16 bg-foreground rounded-full top-0 left-0">
+                    <span className="text-white font-bold text-lg top-0 left-0">
+                      <img
+                        src="./ALogo-removebg-preview.svg"
+                        alt="Logo"
+                        onClick={() => navigate('/admin')}
+                        className='cursor-pointer'
+                      />
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Global Stats - Top Bar */}
-              <div className="hidden xl:flex items-center gap-6">
-                
-                {/* Notification Bell */}
+              {/* Center: Navigation */}
+              <nav className="flex items-center gap-4">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.path);
+
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center gap-2 font-geist border border-gray-200 text-sm font-medium pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl ${
+                        active
+                          ? 'text-foreground bg-gray-100'
+                          : 'text-foreground/70 hover:text-blue-600'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Right: Notification Bell + Logout */}
+              <div className="flex items-center gap-3">
                 <NotificationBell role="ADMIN" />
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg font-gellix text-sm font-medium hover:bg-black/80 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Main Content Area */}
-        <div className="flex h-[calc(100vh-120px)]">
-          {/* Sidebar */}
-          <aside className="w-72 border-r border-gray-200 bg-white/40 backdrop-blur-sm h-full overflow-y-auto">
-            <nav className="p-4 space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
-
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`
-                      flex items-center justify-between px-4 py-3 rounded-xl
-                      font-inter text-sm font-medium transition-all duration-200
-                      ${
-                        active
-                          ? 'bg-foreground text-black/70 shadow-md'
-                          : 'text-foreground/70 hover:bg-foreground/5 hover:text-foreground'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-5 h-5" />
-                      <span>{item.name}</span>
-                    </div>
-                   
-                  </Link>
-                );
-              })}
-            </nav>
-           
-            {/* logout  */}
-            <div className="absolute bottom-0 w-72 mb-6 px-4">
-              <Link
-                to="/"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-inter text-sm font-medium text-black-600 hover:bg-red-50 transition-all duration-200"
-              >
-                <Package className="w-5 h-5" />
-                <span>Logout</span>
-              </Link>
-           </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1 p-8 h-full overflow-y-auto">
-            <Outlet />
-          </main>
+        {/* Main Content - Full Width */}
+        <div className="flex-1 overflow-hidden">
+          <div className="max-w-[1600px] mx-auto px-6 py-6 h-full z-40 relative">
+            <main className="h-full overflow-y-auto">
+              <Outlet />
+            </main>
+          </div>
         </div>
       </div>
     </div>
@@ -189,4 +184,3 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
-

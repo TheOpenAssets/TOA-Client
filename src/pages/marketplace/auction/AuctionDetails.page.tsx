@@ -415,9 +415,16 @@ const AuctionDetailsPage = () => {
 
                 {/* Price Per Token Input */}
                 <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                  <label className="block font-geist text-xs text-[#6B7280] mb-2">
-                    Price per Token (USDC)
-                  </label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <img 
+                      src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" 
+                      alt="USDC"
+                      className="w-4 h-4 rounded-full"
+                    />
+                    <label className="block font-geist text-xs text-[#6B7280]">
+                      Price per Token (USDC)
+                    </label>
+                  </div>
                   <input
                     type="number"
                     placeholder="0.00"
