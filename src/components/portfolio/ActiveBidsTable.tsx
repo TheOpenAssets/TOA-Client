@@ -1,6 +1,7 @@
 // src/components/portfolio/ActiveBidsTable.tsx
 import { useNavigate } from 'react-router-dom';
 import type { Bid, BidStatus } from '../../types/marketplace.types';
+import { PageLoader } from '../ui/page-loader';
 
 interface ActiveBidsTableProps {
   bids: Bid[];
@@ -43,11 +44,7 @@ export const ActiveBidsTable = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center py-8">
-          <p className="font-gellix text-sm text-gray-500">Loading bids...</p>
-        </div>
-      </div>
+      <PageLoader text="Loading Active Bids..." />
     );
   }
 

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Loader } from './loader';
+// import { ShaderAnimation } from './shimmer-lines';
 
 export interface PageLoaderProps {
   text?: string;
@@ -13,10 +14,10 @@ const PageLoader: React.FC<PageLoaderProps> = ({
   showText = true
 }) => {
   return (
-    <div className="fixed inset-0 bg-[#050505] flex flex-col items-center justify-center z-[9999]">
+    <div className="fixed inset-0 bg-gradient-to-r from-gray-200 via-gray-50 to-gray-200 flex flex-col items-center justify-center">
       <Loader size="md" />
       {showText && (
-        <p className="mt-8 text-[#d4af37] font-inter text-lg animate-pulse">
+        <p className="mt-4 text-gray-900 font-gellix text-xl">
           {text}
         </p>
       )}

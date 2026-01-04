@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Package, Clock, TrendingUp, DollarSign } from 'lucide-react';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import type { CreateAuctionPayload } from '../../../types/marketplace.types';
+import { PageLoader } from '@/components/ui/page-loader';
 
 const AuctionManagementPage = () => {
   const { auctions, isLoadingAuctions, fetchActiveAuctions, fetchEndedAuctions } = useMarketplaceStore();
@@ -248,9 +249,7 @@ const AuctionManagementPage = () => {
         </div>
 
         {isLoadingAuctions ? (
-          <div className="p-12 text-center text-foreground/60">
-            <div className="font-gellix">Loading auctions...</div>
-          </div>
+          <PageLoader text="Loading auctions..." />
         ) : auctions.length === 0 ? (
           <div className="p-12 text-center text-foreground/60">
             <div className="font-gellix">No auctions created yet. Create your first auction above.</div>

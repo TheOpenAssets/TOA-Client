@@ -28,6 +28,7 @@ export const handle401Unauthorized = (): void => {
   // Clear all auth-related data from localStorage
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+  localStorage.removeItem('authenticated_wallet_address');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   localStorage.removeItem('redirect_after_verification');

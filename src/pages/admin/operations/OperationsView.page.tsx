@@ -7,13 +7,13 @@ import {
   CheckCircle2,
   FileCode,
   Hash,
-  Loader2,
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
 import { Button } from '../../../components/ui/button';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const OperationsViewPage = () => {
   const {
@@ -271,7 +271,7 @@ const OperationsViewPage = () => {
         console.log('Transaction Hash:', approvalResult.transactionHash);
         success(
           'Listed & Approved!',
-          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: ${approvalResult.explorerUrl}`,
+          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0,6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\nView on explorer: ${approvalResult.explorerUrl}`,
           10000
         );
       } catch (approvalError: any) {
@@ -356,10 +356,7 @@ const OperationsViewPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-          <div className="font-gellix text-lg text-foreground">Loading operations...</div>
-        </div>
+        <PageLoader text="Loading Operations Dashboard..." />
       </div>
     );
   }
