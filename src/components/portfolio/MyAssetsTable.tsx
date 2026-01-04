@@ -164,15 +164,18 @@ export const MyAssetsTable = ({
                           : 'Claim Yield'}
                       </button>
                     ) : (
-                      <div
+                        <div
                         className={`font-gellix text-sm font-normal ${asset.yieldInfo?.settlementDistributed &&
-                            parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
-                            ? 'text-black-600'
-                            : 'text-gray-400'
+                          parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
+                          ? 'text-black-600'
+                          : 'text-gray-400'
                           }`}
-                      >
-                        {asset.yieldInfo?.claimableYieldFormatted || '$0.00'}
-                      </div>
+                        >
+                          {'$' + formatCurrency(
+                          formatUSDCAmount(asset.yieldInfo?.claimableYield || '0') > 0 ?
+                          formatUSDCAmount(asset.yieldInfo?.claimableYield || '0') - formatUSDCAmount(asset.totalInvested) : 0
+                        )}
+                        </div>
                     )}
                   </div>
                 </td>

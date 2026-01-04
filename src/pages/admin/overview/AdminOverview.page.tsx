@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { TrendingUp, Package, ShieldCheck, Network, Clock, Gavel } from 'lucide-react';
 import { useAdminStore } from '../../../stores/admin.store';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const AdminOverviewPage = () => {
   const { stats, activities, isLoading, error, fetchAdminDashboardData } = useAdminStore();
@@ -86,9 +87,7 @@ const AdminOverviewPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-foreground">Loading admin overview...</div>
-        </div>
+        <PageLoader text="Loading admin dashboard..." />
       </div>
     );
   }

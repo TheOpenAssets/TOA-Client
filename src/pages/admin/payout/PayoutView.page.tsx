@@ -61,15 +61,20 @@ const PayoutViewPage = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch all listed assets
-      const { assets: allAssets } = await adminService.getAllAssets({
-        status: 'LISTED',
-      });
+      // Fetch all assets
+      const { assets: allAssets } = await adminService.getAllAssets({});
 
-      console.log('Listed assets:', allAssets);
+      console.log('All assets:', allAssets);
+
+      // Filter for LISTED, ENDED, or AUCTION_DECLARED assets
+      const filteredAssets = allAssets.filter((asset: any) => 
+        ['LISTED', 'ENDED', 'AUCTION_DECLARED'].includes(asset.status)
+      );
+
+      console.log('Filtered assets for payout:', filteredAssets);
 
       // Map all listed assets (show even if no tokens sold yet)
-      const payoutAssets: PayoutAsset[] = allAssets
+      const payoutAssets: PayoutAsset[] = filteredAssets
         .map((asset: any) => {
           // Parse sold tokens
           const soldRaw = asset.listing?.sold || '0';
@@ -88,7 +93,7 @@ const PayoutViewPage = () => {
           // For AUCTION assets: use listing.reservePrice
           // Backend stores prices in 6 decimals (e.g., 30000 = $0.03, 150000 = $0.15)
           const priceRaw = asset.assetType === 'AUCTION'
-            ? (asset.listing?.reservePrice || '0')
+            ? (asset.listing?.clearingPrice || '0')
             : (asset.listing?.price || asset.tokenParams?.pricePerToken || '0');
 
           // Always divide by 1e6 since backend stores in 6 decimals
