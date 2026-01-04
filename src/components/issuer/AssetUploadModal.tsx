@@ -78,6 +78,14 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   };
 
   const updateField = (field: keyof FormData, value: string | File | null) => {
+    if (field === 'issueDate' && typeof value === 'string' && value > today) {
+      setError('Issue date cannot be in the future');
+      return;
+    }
+    if (field === 'dueDate' && typeof value === 'string' && value < today) {
+      setError('Due date cannot be in the past');
+      return;
+    }
     setFormData({ ...formData, [field]: value });
     setError(null);
   };
@@ -192,6 +200,8 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
     );
   };
 
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <div className="fixed inset-0 bg-slate-200/50 z-50 flex items-center justify-center backdrop-blur-md p-4">
       <AnimatePresence>
@@ -232,7 +242,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               <div className="group">
                 <Label className="text-black font-bold mb-3 block text-xs uppercase tracking-widest">Invoice Document</Label>
                 <div className="rounded-2xl p-1 transition-colors bg-slate-50/50">
-                  <FileUpload onChange={(f) => handleFileChange(f[0])} text="Upload your Invoice here" />
+                  <FileUpload onChange={(f) => handleFileChange(f[0])} text="Upload your Invoice here" accept="application/pdf" />
                 </div>
                 <p className="text-[10px] text-slate-400 mt-2 font-geist text-center uppercase tracking-wider">PDF format supported • Max 10MB</p>
               </div>
@@ -256,9 +266,9 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                     </div>
                   </div>
                 </div>
-                <MinimalInput label="Issue Date" id="issueDate" type="date" value={formData.issueDate} onChange={(v: any) => updateField('issueDate', v)} />
+                <MinimalInput label="Issue Date" id="issueDate" type="date" value={formData.issueDate} onChange={(v: any) => updateField('issueDate', v)} max={today} />
                 <div className="col-span-2">
-                  <MinimalInput label="Due Date" id="dueDate" type="date" value={formData.dueDate} onChange={(v:any) => updateField('dueDate', v)} />
+                  <MinimalInput label="Due Date" id="dueDate" type="date" value={formData.dueDate} onChange={(v:any) => updateField('dueDate', v)} min={today} />
                 </div>
               </div>
             </div>
