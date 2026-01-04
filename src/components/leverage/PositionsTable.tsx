@@ -79,7 +79,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
               Status
             </th>
             <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
-              Chart
+              Swap Chart
             </th>
           </tr>
         </thead>
