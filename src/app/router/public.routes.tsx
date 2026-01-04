@@ -36,7 +36,6 @@ import FaucetPage from '../../pages/faucet/Faucet.page';
 import { NotFoundPage } from '../../components/ui/404-page-not-found';
 
 // Challenge Verification Page
-import { ChallengeVerificationPage } from '../../components/ui/challenge-verification';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -133,10 +132,7 @@ export const publicRoutes: RouteObject[] = [
     element: <ComponentShowcasePage />,
   },
   // Challenge Verification
-  {
-    path: '/verify-challenge',
-    element: <ChallengeVerificationPage />,
-  },
+  
   // 404 - Catch all unmatched routes
   {
     path: '*',

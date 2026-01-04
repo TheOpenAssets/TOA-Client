@@ -1,13 +1,13 @@
 // src/pages/marketplace/asset/AssetDetails.page.tsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 
 const TradeEnginePage = () => {
-    const navigate = useNavigate();
+
 
     // Mock data for UI
     const mockAsset = {
@@ -52,11 +52,11 @@ const TradeEnginePage = () => {
     ];
 
     const [tokensToBuy, setTokensToBuy] = useState('');
-    const [leverageTokenInput, setLeverageTokenInput] = useState('');
+    const [tokensToSell, setTokensToSell] = useState('');
 
     // Mock balances
     const usdcBalance = '1000.00';
-    const methBalance = '5.00';
+
     const methPrice = 2500000000; // $2500 (6 decimals)
 
     const asset = mockAsset;
@@ -75,8 +75,8 @@ const TradeEnginePage = () => {
 
     // Calculate required mETH
     const calculatedMethAmount = (() => {
-        if (!leverageTokenInput || !asset?.tokenParams?.pricePerToken || !methPrice) return 0;
-        const tokens = parseFloat(leverageTokenInput);
+        if (!tokensToSell || !asset?.tokenParams?.pricePerToken || !methPrice) return 0;
+        const tokens = parseFloat(tokensToSell);
         const tokenPrice = parseFloat(asset.tokenParams.pricePerToken);
         const methPriceVal = methPrice;
         const meth = (tokens * tokenPrice * 1.5) / methPriceVal;
@@ -85,16 +85,16 @@ const TradeEnginePage = () => {
 
     const calculatedMethString = calculatedMethAmount > 0 ? calculatedMethAmount.toFixed(6) : '';
 
-    const handleLeverageTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setLeverageTokenInput(e.target.value);
+    const handletokensell = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTokensToSell(e.target.value);
     };
 
     const handleBuyTokens = async () => {
         console.log('Buy tokens clicked:', tokensToBuy);
     };
 
-    const handleOpenLeveragePosition = async () => {
-        console.log('Open leverage position clicked:', leverageTokenInput);
+    const handleOpenSellPosition = async () => {
+        console.log('Open Sell position clicked:', tokensToSell);
     };
 
 
@@ -293,7 +293,7 @@ const TradeEnginePage = () => {
                                         <h2 className="text-2xl font-semibold text-[#111111]">Buy Tokens</h2>
                                         <TabsList className="bg-gray-100 p-1 rounded-lg">
                                             <TabsTrigger value="standard" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">USDC</TabsTrigger>
-                                            <TabsTrigger value="leverage" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">Leverage</TabsTrigger>
+                                            <TabsTrigger value="Sell" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">Sell</TabsTrigger>
                                         </TabsList>
                                     </div>
 
@@ -376,18 +376,18 @@ const TradeEnginePage = () => {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="leverage">
+                                    <TabsContent value="Sell">
                                         <div className="space-y-6">
                                             <div className="bg-[#F3F4F6] rounded-2xl p-4">
                                                 <label className="text-xs text-[#6B7280]">
-                                                    Tokens to buy
+                                                    Tokens to Sell
                                                 </label>
                                                 <div className="relative">
                                                     <Input
                                                         type="number"
                                                         placeholder="0"
-                                                        value={leverageTokenInput}
-                                                        onChange={handleLeverageTokenChange}
+                                                        value={tokensToSell}
+                                                        onChange={handletokensell}
                                                         className=" border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                                                     />
                                                 </div>
@@ -440,15 +440,15 @@ const TradeEnginePage = () => {
                                             </div>
 
                                             <Button
-                                                onClick={handleOpenLeveragePosition}
-                                                disabled={!leverageTokenInput || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
+                                                onClick={handleOpenSellPosition}
+                                                disabled={!tokensToSell || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(tokensToSell || '0') < minInvestment) || parseFloat(tokensToSell || '0') > availableTokens}
                                                 className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {(() => {
-                                                    const enteredAmount = parseFloat(leverageTokenInput || '0');
+                                                    const enteredAmount = parseFloat(tokensToSell || '0');
                                                     if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
                                                     if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
-                                                    return 'Open Leveraged Position';
+                                                    return 'Open Selld Position';
                                                 })()}
                                             </Button>
                                         </div>
