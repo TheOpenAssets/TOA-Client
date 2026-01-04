@@ -271,7 +271,7 @@ const OperationsViewPage = () => {
         console.log('Transaction Hash:', approvalResult.transactionHash);
         success(
           'Listed & Approved!',
-          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: ${approvalResult.explorerUrl}`,
+          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0,6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\nView on explorer: ${approvalResult.explorerUrl}`,
           10000
         );
       } catch (approvalError: any) {

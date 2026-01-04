@@ -7,12 +7,14 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  authenticatedWalletAddress: string | null;
 
   // Actions
   setUser: (user: User) => void;
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
+  setAuthenticatedWallet: (address: string) => void;
 }
 
 /**
@@ -23,6 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  authenticatedWalletAddress: localStorage.getItem('authenticated_wallet_address'),
 
   setUser: (user: User) =>
     set({
@@ -41,13 +44,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (loading: boolean) =>
     set({ isLoading: loading }),
 
+  setAuthenticatedWallet: (address: string) => {
+    localStorage.setItem('authenticated_wallet_address', address.toLowerCase());
+    set({ authenticatedWalletAddress: address.toLowerCase() });
+  },
+
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('authenticated_wallet_address');
     set({
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      authenticatedWalletAddress: null,
     });
   },
 }));

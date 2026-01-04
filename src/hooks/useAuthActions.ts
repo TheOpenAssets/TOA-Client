@@ -11,7 +11,7 @@ export const useAuthActions = () => {
   const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { setUser, setLoading } = useAuthStore();
+  const { setUser, setLoading, setAuthenticatedWallet } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [pendingAction, setPendingAction] = useState<'investor' | 'issuer' | null>(null);
@@ -47,6 +47,7 @@ export const useAuthActions = () => {
       });
 
       setUser(loginResponse.user);
+      setAuthenticatedWallet(address);
 
       if (loginResponse.user.role === 'ORIGINATOR') {
         navigate('/issuer/dashboard');
@@ -90,6 +91,7 @@ export const useAuthActions = () => {
       });
 
       setUser(loginResponse.user);
+      setAuthenticatedWallet(address);
 
       if (loginResponse.user.role === 'ORIGINATOR') {
         if (loginResponse.user.kyc === true) {

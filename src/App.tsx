@@ -2,12 +2,15 @@
 import { RouterProvider } from 'react-router-dom';
 import { router } from './app/router';
 import { WalletProvider } from './app/providers/WalletProvider';
+import { WalletIntegrityProvider } from './app/providers/WalletIntegrityProvider';
 
 
 function App() {
   return (
     <WalletProvider>
-      <RouterProvider router={router} />
+      <WalletIntegrityProvider>
+        <RouterProvider router={router} />
+      </WalletIntegrityProvider>
     </WalletProvider>
   );
 }

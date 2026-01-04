@@ -139,6 +139,7 @@ const AssetDetailsPage = () => {
 
   useEffect(() => {
     if (address) {
+      
       loadWalletData();
     }
   }, [address, loadWalletData]);
@@ -525,11 +526,11 @@ const AssetDetailsPage = () => {
         await loadWalletData();
       } else {
         console.error('❌ Purchase failed:', result.error);
-        setPurchaseStatus(`Purchase failed: ${result.error}`);
+        setPurchaseStatus(`Purchase failed !`);
       }
     } catch (error: any) {
       console.error('❌ Purchase error:', error);
-      setPurchaseStatus(`Error: ${error.message}`);
+      setPurchaseStatus(`Purchase Failed !`);
     } finally {
       setIsPurchasing(false);
       console.log('\n===== PURCHASE FLOW COMPLETED =====\n');
