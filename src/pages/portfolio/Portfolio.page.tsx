@@ -82,6 +82,17 @@ const PortfolioPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-switch tab if only positions exist
+  useEffect(() => {
+    const hasAssets = portfolio?.portfolio && portfolio.portfolio.length > 0;
+    const hasBids = userBids && userBids.length > 0;
+    const hasPositions = positions && positions.length > 0;
+
+    if (!hasAssets && !hasBids && hasPositions) {
+      setActiveTab('positions');
+    }
+  }, [portfolio, userBids, positions]);
+
   // Handle successful settlement
   useEffect(() => {
     if (isSuccess && settlingBidId) {
@@ -345,7 +356,7 @@ const PortfolioPage = () => {
     );
   }
 
-  if ((!portfolio || !portfolio?.portfolio || !portfolio?.portfolio.length) && !userBids.length) {
+  if ((!portfolio || !portfolio?.portfolio || !portfolio?.portfolio.length) && !userBids.length && !positions.length) {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
