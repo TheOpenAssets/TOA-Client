@@ -52,14 +52,14 @@ export const PositionSparkline = ({
 }: PositionSparklineProps) => {
   // Build timeline from real harvest data
   const data = buildSparklineFromHarvests(position);
-  
+
   // Determine color based on trend (latest vs previous point)
   let lineColor = '#10B981'; // Default green
-  
+
   if (data.length > 2) {
     const latestValue = data[data.length - 2].mETHSwapped || 0; // Second to last (last is current with 0)
     const previousValue = data[data.length - 3].mETHSwapped || 0;
-    
+
     if (latestValue < previousValue) {
       lineColor = '#EF4444'; // Red for declining
     }
@@ -121,8 +121,8 @@ function buildSparklineFromHarvests(position: LeveragePosition): PositionTimelin
   }
 
   // Get latest 5 harvests only
-  const recentHarvests = position.harvestHistory.length > 5 
-    ? position.harvestHistory.slice(-5) 
+  const recentHarvests = position.harvestHistory.length > 5
+    ? position.harvestHistory.slice(-5)
     : position.harvestHistory;
 
   // Use the timestamp of the first harvest we're showing as starting point
@@ -138,7 +138,6 @@ function buildSparklineFromHarvests(position: LeveragePosition): PositionTimelin
   // Add a point for each harvest showing the mETH swapped amount
   recentHarvests.forEach((harvest) => {
     const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
-    
     points.push({
       timestamp: harvest.timestamp,
       mETHSwapped: mETHSwapped,

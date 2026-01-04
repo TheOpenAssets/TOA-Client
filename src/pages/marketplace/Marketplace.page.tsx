@@ -225,7 +225,7 @@ const MarketplacePage = () => {
   }
   const handleTableNavigate = (asset: MarketplaceAsset) => {
     if (asset.listingType === 'STATIC') {
-      navigate(`/marketplace/asset/${asset.id}`);
+      navigate(`/marketplace/trade/${asset.id}`);
     } else {
       navigate(`/marketplace/auction/${asset.id}`);
     }

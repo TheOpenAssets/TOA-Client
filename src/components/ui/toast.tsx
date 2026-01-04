@@ -83,7 +83,7 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
             {toast.title}
           </h4>
           {toast.message && (
-            <p className="font-inter text-sm text-foreground/70 whitespace-pre-line">
+            <p className="font-inter text-sm text-foreground/70 whitespace-pre-line break-words overflow-hidden">
               {toast.message}
             </p>
           )}
