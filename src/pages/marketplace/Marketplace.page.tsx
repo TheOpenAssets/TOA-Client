@@ -431,12 +431,16 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
             >
               Portfolio
             </button>
-            <button
-              onClick={() => navigate('/trade')}
-              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-            >
+            <div className='relative group'>
+              <button
+              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
+              >
               Trade
-            </button>
+              </button>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
+              Coming Soon
+              </div>
+            </div>
             <button
               onClick={() => navigate('/borrow')}
               className="font-gellix border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
@@ -1101,13 +1105,18 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
                               );
                             })()}
                             <span className="text-gray-400">|</span>
-                            <button
+                            <div className="relative group">
+                              <button
                               onClick={(e) => handleTradeNavigate(asset, e)}
-                              
-                              className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 hover:scale-[1.07] transition-colors"
-                            >
+                              disabled={true}
+                              className="px-4 py-2 text-gray-400 rounded-lg font-inter text-sm font-medium cursor-not-allowed"
+                              >
                               Trade
-                            </button>
+                              </button>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                              Coming Soon
+                              </div>
+                            </div>
                           </div>
                         </td>
                       </tr>

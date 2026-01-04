@@ -186,11 +186,22 @@ export const ActiveBidsTable = ({
                       onClick={(e) => e.stopPropagation()}
                       className="text-blue-600 hover:underline font-gellix text-xs font-normal"
                     >
-                      View Tx
+                    Bid Tx
                     </a>
                   ) : (
                     <span className="font-gellix text-xs text-gray-400">N/A</span>
                   )}
+                  <br />
+                  {bid.settlementTxHash && bid.settlementTxHash !== undefined && (<a
+                      href={`https://sepolia.mantlescan.xyz/tx/${bid.settlementTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-blue-600 hover:underline font-gellix text-xs font-normal"
+                    >
+                    Settlement Tx
+                    </a>
+                  ) }
                 </td>
               </tr>
             );

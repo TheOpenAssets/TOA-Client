@@ -298,6 +298,7 @@ export interface Bid {
   status: BidStatus;
   submittedAt: string;
   settledAt?: string;
+  settlementTxHash?: string;
   // Additional fields for UI display
   bidIndex?: number;
   tokenAmount?: string;
