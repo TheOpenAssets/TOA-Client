@@ -341,8 +341,32 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                   <Settings className="w-4 h-4 text-slate-300" />
                 </div>
                 <div className="grid grid-cols-2 gap-6">
-                  <MinimalInput label="Floor %" id="minRaise" type="number" value={formData.minRaisePercentage} onChange={(v: any) => updateField('minRaisePercentage', v)} placeholder="Min 0" />
-                  <MinimalInput label="Cap %" id="maxRaise" type="number" value={formData.maxRaisePercentage} onChange={(v: any) => updateField('maxRaisePercentage', v)} max="100" placeholder="Max 100" />
+                  <MinimalInput 
+                  label="Floor %" 
+                  id="minRaise" 
+                  type="number" 
+                  value={formData.minRaisePercentage} 
+                  onChange={(v: any) => {
+                    const numValue = Math.min(95, Math.max(0, parseInt(v) || 0));
+                    updateField('minRaisePercentage', numValue.toString());
+                  }}
+                  placeholder="Min 0"
+                  max="95"
+                  min="0"
+                  />
+                  <MinimalInput 
+                  label="Cap %" 
+                  id="maxRaise" 
+                  type="number" 
+                  value={formData.maxRaisePercentage} 
+                  onChange={(v: any) => {
+                    const numValue = Math.min(95, Math.max(0, parseInt(v) || 0));
+                    updateField('maxRaisePercentage', numValue.toString());
+                  }}
+                  max="95"
+                  min="0"
+                  placeholder="Max 95" 
+                  />
                 </div>
               </div>
             </div>

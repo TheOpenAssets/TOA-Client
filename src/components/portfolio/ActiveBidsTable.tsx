@@ -87,9 +87,13 @@ export const ActiveBidsTable = ({
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Status
             </th>
+           
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Action
             </th>
+             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+              Transaction
+          </th>
           </tr>
         </thead>
         <tbody>
@@ -172,7 +176,23 @@ export const ActiveBidsTable = ({
                         (isSettling && settlingBidId === bid.bidId ? settleStatus : 'Refund')}
                     </button>
                   ) : (
-                    <span className="font-gellix text-xs text-gray-400">Pending</span>
+                    <span className="font-gellix text-xs text-gray-400">-</span>
+                  )}
+                </td>
+                {/* Transaction */}
+                <td className="px-6 py-4 text-center">
+                  {bid.txHash ? (
+                    <a
+                      href={`https://sepolia.mantlescan.xyz/tx/${bid.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-blue-600 hover:underline font-gellix text-xs font-normal"
+                    >
+                      View Tx
+                    </a>
+                  ) : (
+                    <span className="font-gellix text-xs text-gray-400">N/A</span>
                   )}
                 </td>
               </tr>
