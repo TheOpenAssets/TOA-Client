@@ -82,6 +82,17 @@ const PortfolioPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-switch tab if only positions exist
+  useEffect(() => {
+    const hasAssets = portfolio?.portfolio && portfolio.portfolio.length > 0;
+    const hasBids = userBids && userBids.length > 0;
+    const hasPositions = positions && positions.length > 0;
+
+    if (!hasAssets && !hasBids && hasPositions) {
+      setActiveTab('positions');
+    }
+  }, [portfolio, userBids, positions]);
+
   // Handle successful settlement
   useEffect(() => {
     if (isSuccess && settlingBidId) {
@@ -345,7 +356,7 @@ const PortfolioPage = () => {
     );
   }
 
-  if ((!portfolio || !portfolio?.portfolio || !portfolio?.portfolio.length) && !userBids.length) {
+  if ((!portfolio || !portfolio?.portfolio || !portfolio?.portfolio.length) && !userBids.length && !positions.length) {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
@@ -468,8 +479,8 @@ const PortfolioPage = () => {
                       <button
                         onClick={() => setActiveTab('assets')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'assets'
-                            ? 'bg-gray-900 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         My Assets
@@ -477,8 +488,8 @@ const PortfolioPage = () => {
                       <button
                         onClick={() => setActiveTab('bids')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'bids'
-                            ? 'bg-gray-900 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         My Bids
@@ -486,8 +497,8 @@ const PortfolioPage = () => {
                       <button
                         onClick={() => setActiveTab('positions')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'positions'
-                            ? 'bg-gray-900 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         Leveraged Positions
@@ -500,8 +511,8 @@ const PortfolioPage = () => {
                     {/* My Assets Tab */}
                     <div
                       className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'assets'
-                          ? 'opacity-100 translate-x-0 z-10'
-                          : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        ? 'opacity-100 translate-x-0 z-10'
+                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
                         }`}
 
                       style={{
@@ -525,8 +536,8 @@ const PortfolioPage = () => {
                     {/* Active Bids Tab */}
                     <div
                       className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'bids'
-                          ? 'opacity-100 translate-x-0 z-10'
-                          : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        ? 'opacity-100 translate-x-0 z-10'
+                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
                         }`}
                     >
                       <div className="h-full flex flex-col">
@@ -544,20 +555,20 @@ const PortfolioPage = () => {
                       </div>
                     </div>
 
-                  {/* Leveraged Positions Tab */}
-                  <div
-                    className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                      activeTab === 'positions'
+                    {/* Leveraged Positions Tab */}
+                    <div
+                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'positions'
                         ? 'opacity-100 translate-x-0 z-10'
                         : 'opacity-0 -translate-x-4 pointer-events-none z-0'
-                    }`}
-                  >
-                    <div className="h-full flex flex-col overflow-y-auto p-6">
-                      <PositionsTable
-                        positions={filteredPositions}
-                        isLoading={isLoadingPositions}
-                        onSelectPosition={setSelectedPosition}
-                      />
+                        }`}
+                    >
+                      <div className="h-full flex flex-col overflow-y-auto p-6">
+                        <PositionsTable
+                          positions={filteredPositions}
+                          isLoading={isLoadingPositions}
+                          onSelectPosition={setSelectedPosition}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -565,56 +576,61 @@ const PortfolioPage = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Leverage Position Detail Chart Modal */}
-      {selectedPosition && (
-        <PositionDetailChart
-          position={selectedPosition}
-          isOpen={!!selectedPosition}
-          onClose={() => setSelectedPosition(null)}
-        />
-      )}
+        {/* Leverage Position Detail Chart Modal */}
+        {selectedPosition && (
+          <PositionDetailChart
+            position={selectedPosition}
+            isOpen={!!selectedPosition}
+            onClose={() => setSelectedPosition(null)}
+          />
+        )}
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
         {showClaimModal && selectedAssetForClaim && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-lg flex items-center justify-center z-50 p-4">
             <div
-              className="rounded-2xl p-8 max-w-md w-full"
-              style={{ background: 'linear-gradient(to bottom, #ffffff 0%, #d8dfe5 100%)' }}
+              className="rounded-2xl p-8 max-w-md w-full bg-white"
+              style={{
+                boxShadow: `
+                  4px 4px 12px rgba(243, 244, 245, 0.08),
+                  8px 8px 24px rgba(150, 151, 151, 0.06),
+                  12px 12px 36px rgba(92, 92, 93, 0.04),
+                  16px 16px 48px rgba(45, 46, 47, 0.02)
+                `,
+              }}
             >
               <div className="text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">🔥</span>
+                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <span className="text-2xl">🔥</span>
                 </div>
 
-                <h2 className="font-gellix text-2xl font-semibold text-foreground mb-2">
+                <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
                   Burn Tokens to Claim Yield
                 </h2>
 
-                <p className="font-inter text-sm text-foreground/70 mb-6">
+                <p className="font-inter text-sm text-gray-600 mb-8">
                   This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
                 </p>
 
-                <div className="bg-white rounded-xl p-6 mb-4 border border-gray-200">
-                  <div className="mb-4">
-                    <p className="font-inter text-xs text-gray-500 mb-2">Tokens to Burn</p>
-                    <p className="font-gellix text-2xl font-semibold text-orange-600">
+                <div className="bg-gray-50 rounded-xl p-5 mb-6 space-y-5">
+                  <div>
+                    <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
+                    <p className="font-gellix text-xl font-semibold text-foreground">
                       {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
                     </p>
                   </div>
-                  <div className="border-t border-gray-200 pt-4">
-                    <p className="font-inter text-xs text-gray-500 mb-2">Expected USDC</p>
-                    <p className="font-gellix text-3xl font-semibold text-green-600">
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="font-inter text-xs text-gray-500 mb-1.5">Expected USDC</p>
+                    <p className="font-gellix text-2xl font-semibold text-foreground">
                       ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
                     </p>
-                    <p className="font-inter text-sm text-gray-500 mt-1">USDC</p>
                   </div>
                 </div>
 
-                <div className="bg-orange-50 rounded-lg p-3 mb-6 border border-orange-200">
-                  <p className="font-inter text-xs text-orange-800">
-                    ⚠️ <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                  <p className="font-inter text-xs text-gray-700 text-left">
+                    <span className="text-gray-500">⚠️</span> <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
                   </p>
                 </div>
 
@@ -624,17 +640,13 @@ const PortfolioPage = () => {
                       setShowClaimModal(false);
                       setSelectedAssetForClaim(null);
                     }}
-                    className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-foreground rounded-xl font-inter font-medium transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-foreground rounded-xl font-inter font-medium transition-all"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={executeClaimYield}
-                    className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-inter font-medium transition-colors"
-                    style={{
-                      background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
-                      boxShadow: '0 4px 14px 0 rgba(22, 163, 74, 0.25)',
-                    }}
+                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all"
                   >
                     Claim Now
                   </button>

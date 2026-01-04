@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ComposedChart,
   Area,
@@ -13,6 +13,7 @@ import {
 import { X } from 'lucide-react';
 import type { HarvestEvent, PositionTimelineData, LeveragePosition } from '../../types/leverage.types';
 import { formatUnits } from 'viem';
+import { leverageService } from '../../lib/api/leverage.service';
 
 interface PositionDetailChartProps {
   position: LeveragePosition;
@@ -137,8 +138,27 @@ const DetailedTooltip = (props: any) => {
  * PositionDetailChart Modal Component
  * Full-featured chart with grid, axes, legends, and dual lines
  */
-export const PositionDetailChart = ({ position, isOpen, onClose }: PositionDetailChartProps) => {
+export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose }: PositionDetailChartProps) => {
   const [timeRange, setTimeRange] = useState<'1d' | '7d' | '30d' | 'all'>('all');
+  const [position, setPosition] = useState<LeveragePosition>(initialPosition);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialPosition?.positionId) {
+      const fetchDetails = async () => {
+        setLoading(true);
+        try {
+          const details = await leverageService.getPositionDetails(initialPosition.positionId);
+          setPosition(details);
+        } catch (error) {
+          console.error('Failed to fetch position details:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDetails();
+    }
+  }, [isOpen, initialPosition?.positionId]);
 
   if (!isOpen) return null;
 
@@ -198,7 +218,12 @@ export const PositionDetailChart = ({ position, isOpen, onClose }: PositionDetai
 
         {/* Chart */}
         <div className="p-6">
-          <ResponsiveContainer width="100%" height={400}>
+          {loading ? (
+            <div className="flex items-center justify-center h-[400px]">
+              <p className="text-gray-500">Loading position details...</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
             <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <defs>
                 <linearGradient id="mETHGradient" x1="0" y1="0" x2="0" y2="1">
@@ -298,6 +323,7 @@ export const PositionDetailChart = ({ position, isOpen, onClose }: PositionDetai
               />
             </ComposedChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         {/* Footer Info */}

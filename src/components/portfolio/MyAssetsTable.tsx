@@ -18,6 +18,7 @@ interface PortfolioAsset {
   assetId: string;
   totalAmount: string;
   totalInvested: string;
+  status: string;
   tokenAddress?: string;
   metadata?: AssetMetadata;
   yieldInfo?: YieldInfo;
@@ -139,7 +140,7 @@ export const MyAssetsTable = ({
                 {/* Status */}
                 <td className="px-6 py-4 text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-normal">
-                    Active
+                    {asset.status}
                   </span>
                 </td>
 
