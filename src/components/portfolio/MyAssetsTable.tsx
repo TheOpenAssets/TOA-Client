@@ -101,9 +101,8 @@ export const MyAssetsTable = ({
             <>
               <tr
                 key={asset.assetId}
-                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                  index % 2 === 0 ? 'bg-gray-10' : 'bg-gray-50/50'
-                }`}
+                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-gray-10' : 'bg-gray-50/50'
+                  }`}
                 onMouseEnter={() => setHoveredRow(asset.assetId)}
                 onMouseLeave={() => setHoveredRow(null)}
                 onClick={() => navigate(`/marketplace/asset/${asset.assetId}`)}
@@ -111,7 +110,7 @@ export const MyAssetsTable = ({
                 {/* Asset ID */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                   
+
                     <div>
                       <div className="font-gellix text-sm font-normal text-foreground">
                         {asset.metadata?.assetName || asset.assetId.slice(0, 8)}
@@ -147,34 +146,34 @@ export const MyAssetsTable = ({
                 {/* Yield Earned */}
                 <td className="px-6 py-4 text-center">
                   <div className="flex flex-col gap-2">
-                  {hoveredRow === asset.assetId &&
-                  asset.yieldInfo?.claimableYieldFormatted &&
-                  asset.yieldInfo.claimableYieldFormatted !== '$0.00' &&
-                  parseFloat(asset.yieldInfo.claimableYield || '0') > 0 ? (
-                    <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClaimYield(asset.assetId);
-                    }}
-                    disabled={claimingAssetId === asset.assetId}
-                    className="px-2 py-2 bg-black  text-center text-white rounded-lg font-gellix text-sm font-normal hover:bg-black/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                    {claimingAssetId === asset.assetId
-                      ? claimStatus
-                      : 'Claim Yield'}
-                    </button>
-                  ) : (
-                    <div
-                    className={`font-gellix text-sm font-normal ${
-                      asset.yieldInfo?.settlementDistributed &&
-                      parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
-                      ? 'text-black-600'
-                      : 'text-gray-400'
-                    }`}
-                    >
-                    {asset.yieldInfo?.claimableYieldFormatted || '$0.00'}
-                    </div>
-                  )}
+                    {hoveredRow === asset.assetId &&
+                      asset.yieldInfo?.claimableYieldFormatted &&
+                      asset.yieldInfo.claimableYieldFormatted !== '$0.00' &&
+                    (parseFloat(asset.yieldInfo.claimableYield || '0') > 0 && asset.status !== 'CLAIMED') ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClaimYield(asset.assetId);
+                        }}
+                        disabled={claimingAssetId === asset.assetId}
+                        className="px-2 py-2 bg-black  text-center text-white rounded-lg font-gellix text-sm font-normal hover:bg-black/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+
+                        {claimingAssetId === asset.assetId
+                          ? claimStatus
+                          : 'Claim Yield'}
+                      </button>
+                    ) : (
+                      <div
+                        className={`font-gellix text-sm font-normal ${asset.yieldInfo?.settlementDistributed &&
+                            parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
+                            ? 'text-black-600'
+                            : 'text-gray-400'
+                          }`}
+                      >
+                        {asset.yieldInfo?.claimableYieldFormatted || '$0.00'}
+                      </div>
+                    )}
                   </div>
                 </td>
 
@@ -185,7 +184,7 @@ export const MyAssetsTable = ({
                   </span>
                 </td>
               </tr>
-              
+
             </>
           ))}
         </tbody>
