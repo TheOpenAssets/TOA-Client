@@ -19,6 +19,7 @@ import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
+import { PageLoader } from '../../components/ui/page-loader';
 
 
 const PortfolioPage = () => {
@@ -321,11 +322,7 @@ const PortfolioPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-foreground">Loading Portfolio...</div>
-        </div>
-      </div>
+      <PageLoader text="" />
     );
   }
 

@@ -10,7 +10,6 @@ import {
   TrendingDown,
   TrendingUp,
   Minus,
-  Loader2,
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
@@ -20,6 +19,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
 import { authService } from '../../../lib/api/auth.service';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const ComplianceViewPage = () => {
   const { assetsForCompliance, isLoading, error, fetchAdminDashboardData } = useAdminStore();
@@ -192,10 +192,7 @@ const ComplianceViewPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-          <div className="font-gellix text-sm text-foreground">Loading compliance queue...</div>
-        </div>
+        <PageLoader text="Loading Compliance Assets..."/>
       </div>
     );
   }

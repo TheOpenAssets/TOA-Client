@@ -16,6 +16,7 @@ import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 // Step definitions matching admin-yeild.sh
 type SettlementStep =
@@ -206,9 +207,7 @@ const SettlementViewPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-foreground">Loading settlements...</div>
-        </div>
+        <PageLoader text="Loading Settlements..." />
       </div>
     );
   }

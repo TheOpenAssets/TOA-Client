@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, Check, Loader2, ExternalLink } from 'lucide-react';
 import { adminService } from '../../../lib/api/admin.service';
-
+import { PageLoader } from '../../../components/ui/page-loader';
 interface PayoutAsset {
   assetId: string;
   invoiceNumber: string;
@@ -221,8 +221,7 @@ const PayoutViewPage = () => {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-3" />
-          <p className="font-gellix text-foreground/70">Loading assets...</p>
+          <PageLoader text="Loading Assets..." />
         </div>
       )}
 

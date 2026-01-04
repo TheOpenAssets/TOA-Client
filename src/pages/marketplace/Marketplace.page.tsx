@@ -18,6 +18,7 @@ import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
+import { PageLoader } from '../../components/ui/page-loader';
 
 const MarketplacePage = () => {
   const navigate = useNavigate();
@@ -397,11 +398,7 @@ const MarketplacePage = () => {
   // Show loading state
   if (isLoading && listings.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg font-gellix text-foreground">Loading marketplace...</div>
-        </div>
-      </div>
+     <PageLoader text=""/>
     );
   }
 

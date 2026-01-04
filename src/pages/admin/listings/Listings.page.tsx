@@ -17,6 +17,7 @@ import {
 import { Input } from '../../../components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
+import { PageLoader } from '@/components/ui/page-loader';
 
 const ListingsPage = () => {
   const [assets, setAssets] = useState<ApiAdminAsset[]>([]);
@@ -131,10 +132,7 @@ const ListingsPage = () => {
   if (isLoading && assets.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-          <span className="font-gellix text-sm text-foreground">Loading listings...</span>
-        </div>
+        <PageLoader text="Loading Listings..." />
       </div>
     );
   }
