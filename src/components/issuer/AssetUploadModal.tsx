@@ -106,7 +106,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const validateStep = (): boolean => {
     setError(null);
     if (currentStep === 1) {
-      if (!formData.file) { setError('Please upload an invoice file'); return false; }
+      if (!formData.file) { setError('Please upload an invoice file. The format must be a pdf'); return false; }
       if (!formData.invoiceNumber || !formData.faceValue || !formData.issueDate || !formData.dueDate) {
         setError('Please fill in all required fields'); return false;
       }
@@ -338,7 +338,6 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
               <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-6">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Fundraising Limits (%)</h4>
-                  <Settings className="w-4 h-4 text-slate-300" />
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <MinimalInput 
