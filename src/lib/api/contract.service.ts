@@ -81,6 +81,42 @@ class ContractService {
   }
 
   /**
+   * Custom wait loop for transaction confirmation
+   * Polls every 10 seconds for up to 20 minutes
+   * Prevents UI freeze and aggressive RPC polling
+   */
+  async waitForTransaction(txHash: string, provider: ethers.Provider): Promise<ethers.TransactionReceipt> {
+    const POLL_INTERVAL = 5000; // 5 seconds
+    const MAX_ATTEMPTS = 240; // 20 minutes (240 * 5s = 1200s)
+    
+    console.log(`⏳ Polling for TX ${txHash} (Interval: 5s, Timeout: 20m)...`);
+
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      try {
+        const receipt = await provider.getTransactionReceipt(txHash);
+        if (receipt) {
+            if (receipt.status === 1) {
+                console.log(`✅ TX Confirmed in block ${receipt.blockNumber} after ${(i + 1) * 5}s`);
+                return receipt;
+            } else {
+                 throw new Error(`Transaction failed (status: 0)`);
+            }
+        }
+      } catch (error: any) {
+         // Ignore "not found" errors during polling, rethrow others if critical
+         if (error.message && !error.message.includes('not found')) {
+            console.warn(`Polling error (attempt ${i+1}):`, error);
+         }
+      }
+
+      // Wait for next poll
+      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+    }
+
+    throw new Error(`Transaction confirmation timed out after 20 minutes. TX: ${txHash}`);
+  }
+
+  /**
    * Check USDC balance of user
    */
   async checkUSDCBalance(userAddress: string): Promise<string> {
@@ -205,7 +241,7 @@ class ContractService {
         const tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment);
         console.log('Approve TX:', tx.hash);
 
-        const receipt = await tx.wait();
+        const receipt = await this.waitForTransaction(tx.hash, provider);
         console.log('✅ USDC approved');
 
         return {
@@ -567,7 +603,7 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       // Wait for confirmation
-      const receipt = await tx.wait();
+      const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('\n✅ Purchase Complete!');
       console.log('━'.repeat(50));
@@ -879,7 +915,7 @@ class ContractService {
       console.log('TX Hash:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
-      const receipt = await tx.wait();
+      const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log('✅ Approved in block', receipt.blockNumber);
       console.log();
 
@@ -958,7 +994,7 @@ class ContractService {
       console.log('TX Hash:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
-      const receipt = await tx.wait();
+      const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log();
 
@@ -1085,7 +1121,7 @@ class ContractService {
       console.log('TX:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
-      const receipt = await tx.wait();
+      const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('✅ Marketplace approved!');
       console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
@@ -1133,7 +1169,7 @@ class ContractService {
       console.log('TX Hash:', tx.hash);
       console.log('Waiting for confirmation...');
 
-      const receipt = await tx.wait();
+      const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log('Confirmed in block', receipt.blockNumber);
       
       return {
