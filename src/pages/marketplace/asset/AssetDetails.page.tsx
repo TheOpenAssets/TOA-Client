@@ -45,6 +45,7 @@ const AssetDetailsPage = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [formattedChartData, setFormattedChartData] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('standard');
 
   // Leverage State
   const [leverageTokenInput, setLeverageTokenInput] = useState('');
@@ -65,7 +66,12 @@ const AssetDetailsPage = () => {
     // Required mETH = Required Collateral Value / mETHPrice
 
     const meth = (tokens * tokenPrice * 1.5) / methPriceVal;
-    return meth;
+    
+    // Add 1 USDC buffer to prevent "insufficient collateral" due to micro-rounding errors
+    // 1 USDC = 1e6 units
+    const buffer = (1.0 * 1e6) / methPriceVal;
+    
+    return meth + buffer;
   })();
 
   const calculatedMethString = calculatedMethAmount > 0 ? calculatedMethAmount.toFixed(6) : '';
@@ -123,23 +129,31 @@ const AssetDetailsPage = () => {
     if (assetId) {
       fetchAssetDetails(assetId);
     }
-    fetchMethPrice();
+
+    if (activeTab === 'leverage') {
+      fetchMethPrice();
+    }
 
     // Load wallet data if already connected
     if (address) {
       loadWalletData();
     }
 
-    // Auto-refresh mETH price every 30 seconds
-    const interval = setInterval(() => {
-      fetchMethPrice();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData]);
+    // Auto-refresh mETH price every 30 seconds ONLY if active tab is leverage
+    let interval: NodeJS.Timeout;
+    if (activeTab === 'leverage') {
+      interval = setInterval(() => {
+        fetchMethPrice();
+      }, 30000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab,purchaseStatus, ]);
 
   useEffect(() => {
     if (address) {
-      
       loadWalletData();
     }
   }, [address, loadWalletData]);
@@ -526,11 +540,11 @@ const AssetDetailsPage = () => {
         await loadWalletData();
       } else {
         console.error('❌ Purchase failed:', result.error);
-        setPurchaseStatus(`Purchase failed !`);
+        setPurchaseStatus(`Purchase failed: ${result.error}`);
       }
     } catch (error: any) {
       console.error('❌ Purchase error:', error);
-      setPurchaseStatus(`Purchase Failed !`);
+      setPurchaseStatus(`Error: ${error.message}`);
     } finally {
       setIsPurchasing(false);
       console.log('\n===== PURCHASE FLOW COMPLETED =====\n');
@@ -589,8 +603,8 @@ const AssetDetailsPage = () => {
                     <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                       <defs>
                         <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#b0d79aff" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#98b885ff" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <XAxis
@@ -642,7 +656,7 @@ const AssetDetailsPage = () => {
                       <Area
                         type="monotone"
                         dataKey="tokensPurchased"
-                        stroke="#3B82F6"
+                        stroke="#bbceb0ff"
                         strokeWidth={2}
                         fillOpacity={1}
                         fill="url(#colorTokens)"
@@ -737,7 +751,7 @@ const AssetDetailsPage = () => {
           <div className="relative">
             <div className="sticky top-30">
               <div className="bg-transparent rounded-3xl p-6 shadow-md border border-gray-100">
-                <Tabs defaultValue="standard" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-semibold text-[#111111]">Buy Tokens</h2>
                     <TabsList className="bg-gray-100 p-1 rounded-lg">

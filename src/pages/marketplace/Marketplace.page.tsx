@@ -225,11 +225,19 @@ const MarketplacePage = () => {
   }
   const handleTableNavigate = (asset: MarketplaceAsset) => {
     if (asset.listingType === 'STATIC') {
-      navigate(`/marketplace/trade/${asset.id}`);
+      navigate(`/marketplace/asset/${asset.id}`);
     } else {
       navigate(`/marketplace/auction/${asset.id}`);
     }
   };
+
+const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLButtonElement>) => {
+  if (asset.listingType === 'STATIC') {
+    navigate(`/trade/${asset.id}`); 
+    e.preventDefault();
+    e.stopPropagation();
+  } 
+};
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -880,7 +888,7 @@ const MarketplacePage = () => {
                     return (
                       <div
                         key={asset.id}
-                        onClick={() => handleTableNavigate(asset)}
+                        
                         className="group relative bg-white rounded-3xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl"
                       >
                         {/* Header Section */}
@@ -1094,7 +1102,8 @@ const MarketplacePage = () => {
                             })()}
                             <span className="text-gray-400">|</span>
                             <button
-                              onClick={() => handleTableNavigate(asset)}
+                              onClick={(e) => handleTradeNavigate(asset, e)}
+                              
                               className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 hover:scale-[1.07] transition-colors"
                             >
                               Trade
