@@ -12,9 +12,12 @@ export interface HarvestEvent {
 
 export interface PositionTimelineData {
   timestamp: string;
-  mETHValue: number; // USD value of remaining mETH collateral
-  cumulativeInterest: number; // Cumulative interest paid in USD
+  mETHSwapped?: number; // mETH swapped at this harvest (in ETH)
+  interestPaid?: number; // Interest paid at this harvest (in USD)
+  usdcReceived?: number; // USDC received at this harvest (in USD)
   healthFactor: number; // Health factor at this point
+  mETHValue?: number; // USD value of remaining mETH collateral (deprecated, for backwards compatibility)
+  cumulativeInterest?: number; // Cumulative interest paid in USD (deprecated, for backwards compatibility)
 }
 
 export interface LeveragePosition {

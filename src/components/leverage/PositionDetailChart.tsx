@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   ComposedChart,
   Area,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -26,43 +25,79 @@ interface PositionDetailChartProps {
  * Renders circular markers at harvest events with click navigation
  */
 const HarvestDot = (props: any) => {
-  const { cx, cy, payload, harvestHistory } = props;
+  const { cx, cy, payload, harvestHistory, fill = '#10B981' } = props;
+
+  // Only show dots for actual harvest points (non-zero values)
+  const isHarvestPoint = payload.mETHSwapped > 0 || payload.interestPaid > 0 || payload.usdcReceived > 0;
+
+  if (!isHarvestPoint) {
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={2}
+        fill="#e5e7eb"
+        stroke="#fff"
+        strokeWidth={1}
+      />
+    );
+  }
 
   const harvestEvent = harvestHistory?.find(
     (h: HarvestEvent) => h.timestamp === payload.timestamp
   );
 
-  if (!harvestEvent) return null;
+  if (!harvestEvent) {
+    console.warn('No harvest event found for payload:', payload);
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={4}
+        fill={fill}
+        stroke="#fff"
+        strokeWidth={1.5}
+      />
+    );
+  }
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    console.log('Clicking harvest point:', harvestEvent.transactionHash);
     const explorerUrl = `https://explorer.sepolia.mantle.xyz/tx/${harvestEvent.transactionHash}`;
     window.open(explorerUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <g>
+    <g style={{ cursor: 'pointer', pointerEvents: 'all' }} onClick={handleClick}>
+      {/* Invisible larger circle for easier clicking */}
       <circle
         cx={cx}
         cy={cy}
-        r={6}
-        fill="#10B981"
-        stroke="#fff"
-        strokeWidth={2}
+        r={10}
+        fill="transparent"
         style={{ cursor: 'pointer' }}
-        onClick={handleClick}
-        className="hover:r-8 transition-all"
       />
-      <title>Click to view transaction</title>
+      {/* Visible colored circle - smaller and cleaner */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={4}
+        fill={fill}
+        stroke="#fff"
+        strokeWidth={1.5}
+        style={{ pointerEvents: 'none' }}
+      />
+      <title>Click to view transaction: {harvestEvent.transactionHash}</title>
     </g>
   );
 };
 
 /**
- * Custom Tooltip for Chart
- * Shows detailed information on hover - positioned to not block clicks
+ * Custom Tooltip for mETH Chart
  */
-const DetailedTooltip = (props: any) => {
+const MethTooltip = (props: any) => {
   const { active, payload, harvestHistory } = props;
 
   if (!active || !payload || !payload.length) return null;
@@ -72,76 +107,133 @@ const DetailedTooltip = (props: any) => {
     (h: HarvestEvent) => h.timestamp === dataPoint.timestamp
   );
 
+  if (!harvestEvent) return null;
+
   const date = new Date(dataPoint.timestamp);
   const formattedDate = date.toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const mETHValue = parseFloat(harvestEvent.mETHSwapped) / 1e18;
+  const formattedMETH = mETHValue < 0.000001 ? mETHValue.toExponential(4) : mETHValue.toFixed(6);
+
+  return (
+    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+      <p className="font-medium text-gray-700 mb-2 text-xs">{formattedDate}</p>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        <p className="text-xs text-gray-600">
+          <span className="font-medium">mETH:</span> {formattedMETH}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Custom Tooltip for Interest Chart
+ */
+const InterestTooltip = (props: any) => {
+  const { active, payload, harvestHistory } = props;
+
+  if (!active || !payload || !payload.length) return null;
+
+  const dataPoint = payload[0].payload;
+  const harvestEvent = harvestHistory?.find(
+    (h: HarvestEvent) => h.timestamp === dataPoint.timestamp
+  );
+
+  if (!harvestEvent) return null;
+
+  const date = new Date(dataPoint.timestamp);
+  const formattedDate = date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const interestValue = parseFloat(harvestEvent.interestPaid) / 1e6;
+  const usdcValue = parseFloat(harvestEvent.usdcReceived) / 1e6;
+  const formattedInterest = interestValue < 0.001 ? interestValue.toExponential(4) : interestValue.toFixed(4);
+  const formattedUSDC = usdcValue < 0.001 ? usdcValue.toExponential(4) : usdcValue.toFixed(4);
+
+  return (
+    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+      <p className="font-medium text-gray-700 mb-2 text-xs">{formattedDate}</p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <p className="text-xs text-gray-600">
+            <span className="font-medium">Interest:</span> ${formattedInterest}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+          <p className="text-xs text-gray-600">
+            <span className="font-medium">USDC:</span> ${formattedUSDC}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Custom Tooltip for Health Factor Chart
+ */
+const HealthTooltip = (props: any) => {
+  const { active, payload, harvestHistory } = props;
+
+  if (!active || !payload || !payload.length) return null;
+
+  const dataPoint = payload[0].payload;
+  const harvestEvent = harvestHistory?.find(
+    (h: HarvestEvent) => h.timestamp === dataPoint.timestamp
+  );
+
+  if (!harvestEvent) return null;
+
+  const date = new Date(dataPoint.timestamp);
+  const formattedDate = date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg shadow-xl p-4 pointer-events-none">
-      <p className="font-semibold text-gray-900 mb-3 text-sm">{formattedDate}</p>
-
-      <div className="space-y-2">
+    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+      <p className="font-medium text-gray-700 mb-2 text-xs">{formattedDate}</p>
+      <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          <p className="text-sm text-gray-700">
-            <span className="font-medium">mETH Value:</span> ${dataPoint.mETHValue?.toFixed(2)}
+          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+          <p className="text-xs text-gray-600">
+            <span className="font-medium">After:</span> {(harvestEvent.healthFactorAfter / 10000).toFixed(2)}
           </p>
         </div>
-
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <p className="text-sm text-gray-700">
-            <span className="font-medium">Cumulative Interest:</span> ${dataPoint.cumulativeInterest?.toFixed(4)}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-          <p className="text-sm text-gray-700">
-            <span className="font-medium">Health Factor:</span> {dataPoint.healthFactor?.toFixed(2)}
+          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+          <p className="text-xs text-gray-600">
+            <span className="font-medium">Before:</span> {(harvestEvent.healthFactorBefore / 10000).toFixed(2)}
           </p>
         </div>
       </div>
-
-      {harvestEvent && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <p className="font-semibold text-green-700 mb-2 text-sm">🌾 Harvest Event</p>
-          <div className="space-y-1 text-xs">
-            <p className="text-gray-700">
-              <span className="font-medium">mETH Swapped:</span>{' '}
-              {(parseFloat(harvestEvent.mETHSwapped) / 1e18).toFixed(6)} mETH
-            </p>
-            <p className="text-gray-700">
-              <span className="font-medium">USDC Received:</span> $
-              {(parseFloat(harvestEvent.usdcReceived) / 1e6).toFixed(4)}
-            </p>
-            <p className="text-gray-700">
-              <span className="font-medium">Interest Paid:</span> $
-              {(parseFloat(harvestEvent.interestPaid) / 1e6).toFixed(4)}
-            </p>
-            <p className="text-blue-600 font-medium mt-2">
-              Click green circle to view TX →
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 /**
  * PositionDetailChart Modal Component
- * Full-featured chart with grid, axes, legends, and dual lines
+ * Three separate charts with tabs for different metrics
  */
 export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose }: PositionDetailChartProps) => {
-  const [timeRange, setTimeRange] = useState<'1d' | '7d' | '30d' | 'all'>('all');
   const [position, setPosition] = useState<LeveragePosition>(initialPosition);
   const [loading, setLoading] = useState(false);
+  const [activeChart, setActiveChart] = useState<'meth' | 'interest' | 'health'>('meth');
 
   useEffect(() => {
     if (isOpen && initialPosition?.positionId) {
@@ -160,180 +252,303 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
     }
   }, [isOpen, initialPosition?.positionId]);
 
+  // Handle clicks on data points
+  const handleChartClick = (data: any) => {
+    if (!data || !data.activePayload || !data.activePayload.length) return;
+
+    const clickedPoint = data.activePayload[0].payload;
+    console.log('Chart clicked:', clickedPoint);
+
+    // Find the harvest event for this point
+    const harvestEvent = position.harvestHistory?.find(
+      (h: HarvestEvent) => h.timestamp === clickedPoint.timestamp
+    );
+
+    if (harvestEvent) {
+      console.log('Opening transaction:', harvestEvent.transactionHash);
+      const explorerUrl = `https://explorer.sepolia.mantle.xyz/tx/${harvestEvent.transactionHash}`;
+      window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   if (!isOpen) return null;
 
   // Build timeline from harvest history (REAL DATA)
-  const data = buildTimelineFromHarvests(position, timeRange);
+  const data = buildTimelineFromHarvests(position);
 
   const collateral = formatUnits(BigInt(position.mETHCollateral), 18);
   const debt = formatUnits(BigInt(position.usdcBorrowed), 6);
   const health = position.currentHealthFactor / 10000;
+  const totalMETH = (parseFloat(position.totalMETHHarvested || '0') / 1e18).toFixed(8);
+  const totalInterest = (parseFloat(position.totalInterestPaid || '0') / 1e6).toFixed(4);
+  const totalHarvests = position.harvestHistory?.length || 0;
 
   return (
-    <div className="fixed inset-0 bg-white/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-gray-200">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-gray-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Position #{position.positionId} - {position.assetSymbol || position.assetId.substring(0, 12)}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              Position #{position.positionId} · {position.assetSymbol || position.assetId.substring(0, 12)}
             </h2>
-            <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
+            <div className="flex items-center gap-6 text-sm text-gray-600">
               <span>
-                <span className="font-medium">Collateral:</span> {parseFloat(collateral).toFixed(2)} mETH
+                <span className="font-medium text-gray-700">Collateral:</span> {parseFloat(collateral).toFixed(4)} mETH
               </span>
               <span>
-                <span className="font-medium">Debt:</span> ${parseFloat(debt).toLocaleString()} USDC
+                <span className="font-medium text-gray-700">Debt:</span> ${parseFloat(debt).toLocaleString()} USDC
               </span>
               <span className={health >= 1.4 ? 'text-green-600' : health >= 1.15 ? 'text-yellow-600' : 'text-red-600'}>
-                <span className="font-medium">Health Factor:</span> {health.toFixed(2)}
+                <span className="font-medium text-gray-700">Health:</span> {health.toFixed(2)}
               </span>
+              {totalHarvests > 0 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span>
+                    <span className="font-medium text-gray-700">Harvests:</span> {totalHarvests}
+                  </span>
+                  <span>
+                    <span className="font-medium text-gray-700">mETH Swapped:</span> {totalMETH}
+                  </span>
+                  <span>
+                    <span className="font-medium text-gray-700">Interest Paid:</span> ${totalInterest}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            <X className="w-6 h-6 text-gray-500" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
-        {/* Time Range Selector */}
-        <div className="flex items-center gap-2 px-6 pt-4">
-          {(['1d', '7d', '30d', 'all'] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                timeRange === range
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        {/* Chart Type Tabs */}
+        <div className="flex items-center gap-1 px-6 pt-3 border-b border-gray-100">
+          <button
+            onClick={() => setActiveChart('meth')}
+            className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'meth'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
-            >
-              {range === '1d' ? '24H' : range === '7d' ? '7D' : range === '30d' ? '30D' : 'All'}
-            </button>
-          ))}
+          >
+            mETH Swapped
+          </button>
+          <button
+            onClick={() => setActiveChart('interest')}
+            className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'interest'
+                ? 'border-red-500 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+          >
+            Interest & USDC
+          </button>
+          <button
+            onClick={() => setActiveChart('health')}
+            className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'health'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+          >
+            Health Factor
+          </button>
         </div>
 
         {/* Chart */}
         <div className="p-6">
           {loading ? (
-            <div className="flex items-center justify-center h-[400px]">
-              <p className="text-gray-500">Loading position details...</p>
+            <div className="flex items-center justify-center h-[450px]">
+              <div className="flex flex-col items-center">
+                <div className="loader-container">
+                  <svg className="loader" viewBox="0 0 100 100" width="48" height="48">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#000" strokeWidth="8" strokeDasharray="70, 200" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <p className="mt-3 text-sm text-gray-500">Loading chart data...</p>
+              </div>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-              <defs>
-                <linearGradient id="mETHGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="debtGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="healthGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
+            <>
+              {position.harvestHistory && position.harvestHistory.length === 0 && (
+                <div className="mb-4 bg-blue-50/50 border border-blue-200/50 rounded-lg p-3 text-sm text-blue-600">
+                  <span className="font-medium">ℹ️ No harvests yet.</span> Harvest events will appear on the chart once interest is paid.
+                </div>
+              )}
 
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              {/* mETH Swapped Chart */}
+              {activeChart === 'meth' && (
+                <ResponsiveContainer width="100%" height={450}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick}>
+                    <defs>
+                      <linearGradient id="mETHGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp);
+                        return date.toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                        });
+                      }}
+                      stroke="#d1d5db"
+                      tick={{ fill: '#9ca3af', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      label={{ value: 'mETH', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
+                      stroke="#d1d5db"
+                      tick={{ fill: '#9ca3af', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <Tooltip content={<MethTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
+                    <Area
+                      type="monotone"
+                      dataKey="mETHSwapped"
+                      name="mETH Swapped"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      fill="url(#mETHGradient)"
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#10b981" />}
+                      connectNulls
+                      isAnimationActive={false}
+                      fillOpacity={1}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
 
-              <XAxis
-                dataKey="timestamp"
-                tickFormatter={(timestamp) => {
-                  const date = new Date(timestamp);
-                  return date.toLocaleString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                  });
-                }}
-                stroke="#6B7280"
-                style={{ fontSize: '12px' }}
-              />
+              {/* Interest & USDC Chart */}
+              {activeChart === 'interest' && (
+                <ResponsiveContainer width="100%" height={450}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick}>
+                    <defs>
+                      <linearGradient id="interestGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="usdcGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp);
+                        return date.toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                        });
+                      }}
+                      stroke="#d1d5db"
+                      tick={{ fill: '#9ca3af', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      label={{ value: 'USDC ($)', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
+                      stroke="#d1d5db"
+                      tick={{ fill: '#9ca3af', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <Tooltip content={<InterestTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
+                    <Area
+                      type="monotone"
+                      dataKey="interestPaid"
+                      name="Interest Paid"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                      fill="url(#interestGradient)"
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#ef4444" />}
+                      connectNulls
+                      isAnimationActive={false}
+                      fillOpacity={1}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="usdcReceived"
+                      name="USDC Received"
+                      stroke="#f97316"
+                      strokeWidth={3}
+                      fill="url(#usdcGradient)"
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#f97316" />}
+                      connectNulls
+                      isAnimationActive={false}
+                      fillOpacity={1}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
 
-              <YAxis
-                yAxisId="left"
-                label={{ value: 'Value (USD)', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
-                stroke="#6B7280"
-                style={{ fontSize: '12px' }}
-              />
-
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                label={{ value: 'Health Factor', angle: 90, position: 'insideRight', style: { fontSize: '12px' } }}
-                stroke="#6B7280"
-                style={{ fontSize: '12px' }}
-              />
-
-              <Tooltip
-                content={(props) => <DetailedTooltip {...props} harvestHistory={position.harvestHistory} />}
-                cursor={false}
-                wrapperStyle={{ pointerEvents: 'none' }}
-              />
-
-              <Legend
-                wrapperStyle={{ fontSize: '14px', paddingTop: '20px' }}
-                iconType="line"
-              />
-
-              {/* mETH Value Area (Green) */}
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="mETHValue"
-                stroke="#10B981"
-                strokeWidth={3}
-                fill="url(#mETHGradient)"
-                name="mETH Value (USD)"
-                dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} />}
-                activeDot={{ r: 6 }}
-                isAnimationActive={false}
-              />
-
-              {/* Cumulative Interest Area (Red) */}
-              <Area
-                yAxisId="left"
-                type="stepAfter"
-                dataKey="cumulativeInterest"
-                stroke="#EF4444"
-                strokeWidth={2}
-                fill="url(#debtGradient)"
-                name="Cumulative Interest Paid (USDC)"
-                strokeDasharray="5 5"
-                dot={false}
-                isAnimationActive={false}
-              />
-
-              {/* Health Factor Line (Blue) - Keep as line for clarity */}
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="healthFactor"
-                stroke="#3B82F6"
-                strokeWidth={2}
-                name="Health Factor"
-                dot={false}
-                opacity={0.8}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+              {/* Health Factor Chart */}
+              {activeChart === 'health' && (
+                <ResponsiveContainer width="100%" height={450}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick}>
+                    <defs>
+                      <linearGradient id="healthGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                    <XAxis
+                      dataKey="timestamp"
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp);
+                        return date.toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                        });
+                      }}
+                      stroke="#d1d5db"
+                      tick={{ fill: '#9ca3af', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      label={{ value: 'Health Factor', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
+                      stroke="#d1d5db"
+                      tick={{ fill: '#9ca3af', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <Tooltip content={<HealthTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
+                    <Area
+                      type="monotone"
+                      dataKey="healthFactor"
+                      name="Health Factor"
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      fill="url(#healthGradient)"
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#3b82f6" />}
+                      connectNulls
+                      isAnimationActive={false}
+                      fillOpacity={1}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </>
           )}
-        </div>
-
-        {/* Footer Info */}
-        <div className="px-6 pb-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
-              <span className="font-semibold">💡 Tip:</span> Green circles represent harvest events where mETH was swapped to pay interest.
-              Click on them to view the transaction on the block explorer. The green line shows your collateral value, and the red line shows cumulative interest paid over time.
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -342,116 +557,66 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
 
 /**
  * Build timeline from actual harvest history data
- * This uses REAL data from the backend - no dummy data!
+ * Creates data points for mETH swapped, interest paid, and health factor at each harvest
  */
-function buildTimelineFromHarvests(
-  position: LeveragePosition,
-  timeRange: '1d' | '7d' | '30d' | 'all'
-): PositionTimelineData[] {
+function buildTimelineFromHarvests(position: LeveragePosition): PositionTimelineData[] {
   const points: PositionTimelineData[] = [];
 
-  // Assume current mETH price (backend will provide this later)
-  const ASSUMED_METH_PRICE = 3000; // USD per mETH
-
-  // Starting values
-  const initialCollateral = parseFloat(formatUnits(BigInt(position.mETHCollateral), 18));
-  let cumulativeInterest = 0;
-  let remainingCollateral = initialCollateral;
-
-  // Add starting point at position creation
-  const initialMETHValue = initialCollateral * ASSUMED_METH_PRICE;
-
+  // Add starting point at position creation (no harvest yet)
   points.push({
     timestamp: position.createdAt,
-    mETHValue: initialMETHValue,
-    cumulativeInterest: 0,
+    mETHSwapped: 0,
+    interestPaid: 0,
+    usdcReceived: 0,
     healthFactor: position.currentHealthFactor / 10000,
   });
 
   // Process each harvest event
   if (position.harvestHistory && position.harvestHistory.length > 0) {
-    position.harvestHistory.forEach((harvest, index) => {
+    position.harvestHistory.forEach((harvest) => {
       // Convert mETH swapped from WEI to ETH
       const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
 
       // Convert interest paid from USDC WEI to USD
       const interestPaid = parseFloat(harvest.interestPaid) / 1e6;
 
-      // Before updating: add a point just before harvest (for step visualization)
-      // This shows the flat line before the step-up
-      const beforeHarvestTime = new Date(new Date(harvest.timestamp).getTime() - 1000).toISOString();
-      points.push({
-        timestamp: beforeHarvestTime,
-        mETHValue: remainingCollateral * ASSUMED_METH_PRICE,
-        cumulativeInterest: cumulativeInterest, // Same as before (flat line)
-        healthFactor: harvest.healthFactorBefore / 10000,
-      });
-
-      // Update cumulative interest (STEP UP happens here)
-      cumulativeInterest += interestPaid;
-
-      // Update remaining collateral (subtract what was swapped)
-      remainingCollateral -= mETHSwapped;
-
-      // Calculate mETH value at this point
-      const mETHValue = remainingCollateral * ASSUMED_METH_PRICE;
+      // Convert USDC received from USDC WEI to USD
+      const usdcReceived = parseFloat(harvest.usdcReceived) / 1e6;
 
       // Health factor from harvest event
       const healthFactor = harvest.healthFactorAfter / 10000;
 
-      // Add harvest point (AFTER the step-up)
+      // Add harvest point
       points.push({
         timestamp: harvest.timestamp,
-        mETHValue,
-        cumulativeInterest, // NEW higher value (step up)
+        mETHSwapped,
+        interestPaid,
+        usdcReceived,
         healthFactor,
       });
-
-      // Debug log for first few harvests
-      if (index < 3) {
-        console.log(`📊 Harvest ${index + 1}:`, {
-          timestamp: harvest.timestamp,
-          mETHSwapped: mETHSwapped.toFixed(6),
-          interestPaid: `$${interestPaid.toFixed(6)}`,
-          cumulativeInterest: `$${cumulativeInterest.toFixed(6)}`,
-          mETHValue: `$${mETHValue.toFixed(2)}`,
-          remainingCollateral: remainingCollateral.toFixed(6)
-        });
-      }
     });
   }
 
-  // Add current point (now) - interest stays flat after last harvest
-  const currentMETHValue = remainingCollateral * ASSUMED_METH_PRICE;
-
+  // Add current point (now)
   points.push({
     timestamp: new Date().toISOString(),
-    mETHValue: currentMETHValue,
-    cumulativeInterest: cumulativeInterest, // Use calculated cumulative, not totalInterestPaid
+    mETHSwapped: 0, // No harvest at current time
+    interestPaid: 0,
+    usdcReceived: 0,
     healthFactor: position.currentHealthFactor / 10000,
   });
 
-  // Debug: Log summary
-  console.log('📈 Chart Data Summary:', {
+  console.log('📈 Chart Data Points:', {
     totalPoints: points.length,
-    startInterest: points[0].cumulativeInterest,
-    endInterest: cumulativeInterest,
-    startMETHValue: points[0].mETHValue.toFixed(2),
-    endMETHValue: currentMETHValue.toFixed(2),
-    totalHarvests: position.harvestHistory?.length || 0
+    totalHarvests: position.harvestHistory?.length || 0,
+    points: points.map(p => ({
+      timestamp: new Date(p.timestamp).toLocaleString(),
+      mETHSwapped: p.mETHSwapped?.toFixed(6),
+      interestPaid: p.interestPaid?.toFixed(4),
+      usdcReceived: p.usdcReceived?.toFixed(4),
+      healthFactor: p.healthFactor?.toFixed(2),
+    }))
   });
-
-  // Filter by time range
-  if (timeRange !== 'all') {
-    const now = Date.now();
-    const cutoff = {
-      '1d': now - 24 * 60 * 60 * 1000,
-      '7d': now - 7 * 24 * 60 * 60 * 1000,
-      '30d': now - 30 * 24 * 60 * 60 * 1000,
-    }[timeRange];
-
-    return points.filter((p) => new Date(p.timestamp).getTime() >= cutoff);
-  }
 
   return points;
 }

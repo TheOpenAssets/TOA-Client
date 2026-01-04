@@ -1,6 +1,5 @@
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import type { HarvestEvent, PositionTimelineData, HealthStatus, LeveragePosition } from '../../types/leverage.types';
-import { formatUnits } from 'viem';
 
 interface PositionSparklineProps {
   position: LeveragePosition;
@@ -8,44 +7,8 @@ interface PositionSparklineProps {
 }
 
 /**
- * Custom Dot Component for Harvest Points
- * Renders circular markers at harvest events with click navigation to block explorer
- */
-const HarvestDot = (props: any) => {
-  const { cx, cy, payload, harvestHistory } = props;
-
-  // Check if this data point has a harvest event
-  const harvestEvent = harvestHistory?.find(
-    (h: HarvestEvent) => h.timestamp === payload.timestamp
-  );
-
-  if (!harvestEvent) return null;
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const explorerUrl = `https://explorer.sepolia.mantle.xyz/tx/${harvestEvent.transactionHash}`;
-    window.open(explorerUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  return (
-    <g>
-      <circle
-        cx={cx}
-        cy={cy}
-        r={4}
-        fill="#10B981"
-        stroke="#fff"
-        strokeWidth={2}
-        style={{ cursor: 'pointer' }}
-        onClick={handleClick}
-      />
-    </g>
-  );
-};
-
-/**
  * Custom Tooltip for Harvest Points
- * Shows harvest details on hover - positioned to not block clicks
+ * Shows harvest details on hover
  */
 const HarvestTooltip = (props: any) => {
   const { active, payload, position } = props;
@@ -73,7 +36,6 @@ const HarvestTooltip = (props: any) => {
           <span className="font-medium">Interest:</span> ${interestPaid}
         </p>
       </div>
-      <p className="text-blue-600 text-[10px] mt-1 italic">Click circle to view TX</p>
     </div>
   );
 };
@@ -81,24 +43,27 @@ const HarvestTooltip = (props: any) => {
 /**
  * PositionSparkline Component
  * Displays a minimal sparkline chart in the table row
- * Shows mETH value trend with clickable harvest point markers
+ * Shows mETH value trend with color-coded area fill
+ * Green for upward trend, red for downward trend
  */
 export const PositionSparkline = ({
   position,
-  healthStatus,
+  healthStatus: _healthStatus,
 }: PositionSparklineProps) => {
   // Build timeline from real harvest data
   const data = buildSparklineFromHarvests(position);
-
-  // Color based on health status
-  const lineColor =
-    healthStatus === 'HEALTHY'
-      ? '#10B981'
-      : healthStatus === 'WARNING'
-      ? '#F59E0B'
-      : healthStatus === 'CRITICAL'
-      ? '#EF4444'
-      : '#6B7280'; // Gray for LIQUIDATED or SETTLED
+  
+  // Determine color based on trend (latest vs previous point)
+  let lineColor = '#10B981'; // Default green
+  
+  if (data.length > 2) {
+    const latestValue = data[data.length - 2].mETHSwapped || 0; // Second to last (last is current with 0)
+    const previousValue = data[data.length - 3].mETHSwapped || 0;
+    
+    if (latestValue < previousValue) {
+      lineColor = '#EF4444'; // Red for declining
+    }
+  }
 
   const gradientId = `sparkline-gradient-${position.positionId}`;
 
@@ -119,11 +84,11 @@ export const PositionSparkline = ({
         />
         <Area
           type="monotone"
-          dataKey="mETHValue"
+          dataKey="mETHSwapped"
           stroke={lineColor}
           strokeWidth={2}
           fill={`url(#${gradientId})`}
-          dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} />}
+          dot={false}
           activeDot={false}
           isAnimationActive={false}
         />
@@ -134,61 +99,57 @@ export const PositionSparkline = ({
 
 /**
  * Build sparkline timeline from actual harvest history data
- * Uses REAL data only - no dummy data!
+ * Shows mETH swapped amounts at each harvest point
+ * Limits to latest 5 harvests for cleaner visualization
  */
 function buildSparklineFromHarvests(position: LeveragePosition): PositionTimelineData[] {
   const points: PositionTimelineData[] = [];
 
-  // Assume mETH price (backend will provide this later)
-  const ASSUMED_METH_PRICE = 3000;
-
-  // Starting values
-  const initialCollateral = parseFloat(formatUnits(BigInt(position.mETHCollateral), 18));
-  let remainingCollateral = initialCollateral;
-  let cumulativeInterest = 0;
-
-  // Add starting point
-  points.push({
-    timestamp: position.createdAt,
-    mETHValue: initialCollateral * ASSUMED_METH_PRICE,
-    cumulativeInterest: 0,
-    healthFactor: position.currentHealthFactor / 10000,
-  });
-
-  // Process harvest events
-  if (position.harvestHistory && position.harvestHistory.length > 0) {
-    position.harvestHistory.forEach((harvest) => {
-      const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
-      const interestPaid = parseFloat(harvest.interestPaid) / 1e6;
-
-      // Add point before harvest (flat line)
-      const beforeTime = new Date(new Date(harvest.timestamp).getTime() - 1000).toISOString();
-      points.push({
-        timestamp: beforeTime,
-        mETHValue: remainingCollateral * ASSUMED_METH_PRICE,
-        cumulativeInterest: cumulativeInterest,
-        healthFactor: harvest.healthFactorBefore / 10000,
-      });
-
-      // Update values (step up)
-      cumulativeInterest += interestPaid;
-      remainingCollateral -= mETHSwapped;
-
-      // Add harvest point (after step up)
-      points.push({
-        timestamp: harvest.timestamp,
-        mETHValue: remainingCollateral * ASSUMED_METH_PRICE,
-        cumulativeInterest,
-        healthFactor: harvest.healthFactorAfter / 10000,
-      });
+  // If no harvest history, return minimal data
+  if (!position.harvestHistory || position.harvestHistory.length === 0) {
+    points.push({
+      timestamp: position.createdAt,
+      mETHSwapped: 0,
+      healthFactor: position.currentHealthFactor / 10000,
     });
+    points.push({
+      timestamp: new Date().toISOString(),
+      mETHSwapped: 0,
+      healthFactor: position.currentHealthFactor / 10000,
+    });
+    return points;
   }
 
-  // Add current point (interest stays flat after last harvest)
+  // Get latest 5 harvests only
+  const recentHarvests = position.harvestHistory.length > 5 
+    ? position.harvestHistory.slice(-5) 
+    : position.harvestHistory;
+
+  // Use the timestamp of the first harvest we're showing as starting point
+  const startTimestamp = recentHarvests[0].timestamp;
+
+  // Add starting point at 0 for area fill
+  points.push({
+    timestamp: startTimestamp,
+    mETHSwapped: 0,
+    healthFactor: recentHarvests[0].healthFactorBefore / 10000,
+  });
+
+  // Add a point for each harvest showing the mETH swapped amount
+  recentHarvests.forEach((harvest) => {
+    const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
+    
+    points.push({
+      timestamp: harvest.timestamp,
+      mETHSwapped: mETHSwapped,
+      healthFactor: harvest.healthFactorAfter / 10000,
+    });
+  });
+
+  // Add current point
   points.push({
     timestamp: new Date().toISOString(),
-    mETHValue: remainingCollateral * ASSUMED_METH_PRICE,
-    cumulativeInterest: cumulativeInterest, // Use calculated cumulative
+    mETHSwapped: 0,
     healthFactor: position.currentHealthFactor / 10000,
   });
 
