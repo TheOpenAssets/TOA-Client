@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Loader2, TrendingUp, Info, ShoppingCart } from 'lucide-react';
 import { useLeverageStore } from '../../stores/leverage.store';
 import { parseUnits } from 'viem';
+import { PageLoader } from '../ui/page-loader';
 
 // Hardcoded for testing/demo
 const TEST_ASSET = {
@@ -154,8 +155,7 @@ export const LeverageForm = () => {
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              <PageLoader text="Processing" />
             </>
           ) : (
             'Approve & Open Position'

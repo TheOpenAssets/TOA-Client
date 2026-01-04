@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import type { HarvestEvent, PositionTimelineData, LeveragePosition } from '../../types/leverage.types';
 import { formatUnits } from 'viem';
 import { leverageService } from '../../lib/api/leverage.service';
+import { PageLoader } from '../ui/page-loader';
 
 interface PositionDetailChartProps {
   position: LeveragePosition;
@@ -285,7 +286,15 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-gray-200">
+      <style>{`
+        .position-detail-chart svg:focus,
+        .position-detail-chart svg:focus-visible,
+        .position-detail-chart *:focus,
+        .position-detail-chart *:focus-visible {
+          outline: none !important;
+        }
+      `}</style>
+      <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-gray-200 outline-none focus:outline-none position-detail-chart">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex-1">
@@ -332,8 +341,8 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
           <button
             onClick={() => setActiveChart('meth')}
             className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'meth'
-                ? 'border-green-500 text-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-green-500 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             mETH Swapped
@@ -341,8 +350,8 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
           <button
             onClick={() => setActiveChart('interest')}
             className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'interest'
-                ? 'border-red-500 text-red-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-red-500 text-red-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             Interest & USDC
@@ -350,8 +359,8 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
           <button
             onClick={() => setActiveChart('health')}
             className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'health'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             Health Factor
@@ -362,14 +371,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
         <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center h-[450px]">
-              <div className="flex flex-col items-center">
-                <div className="loader-container">
-                  <svg className="loader" viewBox="0 0 100 100" width="48" height="48">
-                    <circle cx="50" cy="50" r="45" fill="none" stroke="#000" strokeWidth="8" strokeDasharray="70, 200" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <p className="mt-3 text-sm text-gray-500">Loading chart data...</p>
-              </div>
+              <PageLoader text='' />
             </div>
           ) : (
             <>
@@ -382,7 +384,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
               {/* mETH Swapped Chart */}
               {activeChart === 'meth' && (
                 <ResponsiveContainer width="100%" height={450}>
-                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick} className="outline-none focus:outline-none">
                     <defs>
                       <linearGradient id="mETHGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -433,7 +435,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
               {/* Interest & USDC Chart */}
               {activeChart === 'interest' && (
                 <ResponsiveContainer width="100%" height={450}>
-                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick} className="outline-none focus:outline-none">
                     <defs>
                       <linearGradient id="interestGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -500,7 +502,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
               {/* Health Factor Chart */}
               {activeChart === 'health' && (
                 <ResponsiveContainer width="100%" height={450}>
-                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick} className="outline-none focus:outline-none">
                     <defs>
                       <linearGradient id="healthGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />

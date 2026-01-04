@@ -16,6 +16,7 @@ import {
   type BackendNotification,
   type NotificationType,
 } from '../../lib/api/notification.service';
+import { PageLoader } from '../ui/page-loader';
 
 const getNotificationIcon = (type: NotificationType | string) => {
   const iconMap: Record<string, any> = {
@@ -199,9 +200,7 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
 
             <div className="flex-1 overflow-y-auto p-2">
               {isLoading ? (
-                <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-200 uppercase tracking-widest">
-                  Syncing
-                </div>
+                <PageLoader text="Syncing" />
               ) : filteredNotifications.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-200 uppercase tracking-widest">
                   No Updates

@@ -333,7 +333,9 @@ const PortfolioPage = () => {
 
   if (isLoading) {
     return (
-      <PageLoader text="" />
+      <div className='w-screen h-screen flex items-center justify-center'>
+        <PageLoader text="" />
+      </div>
     );
   }
 

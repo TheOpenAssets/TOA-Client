@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { Button } from '../ui/button';
 import { useToast } from '../../hooks/useToast';
-import { Loader2, CheckCircle, ExternalLink } from 'lucide-react';
+import {  CheckCircle, ExternalLink } from 'lucide-react';
 import { faucetService } from '../../lib/api/faucet.service';
 import type { Address } from 'viem';
+import { PageLoader } from '../ui/page-loader';
 
 interface TokenFaucetCardProps {
   tokenName: 'USDC' | 'mETH';
@@ -120,8 +121,7 @@ export const TokenFaucetCard = ({
       >
         {isLoading ? (
           <div className="flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Processing...</span>
+            <PageLoader text="Processing" />
           </div>
         ) : (
           `Get ${faucetAmount.toLocaleString()} ${tokenName}`

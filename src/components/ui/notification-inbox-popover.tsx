@@ -7,6 +7,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "../../components/ui/pop
 import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Bell } from "lucide-react";
 import { notificationService, type Notification } from "../../lib/services/notification.service";
+import { PageLoader } from "./page-loader";
 
 function NotificationInboxPopover() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -93,7 +94,7 @@ function NotificationInboxPopover() {
             {isLoading ? (
               <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                 <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-                <p className="mt-2">Loading notifications...</p>
+                <PageLoader text="Loading" />
               </div>
             ) : filtered.length === 0 ? (
               <div className="px-3 py-6 text-center text-sm text-muted-foreground">

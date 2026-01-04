@@ -398,7 +398,9 @@ const MarketplacePage = () => {
   // Show loading state
   if (isLoading && listings.length === 0) {
     return (
-     <PageLoader text=""/>
+      <div className='w-screen h-screen flex items-center justify-center'>
+        <PageLoader text="" />
+      </div>
     );
   }
 
