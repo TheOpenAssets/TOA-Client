@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { LeveragePosition, LeverageQuote } from '../types/leverage.types';
+import type { LeveragePosition, LeveragePositionDetails, LeverageQuote } from '../types/leverage.types';
 import { leverageService } from '../lib/api/leverage.service';
 import { parseUnits } from 'viem';
 
@@ -7,6 +7,7 @@ interface LeverageState {
   // State
   methPrice: number;
   positions: LeveragePosition[];
+  positionDetails: LeveragePositionDetails[];
   activeQuote: LeverageQuote | null;
   isLoading: boolean;
   error: string | null;
@@ -14,6 +15,7 @@ interface LeverageState {
   // Actions
   fetchMethPrice: () => Promise<void>;
   fetchMyPositions: () => Promise<void>;
+  fetchAssetPositions: (id: number) => Promise<void>;
   getQuote: (mETHAmount: string) => Promise<void>;
   clearQuote: () => void;
   createPosition: (params: {
@@ -28,6 +30,7 @@ interface LeverageState {
 export const useLeverageStore = create<LeverageState>((set, get) => ({
   methPrice: 0,
   positions: [],
+  positionDetails: [],
   activeQuote: null,
   isLoading: false,
   error: null,
@@ -47,6 +50,16 @@ export const useLeverageStore = create<LeverageState>((set, get) => ({
     try {
       const positions = await leverageService.getMyPositions();
       set({ positions, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+   fetchAssetPositions: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const positionDetails = await leverageService.getPositionDetails(id);
+      set({ positionDetails: [positionDetails], isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }

@@ -82,7 +82,6 @@ export interface UnreadCountResponse {
  * Based on NOTIFICATIONS.md API spec
  */
 class NotificationService extends BaseService {
-  private eventSource: EventSource | null = null;
   private sseAbortController: AbortController | null = null;
   private sseReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private isSSEConnected: boolean = false;

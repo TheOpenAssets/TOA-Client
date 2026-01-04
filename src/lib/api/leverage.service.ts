@@ -1,5 +1,5 @@
 import BaseService from './base.service';
-import type { LeveragePosition, LeverageQuote, MethPrice } from '../../types/leverage.types';
+import type { LeveragePosition,LeveragePositionDetails, LeverageQuote, MethPrice } from '../../types/leverage.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
 
@@ -121,8 +121,9 @@ class LeverageService extends BaseService {
    * Get Position Details
    * ENDPOINT: GET /leverage/position/:id
    */
-  async getPositionDetails(id: number): Promise<LeveragePosition> {
+  async getPositionDetails(id: number): Promise<LeveragePositionDetails> {
     try {
+      
       const response = await this.fetchWithTimeout(
         `${this.baseURL}/leverage/position/${id}`,
         {
