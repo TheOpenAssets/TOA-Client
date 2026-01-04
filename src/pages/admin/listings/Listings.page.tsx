@@ -17,7 +17,7 @@ import {
 import { Input } from '../../../components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
-import { PageLoader } from '@/components/ui/page-loader';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const ListingsPage = () => {
   const [assets, setAssets] = useState<ApiAdminAsset[]>([]);
