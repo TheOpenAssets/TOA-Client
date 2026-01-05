@@ -83,9 +83,30 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
             {toast.title}
           </h4>
           {toast.message && (
-            <p className="font-inter text-sm text-foreground/70 whitespace-pre-line break-words overflow-hidden">
-              {toast.message}
-            </p>
+            <div className="font-inter text-sm text-foreground/70 whitespace-pre-line break-words overflow-wrap-anywhere max-w-full">
+              {toast.message.split('\n').map((line, index) => {
+                // Check if line contains a URL
+                const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
+                if (urlMatch) {
+                  const parts = line.split(urlMatch[0]);
+                  return (
+                    <div key={index} className="break-all">
+                      {parts[0]}
+                      <a
+                        href={urlMatch[0]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline break-all"
+                      >
+                        {urlMatch[0]}
+                      </a>
+                      {parts[1]}
+                    </div>
+                  );
+                }
+                return <div key={index}>{line}</div>;
+              })}
+            </div>
           )}
         </div>
         <button

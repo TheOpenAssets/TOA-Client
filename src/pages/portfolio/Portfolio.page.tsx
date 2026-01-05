@@ -154,6 +154,8 @@ const PortfolioPage = () => {
       console.log('Token Address:', asset.tokenAddress);
 
       const settlementResult = await contractService.getSettlementInfo(asset.tokenAddress, address);
+       
+      console.log('Settlement Info:', settlementResult);
 
       if (!settlementResult.success) {
         throw new Error(settlementResult.error || 'Failed to check settlement info');
@@ -415,12 +417,16 @@ const PortfolioPage = () => {
                 >
                   Marketplace
                 </button>
-                <button
-                  onClick={() => navigate('/trade')}
-                  className="font-geist border border-gray-200 text-sm font-medium text-foreground hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-                >
-                  Trade
-                </button>
+                 <div className='relative group'>
+              <button
+              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
+              >
+              Trade
+              </button>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
+              Coming Soon
+              </div>
+            </div>
                 <button
                   onClick={() => navigate('/borrow')}
                   className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">

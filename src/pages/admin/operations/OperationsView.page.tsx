@@ -271,7 +271,7 @@ const OperationsViewPage = () => {
         console.log('Transaction Hash:', approvalResult.transactionHash);
         success(
           'Listed & Approved!',
-          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0,6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\n${<a href={approvalResult.explorerUrl}>View transaction on explorer.</a>}`,
+          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0,6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\nView on explorer:\n${approvalResult.explorerUrl}`,
           10000
         );
       } catch (approvalError: any) {
@@ -328,7 +328,7 @@ const OperationsViewPage = () => {
         console.log('Transaction Hash:', approvalResult.transactionHash);
         success(
           'Auction Scheduled & Approved!',
-          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer: ${approvalResult.explorerUrl}`,
+          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer:\n${approvalResult.explorerUrl}`,
           12000
         );
 

@@ -28,16 +28,12 @@ const AdminLayout = () => {
     const verifyAuth = async () => {
       try {
         // Check if access token exists
-        if (!user) {
-          authService.logout();
-          return;
-        }
+       
         // Verify token with backend
         const currentUser = await authService.getCurrentUser();
 
         // Check if user has ADMIN role
         if (currentUser.role !== 'ADMIN') {
-          console.warn(`Unauthorized role: ${user.role}. Admin dashboard requires Admin role.`);
           setError('Unauthorized access. You do not have permission to access the admin dashboard.');
           setTimeout(() => {
             navigate('/', { replace: true });

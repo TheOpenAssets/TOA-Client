@@ -150,11 +150,10 @@ const AssetDetailsPage = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab]);
+  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab,purchaseStatus, ]);
 
   useEffect(() => {
     if (address) {
-      
       loadWalletData();
     }
   }, [address, loadWalletData]);
@@ -541,11 +540,11 @@ const AssetDetailsPage = () => {
         await loadWalletData();
       } else {
         console.error('❌ Purchase failed:', result.error);
-        setPurchaseStatus(`Purchase failed !`);
+        setPurchaseStatus(`Purchase failed: ${result.error}`);
       }
     } catch (error: any) {
       console.error('❌ Purchase error:', error);
-      setPurchaseStatus(`Purchase Failed !`);
+      setPurchaseStatus(`Error: ${error.message}`);
     } finally {
       setIsPurchasing(false);
       console.log('\n===== PURCHASE FLOW COMPLETED =====\n');
@@ -604,8 +603,8 @@ const AssetDetailsPage = () => {
                     <AreaChart data={formattedChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                       <defs>
                         <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#b0d79aff" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#98b885ff" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <XAxis
@@ -657,7 +656,7 @@ const AssetDetailsPage = () => {
                       <Area
                         type="monotone"
                         dataKey="tokensPurchased"
-                        stroke="#3B82F6"
+                        stroke="#bbceb0ff"
                         strokeWidth={2}
                         fillOpacity={1}
                         fill="url(#colorTokens)"
