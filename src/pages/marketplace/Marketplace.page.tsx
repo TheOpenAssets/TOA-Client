@@ -441,11 +441,16 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
               Coming Soon
               </div>
             </div>
-            <button
-              onClick={() => navigate('/borrow')}
-              className="font-gellix border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
-              Borrow
-            </button>
+            <div className='relative group'>
+              <button
+                className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed"
+              >
+                Borrow
+              </button>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
+                Coming Soon
+              </div>
+            </div>
           </nav>
 
           {/* Right: Auth / Wallet Display */}
