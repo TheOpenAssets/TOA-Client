@@ -1,5 +1,6 @@
 // src/App.tsx
 import { RouterProvider } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { router } from './app/router';
 import { WalletProvider } from './app/providers/WalletProvider';
 import { WalletIntegrityProvider } from './app/providers/WalletIntegrityProvider';

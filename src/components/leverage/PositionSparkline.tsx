@@ -1,8 +1,18 @@
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
-import type { HarvestEvent, PositionTimelineData, HealthStatus, LeveragePosition } from '../../types/leverage.types';
+import type { HarvestEvent, PositionTimelineData, HealthStatus } from '../../types/leverage.types';
+
+// Portfolio API structure (different from detailed LeveragePosition)
+interface PortfolioPosition {
+  positionId: number;
+  createdAt: string;
+  mETHCollateral: string;
+  healthFactor?: number;
+  lastHarvestTime?: string;
+  harvestHistory?: HarvestEvent[];
+}
 
 interface PositionSparklineProps {
-  position: LeveragePosition;
+  position: PortfolioPosition;
   healthStatus: HealthStatus;
 }
 
@@ -102,20 +112,21 @@ export const PositionSparkline = ({
  * Shows mETH swapped amounts at each harvest point
  * Limits to latest 5 harvests for cleaner visualization
  */
-function buildSparklineFromHarvests(position: LeveragePosition): PositionTimelineData[] {
+function buildSparklineFromHarvests(position: PortfolioPosition): PositionTimelineData[] {
   const points: PositionTimelineData[] = [];
+  const healthFactorValue = position.healthFactor || 15000; // Default to 150% if not provided
 
   // If no harvest history, return minimal data
   if (!position.harvestHistory || position.harvestHistory.length === 0) {
     points.push({
       timestamp: position.createdAt,
       mETHSwapped: 0,
-      healthFactor: position.currentHealthFactor / 10000,
+      healthFactor: healthFactorValue / 100,
     });
     points.push({
       timestamp: new Date().toISOString(),
       mETHSwapped: 0,
-      healthFactor: position.currentHealthFactor / 10000,
+      healthFactor: healthFactorValue / 100,
     });
     return points;
   }
@@ -136,9 +147,8 @@ function buildSparklineFromHarvests(position: LeveragePosition): PositionTimelin
   });
 
   // Add a point for each harvest showing the mETH swapped amount
-  recentHarvests.forEach((harvest) => {
+  recentHarvests.forEach((harvest: HarvestEvent) => {
     const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
-
     points.push({
       timestamp: harvest.timestamp,
       mETHSwapped: mETHSwapped,
@@ -150,7 +160,7 @@ function buildSparklineFromHarvests(position: LeveragePosition): PositionTimelin
   points.push({
     timestamp: new Date().toISOString(),
     mETHSwapped: 0,
-    healthFactor: position.currentHealthFactor / 10000,
+    healthFactor: healthFactorValue / 100,
   });
 
   return points;

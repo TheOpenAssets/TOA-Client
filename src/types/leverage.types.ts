@@ -31,13 +31,19 @@ export interface LeveragePosition {
   usdcBorrowed: string; // USDC WEI (6 decimals)
   currentHealthFactor: number; // Basis points (15000 = 150%)
   healthStatus: HealthStatus;
-  status: 'ACTIVE' | 'CLOSED';
+  status: 'ACTIVE' | 'CLOSED' | 'SETTLED' | 'LIQUIDATABLE';
   createdAt: string;
   lastHarvestTime?: string;
   totalInterestPaid?: string; // USDC WEI (6 decimals)
   totalMETHHarvested?: string; // mETH WEI (18 decimals)
   harvestHistory?: HarvestEvent[]; // Harvest events for this position
   timelineData?: PositionTimelineData[]; // Optional - can be built from harvestHistory
+  // Settlement fields (when position is settled/closed)
+  settlementTimestamp?: string;
+  settlementTxHash?: string;
+  settlementUSDCReceived?: string;
+  userYieldDistributed?: string;
+  mETHReturnedToUser?: string;
 }
 
 export interface LeverageQuote {
@@ -45,6 +51,42 @@ export interface LeverageQuote {
   expectedUSDC: string; // USDC WEI
   expectedUSDCFormatted: string;
   ltv: number;
+}
+
+
+export interface LeveragePositionDetails {
+  positionId: number;
+  userAddress: string;
+  assetId: string;
+  assetSymbol?: string;
+  rwaTokenAddress: string;
+  rwaTokenAmount: string;
+  mETHCollateral: string; // WEI
+  usdcBorrowed: string; // USDC WEI (6 decimals)
+  initialLTV: number; // Basis points
+  currentHealthFactor: number; // Basis points (15000 = 150%)
+  healthStatus: HealthStatus;
+  status: 'ACTIVE' | 'CLOSED';
+  createdAt: string;
+  lastHarvestTime?: string;
+  totalInterestPaid?: string; // USDC WEI (6 decimals)
+  totalMETHHarvested?: string; // mETH WEI (18 decimals)
+  harvestHistory?: HarvestEvent[]; // Harvest events for this position
+  liquidationTimestamp?: string;
+  liquidationTxHash?: string;
+  mETHSoldInLiquidation?: string;
+  usdcRecoveredInLiquidation?: string;
+  liquidationShortfall?: string;
+  settlementTimestamp?: string;
+  settlementTxHash?: string;
+  settlementUSDCReceived?: string;
+  seniorRepayment?: string;
+  interestRepayment?: string;
+  userYieldDistributed?: string;
+  mETHReturnedToUser?: string;
+  warningNotificationSent?: boolean;
+  criticalNotificationSent?: boolean;
+  lastNotificationTime?: string;
 }
 
 export interface MethPrice {
