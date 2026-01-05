@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatUnits } from 'viem';
 import { PositionSparkline } from './PositionSparkline';
 import type { LeveragePosition } from '../../types/leverage.types';
+import { Filter } from 'lucide-react';
 
 // Portfolio API types
 interface PortfolioLeveragePosition {
@@ -55,6 +57,14 @@ interface PositionsTableProps {
 
 export const PositionsTable = ({ positions, isLoading, onSelectPosition }: PositionsTableProps) => {
   const navigate = useNavigate();
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED' | 'LIQUIDATABLE'>('ALL');
+
+  // Filter positions based on selected status
+  const filteredPositions = statusFilter === 'ALL'
+    ? positions
+    : positions.filter(pos => getStatus(pos) === statusFilter);
+
+  const statusOptions: Array<'ALL' | 'ACTIVE' | 'SETTLED' | 'LIQUIDATABLE'> = ['ALL', 'ACTIVE', 'SETTLED', 'LIQUIDATABLE'];
 
   // Type guard to check if position is from Portfolio API
   const isPortfolioPosition = (pos: Position): pos is PortfolioLeveragePosition => {
@@ -163,6 +173,33 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
   return (
     <>
       <div className="flex-1 overflow-y-auto">
+        {/* Filter Bar */}
+        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-white">
+          <div className="flex items-center justify-end gap-3">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <span className="text-xs font-medium text-gray-700">Filter by Status:</span>
+            <div className="flex gap-2">
+              {statusOptions.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${statusFilter === status
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+            {statusFilter !== 'ALL' && (
+              <span className="text-xs text-gray-500 ml-2">
+                ({filteredPositions.length} of {positions.length})
+              </span>
+            )}
+          </div>
+        </div>
+
         <table className="w-full">
           <thead className="sticky top-0 bg-white z-10">
             <tr className="border-b border-gray-200 text-black">
@@ -187,7 +224,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
             </tr>
           </thead>
           <tbody>
-            {positions.map((pos, index) => {
+            {filteredPositions.map((pos, index) => {
               const health = getHealthFactor(pos);
               const collateral = formatMETH(pos.mETHCollateral);
               const invested = formatUSDC(pos.usdcBorrowed);

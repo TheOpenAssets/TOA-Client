@@ -1,7 +1,7 @@
 // src/components/portfolio/MyAssetsTable.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { ExternalLink, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 
 interface AssetMetadata {
   assetName?: string;
@@ -77,6 +77,21 @@ export const MyAssetsTable = ({
   const navigate = useNavigate();
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED' | 'CONFIRMED' | 'CLAIMED'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'STATIC' | 'LEVERAGE'>('ALL');
+
+  // Filter assets based on selected filters
+  const filteredAssets = assets.filter(asset => {
+    const statusMatch = statusFilter === 'ALL' || asset.status === statusFilter;
+    const typeMatch = typeFilter === 'ALL' || asset.purchaseType === typeFilter;
+    return statusMatch && typeMatch;
+  });
+
+  const statusOptions: Array<'ALL' | 'ACTIVE' | 'SETTLED' | 'CONFIRMED' | 'CLAIMED'> = [
+    'ALL', 'ACTIVE', 'SETTLED', 'CONFIRMED', 'CLAIMED'
+  ];
+
+  const typeOptions: Array<'ALL' | 'STATIC' | 'LEVERAGE'> = ['ALL', 'STATIC', 'LEVERAGE'];
 
   const toggleRowExpansion = (key: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -156,6 +171,54 @@ export const MyAssetsTable = ({
 
   return (
     <div className="flex-1 overflow-y-auto">
+      {/* Filter Bar */}
+      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-white border-b border-gray-200 px-6 py-3 ">
+        {/* Type Filter */}
+        <div className="flex items-center gap-3">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-xs font-medium text-gray-700">Type:</span>
+          <div className="flex gap-2">
+            {typeOptions.map((type) => (
+              <button
+                key={type}
+                onClick={() => setTypeFilter(type)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${typeFilter === type
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Status Filter */}
+        <div className="flex items-center gap-3">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-xs font-medium text-gray-700">Status:</span>
+          <div className="flex gap-2">
+            {statusOptions.map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${statusFilter === status
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+          {(statusFilter !== 'ALL' || typeFilter !== 'ALL') && (
+            <span className="text-xs text-gray-500 ml-2">
+              ({filteredAssets.length} of {assets.length})
+            </span>
+          )}
+        </div>
+      </div>
+
       <table className="w-full">
         <thead className="sticky top-0 bg-white z-10">
           <tr className="border-b border-gray-200">
@@ -189,7 +252,7 @@ export const MyAssetsTable = ({
           </tr>
         </thead>
         <tbody>
-          {assets.map((asset, index) => {
+          {filteredAssets.map((asset, index) => {
             const rowKey = getRowKey(asset);
             const isExpanded = expandedRows.has(rowKey);
             const isLeverage = asset.purchaseType === 'LEVERAGE';
@@ -222,8 +285,8 @@ export const MyAssetsTable = ({
                   <td className="px-4 py-4">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${isLeverage
-                          ? 'bg-orange-100 text-orange-700'
-                          : 'bg-blue-100 text-blue-700'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-blue-100 text-blue-700'
                         }`}
                     >
                       {asset.purchaseType}
@@ -341,8 +404,8 @@ export const MyAssetsTable = ({
                       <div className="flex flex-col">
                         <span
                           className={`text-sm font-medium ${parseFloat(asset.yieldInfo?.claimableYield || '0') > 0
-                              ? 'text-green-600'
-                              : 'text-gray-400'
+                            ? 'text-green-600'
+                            : 'text-gray-400'
                             }`}
                         >
                           {asset.yieldInfo?.claimableYieldFormatted || '$0.00'}
