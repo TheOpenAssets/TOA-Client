@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ComposedChart,
   Area,
@@ -54,7 +54,7 @@ const HarvestDot = (props: any) => {
       <circle
         cx={cx}
         cy={cy}
-        r={4}
+        r={2.5}
         fill={fill}
         stroke="#fff"
         strokeWidth={1.5}
@@ -235,6 +235,13 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
   const [position, setPosition] = useState<LeveragePosition>(initialPosition);
   const [loading, setLoading] = useState(false);
   const [activeChart, setActiveChart] = useState<'meth' | 'interest' | 'health'>('meth');
+  // Zoom/History Slider State
+  // Value 0: Show all history (start from index 0)
+  // Value 80: Show last 20% (start from index 80%)
+  const [historyStartPct, setHistoryStartPct] = useState(80);
+  // Professional chart interaction state
+  const [timeOffset, setTimeOffset] = useState(0); // Time panning offset (moves the window)
+  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && initialPosition?.positionId) {
@@ -272,10 +279,92 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
     }
   };
 
+  // Professional chart wheel handler (zoom + pan)
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!chartRef.current?.contains(e.target as Node)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Vertical scroll = Control zoom slider (history percentage)
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      setHistoryStartPct(prev => {
+        const zoomDelta = e.deltaY * 0.02; // Smooth, slow, eased zoom adjustment
+        const newPct = prev + zoomDelta;
+        return Math.max(0, Math.min(95, newPct)); // Clamp to slider range
+      });
+    }
+    // Horizontal scroll = Time panning (moves window position)
+    else {
+      setTimeOffset(prev => {
+        const panDelta = e.deltaX * 0.08; // Smooth, slow, eased pan adjustment
+        return prev + panDelta;
+      });
+    }
+  }, []);
+
+  // Attach wheel listener
+  useEffect(() => {
+    const chartEl = chartRef.current;
+    if (!chartEl || !isOpen) return;
+
+    chartEl.addEventListener('wheel', handleWheel, { passive: false });
+    return () => chartEl.removeEventListener('wheel', handleWheel);
+  }, [isOpen, handleWheel]);
+
+  // Reset time offset when switching charts or changing zoom level
+  useEffect(() => {
+    setTimeOffset(0);
+  }, [activeChart, historyStartPct]);
+
   if (!isOpen) return null;
 
   // Build timeline from harvest history (REAL DATA)
-  const data = buildTimelineFromHarvests(position);
+  const fullData = buildTimelineFromHarvests(position);
+
+  // Calculate visible data based on slider zoom + time offset
+  const baseStartIndex = Math.floor((fullData.length * historyStartPct) / 100);
+  const windowSize = fullData.length - baseStartIndex; // Size of the zoom window
+
+  // Apply time offset (horizontal pan) while maintaining zoom window size
+  const offsetIndex = Math.floor(timeOffset);
+
+  // Calculate start and end with proper boundary handling
+  let panAdjustedStart = baseStartIndex - offsetIndex;
+
+  // Clamp to valid range: can't go before 0 or leave less than 2 points visible
+  panAdjustedStart = Math.max(0, panAdjustedStart);
+  panAdjustedStart = Math.min(panAdjustedStart, fullData.length - 2);
+
+  // Calculate end maintaining consistent window size
+  let panAdjustedEnd = panAdjustedStart + windowSize;
+
+  // If we hit the right boundary, adjust start to maintain window size
+  if (panAdjustedEnd > fullData.length) {
+    panAdjustedEnd = fullData.length;
+    panAdjustedStart = Math.max(0, panAdjustedEnd - windowSize);
+  }
+
+  const data = fullData.slice(panAdjustedStart, panAdjustedEnd);
+
+  // Interest & USDC chart — visual-only Y-axis scaling
+  const interestValues: number[] = data
+    .flatMap(d => [d.interestPaid, d.usdcReceived])
+    .filter((v): v is number => typeof v === 'number' && v > 0);
+
+  const interestMin = interestValues.length ? Math.min(...interestValues) : 0;
+  const interestMax = interestValues.length ? Math.max(...interestValues) : 0;
+
+  // Standard padding for visual clarity
+  const padding =
+    interestMax > interestMin
+      ? (interestMax - interestMin) * 0.15
+      : interestMax * 0.85 || 1;
+
+  const interestYAxisDomain: [number, number] = [
+    Math.max(0, interestMin - padding),
+    interestMax + padding,
+  ];
 
   const collateral = formatUnits(BigInt(position.mETHCollateral), 18);
   const debt = formatUnits(BigInt(position.usdcBorrowed), 6);
@@ -292,6 +381,46 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
         .position-detail-chart *:focus,
         .position-detail-chart *:focus-visible {
           outline: none !important;
+        }
+        /* Custom Range Slider Styling */
+        input[type=range] {
+          -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+          width: 100%; /* Specific width is required for Firefox. */
+          background: transparent; /* Otherwise white in Chrome */
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: #ffffff;
+          border: 2px solid #e5e7eb;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          cursor: pointer;
+          margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+        }
+
+        input[type=range]::-moz-range-thumb {
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: #ffffff;
+          border: 2px solid #e5e7eb;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 4px;
+          cursor: pointer;
+          background: #f3f4f6;
+          border-radius: 2px;
+        }
+
+        input[type=range]:focus::-webkit-slider-runnable-track {
+          background: #e5e7eb;
         }
       `}</style>
       <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-gray-200 outline-none focus:outline-none position-detail-chart">
@@ -336,39 +465,55 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
           </button>
         </div>
 
-        {/* Chart Type Tabs */}
-        <div className="flex items-center gap-1 px-6 pt-3 border-b border-gray-100">
-          <button
-            onClick={() => setActiveChart('meth')}
-            className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'meth'
-              ? 'border-green-500 text-green-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            mETH Swapped
-          </button>
-          <button
-            onClick={() => setActiveChart('interest')}
-            className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'interest'
-              ? 'border-red-500 text-red-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            Interest & USDC
-          </button>
-          <button
-            onClick={() => setActiveChart('health')}
-            className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'health'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            Health Factor
-          </button>
+        {/* Chart Type Tabs & Zoom Controls */}
+        <div className="flex items-center justify-between px-6 pt-3 border-b border-gray-100">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setActiveChart('meth')}
+              className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'meth'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              mETH Swapped
+            </button>
+            <button
+              onClick={() => setActiveChart('interest')}
+              className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'interest'
+                ? 'border-red-500 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Interest & USDC
+            </button>
+            <button
+              onClick={() => setActiveChart('health')}
+              className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'health'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Health Factor
+            </button>
+          </div>
+
+          {/* Zoom Slider */}
+          <div className="flex items-center gap-3 pb-2 w-64">
+            <span className="text-xs font-medium text-gray-400 whitespace-nowrap">Zoom</span>
+            <input
+              type="range"
+              min="0"
+              max="95"
+              step="1"
+              value={historyStartPct}
+              onChange={(e) => setHistoryStartPct(Number(e.target.value))}
+              className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
         </div>
 
         {/* Chart */}
-        <div className="p-6">
+        <div className="p-6" ref={chartRef}>
           {loading ? (
             <div className="flex items-center justify-center h-[450px]">
               <PageLoader text='' />
@@ -402,17 +547,18 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                           hour: '2-digit',
                         });
                       }}
-                      stroke="#d1d5db"
+                      stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={false}
+                      dy={10}
                     />
                     <YAxis
                       label={{ value: 'mETH', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
-                      stroke="#d1d5db"
+                      stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={false}
                     />
                     <Tooltip content={<MethTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
@@ -421,7 +567,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       dataKey="mETHSwapped"
                       name="mETH Swapped"
                       stroke="#10b981"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fill="url(#mETHGradient)"
                       dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#10b981" />}
                       connectNulls
@@ -457,40 +603,43 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                           hour: '2-digit',
                         });
                       }}
-                      stroke="#d1d5db"
+                      stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={false}
+                      dy={10}
                     />
                     <YAxis
+                      domain={interestYAxisDomain}
+                      allowDataOverflow={false}
                       label={{ value: 'USDC ($)', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
-                      stroke="#d1d5db"
+                      stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={false}
                     />
                     <Tooltip content={<InterestTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
                     <Area
                       type="monotone"
-                      dataKey="interestPaid"
-                      name="Interest Paid"
-                      stroke="#ef4444"
-                      strokeWidth={3}
-                      fill="url(#interestGradient)"
-                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#ef4444" />}
+                      dataKey="usdcReceived"
+                      name="USDC Received"
+                      stroke="#f97316"
+                      strokeWidth={2}
+                      fill="url(#usdcGradient)"
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#f97316" />}
                       connectNulls
                       isAnimationActive={false}
                       fillOpacity={1}
                     />
                     <Area
                       type="monotone"
-                      dataKey="usdcReceived"
-                      name="USDC Received"
-                      stroke="#f97316"
-                      strokeWidth={3}
-                      fill="url(#usdcGradient)"
-                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#f97316" />}
+                      dataKey="interestPaid"
+                      name="Interest Paid"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      fill="url(#interestGradient)"
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#ef4444" />}
                       connectNulls
                       isAnimationActive={false}
                       fillOpacity={1}
@@ -520,17 +669,18 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                           hour: '2-digit',
                         });
                       }}
-                      stroke="#d1d5db"
+                      stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={false}
+                      dy={10}
                     />
                     <YAxis
                       label={{ value: 'Health Factor', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
-                      stroke="#d1d5db"
+                      stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={false}
                     />
                     <Tooltip content={<HealthTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
@@ -539,7 +689,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       dataKey="healthFactor"
                       name="Health Factor"
                       stroke="#3b82f6"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fill="url(#healthGradient)"
                       dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#3b82f6" />}
                       connectNulls
@@ -580,10 +730,10 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
       const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
 
       // Convert interest paid from USDC WEI to USD
-      const interestPaid = parseFloat(harvest.interestPaid) / 1e6;
+      const interestPaid = parseFloat(harvest.interestPaid);
 
       // Convert USDC received from USDC WEI to USD
-      const usdcReceived = parseFloat(harvest.usdcReceived) / 1e6;
+      const usdcReceived = parseFloat(harvest.usdcReceived);
 
       // Health factor from harvest event
       const healthFactor = harvest.healthFactorAfter / 10000;
