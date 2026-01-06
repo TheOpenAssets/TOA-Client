@@ -12,7 +12,7 @@ import {
   List,
   Clock,
 } from 'lucide-react';
-import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-mock-data';
+import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-helper';
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
 import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';

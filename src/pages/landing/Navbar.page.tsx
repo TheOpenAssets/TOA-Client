@@ -31,20 +31,25 @@ const Navbar = () => {
           {/* Navigation Links */}
           <nav className="navbar-nav">
             <a
-              href="/"
+              href="/changelog"
               className="nav-link underline-animation underline-animation-purple"
             >
               <p className="font-bold">Changelog</p>
             </a>
 
-            <a href="/" className="nav-link underline-animation underline-animation-purple">
+            <a href="/about" className="nav-link underline-animation underline-animation-purple">
               <p className="font-bold">About</p>
             </a>
-            <a href="/" className="nav-link underline-animation underline-animation-purple">
+            <a href="/how-it-works" className="nav-link underline-animation underline-animation-purple">
               <p className="font-bold">How it works</p>
             </a>
-            <a href="/" className="nav-link underline-animation underline-animation-purple">
-              <p className="font-bold">Features</p>
+            <a 
+              href="https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19" 
+              className="nav-link underline-animation underline-animation-purple"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <p className="font-bold">Documents</p>
             </a>
 
           </nav>
