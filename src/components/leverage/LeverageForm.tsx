@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Loader2, TrendingUp, Info, ShoppingCart } from 'lucide-react';
+import { TrendingUp, Info, ShoppingCart } from 'lucide-react';
 import { useLeverageStore } from '../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { PageLoader } from '../ui/page-loader';
@@ -10,7 +10,7 @@ import { PageLoader } from '../ui/page-loader';
 // Hardcoded for testing/demo
 const TEST_ASSET = {
   id: '1aa1e321-f783-4504-ad19-676a397057d7',
-  symbol: 'INV-TECH-2025-A',
+  symbol: 'INV-TECH-2026-A',
   address: '0xe7BAdAaF6d2FFF75394cC8608f68362c61F00bFb',
   price: 0.80,
   priceWei: '800000' // 0.80 USDC (6 decimals)

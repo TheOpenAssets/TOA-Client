@@ -34,6 +34,8 @@ import FaucetPage from '../../pages/faucet/Faucet.page';
 
 // 404 Page
 import { NotFoundPage } from '../../components/ui/404-page-not-found';
+import AboutPage from '../../pages/landing/About.page';
+import ChangelogPage from '../../pages/landing/Changelog.page';
 
 // Challenge Verification Page
 
@@ -42,7 +44,14 @@ export const publicRoutes: RouteObject[] = [
     path: '/',
     element: <HomePage />,
   },
-  
+  {
+    path: '/about',
+    element: <AboutPage />,
+  },
+  {
+    path: '/Changelog',
+    element: <ChangelogPage />,
+  },
   {
     path: '/marketplace',
     element: <MarketplacePage />,

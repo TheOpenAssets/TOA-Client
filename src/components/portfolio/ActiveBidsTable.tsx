@@ -173,7 +173,7 @@ export const ActiveBidsTable = ({
                         (isSettling && settlingBidId === bid.bidId ? settleStatus : 'Refund')}
                     </button>
                   ) : (
-                    <span className="font-gellix text-xs text-gray-400">-</span>
+                    <span className="font-gellix text-xs text-gray-400">{bid.status === 'REFUNDED' || bid.status === 'SETTLED' ? 'Inactive' : 'Pending'}</span>
                   )}
                 </td>
                 {/* Transaction */}

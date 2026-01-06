@@ -31,13 +31,19 @@ export interface LeveragePosition {
   usdcBorrowed: string; // USDC WEI (6 decimals)
   currentHealthFactor: number; // Basis points (15000 = 150%)
   healthStatus: HealthStatus;
-  status: 'ACTIVE' | 'CLOSED';
+  status: 'ACTIVE' | 'CLOSED' | 'SETTLED' | 'LIQUIDATABLE';
   createdAt: string;
   lastHarvestTime?: string;
   totalInterestPaid?: string; // USDC WEI (6 decimals)
   totalMETHHarvested?: string; // mETH WEI (18 decimals)
   harvestHistory?: HarvestEvent[]; // Harvest events for this position
   timelineData?: PositionTimelineData[]; // Optional - can be built from harvestHistory
+  // Settlement fields (when position is settled/closed)
+  settlementTimestamp?: string;
+  settlementTxHash?: string;
+  settlementUSDCReceived?: string;
+  userYieldDistributed?: string;
+  mETHReturnedToUser?: string;
 }
 
 export interface LeverageQuote {

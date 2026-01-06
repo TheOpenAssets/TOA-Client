@@ -13,7 +13,6 @@ import { NotificationBell } from '../../components/notifications/NotificationBel
 import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { PositionsTable } from '../../components/leverage/PositionsTable';
-import { useLeverageStore } from '../../stores/leverage.store';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
@@ -27,7 +26,6 @@ const PortfolioPage = () => {
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
-  const { positions, fetchMyPositions, isLoading: isLoadingPositions } = useLeverageStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
 
@@ -40,11 +38,17 @@ const PortfolioPage = () => {
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
 
   // Filtered data based on search term
-  const filteredAssets = portfolio?.portfolio?.filter(asset =>
+  // Get all portfolio items (both STATIC and LEVERAGE)
+  const allPortfolioItems = portfolio?.portfolio || [];
+  const staticAssets = allPortfolioItems.filter(item => item.purchaseType === 'STATIC');
+  const leveragePositions = allPortfolioItems.filter(item => item.purchaseType === 'LEVERAGE');
+
+  // Filter ALL assets for My Assets table (both STATIC and LEVERAGE)
+  const filteredAssets = allPortfolioItems.filter(asset =>
     asset.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     asset.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
-  ) || [];
+  );
 
   const filteredBids = userBids.filter(bid =>
     bid.assetId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,11 +56,17 @@ const PortfolioPage = () => {
     false
   ) || [];
 
-  const filteredPositions = positions.filter(position =>
+  const filteredPositions = leveragePositions.filter(position =>
     position.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    position.assetSymbol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    position.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
-  ) || [];
+  );
+
+  // Calculate total asset value (STATIC purchases only)
+  const totalAssetValue = staticAssets.reduce(
+    (sum, asset) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
+    0
+  );
 
   // Contract interaction for settling bids (investor-settle.sh verified)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -79,20 +89,20 @@ const PortfolioPage = () => {
   useEffect(() => {
     fetchPortfolio();
     fetchUserBids();
-    fetchMyPositions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-switch tab if only positions exist
+  // Auto-switch tab if only specific content exists
   useEffect(() => {
-    const hasAssets = portfolio?.portfolio && portfolio.portfolio.length > 0;
+    const hasAssets = allPortfolioItems && allPortfolioItems.length > 0;
     const hasBids = userBids && userBids.length > 0;
-    const hasPositions = positions && positions.length > 0;
+    const hasPositions = leveragePositions && leveragePositions.length > 0;
 
     if (!hasAssets && !hasBids && hasPositions) {
       setActiveTab('positions');
     }
-  }, [portfolio, userBids, positions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portfolio, userBids]);
 
   // Handle successful settlement
   useEffect(() => {
@@ -113,10 +123,6 @@ const PortfolioPage = () => {
   }, [settleError]);
 
   // Helper functions
-  const formatUSDCAmount = (amount: string): number => {
-    return parseFloat(amount) / 1e6;
-  };
-
   const handlelogout = () => {
     authService.logout();
     disconnect();
@@ -154,7 +160,7 @@ const PortfolioPage = () => {
       console.log('Token Address:', asset.tokenAddress);
 
       const settlementResult = await contractService.getSettlementInfo(asset.tokenAddress, address);
-       
+
       console.log('Settlement Info:', settlementResult);
 
       if (!settlementResult.success) {
@@ -357,7 +363,7 @@ const PortfolioPage = () => {
     );
   }
 
-  if ((!portfolio || !portfolio?.portfolio || !portfolio?.portfolio.length) && !userBids.length && !positions.length) {
+  if (!allPortfolioItems.length && !userBids.length) {
     return (
       <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
         <div className="text-center">
@@ -372,12 +378,6 @@ const PortfolioPage = () => {
       </div>
     );
   }
-
-  // Calculate total values
-  const totalAssetValue = portfolio?.portfolio?.reduce(
-    (sum, asset) => sum + formatUSDCAmount(asset.totalInvested),
-    0
-  ) || 0;
 
   return (
     <>
@@ -417,16 +417,16 @@ const PortfolioPage = () => {
                 >
                   Marketplace
                 </button>
-                 <div className='relative group'>
-              <button
-              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
-              >
-              Trade
-              </button>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-              Coming Soon
-              </div>
-            </div>
+                <div className='relative group'>
+                  <button
+                    className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
+                  >
+                    Trade
+                  </button>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
+                    Coming Soon
+                  </div>
+                </div>
                 <button
                   onClick={() => navigate('/borrow')}
                   className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
@@ -457,7 +457,7 @@ const PortfolioPage = () => {
 
         {/* Main Content - Fills remaining height to make 100vh */}
         <div className="flex-1 overflow-hidden">
-          <div className="max-w-[1600px] mx-auto px-6 py-6 h-full z-40 relative">
+          <div className="w-[100vw] mx-auto p-10 h-full z-40 relative">
             <div className="grid grid-cols-5 lg:grid-cols-4 gap-6 h-full">
               {/* Left Sidebar - 1/4 width, stats cards */}
               <div className="lg:col-span-1 h-full">
@@ -530,7 +530,7 @@ const PortfolioPage = () => {
                       }}>
                       <div className="h-full flex flex-col"  >
                         <MyAssetsTable
-                          assets={filteredAssets}
+                          assets={filteredAssets as any}
                           onClaimYield={handleClaimYield}
                           claimingAssetId={claimingAssetId}
                           claimStatus={claimStatus}
@@ -569,8 +569,8 @@ const PortfolioPage = () => {
                     >
                       <div className="h-full flex flex-col overflow-y-auto p-6">
                         <PositionsTable
-                          positions={filteredPositions}
-                          isLoading={isLoadingPositions}
+                          positions={filteredPositions as any}
+                          isLoading={isLoading}
                           onSelectPosition={setSelectedPosition}
                         />
                       </div>
