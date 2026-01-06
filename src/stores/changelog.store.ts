@@ -10,6 +10,8 @@ import type {
     SyncResponse,
     OrganizationDetails,
     OrganizationFilters,
+    GitMetrics,
+    Contributor,
 } from '../types/changelog.types';
 import { changelogService } from '../lib/api/changelog.service';
 
@@ -21,6 +23,9 @@ interface ChangelogState {
     statistics: ChangelogStatistics | null;
     syncResult: SyncResponse | null;
     organization: OrganizationDetails | null;
+    uiMetrics: GitMetrics | null;
+    contributors: Contributor[];
+    graphData: any | null;
 
     // Loading states
     isLoadingCommits: boolean;
@@ -29,6 +34,8 @@ interface ChangelogState {
     isLoadingStatistics: boolean;
     isSyncing: boolean;
     isLoadingOrganization: boolean;
+    isLoadingMetrics: boolean;
+    isSyncingMetrics: boolean;
 
     // Error states
     commitsError: string | null;
@@ -37,6 +44,7 @@ interface ChangelogState {
     statisticsError: string | null;
     syncError: string | null;
     organizationError: string | null;
+    metricsError: string | null;
 
     // Metadata
     commitsCount: number;
@@ -50,12 +58,15 @@ interface ChangelogState {
     generateStatistics: () => Promise<void>;
     triggerSync: () => Promise<void>;
     fetchOrganization: (filters?: OrganizationFilters) => Promise<void>;
+    fetchUiMetrics: (repoName: string) => Promise<void>;
+    triggerMetricsSync: (repoName: string) => Promise<void>;
     clearErrors: () => void;
     clearCommits: () => void;
     clearPullRequests: () => void;
     clearTimeline: () => void;
     clearStatistics: () => void;
     clearOrganization: () => void;
+    clearMetrics: () => void;
 }
 
 export const useChangelogStore = create<ChangelogState>((set) => ({
@@ -66,6 +77,9 @@ export const useChangelogStore = create<ChangelogState>((set) => ({
     statistics: null,
     syncResult: null,
     organization: null,
+    uiMetrics: null,
+    contributors: [],
+    graphData: null,
 
     isLoadingCommits: false,
     isLoadingPullRequests: false,
@@ -73,6 +87,8 @@ export const useChangelogStore = create<ChangelogState>((set) => ({
     isLoadingStatistics: false,
     isSyncing: false,
     isLoadingOrganization: false,
+    isLoadingMetrics: false,
+    isSyncingMetrics: false,
 
     commitsError: null,
     pullRequestsError: null,
@@ -80,6 +96,7 @@ export const useChangelogStore = create<ChangelogState>((set) => ({
     statisticsError: null,
     syncError: null,
     organizationError: null,
+    metricsError: null,
 
     commitsCount: 0,
     pullRequestsCount: 0,
@@ -274,6 +291,7 @@ export const useChangelogStore = create<ChangelogState>((set) => ({
             statisticsError: null,
             syncError: null,
             organizationError: null,
+            metricsError: null,
         });
     },
 
@@ -327,6 +345,57 @@ export const useChangelogStore = create<ChangelogState>((set) => ({
         set({
             organization: null,
             organizationError: null,
+        });
+    },
+
+    /**
+     * Fetch UI metrics for a repository
+     */
+    fetchUiMetrics: async (repoName: string) => {
+        set({ isLoadingMetrics: true, metricsError: null });
+        try {
+            const response = await changelogService.getUiMetrics(repoName);
+            set({
+                uiMetrics: response.data,
+                contributors: response.data.contributors,
+                graphData: response.data.graphData,
+                isLoadingMetrics: false,
+            });
+        } catch (error: any) {
+            set({
+                metricsError: error.message || 'Failed to fetch UI metrics',
+                isLoadingMetrics: false,
+            });
+            throw error;
+        }
+    },
+
+    /**
+     * Trigger metrics sync for a repository
+     */
+    triggerMetricsSync: async (repoName: string) => {
+        set({ isSyncingMetrics: true, metricsError: null });
+        try {
+            await changelogService.triggerMetricsSync(repoName);
+            set({ isSyncingMetrics: false });
+        } catch (error: any) {
+            set({
+                metricsError: error.message || 'Failed to trigger metrics sync',
+                isSyncingMetrics: false,
+            });
+            throw error;
+        }
+    },
+
+    /**
+     * Clear UI metrics data
+     */
+    clearMetrics: () => {
+        set({
+            uiMetrics: null,
+            contributors: [],
+            graphData: null,
+            metricsError: null,
         });
     },
 }));

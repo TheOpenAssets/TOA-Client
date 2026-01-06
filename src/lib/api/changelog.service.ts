@@ -9,6 +9,8 @@ import type {
     ChangelogFilters,
     OrganizationResponse,
     OrganizationFilters,
+    GitMetricsResponse,
+    SyncMetricsResponse,
 } from '../../types/changelog.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -247,6 +249,68 @@ class ChangelogService extends BaseService {
             return data;
         } catch (error) {
             console.error('Error fetching organization details:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get UI metrics for a repository
+     *
+     * ENDPOINT: GET /ui-metrics/:repoName
+     *
+     * BACKEND RESPONSE:
+     * {
+     *   success: boolean,
+     *   data: GitMetrics
+     * }
+     */
+    async getUiMetrics(repoName: string): Promise<GitMetricsResponse> {
+        try {
+            const response = await fetch(`${this.baseURL}/ui-metrics/${repoName}`, {
+                method: 'GET',
+                headers: this.getHeaders(),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to fetch UI metrics');
+            }
+
+            const data: GitMetricsResponse = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching UI metrics:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Trigger metrics sync for a repository
+     *
+     * ENDPOINT: POST /ui-metrics/sync/:repoName
+     *
+     * BACKEND RESPONSE:
+     * {
+     *   success: boolean,
+     *   message: string
+     * }
+     */
+    async triggerMetricsSync(repoName: string): Promise<SyncMetricsResponse> {
+        try {
+            const response = await fetch(`${this.baseURL}/ui-metrics/sync/${repoName}`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to trigger metrics sync');
+            }
+
+            const data: SyncMetricsResponse = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error triggering metrics sync:', error);
             throw error;
         }
     }

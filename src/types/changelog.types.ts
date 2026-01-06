@@ -204,6 +204,7 @@ export interface OrganizationSummary {
 
 export interface OrganizationDetails {
     organization: string;
+    syncedRespositories: string[];
     configuredRepositories: string[];
     totalRepositories: number;
     totalBranches: number;
@@ -217,4 +218,58 @@ export interface OrganizationResponse extends BaseChangelogResponse {
 
 export interface OrganizationFilters {
     repo?: string;
+}
+
+// ==================== UI Metrics Types ====================
+
+export interface ContributionDay {
+    date: string; // ISO date string
+    count: number;
+    level: number; // 0-4 for color intensity
+}
+
+export interface Contributor {
+    name: string;
+    avatarUrl: string;
+    profileUrl: string;
+}
+
+export interface CommitGraphCommit {
+    sha: string;
+    commit: {
+        author: {
+            name: string;
+            date: string;
+            email?: string;
+        };
+        message: string;
+    };
+    parents: Array<{ sha: string }>;
+    html_url: string;
+}
+
+export interface CommitGraphBranch {
+    name: string;
+    commit: {
+        sha: string;
+    };
+    link: string;
+}
+
+export interface GitMetrics {
+    repoName: string;
+    contributionData: ContributionDay[];
+    graphData: {
+        commits: CommitGraphCommit[];
+        branchHeads: CommitGraphBranch[];
+    };
+    contributors: Contributor[];
+}
+
+export interface GitMetricsResponse extends BaseChangelogResponse {
+    data: GitMetrics;
+}
+
+export interface SyncMetricsResponse extends BaseChangelogResponse {
+    message: string;
 }
