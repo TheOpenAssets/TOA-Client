@@ -750,13 +750,13 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
   }
 
   // Add current point (now)
-  points.push({
-    timestamp: new Date().toISOString(),
-    mETHSwapped: 0, // No harvest at current time
-    interestPaid: 0,
-    usdcReceived: 0,
-    healthFactor: position.currentHealthFactor / 10000,
-  });
+  // points.push({
+  //   timestamp: new Date().toISOString(),
+  //   mETHSwapped: 0, // No harvest at current time
+  //   interestPaid: 0,
+  //   usdcReceived: 0,
+  //   healthFactor: position.currentHealthFactor / 10000,
+  // });
 
   console.log('📈 Chart Data Points:', {
     totalPoints: points.length,
