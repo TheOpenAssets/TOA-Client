@@ -156,12 +156,12 @@ function buildSparklineFromHarvests(position: PortfolioPosition): PositionTimeli
     });
   });
 
-  // Add current point
-  points.push({
-    timestamp: new Date().toISOString(),
-    mETHSwapped: 0,
-    healthFactor: healthFactorValue / 100,
-  });
+  // // Add current point
+  // points.push({
+  //   timestamp: new Date().toISOString(),
+  //   mETHSwapped: 0,
+  //   healthFactor: healthFactorValue / 100,
+  // });
 
   return points;
 }

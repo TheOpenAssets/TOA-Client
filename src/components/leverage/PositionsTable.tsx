@@ -269,7 +269,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
 
                   {/* Health Factor */}
                   <td className="px-6 py-4 text-right">
-                    <div className={`font-gellix text-sm font-normal ${getHealthColor(health)}`}>
+                    <div className={`font-gellix text-sm font-normal ${getHealthColor(health*100)}`}>
                       {health > 0 ? (health / 100).toFixed(2) + '%' : 'N/A'}
                     </div>
                   </td>
