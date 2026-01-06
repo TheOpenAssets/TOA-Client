@@ -26,7 +26,7 @@ import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.p
 
 import SecondaryMarketplacePage from '../../pages/secondary-marketplace/SecondaryMarketplace.page';
 import TradingEnginePage from '../../pages/secondary-marketplace/TradingEngine.page';
-import BorrowPage from '../../pages/app/borrow/Borrow.page';
+import BorrowPage from '../../pages/borrow/BorrowPage';
 
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
