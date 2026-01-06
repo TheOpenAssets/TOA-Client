@@ -193,44 +193,44 @@ const AuthPage = () => {
       galleryImages={[
         {
           id: 1,
-          src: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?q=80&w=1470&auto=format&fit=crop",
+          src: "/Upload.png",
           alt: "Tokenized Real Estate",
-          title: "Tokenized Real Estate",
+          title: "Launch assets",
           span: "col-span-2 row-span-2"
         },
         {
           id: 2,
-          src: "https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1470&auto=format&fit=crop",
-          alt: "Blockchain Technology",
-          title: "Blockchain Technology",
+          src: "/Landing1.png",
+          alt: "Start Tokenisation",
+          title: "Unlock Real-World Value",
           span: "col-span-2 row-span-1"
         },
         {
           id: 3,
-          src: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=1470&auto=format&fit=crop",
-          alt: "Digital Assets",
-          title: "Digital Assets",
+          src: "/Marketaplce4.png",
+          alt: "TOA Marketplace",
+          title: "TOA Marketplace",
           span: "col-span-2 row-span-1"
         },
         {
           id: 4,
-          src: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1470&auto=format&fit=crop",
+          src: "/RWA1.webp",
           alt: "Investment Portfolio",
-          title: "Investment Portfolio",
+          title: "RWA",
           span: "col-span-1 row-span-1"
         },
         {
           id: 5,
-          src: "https://images.unsplash.com/photo-1559526324-593bc073d938?q=80&w=1470&auto=format&fit=crop",
+          src: "/mantle.png",
           alt: "Modern Architecture",
-          title: "Modern Architecture",
+          title: "Mantle Network",
           span: "col-span-1 row-span-1"
         },
         {
           id: 6,
-          src: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1470&auto=format&fit=crop",
+          src: "/Portfolio1.png",
           alt: "Commercial Properties",
-          title: "Commercial Properties",
+          title: "Investor Portfolio",
           span: "col-span-2 row-span-1"
         }
       ]}
