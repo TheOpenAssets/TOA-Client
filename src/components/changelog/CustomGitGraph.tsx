@@ -6,6 +6,7 @@ import { ExternalLink, GitMerge, GitBranch } from 'lucide-react';
 
 interface Contributor {
     name: string;
+    author: string;
     avatarUrl: string;
 }
 

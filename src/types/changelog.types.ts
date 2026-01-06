@@ -230,6 +230,7 @@ export interface ContributionDay {
 
 export interface Contributor {
     name: string;
+    author: string;
     avatarUrl: string;
     profileUrl: string;
 }
