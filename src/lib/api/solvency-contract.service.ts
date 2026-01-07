@@ -1,34 +1,31 @@
 /**
  * Solvency Vault Contract Service
  * Handles all smart contract interactions for borrowing/lending
+ *
+ * ✅ VERIFIED: Based on deposit-to-vaultsolvency.js (working script)
+ * Contract ABI matches actual deployed contract
  */
 
 import { ethers } from 'ethers';
-import { type TokenApprovalState } from '../../types/solvency.types';
 
 // Contract addresses from environment
-const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '';
+const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '0x0849B8d12Ac2a7Fcab4FAe8a46154e9778579493';
 const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
 
-// Vault Contract ABI - Based on SOLVENCY_INTEGRATION.md
-const VAULT_ABI = [
-  // Read functions
-  'function getCollateralBalance(bytes32 oaidId, address tokenAddress) view returns (uint256)',
-  'function getDebtBalance(bytes32 oaidId) view returns (uint256)',
-  'function calculateHealthFactor(bytes32 oaidId) view returns (uint256)',
-  'function getCreditLimit(bytes32 oaidId) view returns (uint256)',
-
+// Solvency Vault ABI - ✅ VERIFIED from deposit-to-vaultsolvency.js lines 115-121
+const SOLVENCY_VAULT_ABI = [
   // Write functions
-  'function depositCollateral(bytes32 oaidId, address tokenAddress, uint256 amount) external',
-  'function borrow(bytes32 oaidId, uint256 amount) external',
-  'function repay(bytes32 oaidId, uint256 amount) external',
-  'function withdrawCollateral(bytes32 oaidId, address tokenAddress, uint256 amount) external',
+  'function depositCollateral(address collateralToken, uint256 collateralAmount, uint256 tokenValueUSD, uint8 tokenType, bool issueOAID) external returns (uint256 positionId)',
+  'function borrowUSDC(uint256 positionId, uint256 amount) external',
+  'function repayLoan(uint256 positionId, uint256 amount) external',
+  'function withdrawCollateral(uint256 positionId, uint256 amount) external',
+
+  // Read functions
+  'function positions(uint256) view returns (address user, address collateralToken, uint256 collateralAmount, uint256 usdcBorrowed, uint256 tokenValueUSD, uint256 createdAt, bool active, uint8 tokenType)',
 
   // Events
-  'event CollateralDeposited(bytes32 indexed oaidId, address indexed user, address tokenAddress, uint256 amount)',
-  'event Borrowed(bytes32 indexed oaidId, address indexed user, uint256 amount)',
-  'event Repaid(bytes32 indexed oaidId, address indexed user, uint256 amount)',
-  'event CollateralWithdrawn(bytes32 indexed oaidId, address indexed user, address tokenAddress, uint256 amount)',
+  'event PositionCreated(uint256 indexed positionId, address indexed user, address collateralToken, uint256 collateralAmount, uint256 tokenValueUSD, uint8 tokenType)',
+  'event USDCBorrowed(uint256 indexed positionId, uint256 amount, uint256 totalDebt)',
 ];
 
 // ERC20 Token ABI
@@ -52,20 +49,22 @@ export interface TransactionResult {
   success: boolean;
   txHash?: string;
   blockNumber?: number;
+  positionId?: string; // For depositCollateral
   error?: string;
 }
 
-class SolvencyContractService {
-  /**
-   * Convert UUID OAID to bytes32 format
-   * Example: "4d02feaa-7b32-4c35-980f-5710b73a982a" -> "0x4d02feaa7b324c35980f5710b73a982a00000000000000000000000000000000"
-   */
-  private oaidToBytes32(oaidId: string): string {
-    const cleanId = oaidId.replace(/-/g, '');
-    const paddedId = cleanId.padEnd(64, '0');
-    return '0x' + paddedId;
-  }
+export interface Position {
+  user: string;
+  collateralToken: string;
+  collateralAmount: bigint;
+  usdcBorrowed: bigint;
+  tokenValueUSD: bigint;
+  createdAt: bigint;
+  active: boolean;
+  tokenType: number; // 0 = RWA, 1 = PRIVATE_ASSET
+}
 
+class SolvencyContractService {
   /**
    * Get provider and signer from browser wallet
    */
@@ -93,7 +92,7 @@ class SolvencyContractService {
    */
   private async getVaultContract() {
     const { signer } = await this.getProviderAndSigner();
-    return new ethers.Contract(VAULT_CONTRACT_ADDRESS, VAULT_ABI, signer);
+    return new ethers.Contract(VAULT_CONTRACT_ADDRESS, SOLVENCY_VAULT_ABI, signer);
   }
 
   /**
@@ -117,104 +116,39 @@ class SolvencyContractService {
   // ============================================
 
   /**
-   * Get collateral balance for a specific token
+   * Get position details from contract
+   * Reference: deposit-to-vaultsolvency.js lines 304-322
    */
-  async getCollateralBalance(oaidId: string, tokenAddress: string): Promise<bigint> {
+  async getPosition(positionId: number): Promise<Position> {
     try {
       const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-      const balance: bigint = await vault.getCollateralBalance(bytes32OaidId, tokenAddress);
-      return balance;
-    } catch (error: any) {
-      console.error('❌ Error fetching collateral balance:', error);
-      throw new Error(`Failed to fetch collateral balance: ${error.message}`);
-    }
-  }
+      const position = await vault.positions(positionId);
 
-  /**
-   * Get debt balance in USDC
-   */
-  async getDebtBalance(oaidId: string): Promise<bigint> {
-    try {
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-      const debt: bigint = await vault.getDebtBalance(bytes32OaidId);
-      return debt;
+      return {
+        user: position.user,
+        collateralToken: position.collateralToken,
+        collateralAmount: position.collateralAmount,
+        usdcBorrowed: position.usdcBorrowed,
+        tokenValueUSD: position.tokenValueUSD,
+        createdAt: position.createdAt,
+        active: position.active,
+        tokenType: position.tokenType,
+      };
     } catch (error: any) {
-      console.error('❌ Error fetching debt balance:', error);
-      throw new Error(`Failed to fetch debt balance: ${error.message}`);
-    }
-  }
-
-  /**
-   * Calculate health factor (returned as percentage * 100)
-   * Example: 15000 = 150.00%
-   */
-  async calculateHealthFactor(oaidId: string): Promise<bigint> {
-    try {
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-      const healthFactor: bigint = await vault.calculateHealthFactor(bytes32OaidId);
-      return healthFactor;
-    } catch (error: any) {
-      console.error('❌ Error calculating health factor:', error);
-      throw new Error(`Failed to calculate health factor: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get credit limit in USDC
-   */
-  async getCreditLimit(oaidId: string): Promise<bigint> {
-    try {
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-      const creditLimit: bigint = await vault.getCreditLimit(bytes32OaidId);
-      return creditLimit;
-    } catch (error: any) {
-      console.error('❌ Error fetching credit limit:', error);
-      throw new Error(`Failed to fetch credit limit: ${error.message}`);
-    }
-  }
-
-  /**
-   * Check token allowance
-   */
-  async getTokenAllowance(
-    tokenAddress: string,
-    ownerAddress: string
-  ): Promise<bigint> {
-    try {
-      const token = await this.getTokenContract(tokenAddress);
-      const allowance: bigint = await token.allowance(ownerAddress, VAULT_CONTRACT_ADDRESS);
-      return allowance;
-    } catch (error: any) {
-      console.error('❌ Error checking token allowance:', error);
-      throw new Error(`Failed to check token allowance: ${error.message}`);
-    }
-  }
-
-  /**
-   * Check USDC allowance
-   */
-  async getUSDCAllowance(ownerAddress: string): Promise<bigint> {
-    try {
-      const usdc = await this.getUSDCContract();
-      const allowance: bigint = await usdc.allowance(ownerAddress, VAULT_CONTRACT_ADDRESS);
-      return allowance;
-    } catch (error: any) {
-      console.error('❌ Error checking USDC allowance:', error);
-      throw new Error(`Failed to check USDC allowance: ${error.message}`);
+      console.error('❌ Error fetching position:', error);
+      throw new Error(`Failed to fetch position: ${error.message}`);
     }
   }
 
   /**
    * Get token balance of user
+   * Reference: deposit-to-vaultsolvency.js lines 171-180
    */
   async getTokenBalance(tokenAddress: string, userAddress: string): Promise<bigint> {
     try {
       const token = await this.getTokenContract(tokenAddress);
       const balance: bigint = await token.balanceOf(userAddress);
+      console.log(`   Token balance for ${userAddress}: ${ethers.formatUnits(balance, 18)}`);
       return balance;
     } catch (error: any) {
       console.error('❌ Error checking token balance:', error);
@@ -237,24 +171,45 @@ class SolvencyContractService {
   }
 
   /**
-   * Check if token approval is sufficient
+   * Check token allowance
    */
-  async checkTokenApproval(
+  async getTokenAllowance(
     tokenAddress: string,
-    ownerAddress: string,
-    requiredAmount: bigint
-  ): Promise<TokenApprovalState> {
+    ownerAddress: string
+  ): Promise<bigint> {
     try {
-      const currentAllowance = await this.getTokenAllowance(tokenAddress, ownerAddress);
-
-      return {
-        isApproved: currentAllowance >= requiredAmount,
-        currentAllowance,
-        requiredAmount,
-      };
+      const token = await this.getTokenContract(tokenAddress);
+      const allowance: bigint = await token.allowance(ownerAddress, VAULT_CONTRACT_ADDRESS);
+      return allowance;
     } catch (error: any) {
-      console.error('❌ Error checking token approval:', error);
-      throw new Error(`Failed to check token approval: ${error.message}`);
+      console.error('❌ Error checking token allowance:', error);
+      throw new Error(`Failed to check token allowance: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get token decimals
+   */
+  async getTokenDecimals(tokenAddress: string): Promise<number> {
+    try {
+      const token = await this.getTokenContract(tokenAddress);
+      return await token.decimals();
+    } catch (error: any) {
+      console.error('❌ Error getting token decimals:', error);
+      throw new Error(`Failed to get token decimals: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get token symbol
+   */
+  async getTokenSymbol(tokenAddress: string): Promise<string> {
+    try {
+      const token = await this.getTokenContract(tokenAddress);
+      return await token.symbol();
+    } catch (error: any) {
+      console.error('❌ Error getting token symbol:', error);
+      throw new Error(`Failed to get token symbol: ${error.message}`);
     }
   }
 
@@ -264,6 +219,7 @@ class SolvencyContractService {
 
   /**
    * Approve token for vault contract
+   * Reference: deposit-to-vaultsolvency.js lines 182-199
    */
   async approveToken(
     tokenAddress: string,
@@ -273,12 +229,30 @@ class SolvencyContractService {
       console.log('🔓 Approving token:', { tokenAddress, amount: amount.toString() });
 
       const token = await this.getTokenContract(tokenAddress);
+
+      // Check current allowance
+      const { signer } = await this.getProviderAndSigner();
+      const userAddress = await signer.getAddress();
+      const currentAllowance = await token.allowance(userAddress, VAULT_CONTRACT_ADDRESS);
+
+      console.log(`   Current allowance: ${ethers.formatUnits(currentAllowance, 18)}`);
+
+      if (currentAllowance >= amount) {
+        console.log('✅ Sufficient allowance already granted');
+        return {
+          success: true,
+          txHash: '',
+          blockNumber: 0,
+        };
+      }
+
       const tx = await token.approve(VAULT_CONTRACT_ADDRESS, amount);
+      console.log(`   Approval transaction: ${tx.hash}`);
+      console.log('⏳ Waiting for approval confirmation...');
 
-      console.log('⏳ Waiting for approval confirmation...', tx.hash);
       const receipt = await tx.wait();
-
       console.log('✅ Token approved successfully!', receipt.hash);
+
       return {
         success: true,
         txHash: receipt.hash,
@@ -289,6 +263,236 @@ class SolvencyContractService {
       return {
         success: false,
         error: error.message || 'Token approval failed',
+      };
+    }
+  }
+
+  /**
+   * Deposit collateral to vault
+   *
+   * ✅ VERIFIED: Based on deposit-to-vaultsolvency.js lines 201-256
+   *
+   * @param tokenAddress - RWA token address
+   * @param amount - Amount in wei (18 decimals)
+   * @param tokenValueUSD - USD value (6 decimals)
+   * @param tokenType - 0 = RWA, 1 = PRIVATE_ASSET
+   * @param issueOAID - Whether to create OAID credit line (usually true)
+   * @returns Transaction result with positionId
+   */
+  async depositCollateral(
+    tokenAddress: string,
+    amount: bigint,
+    tokenValueUSD: bigint,
+    tokenType: number = 0,
+    issueOAID: boolean = true
+  ): Promise<TransactionResult> {
+    try {
+      console.log('💰 Depositing collateral:', {
+        tokenAddress,
+        amount: amount.toString(),
+        tokenValueUSD: tokenValueUSD.toString(),
+        tokenType,
+        issueOAID,
+      });
+
+      const vault = await this.getVaultContract();
+
+      console.log(`   Depositing ${ethers.formatUnits(amount, 18)} tokens...`);
+      console.log(`   Token value: $${ethers.formatUnits(tokenValueUSD, 6)} USD`);
+      console.log(`   Issue OAID: ${issueOAID}`);
+
+      // Call depositCollateral (investor signs transaction directly)
+      const tx = await vault.depositCollateral(
+        tokenAddress,
+        amount,
+        tokenValueUSD,
+        tokenType,
+        issueOAID
+      );
+
+      console.log(`   Transaction submitted: ${tx.hash}`);
+      console.log('⏳ Waiting for confirmation (this may take up to 5 minutes)...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Deposit confirmed in block ${receipt.blockNumber}`);
+
+      // Parse PositionCreated event to get positionId
+      let positionId = null;
+      for (const log of receipt.logs) {
+        try {
+          const parsed = vault.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data
+          });
+          if (parsed && parsed.name === 'PositionCreated') {
+            positionId = parsed.args.positionId.toString();
+            console.log(`✅ Position created with ID: ${positionId}`);
+            break;
+          }
+        } catch (e) {
+          // Skip non-matching logs
+        }
+      }
+
+      if (!positionId) {
+        throw new Error('Could not parse position ID from transaction');
+      }
+
+      console.log(`   Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+
+      return {
+        success: true,
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        positionId,
+      };
+    } catch (error: any) {
+      console.error('❌ Deposit failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Deposit transaction failed',
+      };
+    }
+  }
+
+  /**
+   * Borrow USDC from vault
+   *
+   * ✅ VERIFIED: Based on deposit-to-vaultsolvency.js lines 258-302
+   *
+   * @param positionId - Position ID to borrow against
+   * @param amount - USDC amount in wei (6 decimals)
+   * @returns Transaction result
+   */
+  async borrowUSDC(positionId: number, amount: bigint): Promise<TransactionResult> {
+    try {
+      console.log('💸 Borrowing USDC:', {
+        positionId,
+        amount: amount.toString(),
+      });
+
+      const vault = await this.getVaultContract();
+
+      console.log(`   Borrowing $${ethers.formatUnits(amount, 6)} USDC from SeniorPool...`);
+
+      const tx = await vault.borrowUSDC(positionId, amount);
+
+      console.log(`   Transaction submitted: ${tx.hash}`);
+      console.log('⏳ Waiting for confirmation...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Borrow confirmed in block ${receipt.blockNumber}`);
+
+      // Parse USDCBorrowed event
+      let borrowed = null;
+      let totalDebt = null;
+      for (const log of receipt.logs) {
+        try {
+          const parsed = vault.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data
+          });
+          if (parsed && parsed.name === 'USDCBorrowed') {
+            borrowed = parsed.args.amount;
+            totalDebt = parsed.args.totalDebt;
+            console.log(`✅ Borrowed: $${ethers.formatUnits(borrowed, 6)} USDC`);
+            console.log(`   Total Debt: $${ethers.formatUnits(totalDebt, 6)} USDC`);
+            break;
+          }
+        } catch (e) {
+          // Skip non-matching logs
+        }
+      }
+
+      console.log(`   Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+
+      return {
+        success: true,
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error: any) {
+      console.error('❌ Borrow failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Borrow transaction failed',
+      };
+    }
+  }
+
+  /**
+   * Repay loan to vault
+   *
+   * @param positionId - Position ID to repay
+   * @param amount - USDC amount to repay (6 decimals)
+   * @returns Transaction result
+   */
+  async repayLoan(positionId: number, amount: bigint): Promise<TransactionResult> {
+    try {
+      console.log('💵 Repaying debt:', {
+        positionId,
+        amount: amount.toString(),
+      });
+
+      const vault = await this.getVaultContract();
+      const tx = await vault.repayLoan(positionId, amount);
+
+      console.log(`   Transaction submitted: ${tx.hash}`);
+      console.log('⏳ Waiting for repayment confirmation...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Repayment confirmed in block ${receipt.blockNumber}`);
+
+      return {
+        success: true,
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error: any) {
+      console.error('❌ Repayment failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Repayment transaction failed',
+      };
+    }
+  }
+
+  /**
+   * Withdraw collateral from vault
+   *
+   * @param positionId - Position ID to withdraw from
+   * @param amount - Amount to withdraw (18 decimals)
+   * @returns Transaction result
+   */
+  async withdrawCollateral(
+    positionId: number,
+    amount: bigint
+  ): Promise<TransactionResult> {
+    try {
+      console.log('🏦 Withdrawing collateral:', {
+        positionId,
+        amount: amount.toString(),
+      });
+
+      const vault = await this.getVaultContract();
+      const tx = await vault.withdrawCollateral(positionId, amount);
+
+      console.log(`   Transaction submitted: ${tx.hash}`);
+      console.log('⏳ Waiting for withdrawal confirmation...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Withdrawal confirmed in block ${receipt.blockNumber}`);
+
+      return {
+        success: true,
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error: any) {
+      console.error('❌ Withdrawal failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Withdrawal transaction failed',
       };
     }
   }
@@ -317,148 +521,6 @@ class SolvencyContractService {
       return {
         success: false,
         error: error.message || 'USDC approval failed',
-      };
-    }
-  }
-
-  /**
-   * Deposit collateral to vault
-   */
-  async depositCollateral(
-    oaidId: string,
-    tokenAddress: string,
-    amount: bigint
-  ): Promise<TransactionResult> {
-    try {
-      console.log('💰 Depositing collateral:', {
-        oaidId,
-        tokenAddress,
-        amount: amount.toString(),
-      });
-
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-
-      const tx = await vault.depositCollateral(bytes32OaidId, tokenAddress, amount);
-
-      console.log('⏳ Waiting for deposit confirmation...', tx.hash);
-      const receipt = await tx.wait();
-
-      console.log('✅ Collateral deposited successfully!', receipt.hash);
-      return {
-        success: true,
-        txHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-      };
-    } catch (error: any) {
-      console.error('❌ Deposit failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Deposit transaction failed',
-      };
-    }
-  }
-
-  /**
-   * Borrow USDC from vault
-   */
-  async borrow(oaidId: string, amount: bigint): Promise<TransactionResult> {
-    try {
-      console.log('💸 Borrowing USDC:', {
-        oaidId,
-        amount: amount.toString(),
-      });
-
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-
-      const tx = await vault.borrow(bytes32OaidId, amount);
-
-      console.log('⏳ Waiting for borrow confirmation...', tx.hash);
-      const receipt = await tx.wait();
-
-      console.log('✅ Borrow successful!', receipt.hash);
-      return {
-        success: true,
-        txHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-      };
-    } catch (error: any) {
-      console.error('❌ Borrow failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Borrow transaction failed',
-      };
-    }
-  }
-
-  /**
-   * Repay debt to vault
-   */
-  async repay(oaidId: string, amount: bigint): Promise<TransactionResult> {
-    try {
-      console.log('💵 Repaying debt:', {
-        oaidId,
-        amount: amount.toString(),
-      });
-
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-
-      const tx = await vault.repay(bytes32OaidId, amount);
-
-      console.log('⏳ Waiting for repayment confirmation...', tx.hash);
-      const receipt = await tx.wait();
-
-      console.log('✅ Repayment successful!', receipt.hash);
-      return {
-        success: true,
-        txHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-      };
-    } catch (error: any) {
-      console.error('❌ Repayment failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Repayment transaction failed',
-      };
-    }
-  }
-
-  /**
-   * Withdraw collateral from vault
-   */
-  async withdrawCollateral(
-    oaidId: string,
-    tokenAddress: string,
-    amount: bigint
-  ): Promise<TransactionResult> {
-    try {
-      console.log('🏦 Withdrawing collateral:', {
-        oaidId,
-        tokenAddress,
-        amount: amount.toString(),
-      });
-
-      const vault = await this.getVaultContract();
-      const bytes32OaidId = this.oaidToBytes32(oaidId);
-
-      const tx = await vault.withdrawCollateral(bytes32OaidId, tokenAddress, amount);
-
-      console.log('⏳ Waiting for withdrawal confirmation...', tx.hash);
-      const receipt = await tx.wait();
-
-      console.log('✅ Withdrawal successful!', receipt.hash);
-      return {
-        success: true,
-        txHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-      };
-    } catch (error: any) {
-      console.error('❌ Withdrawal failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Withdrawal transaction failed',
       };
     }
   }

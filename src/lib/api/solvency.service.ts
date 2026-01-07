@@ -5,6 +5,7 @@
  * IMPORTANT: Based on actual backend implementation from deposit-to-vaultsolvency.js
  */
 
+import type { GetPositionsResponse, Position } from '../../types/solvency.types';
 import BaseService from './base.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
@@ -31,34 +32,6 @@ export interface OAIDCreditResponse {
     collateralToken: string;
     collateralAmount: string;
   }>;
-}
-
-export interface Position {
-  positionId: number;
-  collateralToken: {
-    address: string;
-    symbol: string;
-    name: string;
-    type: string; // "RWA" or "PRIVATE_ASSET"
-  };
-  collateralAmount: string;           // "90000000000000000000" (18 decimals)
-  tokenValueUSD: string;              // "76500000000" (6 decimals)
-  usdcBorrowed: string;               // "50000000000" (6 decimals)
-  outstandingDebt: string;            // "50041100000" (6 decimals)
-  healthFactor: number;               // 15300 = 153%
-  healthStatus: string;               // "HEALTHY", "WARNING", "CRITICAL"
-  status: string;                     // "ACTIVE", "CLOSED"
-  maxBorrowCapacity: string;          // "53550000000" (6 decimals)
-  createdAt: string;
-}
-
-export interface GetPositionsResponse {
-  positions: Position[];
-  meta: {
-    total: number;
-    limit: number;
-    offset: number;
-  };
 }
 
 export interface SyncPositionRequest {
