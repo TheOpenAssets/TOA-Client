@@ -1,151 +1,230 @@
-import { useEffect, useRef } from "react";
-import{Accordion, AccordionContent, AccordionItem, AccordionTrigger}from"../../components/ui/accordion";
+
+
+import MermaidSimulator from "./MermaidSimulator.page";
+import Navbar from "./Navbar.page";
+import FaqDetails from "../../components/ui/faq-details";
+
+const mermaidCode = `flowchart TB
+    %% =========================
+    %% ENTRY POINT
+    %% =========================
+    A[Landing Page | The main entry point for all protocol users.]
+    F[Faucet | Request test tokens to interact with the platform.]
+    M[Explore Marketplace | Browse available Real World Asset (RWA) listings.]
+    G[Get Started | Begin the onboarding and wallet connection process.]
+    I[Become an Issuer | Apply to tokenize and list your own assets.]
+
+    A --> F
+    A --> M
+    A --> G
+    A --> I
+
+    %% =========================
+    %% AUTH & ROLE GATING
+    %% =========================
+    AU[Wallet Authentication | Securely connect your Web3 wallet to the protocol.]
+    RS[Role Selection | Choose between Investor or Issuer permissions.]
+    
+    G --> AU
+    M --> AU
+
+    AU -->|New Wallet| RS
+    AU -->|Returning Wallet| MP[Marketplace | Access the primary RWA listing directory.]
+
+    RS --> INV[Register as Investor | Complete registration to browse and buy assets.]
+    RS --> ISS[Register as Issuer | Complete registration to manage and list assets.]
+
+    %% Role immutability logic
+    ISS -->|Check| BLOCK1[Role Switch Blocked | Users cannot change roles once registered.]
+    INV -->|Check| BLOCK2[Role Switch Blocked | Users cannot change roles once registered.]
+
+    %% =========================
+    %% ISSUER FLOW
+    %% =========================
+    I --> ISS
+    IP[Issuer Profile Created | Your business identity is verified on-chain.]
+    AS[Submit Assets | Provide documentation for asset tokenization.]
+    TK[Tokenization | Assets are minted into fractional RWA tokens.]
+    LIST[Asset Listed | Tokens are now live for trade on the Marketplace.]
+
+    ISS --> IP
+    IP --> AS
+    AS --> TK
+    TK --> LIST
+
+    %% =========================
+    %% INVESTOR FLOW
+    %% =========================
+    INV --> MP
+
+    %% =========================
+    %% MARKETPLACE HUB
+    %% =========================
+    H[Marketplace Hub | Central dashboard for discovery, trading, and borrowing.]
+    MP --> H
+
+    D[Asset Discovery | Explore asset classes and filtered listings.]
+    P[Portfolio | Track your holdings, yield, and active positions.]
+    T[Trade | Buy and sell RWA tokens on the secondary market.]
+    B[Borrow | Use your RWA holdings as collateral for credit.]
+
+    H --> D
+    H --> P
+    H --> T
+    H --> B
+
+    %% =========================
+    %% ASSET DISCOVERY & AUCTION
+    %% =========================
+    AD[Asset Detail Page | View financials, legal docs, and buy modules.]
+    AUCTION[Auction Listing | Participate in competitive bidding for new assets.]
+    BID[Place Bid | Submit a USDC bid for the desired RWA amount.]
+    AEND[Auction Ends | Finalize the price and distribute tokens.]
+    REFUND[Bid Refunded | Capital returned if the bid was unsuccessful.]
+
+    D -->|Fixed Price| AD
+    D -->|Auction| AUCTION
+    AUCTION --> BID
+    BID --> AEND
+    AEND -->|Successful| AD
+    AEND -->|Failed| REFUND
+
+    %% =========================
+    %% BUY & LEVERAGE
+    %% =========================
+    BM[Buy Module | Configure purchase settings and payment type.]
+    U[USDC Buy | Direct purchase using stablecoin collateral.]
+    L[METH Buy | Leveraged purchase using protocol liquidity.]
+    LC[Collateral Locked | METH is held in escrow to secure the position.]
+    LP[Leverage Position | Active position with health factor tracking.]
+
+    AD --> BM
+    BM --> U
+    BM --> L
+    L --> LC
+    LC --> LP
+
+    %% =========================
+    %% MAINTENANCE & LIQUIDATION
+    %% =========================
+    MAINT[Maintenance Loop | Continuous monitoring of collateral health.]
+    HEALTH[Health Check | Automated oracle check for liquidation risk.]
+    LIQ[Liquidation | Position closed to protect senior pool liquidity.]
+    REPAY1[Senior Pool Repaid | Debt settled using liquidated collateral.]
+    RELEASE1[RWA Released | Remaining assets returned to the user.]
+
+    LP --> MAINT
+    MAINT --> HEALTH
+    HEALTH -->|Healthy| MAINT
+    HEALTH -->|Breach| LIQ
+    LIQ --> REPAY1
+    REPAY1 --> RELEASE1
+
+    %% =========================
+    %% PORTFOLIO DETAILS
+    %% =========================
+    PA[Owned RWA | View your fractional real estate or credit tokens.]
+    PB[Auction Bids | Monitor pending asset acquisitions.]
+    PL[Leveraged Positions | Manage health and collateral for active buys.]
+    LO[Active Loans | View borrowed amounts and repayment schedules.]
+    PY[Yield & History | Track accrued earnings from asset performance.]
+    CLAIM[Claim Yield | Withdraw earned USDC to your wallet.]
+    WALLET[USDC Received | Yield successfully transferred to personal wallet.]
+
+    P --> PA
+    P --> PB
+    P --> PL
+    P --> LO
+    P --> PY
+    PY --> CLAIM
+    CLAIM --> WALLET
+
+    %% =========================
+    %% SECONDARY MARKET
+    %% =========================
+    SM[Secondary Marketplace | peer-to-peer trading for existing RWAs.]
+    BUY[Buy Tokens | Acquire existing tokens from other users.]
+    SELL[Sell Tokens | List your holdings for exit liquidity.]
+    YP[Yield Preserved | Yield accrual remains seamless during transfers.]
+
+    T --> SM
+    SM --> BUY
+    SM --> SELL
+    BUY --> YP
+    SELL --> YP
+
+    %% =========================
+    %% BORROW & CREDIT
+    %% =========================
+    OA[OAID Activated | On-chain identity linked to credit scoring.]
+    CR[Available Credit | View borrowing capacity based on RWA collateral.]
+    AL[Active Loans | Track current debt and interest accrual.]
+    BN[Native Borrow | Access capital via partner liquidity protocols.]
+    PC[Private Credit | Peer-to-peer borrowing against specific assets.]
+    LOAN[Loan Active | Funds deployed to user wallet with interest.]
+    RESTORE[Credit Restored | Repayment completes and limit is refreshed.]
+    ENFORCE[Enforcement | Settlement logic applied to defaulted loans.]
+    REPAY2[Lender Paid | Capital returned to the senior pool.]
+    EXCESS[Excess Returned | Remaining collateral sent back to user.]
+
+    B --> OA
+    OA --> CR
+    OA --> AL
+    CR --> BN
+    CR --> PC
+    BN --> LOAN
+    LOAN -->|Repays| RESTORE
+    LOAN -->|Default| ENFORCE
+    ENFORCE --> REPAY2
+    REPAY2 --> EXCESS
+
+    %% =========================
+    %% SYSTEM FEEDBACK
+    %% =========================
+    SETTLE[Matures | Asset lifecycle reaches the repayment phase.]
+    RECORD[Recorded | Blockchain confirmation of asset settlement.]
+    DIST[Yield Sent | Profits shared proportionally to token holders.]
+    NOTIF[Notifications | Real-time alerts sent to user dashboard.]
+
+    SETTLE --> RECORD
+    RECORD --> DIST
+    DIST --> PY
+
+    MAINT --> NOTIF
+    AEND --> NOTIF
+    DIST --> NOTIF
+    LIQ --> NOTIF
+    RESTORE --> NOTIF
+
+    %% =========================
+    %% CLASS ASSIGNMENTS
+    %% =========================
+    classDef entry fill:#f5f5f5,stroke:#555;
+    classDef hub fill:#e3f2fd,stroke:#1565c0;
+    classDef action fill:#e8f5e9,stroke:#2e7d32;
+    classDef finance fill:#fff8e1,stroke:#f9a825;
+
+    class A,F,M,G,I entry;
+    class MP,H,D,P,T,B,SM hub;
+    class AU,RS,INV,ISS,IP,AS,TK,LIST,BID,AEND,MAINT,HEALTH,NOTIF action;
+    class AD,BM,U,L,LC,LP,LIQ,REPAY1,RELEASE1,PA,PB,PL,LO,PY,CLAIM,WALLET,BUY,SELL,YP finance;
+    class OA,CR,AL,BN,PC,LOAN,RESTORE,ENFORCE,REPAY2,EXCESS,SETTLE,RECORD,DIST finance;
+`;
 
 const FAQSection = () => {
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries: IntersectionObserverEntry[]) => {
-        entries.forEach((entry: IntersectionObserverEntry) => {
-          if (entry.isIntersecting) {
-            (entry.target as HTMLElement).classList.add('animate-fade-in-up');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const elements = sectionRef.current?.querySelectorAll('[data-scroll-reveal]');
-    elements?.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
-
-  const faqs = [
-    {
-      question: "What is OpenAssets?",
-      answer: (
-        <div className="space-y-3">
-          <p>A compliant RWA tokenization platform built on Mantle.</p>
-          <div className="pl-4 border-l-2 border-purple-500 space-y-2">
-            <p className="text-sm">✓ Buy, trade, and manage tokenized real-world assets</p>
-            <p className="text-sm">✓ ERC-3643 security tokens with built-in compliance</p>
-            <p className="text-sm">✓ Everything happens on-chain—transparent and legally sound</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      question: "Why choose OpenAssets?",
-      answer: (
-        <div className="space-y-3">
-          <p className="font-medium">Compliance is built directly into the blockchain.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            <div className="bg-white/50 rounded-lg p-3">
-              <p className="font-semibold text-purple-600 text-sm mb-1">For Issuers</p>
-              <p className="text-sm">Faster capital access without traditional friction</p>
-            </div>
-            <div className="bg-white/50 rounded-lg p-3">
-              <p className="font-semibold text-blue-600 text-sm mb-1">For Investors</p>
-              <p className="text-sm">Transparent, liquid, compliant investments</p>
-            </div>
-          </div>
-          <p className="text-sm italic">KYC/AML checks and regulatory requirements are automatically enforced—no manual intervention.</p>
-        </div>
-      )
-    },
-    {
-      question: "How does OpenAssets work?",
-      answer: (
-        <div className="space-y-4">
-          <p className="font-medium">A simple, fully on-chain process:</p>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-              <div>
-                <p className="font-semibold text-sm">Issuers submit assets</p>
-                <p className="text-sm text-gray-600">Invoices, receivables, and other RWAs</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-              <div>
-                <p className="font-semibold text-sm">We verify & tokenize</p>
-                <p className="text-sm text-gray-600">Using ERC-3643 compliant security tokens</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-              <div>
-                <p className="font-semibold text-sm">Investors buy on marketplace</p>
-                <p className="text-sm text-gray-600">Fixed-price or auction mechanisms</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
-              <div>
-                <p className="font-semibold text-sm">Smart contracts automate everything</p>
-                <p className="text-sm text-gray-600">Compliance checks, trading, and yield distribution</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 mt-4">
-            <p className="text-sm font-medium text-center">🔒 Full transparency from registration to settlement</p>
-          </div>
-        </div>
-      )
-    }
-  ];
 
   return (
-    <section id="faqs" ref={sectionRef} className="py-24 bg-[#f6fbff] relative">
-      <div className="max-w-[1200px] mx-auto px-6">
-        {/* Floating Card Component - Matching Integration Section Style */}
-        <div
-          className="bg-[#d8dfe5] rounded-[20px] p-12 md:p-16 card-shadow relative opacity-0"
-          data-scroll-reveal
-          style={{
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            animationDelay: '0.2s'
-          }}
-        >
-          <div className="text-center mb-16">
-            <div className="inline-block bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-gray-700 mb-6">
-              FAQ
-            </div>
-            <h2 className="font-['Plus_Jakarta_Sans'] mb-2 text-[#0e1c29] text-[44px] not-italic font-normal h-[52.8px] tracking-[-0.44px] leading-[52.8px]">
-              Frequently Asked Questions
-            </h2>
-            <p className="font-inter text-base md:text-lg text-[#0e1c29]/80 max-w-2xl mx-auto mt-4">
-              Discover how OpenAssets brings compliant, on-chain tokenization to real-world assets.
-            </p>
-          </div>
-
-          <div className="max-w-3xl mx-auto opacity-0" data-scroll-reveal style={{ animationDelay: '0.4s' }}>
-            <Accordion type="single" collapsible className="space-y-4">
-              {faqs.map((faq, index) => (
-                <AccordionItem
-                  key={`faq-${index}`}
-                  value={`item-${index}`}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 border-0"
-                  style={{
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                  }}
-                >
-                  <AccordionTrigger className="font-jakarta text-lg font-semibold text-[#0e1c29] hover:no-underline py-6 text-left">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="font-inter text-base text-[#0e1c29]/80 leading-relaxed pb-6">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
+    <div className="max-w-screen">
+      <Navbar />
+      <section id="faqs" className="bg-white w-full px-5 flex flex-col gap-4">
+        <div className="bg-neutral-200/40 rounded-4xl border border-neutral-200 mb-2 shadow-lg">
+          <MermaidSimulator mermaidCode={mermaidCode} />
         </div>
-      </div>
-    </section>
+        <div className="rounded-4xl border border-neutral-200 shadow-lg mb-1">
+          <FaqDetails />
+        </div>
+      </section>
+    </div>
   );
 };
 
