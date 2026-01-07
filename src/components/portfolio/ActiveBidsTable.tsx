@@ -1,7 +1,9 @@
 // src/components/portfolio/ActiveBidsTable.tsx
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Bid, BidStatus } from '../../types/marketplace.types';
 import { PageLoader } from '../ui/page-loader';
+import { Filter } from 'lucide-react';
 
 interface ActiveBidsTableProps {
   bids: Bid[];
@@ -21,6 +23,14 @@ export const ActiveBidsTable = ({
   settleStatus,
 }: ActiveBidsTableProps) => {
   const navigate = useNavigate();
+  const [statusFilter, setStatusFilter] = useState<BidStatus | 'ALL'>('ALL');
+
+  // Filter bids based on selected status
+  const filteredBids = statusFilter === 'ALL'
+    ? bids
+    : bids.filter(bid => bid.status === statusFilter);
+
+  const statusOptions: Array<BidStatus | 'ALL'> = ['ALL', 'PENDING', 'WON', 'LOST', 'SETTLED', 'REFUNDED'];
 
   const getBidStatusStyle = (status: BidStatus) => {
     switch (status) {
@@ -66,6 +76,33 @@ export const ActiveBidsTable = ({
 
   return (
     <div className="flex-1 overflow-y-auto">
+      {/* Filter Bar */}
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-3">
+        <div className="flex items-center justify-end gap-3">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-xs font-medium text-gray-700">Filter by Status:</span>
+          <div className="flex gap-2">
+            {statusOptions.map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${statusFilter === status
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+          {statusFilter !== 'ALL' && (
+            <span className="text-xs text-gray-500 ml-2">
+              ({filteredBids.length} of {bids.length})
+            </span>
+          )}
+        </div>
+      </div>
+
       <table className="w-full">
         <thead className="sticky top-0 bg-white z-10">
           <tr className="border-b border-gray-200 text-black">
@@ -84,24 +121,23 @@ export const ActiveBidsTable = ({
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Status
             </th>
-           
+
             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Action
             </th>
-             <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+            <th className="px-6 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Transaction
-          </th>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {bids.map((bid, index) => {
+          {filteredBids.map((bid, index) => {
             const statusStyle = getBidStatusStyle(bid.status);
             return (
               <tr
                 key={bid.bidId}
-                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                  index % 2 === 0 ? 'bg-gray-10' : 'bg-gray-50/50'
-                }`}
+                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-gray-10' : 'bg-gray-50/50'
+                  }`}
                 onClick={() => handleAuctionDetailsNavigate(bid.assetId)}
               >
                 {/* Asset ID */}
@@ -123,8 +159,8 @@ export const ActiveBidsTable = ({
                   <div className="font-gellix text-sm font-normal text-foreground">
                     {bid.tokenAmount
                       ? (parseFloat(bid.tokenAmount) / 1e18).toLocaleString(undefined, {
-                          maximumFractionDigits: 0,
-                        })
+                        maximumFractionDigits: 0,
+                      })
                       : 'N/A'}
                   </div>
                 </td>
@@ -173,7 +209,7 @@ export const ActiveBidsTable = ({
                         (isSettling && settlingBidId === bid.bidId ? settleStatus : 'Refund')}
                     </button>
                   ) : (
-                    <span className="font-gellix text-xs text-gray-400">-</span>
+                    <span className="font-gellix text-xs text-gray-400">{bid.status === 'REFUNDED' || bid.status === 'SETTLED' ? 'Inactive' : 'Pending'}</span>
                   )}
                 </td>
                 {/* Transaction */}
@@ -186,22 +222,22 @@ export const ActiveBidsTable = ({
                       onClick={(e) => e.stopPropagation()}
                       className="text-blue-600 hover:underline font-gellix text-xs font-normal"
                     >
-                    Bid Tx
+                      Bid Tx
                     </a>
                   ) : (
                     <span className="font-gellix text-xs text-gray-400">N/A</span>
                   )}
                   <br />
                   {bid.settlementTxHash && bid.settlementTxHash !== undefined && (<a
-                      href={`https://sepolia.mantlescan.xyz/tx/${bid.settlementTxHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-blue-600 hover:underline font-gellix text-xs font-normal"
-                    >
+                    href={`https://sepolia.mantlescan.xyz/tx/${bid.settlementTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-blue-600 hover:underline font-gellix text-xs font-normal"
+                  >
                     Settlement Tx
-                    </a>
-                  ) }
+                  </a>
+                  )}
                 </td>
               </tr>
             );

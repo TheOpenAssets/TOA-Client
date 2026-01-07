@@ -54,7 +54,7 @@ const Footer: React.FC = () => {
       <div className="absolute bottom-0 left-0 right-0 z-30">
         <div className="flex flex-col items-center pb-2">
           <p className="text-sm text-gray-500 text-center">
-            © 2025 OpenAssets. All rights reserved.
+            © {new Date().getFullYear()} OpenAssets. All rights reserved.
           </p>
         </div>
       </div>

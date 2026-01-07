@@ -66,11 +66,11 @@ const AssetDetailsPage = () => {
     // Required mETH = Required Collateral Value / mETHPrice
 
     const meth = (tokens * tokenPrice * 1.5) / methPriceVal;
-    
+
     // Add 1 USDC buffer to prevent "insufficient collateral" due to micro-rounding errors
     // 1 USDC = 1e6 units
     const buffer = (1.0 * 1e6) / methPriceVal;
-    
+
     return meth + buffer;
   })();
 
@@ -146,11 +146,11 @@ const AssetDetailsPage = () => {
         fetchMethPrice();
       }, 30000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab,purchaseStatus, ]);
+  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab, purchaseStatus,]);
 
   useEffect(() => {
     if (address) {
@@ -196,7 +196,7 @@ const AssetDetailsPage = () => {
     const intervalMs = intervalMinutes * 60 * 1000;
 
     // Create time blocks map
-    const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number }> = new Map();
+    const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number; purchaseMethod?: string }> = new Map();
 
     // Aggregate purchases into time blocks
     chartData.forEach(purchase => {
@@ -209,13 +209,18 @@ const AssetDetailsPage = () => {
         const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
         block.tokensPurchased += tokensPurchased;
         block.count += 1;
+        // Keep the method of the most recent purchase in the block
+        if (purchase.purchaseMethod) {
+          block.purchaseMethod = purchase.purchaseMethod;
+        }
       } else {
         // Create new block for this time interval
         const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
         blocks.set(blockTime, {
           timestamp: blockTime,
           tokensPurchased: tokensPurchased,
-          count: 1
+          count: 1,
+          purchaseMethod: purchase.purchaseMethod
         });
       }
     });
@@ -228,6 +233,7 @@ const AssetDetailsPage = () => {
         timestamp: block.timestamp,
         tokensPurchased: block.tokensPurchased,
         purchaseCount: block.count,
+        purchaseMethod: block.purchaseMethod,
       }));
 
     console.log(`📊 Chart data aggregated into ${intervalMinutes}-minute blocks (non-zero only):`, result);
@@ -333,16 +339,28 @@ const AssetDetailsPage = () => {
           await new Promise(resolve => setTimeout(resolve, 3000));
 
           // Refetch allowance to verify
-          await refetchAllowance();
+          const { data: newAllowance } = await refetchAllowance();
           console.log('✅ mETH approved successfully');
+          console.log(`  New Allowance: ${newAllowance ? formatUnits(newAllowance, 18) : '0'} mETH`);
 
-          setLeveragePurchaseStatus('Approval confirmed! Click again to create position.');
+          setLeveragePurchaseStatus('Approval confirmed! Proceeding to open position...');
           setIsApproving(false);
-          return;
+
+          // Don't return - continue to next step automatically
+          console.log('✅ Continuing to position creation...');
         } catch (err: any) {
           console.error('❌ Approval failed:', err);
-          setLeveragePurchaseStatus(`Approval failed: ${err.message || 'Unknown error'}`);
+          setLeveragePurchaseStatus(`Approval failed`);
           setIsApproving(false);
+          // Reset form and reload wallet data
+          setLeverageTokenInput('');
+          await loadWalletData();
+
+          // Briefly show success then reset button state
+          setTimeout(() => {
+            setLeveragePurchaseStatus(null);
+          }, 2500);
+          console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
           return;
         }
       } else {
@@ -366,7 +384,44 @@ const AssetDetailsPage = () => {
       console.log('📤 Purchase Data:');
       console.log(JSON.stringify(purchaseData, null, 2));
 
-      const result = await leverageService.initiatePosition(purchaseData);
+      let result;
+      try {
+        result = await leverageService.initiatePosition(purchaseData);
+      } catch (apiError: any) {
+        // Backend might return error but transaction could succeed due to nonce issues
+        console.warn('⚠️ API returned error, checking if transaction succeeded anyway...', apiError.message);
+
+        // Wait a bit for transaction to be indexed
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        // Try to fetch user positions to see if it was created
+        try {
+          const positions = await leverageService.getMyPositions();
+          const recentPosition = positions[0]; // Most recent position
+
+          if (recentPosition) {
+            // Check if most recent position matches our attempt (within last 15 seconds)
+            const positionTime = new Date(recentPosition.createdAt).getTime();
+            const now = Date.now();
+
+            if (now - positionTime < 15000) {
+              console.log('✅ Found recently created position despite API error!');
+              result = {
+                positionId: recentPosition.positionId,
+                transactionHash: 'Check portfolio for details',
+              };
+            } else {
+              // No recent position found, this is a real error
+              throw apiError;
+            }
+          } else {
+            throw apiError;
+          }
+        } catch (fetchError) {
+          // Could not verify, re-throw original error
+          throw apiError;
+        }
+      }
 
       console.log('✅ Position created successfully!');
       console.log(`  Position ID: ${result.positionId}`);
@@ -411,11 +466,20 @@ const AssetDetailsPage = () => {
       setLeverageTokenInput('');
       await loadWalletData();
 
+      // Briefly show success then reset button state
+      setTimeout(() => {
+        setLeveragePurchaseStatus(null);
+      }, 2500);
+
       console.log('\n✨ ===== LEVERAGED PURCHASE COMPLETED =====\n');
 
     } catch (error: any) {
       console.error('❌ Leveraged purchase failed:', error);
-      setLeveragePurchaseStatus(`Failed to create position: ${error.message}`);
+      setLeveragePurchaseStatus(`Failed to create position`);
+      // Reset status after showing failure briefly
+      setTimeout(() => {
+        setLeveragePurchaseStatus(null);
+      }, 3000);
       console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
     }
   };
@@ -540,11 +604,23 @@ const AssetDetailsPage = () => {
         await loadWalletData();
       } else {
         console.error('❌ Purchase failed:', result.error);
-        setPurchaseStatus(`Purchase failed: ${result.error}`);
+        setPurchaseStatus(`Purchase failed`);
+        setTokensToBuy('');
+        // Reload wallet data
+        await loadWalletData();
+        setTimeout(() => {
+          setPurchaseStatus(null);
+        }, 2500);
       }
     } catch (error: any) {
       console.error('❌ Purchase error:', error);
       setPurchaseStatus(`Error: ${error.message}`);
+      setTokensToBuy('');
+      // Reload wallet data
+      await loadWalletData();
+      setTimeout(() => {
+        setPurchaseStatus(null);
+      }, 2500);
     } finally {
       setIsPurchasing(false);
       console.log('\n===== PURCHASE FLOW COMPLETED =====\n');
@@ -588,6 +664,21 @@ const AssetDetailsPage = () => {
                   <p className="text-green-800 text-sm mt-1">Token Price (USDC)</p>
                 </div>
 
+                {/* New Activity Stats */}
+                <div className="flex gap-6 text-right">
+                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Activity</p>
+                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.totalTransactions || 0}</p>
+                  </div>
+                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Direct Buys</p>
+                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.metadata?.directPurchases || 0}</p>
+                  </div>
+                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Leveraged</p>
+                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.metadata?.leveragePurchases || 0}</p>
+                  </div>
+                </div>
               </div>
               {isLoadingHistory ? (
                 <div className="h-[400px] flex items-center justify-center">
@@ -636,11 +727,23 @@ const AssetDetailsPage = () => {
                         label={{ value: 'Tokens Purchased', angle: -90, position: 'insideRight', style: { fill: '#6B7280', fontSize: 12 } }}
                       />
                       <Tooltip
-                        formatter={(value: any) => {
-                          if (typeof value === 'number') {
-                            return [`${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`, ''];
-                          }
-                          return ['', ''];
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value: any, name: any, props: any) => {
+                          const tokens = typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : value;
+                          return [
+                            <div key="tooltip-content" className="space-y-1">
+                              <p className="font-bold text-[#111111]">{tokens} Tokens</p>
+                              {props.payload.purchaseMethod && (
+                                <p className="text-xs text-gray-500">
+                                  Method: <span className={props.payload.purchaseMethod === 'LEVERAGE' ? 'text-blue-600 font-medium' : 'text-green-600 font-medium'}>
+                                    {props.payload.purchaseMethod}
+                                  </span>
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-400">{props.payload.purchaseCount} transaction(s)</p>
+                            </div>,
+                            ''
+                          ];
                         }}
                         labelFormatter={(timestamp) => {
                           const date = new Date(timestamp);
@@ -797,8 +900,8 @@ const AssetDetailsPage = () => {
                           Estimated Total Price
                         </label>
                         <div className="flex items-center gap-2">
-                          <img 
-                            src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" 
+                          <img
+                            src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
                             alt="USDC"
                             className="w-6 h-6 rounded-full"
                           />
@@ -873,8 +976,8 @@ const AssetDetailsPage = () => {
                         <div>
                           <p className="text-xs text-[#6B7280] mb-1">Required Collateral</p>
                           <div className="flex items-center gap-2">
-                            <img 
-                              src="/meth-crystal.svg" 
+                            <img
+                              src="/meth-crystal.svg"
                               alt="mETH"
                               className="w-6 h-6 rounded-full"
                             />
@@ -914,16 +1017,21 @@ const AssetDetailsPage = () => {
                         </div>
                       </div>
 
-                      {leveragePurchaseStatus && (
-                        <div className={`text-sm p-3 rounded-lg ${leveragePurchaseStatus.includes('successfully') || leveragePurchaseStatus.includes('submitted')
-                          ? 'bg-green-100 text-green-800'
-                          : leveragePurchaseStatus.includes('failed') || leveragePurchaseStatus.includes('Error')
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
-                          }`}>
-                          {leveragePurchaseStatus}
-                        </div>
-                      )}
+                      {leveragePurchaseStatus && (() => {
+                        const statusLower = leveragePurchaseStatus.toLowerCase();
+                        const isSuccess = statusLower.includes('success');
+                        const isError = statusLower.includes('fail') || statusLower.includes('error');
+                        const tone = isSuccess
+                          ? 'bg-green-50 text-green-800 border border-green-200'
+                          : isError
+                            ? 'bg-red-50 text-red-800 border border-red-200'
+                            : 'bg-blue-50 text-blue-800 border border-blue-200';
+                        return (
+                          <div className={`text-sm p-3 rounded-lg ${tone}`}>
+                            {leveragePurchaseStatus}
+                          </div>
+                        );
+                      })()}
 
                       <Button
                         onClick={handleOpenLeveragePosition}
@@ -934,7 +1042,28 @@ const AssetDetailsPage = () => {
                           const enteredAmount = parseFloat(leverageTokenInput || '0');
                           if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
                           if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
-                          return isApproving ? 'Approving mETH...' : isLeverageLoading ? 'Processing...' : needsApproval ? 'Approve mETH' : 'Open Leveraged Position';
+
+                          const statusLower = (leveragePurchaseStatus || '').toLowerCase();
+                          const isWaiting = statusLower.includes('submitted') || statusLower.includes('waiting');
+                          const isOpening = statusLower.includes('creating') || statusLower.includes('position');
+                          const showLoader = isApproving || isLeverageLoading || isWaiting || isOpening;
+
+                          const label = (() => {
+                            if (isApproving) return 'Approving mETH...';
+                            if (isWaiting) return 'Waiting for confirmation...';
+                            if (isOpening) return 'Opening position...';
+                            if (isLeverageLoading) return leveragePurchaseStatus || 'Processing...';
+                            return needsApproval ? 'Approve mETH' : 'Open Leveraged Position';
+                          })();
+
+                          return (
+                            <span className="flex items-center justify-center gap-2 w-full">
+                              {showLoader && (
+                                <span className="h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+                              )}
+                              <span>{label}</span>
+                            </span>
+                          );
                         })()}
                       </Button>
                     </div>

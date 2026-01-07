@@ -12,7 +12,7 @@ import {
   List,
   Clock,
 } from 'lucide-react';
-import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-mock-data';
+import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-helper';
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
 import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';
@@ -406,7 +406,9 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
   // Show loading state
   if (isLoading && listings.length === 0) {
     return (
-     <PageLoader text=""/>
+      <div className='w-screen h-screen flex items-center justify-center'>
+        <PageLoader text="" />
+      </div>
     );
   }
 

@@ -3,10 +3,9 @@
 import HeroSection from "./Hero.page";
 import Navbar from "./Navbar.page";
 import Footer from "./Footer.page";
-import AutoRepayingSection from "./FeaturePage";
-// import HeroBackground from "./HeroBackground";
+import FeaturePage from "./FeaturePage";
 import FadeIn from "../../components/ui/fadein"; // Adjust path as needed
-// import { ShaderAnimation } from "../../components/ui/shader-animation";
+
 
 const HomePage = () => {
   return (
@@ -25,12 +24,13 @@ const HomePage = () => {
       </div>
 
       {/* SECTION 2: AUTO REPAYING */}
-      <div className="snap-start min-h-screen flex items-center justify-center">
+      <div className="snap-start h-screen flex items-center justify-center">
         {/* We use w-full to ensure the fade wrapper takes full width */}
         <FadeIn className="w-full">
-          <AutoRepayingSection />
+          <FeaturePage />
         </FadeIn>
       </div>
+
 
       {/* SECTION 3: FOOTER */}
       <div className="snap-start min-h-screen flex items-end">

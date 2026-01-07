@@ -2,7 +2,9 @@
 import { useNavigate } from "react-router-dom";
 import "../../styles/Navbar.css";
 import { useAuthActions } from "../../hooks/useAuthActions";
-import { ShimmerButton } from "../../components/ui/shimmer-button";
+// import { ShimmerButton } from "../../components/ui/shimmer-button";
+import { Button } from "../../components/ui/button";
+import { Layout, Droplet } from "lucide-react";
 
 
 
@@ -25,26 +27,31 @@ const Navbar = () => {
         <div className="flex flex-row justify-between">
           {/* Logo */}
           <div className="navbar-logo">
-            <img src="./ALogo-removebg-preview.svg" alt="Openassets" className="h-16 w-auto object-contain" />
+            <img src="./ALogo-removebg-preview.svg" alt="Openassets"  onClick={() => navigate('/')} className="h-20 w-20 rounded-full object-cover hover:shadow-xs" />
           </div>
 
           {/* Navigation Links */}
-          <nav className="navbar-nav">
+          <nav className="navbar-nav ml-1">
             <a
-              href="/"
+              href="/changelog"
               className="nav-link underline-animation underline-animation-purple"
             >
-              <p className="font-bold">Changelog</p>
+              <p className="font-extrabold text-2xl font-beau">Changelog</p>
             </a>
 
-            <a href="/" className="nav-link underline-animation underline-animation-purple">
-              <p className="font-bold">About</p>
+            <a href="/about" className="nav-link underline-animation underline-animation-purple">
+              <p className="font-extrabold text-2xl font-beau">About</p>
             </a>
-            <a href="/" className="nav-link underline-animation underline-animation-purple">
-              <p className="font-bold">How it works</p>
+            <a href="/how-it-works" className="nav-link underline-animation underline-animation-purple">
+              <p className="font-extrabold text-2xl font-beau">How it works</p>
             </a>
-            <a href="/" className="nav-link underline-animation underline-animation-purple">
-              <p className="font-bold">Features</p>
+            <a 
+              href="https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19" 
+              className="nav-link underline-animation underline-animation-purple"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <p className="font-extrabold text-2xl font-beau">Documents</p>
             </a>
 
           </nav>
@@ -53,19 +60,22 @@ const Navbar = () => {
         {/* CTA Button */}
         <div className="flex items-center gap-4">
 
-          <ShimmerButton
+          <Button
             onClick={handleGetUsdcClick}
-            className="shadow-2xl hover:scale-[1.02] transition-transform"
+            className="hover:scale-[1.02] transition-transform rounded-3xl border-2 border-neutral-500 bg-neutral-200/80"
           >
+            <Droplet className="w-4 h-4" />
+
             {'Faucet'}
-          </ShimmerButton>
-          <ShimmerButton
+          </Button>
+          <Button
             onClick={handleGetStarted}
             disabled={isAuthenticating}
-            className="shadow-2xl hover:scale-[1.02] transition-transform"
+            className="flex hover:scale-[1.02] items-center gap-2 px-4 py-2 bg-[#111111] text-white rounded-2xl text-sm font-medium hover:bg-[#000000] transition-colors shadow-sm"
           >
+            <Layout className="w-4 h-4" />
             {isAuthenticating ? "Authenticating..." : "Explore Marketplace"}
-          </ShimmerButton>
+          </Button>
         </div>
       </div>
     </header>

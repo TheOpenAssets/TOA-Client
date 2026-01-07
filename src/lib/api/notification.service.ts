@@ -40,10 +40,12 @@ export type NotificationAction =
 export interface BackendNotification {
   _id: string;
   header: string;
+  summary?: string; // Added from SSE payload
   detail: string;
   type: NotificationType;
   severity: NotificationSeverity;
   action: NotificationAction;
+  walletAddress?: string; // Added from SSE payload
   actionMetadata?: {
     assetId?: string;
     amount?: string;
@@ -80,10 +82,10 @@ export interface UnreadCountResponse {
  * Based on NOTIFICATIONS.md API spec
  */
 class NotificationService extends BaseService {
-  private eventSource: EventSource | null = null;
   private sseAbortController: AbortController | null = null;
   private sseReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private isSSEConnected: boolean = false;
+  private reconnectTimeout: NodeJS.Timeout | null = null;
 
   // Singleton state management to prevent multiple concurrent fetches
   private cachedNotifications: BackendNotification[] | null = null;
@@ -375,174 +377,147 @@ class NotificationService extends BaseService {
   /**
    * Subscribe to real-time notifications via SSE
    * GET /notifications/stream
+   * 
+   * Custom implementation using fetch/ReadableStream to support headers (Auth)
+   * Mimics EventSource behavior including parsing event types.
    *
    * @param callback - Function called when new notification arrives
    * @returns Unsubscribe function
    */
   subscribeToNotifications(callback: (notification: BackendNotification) => void): () => void {
-    // Prevent multiple SSE connections (singleton pattern)
     if (this.isSSEConnected) {
       console.warn('⚠️ SSE connection already active, skipping duplicate');
-      return () => {
-        this.closeSSEConnection();
-      };
+      return () => this.closeSSEConnection();
     }
 
-    // Close existing connection if any
     this.closeSSEConnection();
-
     const token = localStorage.getItem('access_token');
     if (!token) {
       console.error('No access token found for SSE connection');
       return () => {};
     }
 
-    try {
-      // Create SSE connection with Authorization header
-      // Note: EventSource doesn't natively support custom headers, so we use a workaround
-      const url = `${this.baseURL}/notifications/stream`;
+    const connectSSE = async () => {
+      this.sseAbortController = new AbortController();
+      this.isSSEConnected = true;
 
-      // Use fetch with ReadableStream for SSE with custom headers
-      const connectSSE = async () => {
-        // Create AbortController for this SSE connection
-        this.sseAbortController = new AbortController();
-        this.isSSEConnected = true;
+      try {
+        const url = `${this.baseURL}/notifications/stream`;
+        console.log(`🔄 Connecting to Notification Stream at: ${url}`);
+        
+        // Match BaseService headers and required SSE headers
+        // Removing ngrok-skip-browser-warning as it might cause CORS issues on localhost if not allowed
+        const headers: HeadersInit = {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        };
 
-        try {
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'text/event-stream',
-            },
-            signal: this.sseAbortController.signal,
-          });
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+          signal: this.sseAbortController.signal,
+        });
 
-          if (!response.ok) {
-            throw new Error('Failed to establish SSE connection');
-          }
-
-          this.sseReader = response.body?.getReader() || null;
-          const decoder = new TextDecoder();
-
-          console.log('📡 SSE connection established');
-
-          // Read stream without blocking
-          const readStream = async () => {
-            if (!this.sseReader) return;
-
-            try {
-              while (this.isSSEConnected && this.sseReader) {
-                const { done, value } = await this.sseReader.read();
-
-                if (done) {
-                  console.log('📡 SSE stream ended');
-                  break;
-                }
-
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
-
-                for (const line of lines) {
-                  if (line.startsWith('data: ')) {
-                    const data = line.substring(6);
-                    try {
-                      const notification: BackendNotification = JSON.parse(data);
-                      console.log('📬 New notification received:', notification);
-                      callback(notification);
-                    } catch (error) {
-                      console.error('Error parsing notification event:', error);
-                    }
-                  }
-                }
-              }
-            } catch (error: any) {
-              // Only log if not aborted intentionally
-              if (error.name !== 'AbortError') {
-                console.error('SSE connection error:', error);
-
-                // Only attempt to reconnect if still supposed to be connected
-                if (this.isSSEConnected) {
-                  this.isSSEConnected = false;
-                  setTimeout(() => {
-                    console.log('Attempting to reconnect SSE...');
-                    connectSSE();
-                  }, 5000);
-                }
-              }
-            } finally {
-              // Clean up reader if we're done
-              if (this.sseReader) {
-                try {
-                  this.sseReader.releaseLock();
-                } catch (e) {
-                  // Reader might already be released
-                }
-                this.sseReader = null;
-              }
-            }
-          };
-
-          // Start reading stream (non-blocking)
-          readStream().catch(console.error);
-        } catch (error: any) {
-          if (error.name !== 'AbortError') {
-            console.error('SSE connection error:', error);
-          }
-          this.isSSEConnected = false;
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'No error details');
+            throw new Error(`SSE Connection Failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
-      };
+        
+        this.sseReader = response.body?.getReader() || null;
+        if (!this.sseReader) throw new Error('ReadableStream not supported');
 
-      connectSSE();
+        console.log('✅ SSE Connected');
+        
+        const decoder = new TextDecoder();
+        let buffer = '';
 
-      // Return unsubscribe function
-      return () => {
-        this.closeSSEConnection();
-      };
-    } catch (error) {
-      console.error('Error establishing SSE connection:', error);
-      this.isSSEConnected = false;
-      return () => {};
-    }
+        while (this.isSSEConnected) {
+          const { done, value } = await this.sseReader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          // Keep the last partial line in buffer
+          buffer = lines.pop() || '';
+
+          let currentEvent = 'message';
+          let currentData = '';
+          
+          for (const line of lines) {
+            if (line.trim() === '') {
+              // End of event dispatch
+              if (currentData) {
+                try {
+                  if (currentEvent === 'notification') {
+                    const rawData = JSON.parse(currentData);
+                    // Map SSE payload to BackendNotification interface
+                    const notification: BackendNotification = {
+                      _id: rawData.id || rawData._id,
+                      header: rawData.header || rawData.summary,
+                      detail: rawData.detail,
+                      type: rawData.type,
+                      severity: rawData.severity,
+                      action: rawData.action,
+                      actionMetadata: rawData.actionMetadata,
+                      receivedAt: rawData.timestamp || new Date().toISOString(),
+                      read: false,
+                      readAt: null,
+                      summary: rawData.summary,
+                      walletAddress: rawData.walletAddress,
+                      icon: rawData.icon
+                    };
+                    console.log('🔔 Notification Received:', notification.header);
+                    this.addNotificationToCache(notification);
+                    callback(notification);
+                  } else if (currentEvent === 'connected') {
+                    console.log('📡 Stream Handshake:', currentData);
+                  }
+                } catch (e) {
+                  console.error('Error parsing SSE data:', e);
+                }
+              }
+              currentEvent = 'message';
+              currentData = '';
+              continue;
+            }
+
+            if (line.startsWith('event: ')) {
+              currentEvent = line.slice(7).trim();
+            } else if (line.startsWith('data: ')) {
+              currentData += line.slice(6);
+            }
+          }
+        }
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('❌ SSE Error:', error);
+          if (this.isSSEConnected) {
+             this.reconnectTimeout = setTimeout(() => {
+               console.log('♻️ Reconnecting SSE...');
+               connectSSE(); 
+             }, 5000);
+          }
+        }
+      } finally {
+        if (this.sseReader) this.sseReader.releaseLock();
+      }
+    };
+
+    connectSSE();
+    return () => this.closeSSEConnection();
   }
 
   /**
    * Close SSE connection
    */
   private closeSSEConnection(): void {
-    if (this.isSSEConnected || this.sseAbortController || this.sseReader) {
-      console.log('📡 Closing SSE connection');
-
-      // Set flag to stop reading
-      this.isSSEConnected = false;
-
-      // Abort the fetch request
-      if (this.sseAbortController) {
-        try {
-          this.sseAbortController.abort();
-        } catch (e) {
-          // Already aborted
-        }
-        this.sseAbortController = null;
-      }
-
-      // Release the reader
-      if (this.sseReader) {
-        try {
-          this.sseReader.cancel();
-          this.sseReader.releaseLock();
-        } catch (e) {
-          // Reader might already be released
-        }
-        this.sseReader = null;
-      }
-
-      // Clean up old EventSource if it exists (legacy)
-      if (this.eventSource) {
-        this.eventSource.close();
-        this.eventSource = null;
-      }
-    }
+    this.isSSEConnected = false;
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+    if (this.sseAbortController) this.sseAbortController.abort();
+    this.sseAbortController = null;
+    this.sseReader = null;
+    console.log('🔌 SSE Connection Closed');
   }
 
   /**

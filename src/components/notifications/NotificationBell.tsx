@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import {
   Bell, FileCheck, Coins, Award, TrendingUp,
   AlertCircle, DollarSign, UserCheck, XCircle
@@ -15,6 +16,7 @@ import {
   type BackendNotification,
   type NotificationType,
 } from '../../lib/api/notification.service';
+import { PageLoader } from '../ui/page-loader';
 
 const getNotificationIcon = (type: NotificationType | string) => {
   const iconMap: Record<string, any> = {
@@ -66,22 +68,44 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (forceRefresh = false) => {
     try {
       setIsLoading(true);
-      const response = await notificationService.getAllNotifications('all', 50, 0);
+      const response = await notificationService.getAllNotifications('all', 50, 0, forceRefresh);
       const filtered = notificationService.filterNotificationsByRole(response.notifications, role);
       setNotifications(filtered);
       setUnreadCount(filtered.filter((n) => !n.read).length);
     } catch (error) { console.error(error); } finally { setIsLoading(false); }
   }, [role]);
 
-  useEffect(() => { loadNotifications(); }, [loadNotifications]);
+  // Fetch unread count initially for the badge
+  useEffect(() => {
+    const fetchInitialCount = async () => {
+      try {
+        const count = await notificationService.getUnreadCount();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+    fetchInitialCount();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = notificationService.subscribeToNotifications((newNotification) => {
       const allowed = notificationService.filterNotificationsByRole([newNotification], role);
       if (allowed.length === 0) return;
+      
+      // Trigger Toast
+      toast(newNotification.header, {
+        icon: newNotification.severity === 'SUCCESS' ? '✅' : 
+              newNotification.severity === 'ERROR' ? '❌' : 
+              newNotification.severity === 'WARNING' ? '⚠️' : 'ℹ️',
+        duration: 4000,
+        position: 'top-right',
+        className: 'font-geist text-sm font-medium'
+      });
+
       setNotifications((prev) => [newNotification, ...prev]);
       if (!newNotification.read) setUnreadCount((prev) => prev + 1);
     });
@@ -119,7 +143,12 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
         )}
       </AnimatePresence>
 
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) {
+          loadNotifications(true);
+        }
+      }}>
         <PopoverTrigger asChild>
           <Button
             size="icon"
@@ -171,9 +200,7 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
 
             <div className="flex-1 overflow-y-auto p-2">
               {isLoading ? (
-                <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-200 uppercase tracking-widest">
-                  Syncing
-                </div>
+                <PageLoader text="Syncing" />
               ) : filteredNotifications.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-[10px] font-bold text-slate-200 uppercase tracking-widest">
                   No Updates

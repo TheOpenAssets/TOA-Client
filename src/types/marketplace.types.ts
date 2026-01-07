@@ -202,7 +202,11 @@ export interface Purchase {
   totalPayment: string;
   timestamp: string;
   transactionHash: string;
-  type: "BID" | "BUY";
+  type: "BID" | "BUY" | "PURCHASE";
+  purchaseMethod?: "DIRECT" | "LEVERAGE";
+  positionId?: number;
+  mETHCollateral?: string;
+  positionStatus?: string;
 }
 
 export interface ChartDataPoint {
@@ -210,16 +214,26 @@ export interface ChartDataPoint {
   tokensPurchased: string;
   cumulativeTokens: string;
   price: string;
+  purchaseMethod?: "DIRECT" | "LEVERAGE";
 }
 
 export interface PurchaseHistoryResponse {
   assetId: string;
-  assetType: "AUCTION" | "FIXED";
+  assetType: "AUCTION" | "FIXED" | "STATIC";
   purchases: Purchase[];
   chartData: ChartDataPoint[];
   totalTokensSold: string;
   totalUSDCRaised: string;
   totalTransactions: number;
+  metadata?: {
+    totalSupply: string;
+    percentageSold: number;
+    averagePrice: string;
+    firstPurchaseAt: string;
+    lastPurchaseAt: string;
+    directPurchases: number;
+    leveragePurchases: number;
+  };
 }
 
 

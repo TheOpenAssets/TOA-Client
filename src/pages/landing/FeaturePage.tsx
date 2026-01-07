@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 
 
-const AutoRepayingSection = () => {
+const FeaturePage = () => {
   const features = [
     {
       title: "Canonical RWA Tokenization",
@@ -139,4 +139,4 @@ const Feature = ({
   );
 };
 
-export default AutoRepayingSection;
+export default FeaturePage;
