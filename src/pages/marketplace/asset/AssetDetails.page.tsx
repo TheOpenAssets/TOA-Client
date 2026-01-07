@@ -196,7 +196,7 @@ const AssetDetailsPage = () => {
     const intervalMs = intervalMinutes * 60 * 1000;
 
     // Create time blocks map
-    const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number }> = new Map();
+    const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number; purchaseMethod?: string }> = new Map();
 
     // Aggregate purchases into time blocks
     chartData.forEach(purchase => {
@@ -209,13 +209,18 @@ const AssetDetailsPage = () => {
         const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
         block.tokensPurchased += tokensPurchased;
         block.count += 1;
+        // Keep the method of the most recent purchase in the block
+        if (purchase.purchaseMethod) {
+          block.purchaseMethod = purchase.purchaseMethod;
+        }
       } else {
         // Create new block for this time interval
         const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
         blocks.set(blockTime, {
           timestamp: blockTime,
           tokensPurchased: tokensPurchased,
-          count: 1
+          count: 1,
+          purchaseMethod: purchase.purchaseMethod
         });
       }
     });
@@ -228,6 +233,7 @@ const AssetDetailsPage = () => {
         timestamp: block.timestamp,
         tokensPurchased: block.tokensPurchased,
         purchaseCount: block.count,
+        purchaseMethod: block.purchaseMethod,
       }));
 
     console.log(`📊 Chart data aggregated into ${intervalMinutes}-minute blocks (non-zero only):`, result);
@@ -658,6 +664,21 @@ const AssetDetailsPage = () => {
                   <p className="text-green-800 text-sm mt-1">Token Price (USDC)</p>
                 </div>
 
+                {/* New Activity Stats */}
+                <div className="flex gap-6 text-right">
+                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Activity</p>
+                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.totalTransactions || 0}</p>
+                  </div>
+                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Direct Buys</p>
+                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.metadata?.directPurchases || 0}</p>
+                  </div>
+                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Leveraged</p>
+                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.metadata?.leveragePurchases || 0}</p>
+                  </div>
+                </div>
               </div>
               {isLoadingHistory ? (
                 <div className="h-[400px] flex items-center justify-center">
@@ -706,11 +727,23 @@ const AssetDetailsPage = () => {
                         label={{ value: 'Tokens Purchased', angle: -90, position: 'insideRight', style: { fill: '#6B7280', fontSize: 12 } }}
                       />
                       <Tooltip
-                        formatter={(value: any) => {
-                          if (typeof value === 'number') {
-                            return [`${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`, ''];
-                          }
-                          return ['', ''];
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value: any, name: any, props: any) => {
+                          const tokens = typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : value;
+                          return [
+                            <div key="tooltip-content" className="space-y-1">
+                              <p className="font-bold text-[#111111]">{tokens} Tokens</p>
+                              {props.payload.purchaseMethod && (
+                                <p className="text-xs text-gray-500">
+                                  Method: <span className={props.payload.purchaseMethod === 'LEVERAGE' ? 'text-blue-600 font-medium' : 'text-green-600 font-medium'}>
+                                    {props.payload.purchaseMethod}
+                                  </span>
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-400">{props.payload.purchaseCount} transaction(s)</p>
+                            </div>,
+                            ''
+                          ];
                         }}
                         labelFormatter={(timestamp) => {
                           const date = new Date(timestamp);
