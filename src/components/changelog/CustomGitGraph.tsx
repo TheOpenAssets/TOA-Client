@@ -2,276 +2,263 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { ExternalLink, GitMerge, GitBranch } from 'lucide-react';
+import { GitMerge, GitBranch, Github } from 'lucide-react';
 
-interface Contributor {
-    name: string;
-    author: string;
-    avatarUrl: string;
-}
+/* --- Design System Constants --- */
+const COLUMN_WIDTH = 38;
+const ROW_HEIGHT = 64;
+const NODE_RADIUS = 8;
+const LINE_THICKNESS = 4;
+const BEND_RADIUS = 14;
+const SVG_PADDING_LEFT = 40;
+
+const BRANCH_COLORS: Record<string, string> = {
+    'main': '#0969da', 'master': '#0969da',
+    'dev': '#2da44e', 'development': '#2da44e',
+    'staging': '#8250df',
+};
+const PALETTE = ['#cf222e', '#bf3989', '#d4a72c', '#1b7c83', '#4a235a', '#f66a0a', '#0366d6'];
+
+const getBranchColor = (name: string, index: number) => {
+    const key = name.toLowerCase();
+    return BRANCH_COLORS[key] || PALETTE[index % PALETTE.length];
+};
 
 interface Commit {
     sha: string;
-    commit: {
-        message: string;
-        author: { name: string; email?: string; date: string; };
-    };
+    commit: { message: string; author: { name: string; date: string; }; };
     parents: Array<{ sha: string }>;
     html_url?: string;
 }
 
-interface BranchHead {
-    name: string;
-    commit: { sha: string };
-}
-
 interface CustomGitGraphProps {
     commits: Commit[];
-    branchHeads?: BranchHead[];
-    contributors?: Contributor[];
+    branchHeads: any[];
+    branches: { name: string; lastCommitSha: string }[];
+    contributors: any[];
 }
 
-const LANE_WIDTH = 34;
-const ROW_HEIGHT = 60;
-const NODE_RADIUS = 4.5;
-const SVG_PADDING_LEFT = 30;
-
-const BRANCH_COLORS = [
-    '#2188ff', // GitHub Blue (Main)
-    '#28a745', // GitHub Green
-    '#6f42c1', // GitHub Purple
-    '#f66a0a', // GitHub Orange
-    '#d73a49', // GitHub Red
-    '#ea4aaa', // GitHub Pink
-    '#0366d6', // GitHub Dark Blue
-];
-
 /**
- * AUTHOR AVATAR WITH PERSISTENT BROWSER CACHE
- * Fetches once, converts to Base64, and saves to LocalStorage.
+ * Enhanced AuthorAvatar with clean caching
  */
 const AuthorAvatar = ({ name, url, color }: { name: string, url?: string, color: string }) => {
     const [avatarData, setAvatarData] = useState<string | null>(null);
-    const [error, setError] = useState(false);
     const cacheKey = `git_avatar_${name.replace(/\s+/g, '_').toLowerCase()}`;
 
     useEffect(() => {
         if (!url) return;
-
-        // 1. Try to load from LocalStorage
         const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-            setAvatarData(cached);
-            return;
-        }
+        if (cached) { setAvatarData(cached); return; }
 
-        // 2. Fetch and Cache if not present
-        const fetchAndCache = async () => {
-            try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64data = reader.result as string;
-                    try {
-                        localStorage.setItem(cacheKey, base64data);
-                    } catch (e) {
-                        console.warn("Storage full, skipping cache for:", name);
-                    }
-                    setAvatarData(base64data);
-                };
-                reader.readAsDataURL(blob);
-            } catch (err) {
-                setError(true);
-            }
-        };
-
-        fetchAndCache();
-    }, [url, cacheKey, name]);
-
-    const initials = name.substring(0, 2).toUpperCase();
+        fetch(url).then(res => res.blob()).then(blob => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const b64 = reader.result as string;
+                try { localStorage.setItem(cacheKey, b64); } catch (e) { }
+                setAvatarData(b64);
+            };
+            reader.readAsDataURL(blob);
+        }).catch(() => { });
+    }, [url, cacheKey]);
 
     return (
-        <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-[10px] font-black text-white shadow-sm flex-shrink-0 transition-transform group-hover:scale-110 overflow-hidden border-2 border-white ring-1 ring-slate-100 relative bg-slate-100"
-            style={{ backgroundColor: !avatarData || error ? color : undefined }}
-        >
-            {avatarData && !error ? (
+        <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border-2 border-white ring-1 ring-slate-200 relative bg-slate-100 shadow-sm transition-all group-hover:scale-110">
+            {avatarData ? (
                 <img src={avatarData} alt={name} className="w-full h-full object-cover" />
             ) : (
-                <span className="relative z-10">{initials}</span>
+                <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: color }}>
+                    {name.substring(0, 2).toUpperCase()}
+                </div>
             )}
         </div>
     );
 };
 
-const CustomGitGraph: React.FC<CustomGitGraphProps> = ({ commits, branchHeads = [], contributors = [] }) => {
-    const processedData = useMemo(() => {
-        if (!commits || commits.length === 0) return null;
+const CustomGitGraph: React.FC<CustomGitGraphProps> = ({ commits, branchHeads, branches, contributors }) => {
 
-        const avatarMap = new Map<string, string>();
-        contributors.forEach(c => avatarMap.set(c.name, c.avatarUrl));
+    const graphData = useMemo(() => {
+        if (!commits?.length) return null;
 
+        const avatarMap = new Map(contributors.map(c => [c.name, c.avatarUrl]));
         const shaToCommit = new Map(commits.map(c => [c.sha, c]));
         const shaToLane = new Map<string, number>();
-        const shaToBranchNames = new Map<string, string[]>();
-        const branchNameToLane = new Map<string, number>();
+        const headLabels = new Map<string, Array<{ name: string, color: string }>>();
 
-        let nextLane = 0;
-        const sortedHeads = [...branchHeads].sort((a, b) => a.name === 'main' ? -1 : b.name === 'main' ? 1 : 0);
-
-        sortedHeads.forEach(head => {
-            if (!branchNameToLane.has(head.name)) branchNameToLane.set(head.name, nextLane++);
-            const current = shaToBranchNames.get(head.commit.sha) || [];
-            shaToBranchNames.set(head.commit.sha, [...current, head.name]);
+        // 1. DETERMINISTIC LANE RESERVATION
+        const sortedBranches = [...branches].sort((a, b) => {
+            const prio: any = { 'main': 0, 'master': 0, 'dev': 1 };
+            return (prio[a.name.toLowerCase()] ?? 99) - (prio[b.name.toLowerCase()] ?? 99);
         });
 
-        sortedHeads.forEach(head => {
-            const assignedLane = branchNameToLane.get(head.name)!;
-            let currentSha: string | undefined = head.commit.sha;
+        const legend = sortedBranches.map((b, i) => {
+            const color = getBranchColor(b.name, i);
+            const labels = headLabels.get(b.lastCommitSha) || [];
+            headLabels.set(b.lastCommitSha, [...labels, { name: b.name, color }]);
+
+            let currentSha: string | undefined = b.lastCommitSha;
             while (currentSha && shaToCommit.has(currentSha)) {
-                if (shaToLane.has(currentSha)) break;
-                shaToLane.set(currentSha, assignedLane);
-                currentSha = shaToCommit.get(currentSha)?.parents?.[0]?.sha;
+                if (!shaToLane.has(currentSha)) shaToLane.set(currentSha, i);
+                currentSha = shaToCommit.get(currentSha)?.parents[0]?.sha;
             }
+            return { name: b.name, color };
         });
 
-        const nodes = commits.map((commit, index) => {
-            const sha = commit.sha;
-            if (!shaToLane.has(sha)) shaToLane.set(sha, nextLane++);
-            const lane = shaToLane.get(sha)!;
+        const nodes = commits.map((c, i) => {
+            const lane = shaToLane.get(c.sha) ?? sortedBranches.length;
+            const color = getBranchColor(sortedBranches[lane]?.name || 'feature', lane);
 
             return {
-                ...commit,
-                lane,
-                avatarUrl: avatarMap.get(commit.commit.author.name),
-                x: lane * LANE_WIDTH + SVG_PADDING_LEFT,
-                y: index * ROW_HEIGHT + ROW_HEIGHT / 2,
-                headNames: shaToBranchNames.get(sha) || []
+                ...c, lane, color,
+                x: lane * COLUMN_WIDTH + SVG_PADDING_LEFT,
+                y: i * ROW_HEIGHT + ROW_HEIGHT / 2,
+                heads: headLabels.get(c.sha) || [],
+                avatarUrl: avatarMap.get(c.commit.author.name)
             };
         });
 
         return {
             nodes,
-            processedMap: new Map(nodes.map(n => [n.sha, n])),
-            maxLane: nextLane - 1,
-            svgHeight: commits.length * ROW_HEIGHT,
-            legend: Array.from(branchNameToLane.entries()).map(([name, lane]) => ({
-                name,
-                color: BRANCH_COLORS[lane % BRANCH_COLORS.length]
-            }))
+            nodeMap: new Map(nodes.map(n => [n.sha, n])),
+            legend,
+            totalWidth: (Math.max(...nodes.map(n => n.lane)) + 1) * COLUMN_WIDTH + 80,
+            totalHeight: commits.length * ROW_HEIGHT
         };
-    }, [commits, branchHeads, contributors]);
+    }, [commits, branches, contributors]);
 
-    if (!processedData) return null;
-
-    const svgWidth = (processedData.maxLane + 1) * LANE_WIDTH + 40;
+    if (!graphData) return null;
 
     return (
-        <div className="flex flex-col bg-white rounded-3xl border border-slate-200 shadow-2xl h-[850px] overflow-hidden antialiased font-sans">
+        <div className="flex flex-col bg-white rounded-[32px] border border-slate-200 shadow-2xl h-[150vh] overflow-hidden antialiased font-sans">
 
-            {/* CLEAN REFINED HEADER */}
-            <div className="px-8 py-5 border-b border-slate-100 bg-white/95 backdrop-blur-xl sticky top-0 z-20">
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-slate-900 rounded-2xl shadow-xl shadow-slate-200">
-                            <GitBranch size={22} className="text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">Branch Insights</h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Lineage Mapping</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                <span className="text-[10px] text-blue-500 font-black uppercase tracking-wider italic">Optimized Cache</span>
-                            </div>
-                        </div>
+            {/* 1. DETERMINISTIC BRANCH COLOR INDEX (TOOLBAR) */}
+            <div className="px-8 py-5  border-b border-slate-200 flex items-center justify-between shadow-xl z-10 gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
+                        <GitBranch size={20} />
                     </div>
-                    <div className="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
-                        <span className="text-xs font-black text-blue-600 tabular-nums uppercase">{commits.length} Sync Points</span>
+                    <div>
+                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Architecture</span>
+                        <span className="text-sm font-bold text-black uppercase tracking-wider">Branch Lanes</span>
                     </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                    {processedData.legend.map((item) => (
-                        <div key={item.name} className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-100 bg-white shadow-sm hover:border-slate-300 transition-all cursor-default group">
-                            <div className="w-2.5 h-2.5 rounded-full ring-4 ring-slate-50 transition-transform group-hover:scale-110" style={{ backgroundColor: item.color }} />
-                            <span className="text-[11px] font-black text-slate-700 tracking-tight">{item.name}</span>
+                <div className="flex flex-wrap gap-3">
+                    {graphData.legend.map((branch) => (
+                        <div key={branch.name} className="flex items-center gap-2 px-3 py-1.5 border border-slate-700 rounded-full hover:border-slate-500 transition-colors cursor-default">
+                            <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]" style={{ backgroundColor: branch.color }} />
+                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{branch.name}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* SHARED SCROLL CONTAINER */}
-            <div className="flex flex-1 overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent bg-slate-50/10">
+            <div className="flex flex-1 overflow-hidden bg-slate-50/20">
+                {/* 2. GRID CANVAS SIDE */}
+                <div className="overflow-x-auto border-r border-slate-100 select-none no-scrollbar" style={{ width: graphData.totalWidth }}>
+                    <div className="relative overflow-y-auto h-full no-scrollbar">
+                        <svg width={graphData.totalWidth} height={graphData.totalHeight} className="drop-shadow-sm">
+                            {graphData.nodes.map(node => (
+                                <g key={`paths-${node.sha}`}>
+                                    {node.parents.map((p, pIdx) => {
+                                        const pNode = graphData.nodeMap.get(p.sha);
+                                        if (!pNode) return null;
 
-                {/* SVG CANVAS */}
-                <div className="relative border-r border-slate-50 bg-slate-50/20 flex-shrink-0" style={{ width: `${svgWidth}px` }}>
-                    <svg width={svgWidth} height={processedData.svgHeight} className="block">
-                        {processedData.nodes.map((node) =>
-                            node.parents.map((parent, pIndex) => {
-                                const parentNode = processedData.processedMap.get(parent.sha);
-                                if (!parentNode) return null;
-                                const color = BRANCH_COLORS[node.lane % BRANCH_COLORS.length];
-                                const parentColor = BRANCH_COLORS[parentNode.lane % BRANCH_COLORS.length];
+                                        const color = pIdx > 0 ? pNode.color : node.color;
 
-                                if (node.lane === parentNode.lane) {
-                                    return <line key={`${node.sha}-${parent.sha}`} x1={node.x} y1={node.y} x2={parentNode.x} y2={parentNode.y} stroke={color} strokeWidth="2.5" strokeOpacity="0.2" strokeLinecap="round" />;
-                                } else {
-                                    const curveY = (node.y + parentNode.y) / 2;
-                                    const pathD = `M ${node.x} ${node.y} C ${node.x} ${curveY}, ${parentNode.x} ${curveY}, ${parentNode.x} ${parentNode.y}`;
-                                    return <path key={`${node.sha}-${parent.sha}`} d={pathD} fill="none" stroke={pIndex > 0 ? parentColor : color} strokeWidth="2.5" strokeOpacity="0.2" strokeDasharray={pIndex > 0 ? "5 4" : "none"} />;
-                                }
-                            })
-                        )}
+                                        if (node.lane === pNode.lane) {
+                                            // Perfectly straight vertical spine
+                                            return <line key={p.sha} x1={node.x} y1={node.y} x2={pNode.x} y2={pNode.y} stroke={color} strokeWidth={LINE_THICKNESS} strokeOpacity={0.4} strokeLinecap="round" />;
+                                        } else {
+                                            /**
+                                             * SYMMETRICAL ORTHOGONAL U-PATH LOGIC
+                                             * MidX is the "gutter" between the two lanes
+                                             */
+                                            const midX = (node.x + pNode.x) / 2;
+                                            const yDir = pNode.y > node.y ? 1 : -1;
+                                            const xDir = pNode.x > node.x ? 1 : -1;
 
-                        {processedData.nodes.map((node) => {
-                            const color = BRANCH_COLORS[node.lane % BRANCH_COLORS.length];
-                            const isMerge = node.parents.length > 1;
-                            return (
-                                <g key={node.sha} className="group">
-                                    {isMerge && <circle cx={node.x} cy={node.y} r={NODE_RADIUS + 4.5} fill="none" stroke={color} strokeWidth="1" className="opacity-30 group-hover:opacity-100 transition-opacity" />}
-                                    <circle cx={node.x} cy={node.y} r={NODE_RADIUS} fill="white" stroke={color} strokeWidth="2.5" className="transition-all duration-200 group-hover:stroke-[4px]" />
-                                    <circle cx={node.x} cy={node.y} r={1.5} fill={color} />
+                                            // Handle cases where the vertical gap is too small for full bend radius
+                                            const safeRadius = Math.min(BEND_RADIUS, Math.abs(pNode.y - node.y) / 2);
+
+                                            const d = `
+                                                M ${node.x} ${node.y}
+                                                H ${midX - (xDir * safeRadius)}
+                                                Q ${midX} ${node.y}, ${midX} ${node.y + (yDir * safeRadius)}
+                                                V ${pNode.y - (yDir * safeRadius)}
+                                                Q ${midX} ${pNode.y}, ${midX + (xDir * safeRadius)} ${pNode.y}
+                                                H ${pNode.x}
+                                            `;
+
+                                            return (
+                                                <path
+                                                    key={p.sha} d={d} fill="none"
+                                                    stroke={color} strokeWidth={LINE_THICKNESS} strokeOpacity={0.35}
+                                                    strokeLinecap="round" strokeLinejoin="round"
+                                                    strokeDasharray={pIdx > 0 ? "6 4" : "none"}
+                                                />
+                                            );
+                                        }
+                                    })}
                                 </g>
-                            );
-                        })}
-                    </svg>
+                            ))}
+
+                            {/* 3. BOLDER NODES WITH INTERACTIVE HALOS */}
+                            {graphData.nodes.map(node => (
+                                <g key={`node-${node.sha}`} className="group/node cursor-pointer">
+                                    <circle cx={node.x} cy={node.y} r={NODE_RADIUS + 10} fill={node.color} className="opacity-0 group-hover/node:opacity-10 transition-all duration-300" />
+                                    <circle cx={node.x} cy={node.y} r={NODE_RADIUS + 4} stroke={node.color} strokeWidth={1.5} fill="transparent" className="opacity-0 group-hover/node:opacity-40 transition-all duration-300" />
+                                    <circle
+                                        cx={node.x} cy={node.y} r={NODE_RADIUS}
+                                        fill="white" stroke={node.color} strokeWidth={4}
+                                        className="transition-all duration-200 group-hover/node:stroke-[6px] shadow-lg"
+                                    />
+                                    {node.parents.length > 1 && <circle cx={node.x} cy={node.y} r={2.5} fill={node.color} />}
+                                </g>
+                            ))}
+                        </svg>
+                    </div>
                 </div>
 
-                {/* DETAILS LIST */}
-                <div className="flex-1 bg-white">
-                    {processedData.nodes.map((node) => (
-                        <div key={node.sha} className="flex items-center px-8 border-b border-slate-50 hover:bg-slate-50/60 transition-all group" style={{ height: `${ROW_HEIGHT}px` }}>
+                {/* 4. REFINED DETAILS LIST */}
+                <div className="flex-1 overflow-y-auto bg-white divide-y divide-slate-100">
+                    {graphData.nodes.map(node => (
+                        <div key={node.sha} className="flex items-center px-8 hover:bg-slate-50 transition-all group" style={{ height: ROW_HEIGHT }}>
+                            <AuthorAvatar name={node.commit.author.name} url={node.avatarUrl} color={node.color} />
 
-                            <AuthorAvatar
-                                name={node.commit.author.name}
-                                url={node.avatarUrl}
-                                color={BRANCH_COLORS[node.lane % BRANCH_COLORS.length]}
-                            />
-
-                            <div className="flex-1 min-w-0 px-5">
-                                <div className="flex items-center gap-2.5 mb-1">
-                                    <h4 className="text-[13px] font-black text-slate-800 truncate max-w-[450px] tracking-tight">{node.commit.message.split('\n')[0]}</h4>
-                                    {node.parents.length > 1 && <GitMerge size={12} className="text-purple-600" />}
-                                    {node.headNames.map(name => (
-                                        <div key={name} className="px-2 py-0.5 rounded-md bg-slate-900 flex items-center shadow-sm">
-                                            <span className="text-[9px] font-black text-white uppercase tracking-tighter">{name}</span>
-                                        </div>
-                                    ))}
+                            <div className="ml-6 flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h4 className="text-[14px] font-black text-slate-800 truncate tracking-tight uppercase leading-none">
+                                        {node.commit.message.split('\n')[0]}
+                                    </h4>
+                                    <div className="flex gap-1.5">
+                                        {node.heads.map(h => (
+                                            <span key={h.name} className="px-2 py-0.5 text-white text-[9px] font-black rounded-md uppercase shadow-sm border border-black/10" style={{ backgroundColor: h.color }}>
+                                                {h.name}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 text-[11px] text-slate-400 font-bold uppercase tracking-tighter">
-                                    <span className="text-slate-900 group-hover:text-blue-600 transition-colors">{node.commit.author.name}</span>
-                                    <span className="opacity-20">•</span>
-                                    <span className="font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{node.sha.substring(0, 7)}</span>
-                                    <span className="opacity-20">•</span>
-                                    <span className="tabular-nums font-black italic">{format(new Date(node.commit.author.date), 'MMM dd, HH:mm')}</span>
+                                <div className="flex items-center gap-4 text-[11px] text-slate-400 font-bold uppercase tracking-[0.1em]">
+                                    <span className="text-slate-900 group-hover:text-blue-600 transition-colors font-black">{node.commit.author.name}</span>
+                                    <span className="opacity-30">/</span>
+                                    <a
+                                        href={node.html_url} target="_blank" rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 bg-blue-50/50 px-2 py-1 rounded-lg border border-blue-100 font-mono tracking-normal lowercase transition-all"
+                                    >
+                                        <Github size={12} />
+                                        {node.sha.substring(0, 7)}
+                                    </a>
+                                    <span className="opacity-30">/</span>
+                                    <span className="tabular-nums font-medium opacity-60 lowercase">{format(new Date(node.commit.author.date), 'MMM dd, HH:mm')}</span>
                                 </div>
                             </div>
 
-                            <a href={node.html_url} target="_blank" className="opacity-0 group-hover:opacity-100 transition-all p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl shadow-sm">
-                                <ExternalLink size={16} />
-                            </a>
+                            {node.parents.length > 1 && (
+                                <div className="ml-4 flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-100 shadow-sm transition-transform group-hover:scale-105">
+                                    <GitMerge size={16} />
+                                    <span className="text-[10px] font-black uppercase">Merge</span>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

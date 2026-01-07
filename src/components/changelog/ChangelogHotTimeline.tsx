@@ -208,10 +208,8 @@ export function ChangelogTimeline() {
         },
     ];
     return (
-        <div className="h-screen w-full overflow-scroll rounded-2xl">
-            <div className="top-0 left-0 w-full rounded-2xl">
-                <Timeline data={[...data].reverse()} />
-            </div>
+        <div className="h-screen w-full overflow-scroll rounded-2xl border border-neutral-100 shadow-lg">
+            <Timeline data={[...data].reverse()} />
         </div>
     );
 }

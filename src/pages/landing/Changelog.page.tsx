@@ -4,6 +4,7 @@ import { useChangelogStore } from '../../stores/changelog.store';
 import { GitHubCalendar, CustomGitGraph, ChangelogTester } from '../../components/changelog';
 import { ChangelogTimeline } from '../../components/changelog/ChangelogHotTimeline';
 import { Terminal } from 'lucide-react';
+import { PageLoader } from '../../components/ui/page-loader';
 
 const ChangelogPage: React.FC = () => {
     const navigate = useNavigate();
@@ -55,7 +56,7 @@ const ChangelogPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100/50">
+        <div className="min-h-screen bg-white">
             {/* Top Navigation Bar - Marketplace Style */}
             <header className="w-full flex flex-row z-40 mt-2 mb-1 max-w-[85vw] mx-auto">
                 {/* Logo */}
@@ -120,7 +121,7 @@ const ChangelogPage: React.FC = () => {
                 </div>
             </header>
 
-            <div className="max-w-[85vw] mx-auto px-8 py-8">
+            <div className="max-w-[90vw] mx-auto px-8 py-8">
                 {/* Error Message */}
                 {metricsError && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -132,7 +133,7 @@ const ChangelogPage: React.FC = () => {
                 {isLoadingMetrics && (
                     <div className="bg-white rounded-[20px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
                         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111]"></div>
-                        <p className="mt-4 text-sm text-[#6B7280] font-gellix">Loading metrics...</p>
+                       <PageLoader text='Loading Metrics...' />
                     </div>
                 )}
 
@@ -142,7 +143,7 @@ const ChangelogPage: React.FC = () => {
                         <ChangelogTimeline />
                         {/* Commit Graph - First */}
                         {uiMetrics.graphData && uiMetrics.graphData.commits && (
-                            <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                            <div className="bg-white rounded-2xl border border-neutral-200 p-8 shadow-xl">
                                 <div className='flex flex-row w-full h-full items-center justify-between'>
                                     <h2 className="text-xl font-semibold text-[#111111] mb-6">
                                         Commit Graph
@@ -151,7 +152,7 @@ const ChangelogPage: React.FC = () => {
                                         <select
                                             value={selectedRepo}
                                             onChange={(e) => handleRepoChange(e.target.value)}
-                                            className="p-2 bg-transparent border border-gray-200 rounded-lg font-gellix text-sm font-medium rounded-xl text-foreground focus:outline-none focus:border-gray-400"
+                                            className="p-2 bg-transparent border border-gray-200 font-gellix text-sm font-medium rounded-xl text-foreground focus:outline-none focus:border-gray-400"
                                         >
                                             <option value="">Select Repository</option>
                                             {availableRepos.map(repo => (
@@ -163,6 +164,7 @@ const ChangelogPage: React.FC = () => {
                                 <CustomGitGraph
                                     commits={uiMetrics.graphData.commits}
                                     branchHeads={uiMetrics.graphData.branchHeads}
+                                    branches={organization?.repositories.find(r => r.name === selectedRepo)?.branches || []}
                                     contributors={uiMetrics.contributors}
                                 />
                             </div>
