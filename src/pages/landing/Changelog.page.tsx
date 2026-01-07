@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChangelogStore } from '../../stores/changelog.store';
 import { GitHubCalendar, CustomGitGraph, ChangelogTester } from '../../components/changelog';
+import { ChangelogTimeline } from '../../components/changelog/ChangelogHotTimeline';
+import { Terminal } from 'lucide-react';
 
 const ChangelogPage: React.FC = () => {
     const navigate = useNavigate();
+    const testerRef = useRef<HTMLDivElement>(null);
     const {
         organization,
         uiMetrics,
@@ -44,21 +47,28 @@ const ChangelogPage: React.FC = () => {
         }
     };
 
+    const handleApiPlaygroundClick = () => {
+        setShowTester(true);
+        setTimeout(() => {
+            testerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    };
+
     return (
-        <div className="min-h-screen bg-[#F7F8FA]">
+        <div className="min-h-screen bg-gray-100/50">
             {/* Top Navigation Bar - Marketplace Style */}
             <header className="w-full flex flex-row z-40 mt-2 mb-1 max-w-[85vw] mx-auto">
                 {/* Logo */}
                 <div className='flex flex-row items-center justify-center'>
-                <img
-                    src="./ALogo-removebg-preview.svg"
-                    alt="Logo"
-                    className="h-16 w-auto object-contain cursor-pointer"
-                    onClick={() => navigate('/')}
+                    <img
+                        src="./ALogo-removebg-preview.svg"
+                        alt="Logo"
+                        className="h-16 w-auto object-contain cursor-pointer"
+                        onClick={() => navigate('/')}
                     />
-                <span className="text-xl font-bold font-gellix text-foreground">OpenAssets</span>
-                    </div>
-                    <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
+                    <span className="text-xl font-bold font-gellix text-foreground">OpenAssets</span>
+                </div>
+                <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
                     {/* Center: Organization Info */}
                     {organization && (
                         <div className="flex items-center gap-6 text-sm text-gray-600">
@@ -88,6 +98,14 @@ const ChangelogPage: React.FC = () => {
 
                     {/* Right: Repository Selection + Sync */}
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleApiPlaygroundClick}
+                            className="flex items-center gap-2 px-4 py-2 bg-[#111111] text-white rounded-lg text-sm font-medium hover:bg-[#000000] transition-colors shadow-sm"
+                        >
+                            <Terminal className="w-4 h-4" />
+                            API Playground
+                        </button>
+
                         <select
                             value={selectedRepo}
                             onChange={(e) => handleRepoChange(e.target.value)}
@@ -121,12 +139,27 @@ const ChangelogPage: React.FC = () => {
                 {/* Content */}
                 {!isLoadingMetrics && uiMetrics && selectedRepo && (
                     <div className="space-y-6">
+                        <ChangelogTimeline />
                         {/* Commit Graph - First */}
                         {uiMetrics.graphData && uiMetrics.graphData.commits && (
                             <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                                <h2 className="text-xl font-semibold text-[#111111] mb-6">
-                                    Commit Graph
-                                </h2>
+                                <div className='flex flex-row w-full h-full items-center justify-between'>
+                                    <h2 className="text-xl font-semibold text-[#111111] mb-6">
+                                        Commit Graph
+                                    </h2>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <select
+                                            value={selectedRepo}
+                                            onChange={(e) => handleRepoChange(e.target.value)}
+                                            className="p-2 bg-transparent border border-gray-200 rounded-lg font-gellix text-sm font-medium rounded-xl text-foreground focus:outline-none focus:border-gray-400"
+                                        >
+                                            <option value="">Select Repository</option>
+                                            {availableRepos.map(repo => (
+                                                <option key={repo} value={repo}>{repo}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
                                 <CustomGitGraph
                                     commits={uiMetrics.graphData.commits}
                                     branchHeads={uiMetrics.graphData.branchHeads}
@@ -175,7 +208,7 @@ const ChangelogPage: React.FC = () => {
                         )}
 
                         {/* API Tester - Collapsible */}
-                        <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                        <div ref={testerRef} className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
                             <button
                                 onClick={() => setShowTester(!showTester)}
                                 className="w-full flex items-center justify-between text-left group"
