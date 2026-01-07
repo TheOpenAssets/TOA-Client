@@ -16,8 +16,7 @@ import PayoutViewPage from '../../pages/admin/payout/PayoutView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
 import ListingsPage from '../../pages/admin/listings/Listings.page';
 
-// Component Showcase
-import ComponentShowcasePage from '../../pages/examples/ComponentShowcase.page';
+
 
 // Marketplace
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
@@ -36,6 +35,7 @@ import FaucetPage from '../../pages/faucet/Faucet.page';
 import { NotFoundPage } from '../../components/ui/404-page-not-found';
 import AboutPage from '../../pages/landing/About.page';
 import ChangelogPage from '../../pages/landing/Changelog.page';
+import FAQSection from '../../pages/landing/FAQ.page';
 
 // Challenge Verification Page
 
@@ -43,6 +43,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/',
     element: <HomePage />,
+  },
+  {
+    path: '/how-it-works',
+    element: <FAQSection />,
   },
   {
     path: '/about',
@@ -135,12 +139,6 @@ export const publicRoutes: RouteObject[] = [
       },
     ],
   },
-  // Component Showcase
-  {
-    path: '/showcase',
-    element: <ComponentShowcasePage />,
-  },
-  // Challenge Verification
   
   // 404 - Catch all unmatched routes
   {
