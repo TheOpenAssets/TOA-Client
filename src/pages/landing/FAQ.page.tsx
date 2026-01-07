@@ -216,11 +216,11 @@ const FAQSection = () => {
   return (
     <div className="max-w-screen">
       <Navbar />
-      <section id="faqs" className="bg-neutral-100/50 w-full px-5 flex flex-col gap-4">
+      <section id="faqs" className="bg-white w-full px-5 flex flex-col gap-4">
         <div className="bg-neutral-200/40 rounded-4xl border border-neutral-200 mb-2 shadow-lg">
           <MermaidSimulator mermaidCode={mermaidCode} />
         </div>
-        <div className="bg-neutral-900/40 rounded-4xl border border-neutral-200 mb-2 shadow-lg">
+        <div className="rounded-4xl border border-neutral-200 shadow-lg mb-1">
           <FaqDetails />
         </div>
       </section>

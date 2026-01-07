@@ -164,7 +164,7 @@ const FaqDetails = ({
     }, [activeTab]);
 
     return (
-        <section className="py-12 bg-[#F7F8FA] max-w-screen">
+        <section className="py-10 bg-white/90 max-w-screen rounded-4xl">
             <div className="container mx-auto p-2 ">
                 <div className="flex flex-col items-center gap-4 text-center">
                     <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#F3F4F6] text-[#111111] text-sm font-medium border border-[#E5E7EB]">
