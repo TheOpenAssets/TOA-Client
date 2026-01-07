@@ -4,8 +4,8 @@
  * This maintains backward compatibility while we migrate to correct APIs
  */
 
-import type { OAIDCreditResponse, Position } from '../api/solvency.service';
-import type { OAIDCreditLine, CollateralPosition } from '../../types/solvency.types';
+import type { OAIDCreditResponse } from '../api/solvency.service';
+import type { OAIDCreditLine, CollateralPosition, Position } from '../../types/solvency.types';
 
 /**
  * Convert new OAIDCreditResponse to old OAIDCreditLine format

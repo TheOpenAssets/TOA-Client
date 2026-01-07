@@ -235,6 +235,230 @@ class SolvencyService extends BaseService {
     }
   }
 
+  /**
+   * Get loan repayment schedule for a position
+   *
+   * ✅ ENDPOINT: GET /solvency/position/:positionId/schedule
+   * Reference: Specification Section 6 - Loan Details
+   *
+   * Returns full installment schedule with payment status
+   */
+  async getPositionSchedule(positionId: number): Promise<{
+    schedule: {
+      loanDuration: number;
+      numberOfInstallments: number;
+      installmentInterval: number;
+      installmentsPaid: number;
+      missedPayments: number;
+      nextPaymentDue: number;
+      installments: Array<{
+        installmentNumber: number;
+        dueDate: number;
+        amount: string;
+        status: 'PAID' | 'PENDING' | 'MISSED';
+      }>;
+    };
+  }> {
+    try {
+      console.log(`📅 Fetching repayment schedule for position ${positionId}...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/position/${positionId}/schedule`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch loan schedule');
+      }
+
+      const data = await response.json();
+      console.log('✅ Loan schedule received:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching loan schedule:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Borrow USDC against a position (Backend API - not smart contract)
+   *
+   * ✅ ENDPOINT: POST /solvency/borrow
+   * Reference: Specification Section 4 - Borrow Execution
+   *
+   * Backend handles:
+   * - Credit availability validation
+   * - On-chain borrowUSDC call
+   * - Repayment schedule initialization
+   * - OAID credit usage update
+   */
+  async borrowUSDC(request: {
+    positionId: string;
+    amount: string; // USDC amount in 6 decimals
+    loanDuration: number; // Duration in seconds
+    numberOfInstallments: number;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    txHash?: string;
+    blockNumber?: number;
+  }> {
+    try {
+      console.log('💸 Initiating borrow request:', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/borrow`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to borrow');
+      }
+
+      const data = await response.json();
+      console.log('✅ Borrow successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error borrowing:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Repay loan installment (Backend API - not smart contract)
+   *
+   * ✅ ENDPOINT: POST /solvency/repay
+   * Reference: Specification Section 7 - Repayment Flow
+   *
+   * Backend handles:
+   * - Repayment schedule update
+   * - OAID credit refresh
+   */
+  async repayLoan(request: {
+    positionId: string;
+    amount: string; // USDC amount in 6 decimals
+  }): Promise<{
+    success: boolean;
+    message: string;
+    txHash?: string;
+    blockNumber?: number;
+  }> {
+    try {
+      console.log('💵 Initiating repayment request:', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/repay`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to repay');
+      }
+
+      const data = await response.json();
+      console.log('✅ Repayment successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error repaying:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Get all loans for monitoring
+   *
+   * ✅ ENDPOINT: GET /admin/solvency/loans
+   * Reference: Specification Section 9 - Admin Flow
+   */
+  async getAdminLoans(): Promise<{
+    loans: Array<{
+      userWallet: string;
+      asset: string;
+      positionId: number;
+      outstandingDebt: string;
+      healthFactor: number;
+      ltv: number;
+      status: string;
+    }>;
+  }> {
+    try {
+      console.log('🔍 Fetching admin loans...');
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/loans`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch admin loans');
+      }
+
+      const data = await response.json();
+      console.log('✅ Admin loans received:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching admin loans:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Liquidate a position
+   *
+   * ✅ ENDPOINT: POST /admin/solvency/liquidate/:positionId
+   * Reference: Specification Section 10 - Admin Liquidation
+   */
+  async liquidatePosition(positionId: number): Promise<{
+    success: boolean;
+    message: string;
+    txHash?: string;
+  }> {
+    try {
+      console.log(`⚠️ Liquidating position ${positionId}...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/liquidate/${positionId}`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to liquidate position');
+      }
+
+      const data = await response.json();
+      console.log('✅ Position liquidated:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error liquidating position:', error);
+      throw error;
+    }
+  }
+
 }
 
 export const solvencyService = new SolvencyService();

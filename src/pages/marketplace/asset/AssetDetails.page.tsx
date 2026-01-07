@@ -728,7 +728,7 @@ const AssetDetailsPage = () => {
                       />
                       <Tooltip
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        formatter={(value: any, name: any, props: any) => {
+                        formatter={(value: any, _name: any, props: any) => {
                           const tokens = typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : value;
                           return [
                             <div key="tooltip-content" className="space-y-1">

@@ -123,6 +123,7 @@ const PortfolioPage = () => {
   useEffect(() => {
     fetchPortfolio();
     fetchUserBids();
+    fetchMyLoans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -622,8 +623,9 @@ const PortfolioPage = () => {
                     >
                       <div className="h-full flex flex-col overflow-y-auto">
                         <MyLoansTable
-                          positions={filteredLoans}
+                          positions={myLoans}
                           isLoading={isLoadingMyLoans}
+                          onRefresh={fetchMyLoans}
                         />
                       </div>
                     </div>
@@ -664,8 +666,8 @@ const PortfolioPage = () => {
           onClose={() => setShowDepositModal(false)}
           onSuccess={() => {
             setShowDepositModal(false);
-            if (refetchCredit) refetchCredit();
             fetchPortfolio();
+            fetchMyLoans();
           }}
         />
 

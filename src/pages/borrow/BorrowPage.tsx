@@ -52,42 +52,58 @@ const BorrowPage = () => {
               <h2 className="text-2xl font-semibold text-[#111111]">Connect Your Wallet</h2>
               <p className="text-[#6B7280] mt-2">Please connect your wallet to view your borrowing options.</p>
             </div>
-          ) : (
+          ) : availableCredit > 0 ? (
             <div className="bg-white rounded-[24px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
               <p className="text-sm text-[#6B7280]">Available to Borrow</p>
               <p className="text-6xl font-bold text-[#111111] my-4">{formatUSD(availableCredit)}</p>
               <Button
                 onClick={() => setShowBorrowModal(true)}
-                disabled={availableCredit <= 0}
                 size="lg"
                 className="text-lg py-7 px-8 rounded-[16px]"
               >
                 Borrow Now
               </Button>
-              {availableCredit <= 0 && (
-                 <p className="text-sm text-gray-500 mt-4">
-                   You have no available credit. Visit your{' '}
-                   <a onClick={() => navigate('/portfolio')} className="underline cursor-pointer">portfolio</a>
-                   {' '}to increase your credit limit.
-                 </p>
-              )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-[24px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+              <div className="max-w-md mx-auto">
+                <h2 className="text-2xl font-semibold text-[#111111] mb-3">No Available Credit</h2>
+                <p className="text-[#6B7280] mb-6">
+                  You don't have any available credit to borrow. Increase your credit limit from Portfolio.
+                </p>
+                <Button
+                  onClick={() => navigate('/portfolio')}
+                  size="lg"
+                  className="text-lg py-6 px-8 rounded-[16px] w-full mb-6"
+                >
+                  Go to Portfolio → Increase Credit
+                </Button>
+                <div className="pt-6 border-t border-gray-200">
+                  <p className="text-sm font-medium text-gray-700 mb-3">How to get credit:</p>
+                  <ol className="text-left text-sm text-gray-600 space-y-2 list-decimal list-inside">
+                    <li>Go to your Portfolio page</li>
+                    <li>Click "Increase Credit" or "Deposit Collateral"</li>
+                    <li>Deposit RWA or Private Asset tokens</li>
+                    <li>Your credit limit will increase automatically</li>
+                    <li>Return here to borrow against your credit</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {creditData && (
-        <UnifiedBorrowModal
-          isOpen={showBorrowModal}
-          onClose={() => setShowBorrowModal(false)}
-          onSuccess={() => {
-            setShowBorrowModal(false);
-            refetchCredit();
-            navigate('/portfolio?tab=loans');
-          }}
-          creditData={creditData}
-        />
-      )}
+      <UnifiedBorrowModal
+        isOpen={showBorrowModal}
+        onClose={() => setShowBorrowModal(false)}
+        onSuccess={() => {
+          setShowBorrowModal(false);
+          refetchCredit();
+          navigate('/portfolio?tab=loans');
+        }}
+        creditData={creditData}
+      />
     </div>
   );
 };
