@@ -41,7 +41,7 @@ const FaqDetails = ({
                 description:
                     "Authenticate using your wallet. Each wallet is bound to a single role and returning users are connected automatically.",
                 buttonText: "Connect Wallet",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg",
+                videoSrc: "",
             },
         },
         {
@@ -54,7 +54,7 @@ const FaqDetails = ({
                 description:
                     "Issuers onboard once and can submit assets for verification, tokenization, and lifecycle tracking.",
                 buttonText: "Become an Issuer",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg"
+                videoSrc: ""
             },
         },
         {
@@ -67,7 +67,7 @@ const FaqDetails = ({
                 description:
                     "Browse fixed-price and auction-based assets with transparent yield, maturity, and risk indicators.",
                 buttonText: "Explore Marketplace",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg"
+                videoSrc: ""
             },
         },
         {
@@ -80,7 +80,7 @@ const FaqDetails = ({
                 description:
                     "Purchase RWA tokens directly through a simple buy module showing pricing, quantity, and settlement details.",
                 buttonText: "Buy Asset",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg"
+                videoSrc: ""
             },
         },
         {
@@ -93,7 +93,7 @@ const FaqDetails = ({
                 description:
                     "Place bids on auction listings. Winning bids receive tokens at clearing price, others are refunded automatically.",
                 buttonText: "Place Bid",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg",
+                videoSrc: "",
             },
         },
         {
@@ -106,7 +106,7 @@ const FaqDetails = ({
                 description:
                     "Use mETH as collateral to create leveraged exposure while yield services interest automatically.",
                 buttonText: "Use mETH",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg",
+                videoSrc: "",
             },
         },
         {
@@ -119,7 +119,7 @@ const FaqDetails = ({
                 description:
                     "View owned tokens, auction bids, leveraged positions, loans, yield history, and health metrics.",
                 buttonText: "View Portfolio",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg",
+                videoSrc: "",
             },
         },
         {
@@ -132,7 +132,7 @@ const FaqDetails = ({
                 description:
                     "Buy and sell RWAs on the secondary marketplace while preserving time-weighted yield.",
                 buttonText: "Trade Tokens",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg",
+                videoSrc: "",
             },
         },
         {
@@ -145,7 +145,7 @@ const FaqDetails = ({
                 description:
                     "Borrow against RWAs or private assets across native and partner protocols without moving collateral.",
                 buttonText: "Borrow",
-                videoSrc: "https://youtu.be/Er8l_l7P-kg",
+                videoSrc: "",
             },
         },
     ],

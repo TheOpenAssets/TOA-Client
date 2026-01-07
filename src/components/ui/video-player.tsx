@@ -161,7 +161,7 @@ const VideoPlayer = ({ src }: { src: string }) => {
 
     return (
         <motion.div
-            className="relative w-full h-full max-w-7xl mx-auto rounded-xl overflow-hidden bg-[#11111198] shadow-[0_0_20px_rgba(0,0,0,0.2)] backdrop-blur-sm"
+            className="relative w-full h-[70vh] max-w-7xl mx-auto rounded-xl overflow-hidden bg-[#11111198] shadow-[0_0_20px_rgba(0,0,0,0.2)] backdrop-blur-sm"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

@@ -220,7 +220,7 @@ const FAQSection = () => {
         <div className="bg-neutral-200/40 rounded-4xl border border-neutral-200 mb-2 shadow-lg">
           <MermaidSimulator mermaidCode={mermaidCode} />
         </div>
-        <div className="rounded-4xl border border-neutral-200 shadow-lg mb-1">
+        <div className="rounded-4xl border min-h-screen border-neutral-200 shadow-lg mb-1">
           <FaqDetails />
         </div>
       </section>
