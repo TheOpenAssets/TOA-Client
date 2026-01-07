@@ -93,6 +93,14 @@ export interface AssetListing {
     phase: string;
 }
 
+export interface BorrowAssetListing {
+  type: string;
+    active: boolean;
+    listedAt: string;
+    price: string;
+    sold: string;
+}
+
 export interface Cryptography {
     documentHash: string;
     merkleLeaves: string[];
@@ -109,7 +117,7 @@ export interface IssuerAsset {
   tokenParams: TokenParams;
   files: any; 
   checkpoints: any;
-  listing: AssetListing;
+  listing: BorrowAssetListing;
   createdAt: string;
   updatedAt: string;
   cryptography: Cryptography;

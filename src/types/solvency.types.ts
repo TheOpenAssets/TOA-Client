@@ -31,23 +31,7 @@ export interface CollateralPosition {
   isRWA: boolean;
 }
 
-export interface BorrowPosition {
-  id: string;
-  oaidId: string;
-  protocol: string;
-  protocolName: string;
-  collateralToken: string;
-  collateralTokenSymbol: string;
-  collateralAmount: number;
-  collateralValueUSD: number;
-  debtAmount: number; // in USDC
-  healthFactor: number;
-  interestRate: number;
-  interestAccrued: number;
-  createdAt: string;
-  updatedAt: string;
-  lastInterestUpdate: string;
-}
+
 
 export interface Protocol {
   id: string;
@@ -73,15 +57,13 @@ export interface GetCreditDataResponse {
   message?: string;
 }
 
-export interface GetBorrowPositionsResponse {
-  success: boolean;
-  data: {
-    positions: BorrowPosition[];
-    totalCollateralUSD: number;
-    totalDebtUSD: number;
-    overallHealthFactor: number;
+export interface GetPositionsResponse {
+  positions: Position[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
   };
-  message?: string;
 }
 
 export interface GetProtocolsResponse {
@@ -195,7 +177,6 @@ export interface BorrowFormState {
 }
 
 export interface RepayFormState {
-  position: BorrowPosition | null;
   repayAmount: string;
   isFullRepayment: boolean;
   healthFactorPreview: HealthFactorPreview | null;
@@ -272,4 +253,49 @@ export interface TokenApprovalState {
   isApproved: boolean;
   currentAllowance: bigint;
   requiredAmount: bigint;
+}
+
+
+// ============================================
+// POSITION TYPES
+// ============================================
+
+/**
+ * Represents the raw data for a single borrow position, as returned from the backend API.
+ * This is the "domain model". Numeric values are represented as strings to avoid
+ * precision loss.
+ */
+export interface Position {
+  positionId: number;
+  collateralToken: {
+    address: string;
+    symbol: string;
+    name: string;
+    type: string; // "RWA" or "PRIVATE_ASSET"
+  };
+  collateralAmount: string;   // e.g., "90000000000000000000" (18 decimals)
+  tokenValueUSD: string;      // e.g., "76500000000" (6 decimals)
+  usdcBorrowed: string;       // e.g., "50000000000" (6 decimals)
+  outstandingDebt: string;    // e.g., "50041100000" (6 decimals)
+  healthFactor: number;       // e.g., 15300 (representing 153.00%)
+  healthStatus: string;       // "HEALTHY", "WARNING", "CRITICAL"
+  status: string;             // "ACTIVE", "CLOSED"
+  maxBorrowCapacity: string;  // e.g., "53550000000" (6 decimals)
+  createdAt: string;
+}
+
+/**
+ * Represents a position that has been formatted for display in the UI.
+ * This is a "view model". All financial values are human-readable strings.
+ */
+export interface PositionView {
+  positionId: number;
+  tokenSymbol: string;
+  collateralAmountFormatted: string; // e.g., "90.00 wETH"
+  collateralValueUSD: string;      // e.g., "$76,500.00"
+  usdcBorrowed: string;            // e.g., "$50,000.00"
+  outstandingDebt: string;         // e.g., "$50,041.10"
+  healthFactor: string;            // e.g., "153%"
+  healthStatus: "HEALTHY" | "WARNING" | "CRITICAL";
+  availableCredit: string;         // e.g., "$3,508.90"
 }

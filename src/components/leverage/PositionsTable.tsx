@@ -88,7 +88,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
             const health = pos.currentHealthFactor / 10000;
             const collateral = formatUnits(BigInt(pos.mETHCollateral), 18);
             const debt = formatUnits(BigInt(pos.usdcBorrowed), 6);
-            const statusStyle = getStatusStyle(pos.healthStatus);
+            const statusStyle = getStatusStyle(pos.status);
 
             return (
               <tr
