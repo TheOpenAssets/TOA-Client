@@ -37,12 +37,12 @@ const ChangelogTester: React.FC = () => {
         generateStatistics,
         triggerSync,
         fetchOrganization,
-        fetchUiMetrics,
-        triggerMetricsSync,
+        // fetchUiMetrics, // UNUSED
+        // triggerMetricsSync, // UNUSED
     } = useChangelogStore();
 
     const [activeTab, setActiveTab] = useState<'sync' | 'commits' | 'prs' | 'timeline' | 'stats'>('commits');
-    const [selectedRepo, setSelectedRepo] = useState<string>('');
+    // const [selectedRepo, setSelectedRepo] = useState<string>(''); // UNUSED
     const [filters, setFilters] = useState<ChangelogFilters>({
         limit: 50,
         state: 'all',
@@ -136,6 +136,7 @@ const ChangelogTester: React.FC = () => {
         }
     };
 
+    /* 
     const handleFetchMetrics = async () => {
         if (!selectedRepo) {
             alert('Please select a repository');
@@ -160,7 +161,8 @@ const ChangelogTester: React.FC = () => {
         } catch (error) {
             console.error('Failed to sync metrics:', error);
         }
-    };
+    }; 
+    */
 
     const clearFilters = () => {
         setFilters({ limit: 10, state: 'all' });

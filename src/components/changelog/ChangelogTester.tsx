@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
 import { useChangelogStore } from '../../stores/changelog.store.ts';
 import type { ChangelogFilters } from '../../types/changelog.types.ts';
-import { GitCommit, GitPullRequest, Clock, BarChart3, RefreshCw, Tag } from 'lucide-react';
+import { GitCommit, GitPullRequest, Clock, BarChart3, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ChangelogTesterProps {
