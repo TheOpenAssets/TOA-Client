@@ -30,12 +30,13 @@ import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
 const PortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { address } = useAccount();
+  const { address , isConnected} = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
-  const { creditData } = useCreditData(address);
+  const { creditData , refetch: refetchCredit } = useCreditData(address);
+
 
   // Tab state for portfolio sections
   type PortfolioTab = 'assets' | 'bids' | 'loans' | 'positions';
@@ -49,6 +50,10 @@ const PortfolioPage = () => {
 
   // Leverage position detail chart state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
+
+  
+  
+
 
   // Solvency loans state
   const [myLoans, setMyLoans] = useState<SolvencyPosition[]>([]);
@@ -164,6 +169,11 @@ const PortfolioPage = () => {
       setShowNoAssetsModal(true);
     }
   };
+
+  // Refresh credit data after successful operations
+  const handleRefreshCredit = useCallback(() => {
+    refetchCredit(true); // Force refresh
+  }, [refetchCredit]);
 
   // Helper functions
   const handlelogout = () => {
@@ -668,6 +678,7 @@ const PortfolioPage = () => {
             setShowDepositModal(false);
             fetchPortfolio();
             fetchMyLoans();
+            handleRefreshCredit();
           }}
         />
 
