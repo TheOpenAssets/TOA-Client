@@ -116,30 +116,48 @@ export const RepayLoanModal = ({
     try {
       const amountWei = ethers.parseUnits(repayAmount, 6);
 
-      // Step 1: Approve USDC
-      console.log('📝 Approving USDC for repayment...');
-      const approvalResult = await solvencyContractService.approveUSDC(amountWei);
+      // Step 1: Approve USDC for SeniorPool
+      // Per COMPLETE_LOAN.md: Approve SeniorPool to spend USDC, not Vault
+      console.log('📝 Approving USDC for SeniorPool...');
+      const approvalResult = await solvencyContractService.approveUSDCForSeniorPool(amountWei);
 
       if (!approvalResult.success) {
-        throw new Error(approvalResult.error || 'USDC approval failed');
+        throw new Error(approvalResult.error || 'USDC approval for SeniorPool failed');
       }
 
       setIsApproving(false);
       setCurrentStep('repaying');
       setIsRepaying(true);
 
-      // Step 2: Repay via backend API
-      console.log('💵 Calling backend repay API...');
-      const repayResult = await solvencyService.repayLoan({
-        positionId: position.positionId.toString(),
-        amount: amountWei.toString(),
-      });
+      // Step 2: Direct wallet call to SeniorPool.repayLoan()
+      // Per COMPLETE_LOAN.md: Call SeniorPool directly, not backend API
+      console.log('💵 Repaying loan via SeniorPool...');
+      const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
+        position.positionId,
+        amountWei
+      );
 
       if (!repayResult.success) {
-        throw new Error(repayResult.message || 'Repayment failed');
+        throw new Error(repayResult.error || 'Repayment via SeniorPool failed');
       }
 
       setCurrentStep('syncing');
+
+      // Step 3: Sync position with backend
+      setCurrentStep('syncing');
+      console.log('🔄 Syncing position with backend...');
+
+      try {
+        await solvencyService.syncPosition({
+          positionId: position.positionId.toString(),
+          txHash: repayResult.txHash!,
+          blockNumber: repayResult.blockNumber!,
+        });
+        console.log('✅ Position synced with backend');
+      } catch (syncError) {
+        // Non-blocking: Events will still sync it automatically
+        console.warn('⚠️ Manual sync failed (events will auto-sync):', syncError);
+      }
 
       // Success
       setSuccess(true);
