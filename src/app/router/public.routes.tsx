@@ -23,9 +23,8 @@ import MarketplacePage from '../../pages/marketplace/Marketplace.page';
 import AssetDetailsPage from '../../pages/marketplace/asset/AssetDetails.page';
 import AuctionDetailsPage from '../../pages/marketplace/auction/AuctionDetails.page';
 
-import SecondaryMarketplacePage from '../../pages/secondary-marketplace/SecondaryMarketplace.page';
+// import SecondaryMarketplacePage from '../../pages/secondary-marketplace/P2PTesting';
 import TradingEnginePage from '../../pages/secondary-marketplace/TradingEngine.page';
-import BorrowPage from '../../pages/borrow/BorrowPage';
 
 // Portfolio
 import PortfolioPage from '../../pages/portfolio/Portfolio.page';
@@ -68,16 +67,12 @@ export const publicRoutes: RouteObject[] = [
     path: '/marketplace/auction/:assetId',
     element: <AuctionDetailsPage />,
   },
+  // {
+  //   path: '/trade',
+  //   element: <SecondaryMarketplacePage />,
+  // },
   {
-    path: '/borrow',
-    element: <BorrowPage />,
-  },
-  {
-    path: '/trade',
-    element: <SecondaryMarketplacePage />,
-  },
-  {
-    path: '/trade/:assetId',
+    path: '/trade/asset/:assetId',
     element: <TradingEnginePage />,
   },
   {
@@ -139,7 +134,7 @@ export const publicRoutes: RouteObject[] = [
       },
     ],
   },
-  
+
   // 404 - Catch all unmatched routes
   {
     path: '*',

@@ -261,7 +261,7 @@ const AssetDetailsPage = () => {
     console.log('Token Address:', asset.token?.address || 'N/A');
     console.log('Buyer Address:', address);
     console.log('==============================================\n');
-
+    setIsPurchasing(true);
     setLeveragePurchaseStatus(null);
 
     try {
@@ -354,11 +354,13 @@ const AssetDetailsPage = () => {
           setIsApproving(false);
           // Reset form and reload wallet data
           setLeverageTokenInput('');
+          setIsPurchasing(false);
           await loadWalletData();
 
           // Briefly show success then reset button state
           setTimeout(() => {
             setLeveragePurchaseStatus(null);
+            setIsPurchasing(false);
           }, 2500);
           console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
           return;
@@ -469,6 +471,7 @@ const AssetDetailsPage = () => {
       // Briefly show success then reset button state
       setTimeout(() => {
         setLeveragePurchaseStatus(null);
+        setIsPurchasing(false);
       }, 2500);
 
       console.log('\n✨ ===== LEVERAGED PURCHASE COMPLETED =====\n');
@@ -479,6 +482,7 @@ const AssetDetailsPage = () => {
       // Reset status after showing failure briefly
       setTimeout(() => {
         setLeveragePurchaseStatus(null);
+        setIsPurchasing(false);
       }, 3000);
       console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
     }
@@ -728,7 +732,7 @@ const AssetDetailsPage = () => {
                       />
                       <Tooltip
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        formatter={(value: any, name: any, props: any) => {
+                        formatter={(value: any, _name: any, props: any) => {
                           const tokens = typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : value;
                           return [
                             <div key="tooltip-content" className="space-y-1">
@@ -1035,7 +1039,7 @@ const AssetDetailsPage = () => {
 
                       <Button
                         onClick={handleOpenLeveragePosition}
-                        disabled={isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
+                        disabled={isPurchasing ||isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
                         className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {(() => {

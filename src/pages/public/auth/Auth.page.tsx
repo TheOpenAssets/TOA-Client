@@ -1,31 +1,32 @@
 // src/pages/public/auth/Auth.page.tsx
 
-import { useState, useCallback, useEffect } from 'react';
+
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAccount, useSignMessage } from 'wagmi';
-import { ConnectWallet } from '../../../components/wallet/ConnectWallet';
+import { useAccount } from 'wagmi';
 import { Input } from '../../../components/ui/input';
 import { FileUpload } from '../../../components/ui/file-upload';
 import { Button } from '../../../components/ui/button';
-import { SignInPage } from '../../../components/ui/sign-in';
-import { CheckCircle } from 'lucide-react';
-
-import { authService } from '../../../lib/api/auth.service';
+// import { SignInPage } from '../../../components/ui/sign-in';
+import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { kycService } from '../../../lib/api/kyc.service';
 import { useAuthStore } from '../../../stores/auth.store';
-import type { WalletStatusResponse } from '../../../types/auth.types';
 
-type AuthStep = 'connect' | 'existing_user' | 'new_user' | 'documents_uploaded' | 'authenticating' | 'kyc_submit';
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Wavy } from '../../../components/ui/wavy';
 
-const AuthPage = () => {
+
+type AuthStep = 'new_user' | 'documents' | 'documents_uploaded' | 'kyc_submit';
+
+export default function AuthPage() {
+
   const navigate = useNavigate();
   const location = useLocation();
   const { address } = useAccount();
-  const { signMessageAsync } = useSignMessage();
-  const { setUser, setLoading, user } = useAuthStore();
 
-  const [step, setStep] = useState<AuthStep>('connect');
-  const [walletStatus, setWalletStatus] = useState<WalletStatusResponse | null>(null);
+  const { setLoading, user } = useAuthStore();
+
+  const [step, setStep] = useState<AuthStep>('new_user');
   const [error, setError] = useState<string | null>(null);
   const [kycDocuments, setKycDocuments] = useState<{ aadhaar: File | null }>({ aadhaar: null });
   const [email, setEmail] = useState<string>('');
@@ -50,89 +51,12 @@ const AuthPage = () => {
    * GET /users/exists?walletAddress=0xUSER
    * Memoized to prevent infinite re-render loops
    */
-  const checkWalletStatus = useCallback(async (walletAddress: string) => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      const status = await authService.checkWalletStatus(walletAddress);
-      setWalletStatus(status);
-
-      // STEP 5: UI DECISION BASED ON BACKEND RESPONSE
-      if (status.exists && status.kyc) {
-        // Case A: Wallet exists AND KYC is completed
-        setStep('existing_user');
-      } else {
-        // Case B: Wallet not whitelisted OR KYC not done
-        setStep('new_user');
-      }
-    } catch (err: any) {
-      console.error('Error checking wallet status:', err);
-      setError(err.message || 'Failed to check wallet status');
-      setStep('connect');
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading]);
-
   /**
    * Handle document upload modal completion
    * STEP 6: Document Upload (Frontend Only)
    */
   const handleDocumentUpload = (documents: { aadhaar: File | null }) => {
     setKycDocuments(documents);
-  };
-
-
-  /**
-   * STEP 7: AUTHENTICATION FLOW
-   */
-  const handleLogin = async () => {
-    if (!address) {
-      setError('Wallet not connected');
-      return;
-    }
-
-    try {
-      setStep('authenticating');
-      setError(null);
-      setLoading(true);
-
-      // Step 7.1: Get Challenge
-      const challenge = await authService.getChallenge(address);
-
-      // Step 7.2: Wallet Signs Message
-      const signature = await signMessageAsync({
-        message: challenge.message,
-        account: address,
-      });
-
-      // Step 7.3: Login API (AUTH ONLY)
-      const loginResponse = await authService.login({
-        walletAddress: address,
-        message: challenge.message,
-        signature: signature,
-      });
-
-      // STEP 8: Backend Login Result
-      setUser(loginResponse.user);
-
-      // STEP 9: Post-Login Handling
-      if (loginResponse.user.kyc === true) {
-        // Existing user with KYC → redirect to portfolio
-        navigate('/portfolio');
-      } else {
-        // New user → Stay on auth page, wait for user to submit KYC
-        setError('Please complete KYC verification to continue');
-        setStep('new_user');
-      }
-    } catch (err: any) {
-      console.error('Error during authentication:', err);
-      setError(err.message || 'Authentication failed');
-      setStep(walletStatus?.exists && walletStatus?.kyc ? 'existing_user' : 'new_user');
-    } finally {
-      setLoading(false);
-    }
   };
 
   /**
@@ -186,144 +110,118 @@ const AuthPage = () => {
     const newEmail = e.target.value;
     setEmail(newEmail);
     setIsEmailValid(newEmail.includes('@') && newEmail.includes('.'));
+
   };
 
+  const [titleNumber, setTitleNumber] = useState(0);
+  const titles = useMemo(
+    () => ["Tokenise", "Invest", "Leverage", "Trade", "Borrow"],
+    []
+  );
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (titleNumber === titles.length - 1) {
+        setTitleNumber(0);
+      } else {
+        setTitleNumber(titleNumber + 1);
+      }
+    }, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [titleNumber, titles]);
+
   return (
-    <SignInPage
-      galleryImages={[
-        {
-          id: 1,
-          src: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?q=80&w=1470&auto=format&fit=crop",
-          alt: "Tokenized Real Estate",
-          title: "Tokenized Real Estate",
-          span: "col-span-2 row-span-2"
-        },
-        {
-          id: 2,
-          src: "https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?q=80&w=1470&auto=format&fit=crop",
-          alt: "Blockchain Technology",
-          title: "Blockchain Technology",
-          span: "col-span-2 row-span-1"
-        },
-        {
-          id: 3,
-          src: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=1470&auto=format&fit=crop",
-          alt: "Digital Assets",
-          title: "Digital Assets",
-          span: "col-span-2 row-span-1"
-        },
-        {
-          id: 4,
-          src: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1470&auto=format&fit=crop",
-          alt: "Investment Portfolio",
-          title: "Investment Portfolio",
-          span: "col-span-1 row-span-1"
-        },
-        {
-          id: 5,
-          src: "https://images.unsplash.com/photo-1559526324-593bc073d938?q=80&w=1470&auto=format&fit=crop",
-          alt: "Modern Architecture",
-          title: "Modern Architecture",
-          span: "col-span-1 row-span-1"
-        },
-        {
-          id: 6,
-          src: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1470&auto=format&fit=crop",
-          alt: "Commercial Properties",
-          title: "Commercial Properties",
-          span: "col-span-2 row-span-1"
-        }
-      ]}
-      logoSrc="./ALogo-removebg-preview.svg"
-      onLogoClick={() => window.location.href = "/"}
-    >
-      <div className="flex flex-col gap-6 bg-transparent border border-gray-100 shadow-sm rounded-3xl p-10 ">
-        {/* Title */}
-        <div className="animate-element animate-delay-100">
-          <h3 className="text-3xl md:text-4xl font-medium leading-tight text-[#111111]">
-            Welcome to  <span className="ml-1 font-beau text-5xl">Open Assets</span>
-          </h3>
-          <p className="text-[#6B7280] mt-2">
-            {step === 'connect' && 'Connect your wallet to begin'}
-            {step === 'existing_user' && 'Welcome back! Sign in to continue'}
-            {step === 'new_user' && 'Complete your profile to get started'}
-            {step === 'documents_uploaded' && 'Finalize your registration'}
-            {step === 'authenticating' && 'Authenticating your wallet...'}
-            {step === 'kyc_submit' && 'Completing verification...'}
-          </p>
-        </div>
+    <div className="w-full">
+      <Wavy />
+      <img src="./ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover" />
+      <div className="absolute top-0 left-0 w-full h-full mx-auto">
+        <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
+          <div className="flex gap-4 flex-col">
+            <h1 className="text-3xl md:text-5xl max-w-7xl tracking-tighter text-center font-regular text-white">
+              <span className="font-gellix font-regular">Welcome to Open Assets</span>
+              <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-5">
+                &nbsp;
+                {titles.map((title, index) => (
+                  <motion.span
+                    key={index}
+                    className="absolute font-light font-beau text-7xl text-neutral-100"
+                    initial={{ opacity: 0, y: "-100" }}
+                    transition={{ type: "spring", stiffness: 50 }}
+                    animate={
+                      titleNumber === index
+                        ? {
+                          y: 0,
+                          opacity: 1,
+                        }
+                        : {
+                          y: titleNumber > index ? -150 : 150,
+                          opacity: 0,
+                        }
+                    }
+                  >
+                    {title}
+                  </motion.span>
+                ))}
+              </span>
+            </h1>
 
-        {/* Error Display */}
-        {error && (
-          <div className="animate-element animate-delay-300 p-4 bg-red-50 border border-red-200 rounded-2xl">
-            <p className="text-sm text-red-600 font-sans">{error}</p>
-          </div>
-        )}
-
-        {/* STEP 3: Wallet Connection (First Action) */}
-        {step === 'connect' && (
-          <div className="space-y-4 animate-element animate-delay-400">
-            <ConnectWallet onWalletConnected={checkWalletStatus} />
-            <p className="text-xs text-center text-[#6B7280] font-sans">
-              By connecting, you agree to our Terms of Service
+            <p className="font-inter text-base md:text-lg text-white mb-3 max-w-2xl mx-auto">
+              Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
+              <span className="font-beau text-xl md:text-2xl font-semibold">Tokenize. Invest. Borrow. Earn.</span> All in one unified execution layer.
             </p>
           </div>
-        )}
 
-        {/* CASE A: Existing User - Show Login */}
-        {step === 'existing_user' && address && (
-          <div className="space-y-6 animate-element animate-delay-300">
-            <div className="p-6 bg-[#F3F4F6] rounded-2xl space-y-3">
-              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-xs font-mono text-[#111111] break-all">
-                  {address}
-                </span>
-              </div>
-              <p className="text-sm text-[#6B7280] text-center">
-                Click below to sign in with your wallet
-              </p>
-            </div>
-
-            <Button
-              onClick={handleLogin}
-              className="w-full font-sans font-medium rounded-2xl h-14 bg-black text-white hover:bg-gray-900 transition-colors"
-              size="lg"
-            >
-              Sign In with Wallet
-            </Button>
+          <div className="animate-element animate-delay-100">
+            <p className="text-[#ffffff] mt-1">
+              {step === 'new_user' && 'Complete your profile to get started'}
+              {step === 'documents_uploaded' && 'Finalize your registration'}
+              {step === 'kyc_submit' && 'Completing verification...'}
+            </p>
           </div>
-        )}
 
-        {/* CASE B: New User - Show Email Input and Document Upload */}
-        {step === 'new_user' && address && (
-          <div className="space-y-4 animate-element animate-delay-300">
-            <div className="p-4 bg-white/20 rounded-2xl">
-              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-transparent rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-xs font-mono text-[#111111] break-all">
-                  {address}
-                </span>
-              </div>
+          {/* Error Display */}
+          {error && (
+            <div className="animate-element animate-delay-300 p-4 bg-red-50 border border-red-200 rounded-2xl">
+              <p className="text-sm text-red-600 font-sans">{error}</p>
             </div>
+          )}
+          <div className='border border-gray-500/60 bg-transparent rounded-3xl shadow-xl p-10'>
+            {step === 'new_user' && address && (
+              <div className="space-y-4 animate-element animate-delay-300">
+                  <Button className='border border-neutral-200 bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                <div className="p-4 border border-gray-500/60 bg-transparent rounded-3xl shadow-2xl">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-transparent rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span className="text-xs font-mono text-[#ffffff] break-all">
+                      {address}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[#6B7280] font-sans">
-                Email Address
-              </label>
-              <div className="rounded-2xl border border-gray-200 bg-[#F3F4F6] backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  className="border-none bg-transparent font-sans rounded-2xl h-12 focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[#ffffff] font-sans">
+                    Email Address
+                  </label>
+                  <div className="rounded-2xl border border-gray-500/60 bg-transparent shadow-lg focus-within:border-violet-400/70 focus-within:bg-transparent focus-within:shadow-none mt-3">
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={handleEmailChange}
+                      className="border-none bg-transparent text-white font-sans rounded-2xl h-10"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            {isEmailValid && (
-              <>
+            {step === 'documents' && isEmailValid && (
+              <div className="space-y-6 animate-element animate-delay-300">
+                <Button className='border border-neutral-200 bg-transparent shadow-xl rounded-full' onClick={() => { setStep('new_user'); setEmail(''); setIsEmailValid(false); }}>
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-[#6B7280] font-sans">
                     KYC Document
@@ -353,72 +251,60 @@ const AuthPage = () => {
                     'Complete Registration'
                   )}
                 </Button>
-              </>
+              </div>
             )}
-          </div>
-        )}
 
-        {/* CASE C: Documents Uploaded - Show Complete Registration */}
-        {step === 'documents_uploaded' && address && (
-          <div className="space-y-6 animate-element animate-delay-300">
-            <div className="p-6 bg-[#F3F4F6] rounded-2xl space-y-4">
-              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-xs font-mono text-[#111111] break-all">
-                  {address}
-                </span>
+            {/* CASE C: Documents Uploaded - Show Complete Registration */}
+            {step === 'documents_uploaded' && address && (
+              <div className="space-y-6 animate-element animate-delay-300">
+                <Button className='border border-neutral-200 bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <div className="p-6 bg-[#F3F4F6] rounded-2xl space-y-4">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span className="text-xs font-mono text-[#111111] break-all">
+                      {address}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-green-600">
+                    <CheckCircle className="w-5 h-5" />
+                    <span className="text-sm font-medium font-sans">Documents Uploaded</span>
+                  </div>
+                  <p className="text-sm text-[#6B7280] text-center font-sans">
+                    Click below to complete your registration
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleCompleteRegistration}
+                  className="w-full rounded-2xl h-14 bg-black text-white hover:bg-gray-900 font-medium transition-colors"
+                  size="lg"
+                >
+                  Complete Registration
+                </Button>
               </div>
-              <div className="flex items-center justify-center gap-2 text-green-600">
-                <CheckCircle className="w-5 h-5" />
-                <span className="text-sm font-medium font-sans">Documents Uploaded</span>
+            )}
+
+            {/* Submitting KYC */}
+            {step === 'kyc_submit' && (
+              <div className="text-center space-y-4 animate-element animate-delay-300 p-8 bg-[#F3F4F6] rounded-2xl">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="animate-spin w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full" />
+                  <span className="text-sm text-[#111111] font-sans font-medium">
+                    Completing verification...
+                  </span>
+                </div>
+                <p className="text-xs text-[#6B7280] font-sans">
+                  This may take a few moments
+                </p>
               </div>
-              <p className="text-sm text-[#6B7280] text-center font-sans">
-                Click below to complete your registration
-              </p>
-            </div>
+            )}
 
-            <Button
-              onClick={handleCompleteRegistration}
-              className="w-full rounded-2xl h-14 bg-black text-white hover:bg-gray-900 font-medium transition-colors"
-              size="lg"
-            >
-              Complete Registration
-            </Button>
           </div>
-        )}
-
-        {/* Authenticating */}
-        {step === 'authenticating' && (
-          <div className="text-center space-y-4 animate-element animate-delay-300 p-8 bg-[#F3F4F6] rounded-2xl">
-            <div className="flex items-center justify-center gap-3">
-              <div className="animate-spin w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full" />
-              <span className="text-sm text-[#111111] font-sans font-medium">
-                Authenticating...
-              </span>
-            </div>
-            <p className="text-xs text-[#6B7280] font-sans">
-              Please sign the message in your wallet
-            </p>
-          </div>
-        )}
-
-        {/* Submitting KYC */}
-        {step === 'kyc_submit' && (
-          <div className="text-center space-y-4 animate-element animate-delay-300 p-8 bg-[#F3F4F6] rounded-2xl">
-            <div className="flex items-center justify-center gap-3">
-              <div className="animate-spin w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full" />
-              <span className="text-sm text-[#111111] font-sans font-medium">
-                Completing verification...
-              </span>
-            </div>
-            <p className="text-xs text-[#6B7280] font-sans">
-              This may take a few moments
-            </p>
-          </div>
-        )}
+        </div>
       </div>
-    </SignInPage>
+    </div>
   );
-};
+}
 
-export default AuthPage;

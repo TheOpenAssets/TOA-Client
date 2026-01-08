@@ -29,16 +29,21 @@ export const FileUpload = ({
   onChange,
   text,
   accept,
+  value,
 }: {
     onChange?: (files: File[]) => void;
     text: string;
     accept?: string;
+    value?: File[];
 }) => {
-  const [files, setFiles] = useState<File[]>([]);
+  const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  const files = value || internalFiles;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: File[]) => {
-    setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    if (value === undefined) {
+      setInternalFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    }
     onChange && onChange(newFiles);
   };
 

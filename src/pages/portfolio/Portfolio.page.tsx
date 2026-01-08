@@ -19,6 +19,8 @@ import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
 import { PageLoader } from '../../components/ui/page-loader';
+import { Button } from '../../components/ui/button';
+import { ShaderAnimation } from '../../components/ui/shimmer-lines';
 
 
 const PortfolioPage = () => {
@@ -349,31 +351,26 @@ const PortfolioPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-red-600 mb-4">Error: {error}</div>
-          <button
-            onClick={() => fetchPortfolio()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            Retry
-          </button>
+      <div className="relative w-full h-screen overflow-hidden bg-black">
+        {/* Background Animation */}
+        <div className="absolute inset-0 z-0">
+          <ShaderAnimation />
         </div>
-      </div>
-    );
-  }
 
-  if (!allPortfolioItems.length && !userBids.length) {
-    return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-foreground mb-4">No assets in your portfolio yet.</div>
-          <button
-            onClick={() => navigate('/marketplace')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+        {/* Content Overlay */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-center px-4">
+          <p className="text-2xl md:text-4xl text-white mb-10 font-bold tracking-[0.2em] uppercase">
+            Looks like we had an error !
+          </p>
+
+          <Button
+            onClick={fetchPortfolio}
+            variant="outline"
+            size="lg"
+            className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
           >
-            Explore Marketplace
-          </button>
+            Let's try again !
+          </Button>
         </div>
       </div>
     );

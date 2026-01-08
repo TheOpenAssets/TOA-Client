@@ -74,7 +74,7 @@ const AuthorAvatar = ({ name, url, color }: { name: string, url?: string, color:
     );
 };
 
-const CustomGitGraph: React.FC<CustomGitGraphProps> = ({ commits, branchHeads, branches, contributors }) => {
+const CustomGitGraph: React.FC<CustomGitGraphProps> = ({ commits, branches, contributors }) => {
 
     const graphData = useMemo(() => {
         if (!commits?.length) return null;

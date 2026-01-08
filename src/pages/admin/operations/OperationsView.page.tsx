@@ -1005,8 +1005,8 @@ const OperationsViewPage = () => {
                     </p>
                   </div>
                   <div>
-                    <span className="text-foreground/60">Token Symbol:</span>
-                    <p className="text-foreground font-semibold mt-1">{selectedAsset.token?.symbol || 'N/A'}</p>
+                    {/* <span className="text-foreground/60">Token Symbol:</span>
+                    <p className="text-foreground font-semibold mt-1">{selectedAsset.token?.symbol || 'N/A'}</p> */}
                   </div>
                 </div>
               </div>

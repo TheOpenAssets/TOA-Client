@@ -231,13 +231,11 @@ const MarketplacePage = () => {
     }
   };
 
-const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLButtonElement>) => {
-  if (asset.listingType === 'STATIC') {
-    navigate(`/trade/${asset.id}`); 
-    e.preventDefault();
-    e.stopPropagation();
-  } 
-};
+  const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLButtonElement>) => {
+      navigate(`/trade/asset/${asset.id}`);
+      e.preventDefault();
+      e.stopPropagation();
+  };
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -433,26 +431,19 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
             >
               Portfolio
             </button>
-            <div className='relative group'>
-              <button
-              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
-              >
+            <button
+              onClick={() => navigate('/trade')}
+              className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+            >
               Trade
-              </button>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-              Coming Soon
-              </div>
-            </div>
-            <div className='relative group'>
-              <button
-                className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed"
-              >
-                Borrow
-              </button>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-                Coming Soon
-              </div>
-            </div>
+            </button>
+            <button
+              onClick={() => navigate('/borrow')}
+              className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+            >
+              Borrow
+            </button>
+
           </nav>
 
           {/* Right: Auth / Wallet Display */}
@@ -899,7 +890,7 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
                     return (
                       <div
                         key={asset.id}
-                        
+
                         className="group relative bg-white rounded-3xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl"
                       >
                         {/* Header Section */}
@@ -1112,18 +1103,14 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
                               );
                             })()}
                             <span className="text-gray-400">|</span>
-                            <div className="relative group">
-                              <button
+                            <button
                               onClick={(e) => handleTradeNavigate(asset, e)}
-                              disabled={true}
-                              className="px-4 py-2 text-gray-400 rounded-lg font-inter text-sm font-medium cursor-not-allowed"
-                              >
+                              className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 hover:scale-[1.07] transition-colors"
+                            
+                            >
                               Trade
-                              </button>
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                              Coming Soon
-                              </div>
-                            </div>
+                            </button>
+
                           </div>
                         </td>
                       </tr>
@@ -1140,4 +1127,3 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
 };
 
 export default MarketplacePage;
-

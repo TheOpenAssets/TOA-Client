@@ -36,6 +36,24 @@ interface LeverageInfo {
   settlementDate?: string;
 }
 
+interface TransactionHistory {
+  date: string;
+  type: 'PRIMARY_PURCHASE' | 'SECONDARY_BUY' | 'SECONDARY_SELL' | 'ORDER_LOCK' | 'ORDER_UNLOCK';
+  amount: string;
+  amountFormatted: string;
+  price: string;
+  priceFormatted: string;
+  totalValue: string;
+  totalValueFormatted: string;
+  investmentDelta: string;
+  investmentDeltaFormatted: string;
+  runningTokenBalance: string;
+  runningInvestment: string;
+  avgCostPerToken: string;
+  txHash?: string;
+  source: string;
+}
+
 interface PortfolioAsset {
   purchaseType: 'STATIC' | 'LEVERAGE';
   assetId: string;
@@ -50,6 +68,7 @@ interface PortfolioAsset {
   createdAt?: string;
   metadata?: AssetMetadata;
   yieldInfo?: YieldInfo;
+  transactionHistory?: TransactionHistory[];
   // Leverage-specific fields
   mETHCollateral?: string;
   usdcBorrowed?: string;
@@ -148,7 +167,7 @@ export const MyAssetsTable = ({
 
   const openTxHash = (hash: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://explorer.sepolia.mantle.xyz/tx/${hash}`, '_blank');
+    window.open(`https://sepolia.mantlescan.xyz/tx/${hash}`, '_blank');
   };
 
 
@@ -183,8 +202,8 @@ export const MyAssetsTable = ({
                 key={type}
                 onClick={() => setTypeFilter(type)}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${typeFilter === type
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {type}
@@ -203,8 +222,8 @@ export const MyAssetsTable = ({
                 key={status}
                 onClick={() => setStatusFilter(status)}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${statusFilter === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {status}
@@ -352,7 +371,10 @@ export const MyAssetsTable = ({
                       ) : (
                         <div className="flex flex-col">
                           <span className="text-xs text-gray-500">Invested</span>
-                          <span className="font-medium">
+                          <span className={`font-medium ${formatUSDCAmount(asset.totalInvested || '0') > 0
+                            ? 'text-red-600'
+                            : 'text-green-600'
+                            }`}>
                             ${formatCurrency(formatUSDCAmount(asset.totalInvested || '0'))}
                           </span>
                         </div>
@@ -459,7 +481,8 @@ export const MyAssetsTable = ({
                 {isExpanded && (
                   <tr className="bg-gray-50/80 border-b border-gray-200">
                     <td colSpan={9} className="px-6 py-4">
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+                      {/* Basic Details Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm mb-6">
                         {/* Token Address */}
                         <div>
                           <div className="text-xs text-gray-500 mb-1">Token Address</div>
@@ -565,6 +588,114 @@ export const MyAssetsTable = ({
                           </div>
                         )}
                       </div>
+
+                      {/* Transaction History */}
+                      {asset.transactionHistory && asset.transactionHistory.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                            Transaction History
+                          </h4>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead className="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                  <th className="px-3 py-2 text-left font-medium text-gray-700">Date</th>
+                                  <th className="px-3 py-2 text-left font-medium text-gray-700">Type</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Amount</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Price</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Total Value</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Investment Δ</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Token Balance</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Net Investment</th>
+                                  <th className="px-3 py-2 text-right font-medium text-gray-700">Avg Cost</th>
+                                  <th className="px-3 py-2 text-center font-medium text-gray-700">Tx</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {asset.transactionHistory.map((tx: any, txIndex: number) => (
+                                  <tr key={txIndex} className="hover:bg-white transition-colors">
+                                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                                      {new Date(tx.date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                      })}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <span
+                                        className={`px-2 py-0.5 rounded text-xs font-medium ${tx.type === 'PRIMARY_PURCHASE'
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : tx.type === 'SECONDARY_BUY'
+                                            ? 'bg-green-100 text-green-700'
+                                            : tx.type === 'SECONDARY_SELL'
+                                              ? 'bg-orange-100 text-orange-700'
+                                              : tx.type === 'ORDER_LOCK'
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-gray-100 text-gray-700'
+                                          }`}
+                                      >
+                                        {tx.type.replace(/_/g, ' ')}
+                                      </span>
+                                    </td>
+                                    <td className={`px-3 py-2 text-right font-medium ${parseFloat(tx.amount) < 0 ? 'text-red-600' : 'text-green-600'
+                                      }`}>
+                                      {tx.amountFormatted}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-gray-600">
+                                      {tx.priceFormatted}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-medium text-gray-900">
+                                      {tx.totalValueFormatted}
+                                    </td>
+                                    <td className={`px-3 py-2 text-right font-medium ${parseFloat(tx.investmentDelta) > 0
+                                      ? 'text-red-600'
+                                      : parseFloat(tx.investmentDelta) < 0
+                                        ? 'text-green-600'
+                                        : 'text-gray-600'
+                                      }`}>
+                                      {tx.investmentDeltaFormatted}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-gray-900">
+                                      {tx.runningTokenBalance}
+                                    </td>
+                                    <td className={`px-3 py-2 text-right font-medium ${parseFloat(tx.runningInvestment) > 0
+                                      ? 'text-red-600'
+                                      : 'text-green-600'
+                                      }`}>
+                                      ${tx.runningInvestment}
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-gray-600">
+                                      ${tx.avgCostPerToken}
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                      {tx.txHash ? (
+                                        (() => {
+                                          // Extract hash before dash if present
+                                          const actualHash = tx.txHash.split('-')[0];
+                                          const isRealTx = !actualHash.includes('-');
+
+                                          return isRealTx ? (
+                                            <button
+                                              onClick={(e) => openTxHash(actualHash, e)}
+                                              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors font-mono text-xs"
+                                            >
+                                              <ExternalLink className="w-3 h-3" />
+                                            </button>
+                                          ) : (
+                                            <span className="text-gray-400 text-xs">Internal</span>
+                                          );
+                                        })()
+                                      ) : (
+                                        <span className="text-gray-400 text-xs">-</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )}
