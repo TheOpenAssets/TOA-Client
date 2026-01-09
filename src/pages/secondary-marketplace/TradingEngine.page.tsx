@@ -11,6 +11,7 @@ import { marketplaceService } from '../../lib/api/marketplace.service';
 import type { PurchaseHistoryResponse } from '../../types/marketplace.types';
 import { PageLoader } from '../../components/ui/page-loader';
 import { useNavigate } from 'react-router-dom';
+import { P2PTradingChart } from '../../components/marketplace/P2PTradingChart';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
 
@@ -79,6 +80,7 @@ const TradingEngineProductionPage = () => {
         fetchTradeHistory,
         fetchMyOrders,
         fetchTradeableBalance,
+        isLoadingOrderbook,
         p2pError,
         clearP2PError,
     } = useMarketplaceStore();
@@ -430,7 +432,7 @@ const TradingEngineProductionPage = () => {
         : 0;
 
     // Loading State
-    if (isLoadingAsset || !currentAsset) {
+    if (isLoadingAsset && !currentAsset) {
         return (
             <div className="flex items-center justify-center h-full">
                 <PageLoader text="Loading Listings..." />
@@ -458,10 +460,10 @@ const TradingEngineProductionPage = () => {
                 <div className="flex flex-row items-center justify-between">
                     <div className="flex flex-row items-center gap-4">
                         <h1 className="text-3xl font-semibold text-[#111111] font-gellix leading-none tracking-tight">
-                            {currentAsset.metadata?.invoiceNumber || 'Asset'}
+                            {currentAsset?.metadata?.invoiceNumber || 'Asset'}
                         </h1>
                         <span className="text-[#6B7280] text-lg font-medium font-gellix">
-                            {currentAsset.metadata?.buyerName || 'Real World Asset'}
+                            {currentAsset?.metadata?.buyerName || 'Real World Asset'}
                         </span>
                     </div>
                     <div className='flex flex-row justify-evenly items-center gap-2'>
@@ -511,98 +513,106 @@ const TradingEngineProductionPage = () => {
 
                         {/* MARKET DEPTH (Orderbook) */}
                         <div className="border border-neutral-200 shadow-sm rounded-2xl h-[70vh]">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                                <h3 className="text-xl font-bold text-[#111111] font-gellix tracking-tight">Market Depth</h3>
-                                <div className="text-xs text-[#6B7280] font-medium font-gellix flex gap-4">
-                                    <span className="flex items-center gap-1.5">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> Buy Orders
-                                    </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span> Sell Orders
-                                    </span>
+                            {isLoadingOrderbook ? (
+                                <div className="flex items-center justify-center h-[450px]">
+                                    <PageLoader text='' />
                                 </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-                                {/* BUY ORDERS (Bids) - Left Pane */}
-                                <div className="min-h-[300px] max-h-[400px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                    <div className="sticky top-0 bg-white z-10 grid grid-cols-3 px-4 py-3 text-xs font-bold font-gellix text-[#6B7280] border-b border-gray-100 uppercase tracking-wide">
-                                        <span>Price</span>
-                                        <span className="text-right">Amount</span>
-                                        <span className="text-right">Total</span>
+                            ) : (
+                                <>
+                                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                        <h3 className="text-xl font-bold text-[#111111] font-gellix tracking-tight">Market Depth</h3>
+                                        <div className="text-xs text-[#6B7280] font-medium font-gellix flex gap-4">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> Buy Orders
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span> Sell Orders
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="py-1">
-                                        {orderbook?.bids?.length > 0 ? orderbook.bids.map((level: PriceLevel, i: number) => {
-                                            const maxVolume = Math.max(...(orderbook.bids?.map((b: PriceLevel) => parseFloat(b.amountFormatted)) || [1]));
-                                            const width = (parseFloat(level.amountFormatted) / maxVolume) * 100;
-                                            return (
-                                                <div key={i} className="group relative">
-                                                    {/* Depth Bar - positioned absolutely */}
-                                                    <div
-                                                        className="absolute top-0 right-0 bottom-0 bg-[#10B981] transition-all duration-300 group-hover:opacity-20"
-                                                        style={{ width: `${width}%`, opacity: 0.08 }}
-                                                    />
 
-                                                    {level.orders.map((order) => (
-                                                        <div
-                                                            key={order.orderId}
-                                                            onClick={() => setSelectedOrder(order)}
-                                                            className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-green-50/30 transition-colors"
-                                                        >
-                                                            <span className="font-bold text-[#10B981] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
-                                                            <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
-                                                            <span className="text-right text-[#6B7280] font-gellix">
-                                                                ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
-                                                            </span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+                                        {/* BUY ORDERS (Bids) - Left Pane */}
+                                        <div className="min-h-[300px] max-h-[400px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                            <div className="sticky top-0 bg-white z-10 grid grid-cols-3 px-4 py-3 text-xs font-bold font-gellix text-[#6B7280] border-b border-gray-100 uppercase tracking-wide">
+                                                <span>Price</span>
+                                                <span className="text-right">Amount</span>
+                                                <span className="text-right">Total</span>
+                                            </div>
+                                            <div className="py-1">
+                                                {orderbook?.bids?.length > 0 ? orderbook.bids.map((level: PriceLevel, i: number) => {
+                                                    const maxVolume = Math.max(...(orderbook.bids?.map((b: PriceLevel) => parseFloat(b.amountFormatted)) || [1]));
+                                                    const width = (parseFloat(level.amountFormatted) / maxVolume) * 100;
+                                                    return (
+                                                        <div key={i} className="group relative">
+                                                            {/* Depth Bar - positioned absolutely */}
+                                                            <div
+                                                                className="absolute top-0 right-0 bottom-0 bg-[#10B981] transition-all duration-300 group-hover:opacity-20"
+                                                                style={{ width: `${width}%`, opacity: 0.08 }}
+                                                            />
+
+                                                            {level.orders.map((order) => (
+                                                                <div
+                                                                    key={order.orderId}
+                                                                    onClick={() => setSelectedOrder(order)}
+                                                                    className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-green-50/30 transition-colors"
+                                                                >
+                                                                    <span className="font-bold text-[#10B981] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                    <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
+                                                                    <span className="text-right text-[#6B7280] font-gellix">
+                                                                        ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            );
-                                        }) : (
-                                            <div className="p-12 text-center text-[#9CA3AF] text-sm font-medium font-gellix">No active buy orders</div>
-                                        )}
-                                    </div>
-                                </div>
+                                                    );
+                                                }) : (
+                                                    <div className="p-12 text-center text-[#9CA3AF] text-sm font-medium font-gellix">No active buy orders</div>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                {/* SELL ORDERS (Asks) - Right Pane */}
-                                <div className="min-h-[300px] max-h-[400px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                    <div className="sticky top-0 bg-white z-10 grid grid-cols-3 px-4 py-3 text-xs font-bold font-gellix text-[#6B7280] border-b border-gray-100 uppercase tracking-wide">
-                                        <span>Price</span>
-                                        <span className="text-right">Amount</span>
-                                        <span className="text-right">Total</span>
-                                    </div>
-                                    <div className="py-1">
-                                        {orderbook?.asks?.length > 0 ? orderbook.asks.map((level: PriceLevel, i: number) => {
-                                            const maxVolume = Math.max(...(orderbook.asks?.map((a: PriceLevel) => parseFloat(a.amountFormatted)) || [1]));
-                                            const width = (parseFloat(level.amountFormatted) / maxVolume) * 100;
-                                            return (
-                                                <div key={i} className="group relative">
-                                                    {/* Depth Bar */}
-                                                    <div
-                                                        className="absolute top-0 right-0 bottom-0 bg-[#EF4444] transition-all duration-300 group-hover:opacity-20"
-                                                        style={{ width: `${width}%`, opacity: 0.08 }}
-                                                    />
-                                                    {level.orders.map((order) => (
-                                                        <div
-                                                            key={order.orderId}
-                                                            onClick={() => setSelectedOrder(order)}
-                                                            className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-red-50/30 transition-colors"
-                                                        >
-                                                            <span className="font-bold text-[#EF4444] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
-                                                            <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
-                                                            <span className="text-right text-[#6B7280] font-gellix">
-                                                                ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
-                                                            </span>
+                                        {/* SELL ORDERS (Asks) - Right Pane */}
+                                        <div className="min-h-[300px] max-h-[400px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                            <div className="sticky top-0 bg-white z-10 grid grid-cols-3 px-4 py-3 text-xs font-bold font-gellix text-[#6B7280] border-b border-gray-100 uppercase tracking-wide">
+                                                <span>Price</span>
+                                                <span className="text-right">Amount</span>
+                                                <span className="text-right">Total</span>
+                                            </div>
+                                            <div className="py-1">
+                                                {orderbook?.asks?.length > 0 ? orderbook.asks.map((level: PriceLevel, i: number) => {
+                                                    const maxVolume = Math.max(...(orderbook.asks?.map((a: PriceLevel) => parseFloat(a.amountFormatted)) || [1]));
+                                                    const width = (parseFloat(level.amountFormatted) / maxVolume) * 100;
+                                                    return (
+                                                        <div key={i} className="group relative">
+                                                            {/* Depth Bar */}
+                                                            <div
+                                                                className="absolute top-0 right-0 bottom-0 bg-[#EF4444] transition-all duration-300 group-hover:opacity-20"
+                                                                style={{ width: `${width}%`, opacity: 0.08 }}
+                                                            />
+                                                            {level.orders.map((order) => (
+                                                                <div
+                                                                    key={order.orderId}
+                                                                    onClick={() => setSelectedOrder(order)}
+                                                                    className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-red-50/30 transition-colors"
+                                                                >
+                                                                    <span className="font-bold text-[#EF4444] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                    <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
+                                                                    <span className="text-right text-[#6B7280] font-gellix">
+                                                                        ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            );
-                                        }) : (
-                                            <div className="p-12 text-center text-[#9CA3AF] text-sm font-medium">No active sell orders</div>
-                                        )}
+                                                    );
+                                                }) : (
+                                                    <div className="p-12 text-center text-[#9CA3AF] text-sm font-medium">No active sell orders</div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </div>
 
                         {/* PURCHASE ACTIVITY CHART */}
@@ -728,77 +738,8 @@ const TradingEngineProductionPage = () => {
                             </div>
                         </div>
 
-                        {/* TRADE HISTORY CHART */}
-                        <div className="border border-neutral-200 shadow-sm rounded-2xl p-6">
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-semibold font-gellix text-[#111111] mb-2">Trade History</h2>
-                                    <p className="text-sm text-[#6B7280]">Recent trading activity</p>
-                                </div>
-                                <div className="bg-white/50 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
-                                    <div className="flex items-baseline gap-2">
-                                        <p className="text-3xl font-bold font-gellix text-[#111111]">${latestPrice.toFixed(2)}</p>
-                                        <div className={`flex items-center gap-1 text-sm font-gellix font-semibold ${priceChange >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'
-                                            }`}>
-                                            {priceChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                                            {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="h-[400px]">
-                                {chartData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={chartData}>
-                                            <defs>
-                                                <linearGradient id="tradeGradient" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#0071C5" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#0071C5" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <XAxis
-                                                dataKey="time"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                dy={10}
-                                                minTickGap={30}
-                                            />
-                                            <YAxis
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: '#6B7280', fontSize: 11 }}
-                                                domain={['auto', 'auto']}
-                                                tickFormatter={(val) => `$${val.toFixed(2)}`}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    backgroundColor: '#fff',
-                                                    border: '1px solid #E5E7EB',
-                                                    borderRadius: '12px',
-                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                                }}
-                                                itemStyle={{ color: '#0071C5', fontWeight: 600 }}
-                                                labelStyle={{ color: '#6B7280', marginBottom: '4px', fontSize: '12px' }}
-                                                formatter={(value: number | undefined) => value !== undefined ? [`$${value.toFixed(2)}`, 'Price'] : ['', 'Price']}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="price"
-                                                stroke="#0071C5"
-                                                strokeWidth={2.5}
-                                                fill="url(#tradeGradient)"
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-[#6B7280] gap-2">
-                                        <Activity size={32} className="opacity-20" />
-                                        <p className="text-sm">No trade history available</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        {/* P2P TRADING CHART (Replaces Trade History) */}
+                        <P2PTradingChart assetId={assetId!} />
                     </div>
                     {/* === RIGHT COLUMN (40%): Buy/Sell Panel + Asset Details (Sticky) === */}
                     <div className="col-span-4 sticky top-6 self-start space-y-6 order-2 ">
@@ -1020,59 +961,67 @@ const TradingEngineProductionPage = () => {
 
                         {/* ASSET DETAILS */}
                         <div className="bg-white rounded-3xl shadow-sm p-6">
-                            <h2 className="text-xl font-semibold text-[#111111] mb-6">Asset Details</h2>
-                            <div className="grid grid-cols-2 gap-6 text-sm">
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Face Value</p>
-                                    <p className="font-bold text-[#111111] text-lg">
-                                        ${currentAsset.metadata?.faceValue
-                                            ? (parseFloat(currentAsset.metadata.faceValue)).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-                                            : '0.00'}
-                                    </p>
+                            {isLoadingAsset ? (
+                                <div className="flex items-center justify-center h-[450px]">
+                                    <PageLoader text='' />
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Issue Date</p>
-                                    <p className="font-semibold text-[#111111]">
-                                        {currentAsset.metadata?.issueDate
-                                            ? new Date(currentAsset.metadata.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                                            : 'N/A'}
-                                    </p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Due Date</p>
-                                    <p className="font-semibold text-[#111111]">
-                                        {currentAsset.metadata?.dueDate
-                                            ? new Date(currentAsset.metadata.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                                            : 'N/A'}
-                                    </p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Total Supply</p>
-                                    <p className="font-semibold text-[#111111]">
-                                        {currentAsset.tokenParams?.totalSupply
-                                            ? (parseFloat(currentAsset.tokenParams.totalSupply) / 1e18).toLocaleString()
-                                            : '0'} tokens
-                                    </p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Buyer</p>
-                                    <p className="font-semibold text-[#111111]">{currentAsset.metadata?.buyerName || 'N/A'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Industry</p>
-                                    <p className="font-semibold text-[#111111]">{currentAsset.metadata?.industry || 'N/A'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Risk Tier</p>
-                                    <p className="font-semibold text-[#111111]">{currentAsset.metadata?.riskTier || 'N/A'}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[#6B7280] font-medium">Token Address</p>
-                                    <p className="font-gellix text-xs text-[#111111] truncate">
-                                        {currentAsset.token?.address || 'N/A'}
-                                    </p>
-                                </div>
-                            </div>
+                            ) : (
+                                <>
+                                    <h2 className="text-xl font-semibold text-[#111111] mb-6">Asset Details</h2>
+                                    <div className="grid grid-cols-2 gap-6 text-sm">
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Face Value</p>
+                                            <p className="font-bold text-[#111111] text-lg">
+                                                ${currentAsset?.metadata?.faceValue
+                                                    ? (parseFloat(currentAsset.metadata.faceValue)).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                                                    : '0.00'}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Issue Date</p>
+                                            <p className="font-semibold text-[#111111]">
+                                                {currentAsset?.metadata?.issueDate
+                                                    ? new Date(currentAsset.metadata.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                                                    : 'N/A'}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Due Date</p>
+                                            <p className="font-semibold text-[#111111]">
+                                                {currentAsset?.metadata?.dueDate
+                                                    ? new Date(currentAsset.metadata.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                                                    : 'N/A'}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Total Supply</p>
+                                            <p className="font-semibold text-[#111111]">
+                                                {currentAsset?.tokenParams?.totalSupply
+                                                    ? (parseFloat(currentAsset.tokenParams.totalSupply) / 1e18).toLocaleString()
+                                                    : '0'} tokens
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Buyer</p>
+                                            <p className="font-semibold text-[#111111]">{currentAsset?.metadata?.buyerName || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Industry</p>
+                                            <p className="font-semibold text-[#111111]">{currentAsset?.metadata?.industry || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Risk Tier</p>
+                                            <p className="font-semibold text-[#111111]">{currentAsset?.metadata?.riskTier || 'N/A'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[#6B7280] font-medium">Token Address</p>
+                                            <p className="font-gellix text-xs text-[#111111] truncate">
+                                                {currentAsset?.token?.address || 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1080,5 +1029,6 @@ const TradingEngineProductionPage = () => {
         </div>
     );
 };
+
 
 export default TradingEngineProductionPage;

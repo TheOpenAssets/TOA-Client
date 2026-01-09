@@ -776,6 +776,32 @@ class MarketplaceService extends BaseService {
       throw error;
     }
   }
+
+  /**
+   * Get chart data for the secondary market (execution and sentiment)
+   * GET /marketplace/secondary/:assetId/chart
+   */
+  async getSecondaryMarketChartData(assetId: string, interval: string = '1h'): Promise<{
+    tradeCandles: any[];
+    orderBookCandles: any[];
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/chart?interval=${interval}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch chart data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+      throw error;
+    }
+  }
 }
 
 export const marketplaceService = new MarketplaceService();
