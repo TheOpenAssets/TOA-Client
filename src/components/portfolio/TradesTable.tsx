@@ -17,7 +17,6 @@ export const TradesTable = ({
   isCancellingId,
 }: TradesTableProps) => {
   const navigate = useNavigate();
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'FILLED' | 'CANCELLED'>('ALL');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'BUY' | 'SELL'>('ALL');
@@ -189,9 +188,6 @@ export const TradesTable = ({
                   key={order._id}
                   className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
-                  onMouseEnter={() => setHoveredRow(order._id)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                  onClick={(e) => toggleRowExpansion(order._id, e)}
                 >
                   {/* Expand Icon */}
                   <td className="px-4 py-4">

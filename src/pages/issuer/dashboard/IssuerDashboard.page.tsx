@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
-import { Plus, TrendingUp, Package, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, TrendingUp, Package, Clock, CheckCircle } from 'lucide-react';
 import { type IssuerAsset } from '../../../types/issuer.types';
 import { AssetUploadModal } from '../../../components/issuer/AssetUploadModal';
 import HeroBackground from '../../landing/HeroBackground';

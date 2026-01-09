@@ -78,7 +78,6 @@ const TradingEngineProductionPage = () => {
         fetchAssetDetails,
         orderbook,
         fetchOrderbook,
-        tradeHistory,
         fetchTradeHistory,
         fetchMyOrders,
         fetchTradeableBalance,
@@ -453,20 +452,6 @@ const TradingEngineProductionPage = () => {
         }
     }, [isTxConfirmed, transactionStep, currentAction, selectedOrder]);
 
-    // Chart Data
-    const chartData = tradeHistory
-        ?.slice(-30)
-        .map((trade: any) => ({
-            time: new Date(trade.blockTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            price: parseFloat(formatUnits(BigInt(trade.pricePerToken), 6)),
-        })) || [];
-
-    const latestPrice = chartData.length > 0 ? chartData[chartData.length - 1].price :
-        (orderbook?.summary?.bestAsk ? parseFloat(orderbook.summary.bestAsk) : 0);
-
-    const priceChange = chartData.length > 1
-        ? ((latestPrice - chartData[0].price) / chartData[0].price) * 100
-        : 0;
 
     // Loading State
     if (isLoadingAsset && !currentAsset) {

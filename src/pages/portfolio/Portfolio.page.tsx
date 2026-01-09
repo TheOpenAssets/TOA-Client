@@ -618,15 +618,7 @@ const PortfolioPage = () => {
                         <TradesTable
                           orders={filteredOrders}
                           isLoading={isLoadingMyOrders}
-                          onCancelOrder={async (orderId) => {
-                            setCancellingOrderId(orderId);
-                            try {
-                              await cancelOrder(orderId);
-                            } catch (e) {
-                              console.error("Cancel failed", e);
-                              setCancellingOrderId(null);
-                            }
-                          }}
+                          onCancelOrder={handleCancelOrder}
                           isCancellingId={cancellingOrderId}
                         />
                       </div>

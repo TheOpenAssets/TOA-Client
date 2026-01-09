@@ -22,7 +22,6 @@ export function useCancelOrder() {
   const {
     isLoading: isPending,
     isSuccess,
-    data: receipt,
     error: receiptError
   } = useWaitForTransactionReceipt({
     hash: txHash,
