@@ -739,6 +739,7 @@ const AssetDetailsPage = () => {
                               <p className="font-bold text-[#111111]">{tokens} Tokens</p>
                               {props.payload.purchaseMethod && (
                                 <p className="text-xs text-gray-500">
+                    
                                   Method: <span className={props.payload.purchaseMethod === 'LEVERAGE' ? 'text-blue-600 font-medium' : 'text-green-600 font-medium'}>
                                     {props.payload.purchaseMethod}
                                   </span>

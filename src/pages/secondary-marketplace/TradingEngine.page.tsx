@@ -1,19 +1,19 @@
-// src/pages/secondary-marketplace/TradingEngine.production.page.tsx
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
-import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useMarketplaceStore } from '../../stores/marketplace.store.ts';
-import { useToast } from '../../hooks/useToast.tsx';
-import { ToastContainer } from '../../components/ui/toast.tsx';
-import { marketplaceService } from '../../lib/api/marketplace.service.ts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Info, X, ShieldCheck, Zap, Activity, TrendingUp, TrendingDown } from 'lucide-react';
+import { useMarketplaceStore } from '../../stores/marketplace.store';
+import { useToast } from '../../hooks/useToast';
+import { ToastContainer } from '../../components/ui/toast';
+import { marketplaceService } from '../../lib/api/marketplace.service';
 
 // Contract addresses from environment
 const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0x69d2e2B05eDdB11774A132e2b61B9D10486bd33A') as `0x${string}`;
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
 
-// Minimal ERC20 ABI for balance and approval
+// Minimal ERC20 ABI
 const ERC20_ABI = [
     {
         name: 'balanceOf',
@@ -59,47 +59,40 @@ interface PriceLevel {
 
 const TradingEngineProductionPage = () => {
     const { assetId } = useParams<{ assetId: string }>();
-    const navigate = useNavigate();
     const { address, isConnected } = useAccount();
     const { toasts, success, error: showError, warning, removeToast } = useToast();
 
-    // Fetch asset details, orderbook, trades, and balance
+    // Store State
     const {
         currentAsset,
         isLoadingAsset,
-        error: assetError,
         fetchAssetDetails,
         orderbook,
-        isLoadingOrderbook,
         fetchOrderbook,
         tradeHistory,
-        isLoadingTrades,
         fetchTradeHistory,
-        myOrders,
-        isLoadingMyOrders,
         fetchMyOrders,
-        tradeableBalance,
         fetchTradeableBalance,
         p2pError,
         clearP2PError,
     } = useMarketplaceStore();
 
-    // Wagmi hooks for contract interactions
+    // Wagmi
     const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
     const { isLoading: isTxConfirming, isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
 
-    // Trading state
+    // Local State
     const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
     const [amount, setAmount] = useState('');
     const [price, setPrice] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
-    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
     const [transactionStep, setTransactionStep] = useState<'idle' | 'approving' | 'approved' | 'executing' | 'confirmed'>('idle');
     const [currentAction, setCurrentAction] = useState<'create' | 'fill' | 'cancel' | null>(null);
 
-    // Read token balance and allowance
+    // Asset Token Info
     const tokenAddress = currentAsset?.token?.address as `0x${string}` | undefined;
 
+    // Balances & Allowances
     const { data: tokenBalance, refetch: refetchTokenBalance } = useReadContract({
         address: tokenAddress,
         abi: ERC20_ABI,
@@ -132,7 +125,7 @@ const TradingEngineProductionPage = () => {
         query: { enabled: !!address },
     });
 
-    // Load all data on mount and when transaction confirms
+    // 1. Initial Fetch
     useEffect(() => {
         if (!assetId) return;
         fetchAssetDetails(assetId);
@@ -144,7 +137,7 @@ const TradingEngineProductionPage = () => {
         }
     }, [assetId, address, fetchAssetDetails, fetchOrderbook, fetchTradeHistory, fetchMyOrders, fetchTradeableBalance]);
 
-    // Refresh data after transaction confirms
+    // 2. Transaction Success Handler
     useEffect(() => {
         if (isTxConfirmed && assetId) {
             success('Transaction Confirmed', 'Your transaction has been successfully confirmed.');
@@ -153,9 +146,7 @@ const TradingEngineProductionPage = () => {
             setAmount('');
             setPrice('');
             setSelectedOrder(null);
-            setIsOrderModalOpen(false);
 
-            // Refresh all data
             setTimeout(() => {
                 if (assetId) {
                     fetchOrderbook(assetId);
@@ -172,7 +163,7 @@ const TradingEngineProductionPage = () => {
         }
     }, [isTxConfirmed, assetId]);
 
-    // Handle errors
+    // 3. Error Handler
     useEffect(() => {
         if (p2pError) {
             showError('P2P Error', p2pError);
@@ -180,17 +171,12 @@ const TradingEngineProductionPage = () => {
         }
     }, [p2pError]);
 
-    // Check if asset is tradeable
     const isTradeable = currentAsset?.status === 'LISTED' || currentAsset?.status === 'ACTIVE' || currentAsset?.status !== 'PAYOUT_COMPLETE';
 
-    // Calculate required approval amounts
+    // Calculation Helpers
     const getRequiredTokenApproval = useCallback(() => {
         if (!amount || orderType !== 'sell') return BigInt(0);
-        try {
-            return parseUnits(amount, 18);
-        } catch {
-            return BigInt(0);
-        }
+        try { return parseUnits(amount, 18); } catch { return BigInt(0); }
     }, [amount, orderType]);
 
     const getRequiredUsdcApproval = useCallback(() => {
@@ -199,65 +185,55 @@ const TradingEngineProductionPage = () => {
             const amountBigInt = parseUnits(amount, 18);
             const priceBigInt = parseUnits(price, 6);
             return (amountBigInt * priceBigInt) / parseUnits('1', 18);
-        } catch {
-            return BigInt(0);
-        }
+        } catch { return BigInt(0); }
     }, [amount, price, orderType]);
 
-    // Check approval status
     const needsTokenApproval = orderType === 'sell' && tokenAllowance !== undefined && getRequiredTokenApproval() > tokenAllowance;
     const needsUsdcApproval = orderType === 'buy' && usdcAllowance !== undefined && getRequiredUsdcApproval() > usdcAllowance;
 
-    // Single-click order creation with automatic approval handling
+    // --- ACTIONS ---
+
     const handleCreateOrder = async (skipApprovalCheck = false) => {
         if (!address || !assetId || !amount || !price) {
             warning('Missing Information', 'Please fill in all fields and connect your wallet.');
             return;
         }
-
         if (!tokenAddress) {
             warning('Token Not Found', 'Asset token address is not available.');
             return;
         }
-
         if (!isTradeable) {
             warning('Asset Not Tradeable', 'This asset is not currently available for trading.');
             return;
         }
 
-        // Only set action on initial call, not on retry after approval
         if (!skipApprovalCheck) {
             setCurrentAction('create');
             setTransactionStep('approving');
         }
 
         try {
-            // Step 1: Check and execute approval if needed (only on initial call)
             if (!skipApprovalCheck) {
                 if (orderType === 'sell' && needsTokenApproval) {
-                    const approvalAmount = getRequiredTokenApproval();
                     writeContract({
                         address: tokenAddress,
                         abi: ERC20_ABI,
                         functionName: 'approve',
-                        args: [SECONDARY_MARKET, approvalAmount],
+                        args: [SECONDARY_MARKET, getRequiredTokenApproval()],
                     });
-                    return; // Wait for approval to confirm, then useEffect will call again
+                    return;
                 }
-
                 if (orderType === 'buy' && needsUsdcApproval) {
-                    const approvalAmount = getRequiredUsdcApproval();
                     writeContract({
                         address: USDC_ADDRESS,
                         abi: ERC20_ABI,
                         functionName: 'approve',
-                        args: [SECONDARY_MARKET, approvalAmount],
+                        args: [SECONDARY_MARKET, getRequiredUsdcApproval()],
                     });
-                    return; // Wait for approval to confirm, then useEffect will call again
+                    return;
                 }
             }
 
-            // Step 2: Approval is sufficient (or just completed), create order
             setTransactionStep('executing');
             const txData = await marketplaceService.getCreateOrderTxData({
                 tokenAddress,
@@ -279,47 +255,27 @@ const TradingEngineProductionPage = () => {
         }
     };
 
-    // Auto-proceed to order creation after approval confirms
+    // Auto-proceed after approval (Create)
     useEffect(() => {
         if (isTxConfirmed && transactionStep === 'approving' && currentAction === 'create') {
             setTransactionStep('approved');
-
-            // Refetch allowances to get updated values
-            const refetchPromises = [refetchTokenAllowance(), refetchUsdcAllowance()];
-
-            // Wait for refetch to complete, then proceed with order creation
-            Promise.all(refetchPromises).then(() => {
-                // Small delay to ensure state updates propagate
-                setTimeout(() => {
-                    handleCreateOrder(true); // Skip approval check since we just approved
-                }, 500);
+            Promise.all([refetchTokenAllowance(), refetchUsdcAllowance()]).then(() => {
+                setTimeout(() => handleCreateOrder(true), 500);
             });
         }
     }, [isTxConfirmed, transactionStep, currentAction]);
 
-    // Fill order from modal
     const handleFillOrder = async (order: OrderDetail, isBuyOrder: boolean, skipApprovalCheck = false) => {
-        if (!address) {
-            warning('Wallet Not Connected', 'Please connect your wallet to fill orders.');
-            return;
-        }
+        if (!address || !tokenAddress) return;
 
-        if (!tokenAddress) {
-            warning('Token Not Found', 'Asset token address is not available.');
-            return;
-        }
-
-        // Only set action on initial call, not on retry after approval
         if (!skipApprovalCheck) {
             setCurrentAction('fill');
             setTransactionStep('approving');
         }
 
         try {
-            // Step 1: Check and execute approval if needed (only on initial call)
             if (!skipApprovalCheck) {
-                if (isBuyOrder) {
-                    // Filling a buy order (we're selling tokens)
+                if (isBuyOrder) { // Filling a buy order -> We are Selling tokens
                     const requiredAmount = BigInt(order.amount);
                     if (!tokenAllowance || tokenAllowance < requiredAmount) {
                         writeContract({
@@ -328,14 +284,12 @@ const TradingEngineProductionPage = () => {
                             functionName: 'approve',
                             args: [SECONDARY_MARKET, requiredAmount],
                         });
-                        return; // Wait for approval to confirm, then useEffect will call again
+                        return;
                     }
-                } else {
-                    // Filling a sell order (we're buying tokens with USDC)
+                } else { // Filling a sell order -> We are Buying with USDC
                     const pricePerToken = parseUnits(order.priceFormatted, 6);
                     const amountTokens = parseUnits(order.amountFormatted, 18);
                     const totalCost = (pricePerToken * amountTokens) / parseUnits('1', 18);
-
                     if (!usdcAllowance || usdcAllowance < totalCost) {
                         writeContract({
                             address: USDC_ADDRESS,
@@ -343,12 +297,11 @@ const TradingEngineProductionPage = () => {
                             functionName: 'approve',
                             args: [SECONDARY_MARKET, totalCost],
                         });
-                        return; // Wait for approval to confirm, then useEffect will call again
+                        return;
                     }
                 }
             }
 
-            // Step 2: Approval is sufficient (or just completed), fill order
             setTransactionStep('executing');
             const txData = await marketplaceService.getFillOrderTxData({
                 orderId: order.orderId,
@@ -368,55 +321,24 @@ const TradingEngineProductionPage = () => {
         }
     };
 
-    // Auto-proceed to fill order after approval confirms
+    // Auto-proceed after approval (Fill)
     useEffect(() => {
         if (isTxConfirmed && transactionStep === 'approving' && currentAction === 'fill' && selectedOrder) {
             setTransactionStep('approved');
-
-            // Refetch allowances to get updated values
-            const refetchPromises = [refetchTokenAllowance(), refetchUsdcAllowance()];
-
-            // Wait for refetch to complete, then proceed with order fill
-            Promise.all(refetchPromises).then(() => {
-                // Small delay to ensure state updates propagate
+            Promise.all([refetchTokenAllowance(), refetchUsdcAllowance()]).then(() => {
                 setTimeout(() => {
                     const isBuyOrder = orderbook?.bids?.some((level: PriceLevel) =>
                         level.orders.some(o => o.orderId === selectedOrder.orderId)
                     ) || false;
-                    handleFillOrder(selectedOrder, isBuyOrder, true); // Skip approval check since we just approved
+                    handleFillOrder(selectedOrder, isBuyOrder, true);
                 }, 500);
             });
         }
     }, [isTxConfirmed, transactionStep, currentAction, selectedOrder]);
 
-    // Cancel order
-    const handleCancelOrder = async (orderId: string) => {
-        if (!address) {
-            warning('Wallet Not Connected', 'Please connect your wallet to cancel orders.');
-            return;
-        }
-
-        setCurrentAction('cancel');
-        setTransactionStep('executing');
-
-        try {
-            const txData = await marketplaceService.getCancelOrderTxData(orderId);
-            writeContract({
-                address: txData.to,
-                abi: txData.abi,
-                functionName: txData.functionName,
-                args: txData.args,
-            });
-        } catch (error: any) {
-            showError('Order Cancellation Failed', error.message || 'Failed to cancel order');
-            setTransactionStep('idle');
-            setCurrentAction(null);
-        }
-    };
-
-    // Format chart data (from trade history)
+    // Chart Data
     const chartData = tradeHistory
-        ?.slice(-20)
+        ?.slice(-30)
         .map((trade: any) => ({
             time: new Date(trade.blockTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             price: parseFloat(formatUnits(BigInt(trade.pricePerToken), 6)),
@@ -424,6 +346,19 @@ const TradingEngineProductionPage = () => {
 
     const latestPrice = chartData.length > 0 ? chartData[chartData.length - 1].price :
         (orderbook?.summary?.bestAsk ? parseFloat(orderbook.summary.bestAsk) : 0);
+
+    const priceChange = chartData.length > 1
+        ? ((latestPrice - chartData[0].price) / chartData[0].price) * 100
+        : 0;
+
+    // Loading State
+    if (isLoadingAsset || !currentAsset) {
+        return (
+            <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#111111]"></div>
+            </div>
+        );
+    }
 
     if (!isConnected) {
         return (
@@ -436,404 +371,421 @@ const TradingEngineProductionPage = () => {
         );
     }
 
-    if (isLoadingAsset) {
-        return (
-            <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111] mx-auto mb-4"></div>
-                    <p className="text-[#6B7280]">Loading asset...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (assetError || !currentAsset) {
-        return (
-            <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-2xl font-semibold text-[#111111] mb-4">Asset Not Found</h1>
-                    <p className="text-[#6B7280] mb-6">{assetError || 'The requested asset could not be loaded.'}</p>
-                    <button
-                        onClick={() => navigate('/marketplace')}
-                        className="px-6 py-3 bg-[#111111] text-white rounded-xl hover:bg-[#1a1a1a] transition-colors"
-                    >
-                        Back to Marketplace
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <>
+        <div className="min-h-screen bg-[#fefefe] text-[#111111] font-sans">
             <ToastContainer toasts={toasts} onClose={removeToast} />
 
-            <div className="min-h-screen bg-[#F7F8FA]">
-                <div className="max-w-[1400px] mx-auto px-8 py-8">
-                    {/* Asset Banner */}
-                    <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)] mb-6">
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 bg-gradient-to-br from-[#0071C5] to-[#0052A3] rounded-xl flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg">
-                                        {currentAsset.metadata?.buyerName?.substring(0, 2).toUpperCase() || 'RW'}
+            <div className="max-w-[90vw] mx-auto px-8 py-8">
+                <div className="grid grid-cols-12 gap-8">
+
+                    {/* === LEFT COLUMN: ANALYSIS ZONE (8 cols) === */}
+                    <div className="col-span-12 lg:col-span-8 space-y-6">
+
+                        {/* 1. ASSET HEADER */}
+                        <div className="bg-transparent p-6 shadow-sm border border-neutral-50 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex flex-row items-center gap-4">
+                                <h1 className="text-3xl font-semibold text-[#111111] font-gellix leading-none tracking-tight">
+                                    {currentAsset.metadata?.invoiceNumber || 'Asset'}
+                                </h1>
+
+                                <span className="text-[#6B7280] text-lg font-medium">
+                                    {currentAsset.metadata?.buyerName || 'Real World Asset'}
+                                </span>
+                            </div>
+
+                            <div className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 ${isTradeable
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                }`}>
+                                <div className={`w-2 h-2 rounded-full ${isTradeable ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                                {isTradeable ? 'MARKET OPEN' : 'MARKET CLOSED'}
+                            </div>
+                        </div>
+
+                        {/* 2. MARKET DEPTH (Industrial Orderbook with Depth Bars) */}
+                        <div className="bg-white rounded-[24px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                <div className="text-xs text-[#6B7280] font-medium flex gap-4">
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> Buy Orders
                                     </span>
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold text-[#111111] mb-1">
-                                        {currentAsset.metadata?.invoiceNumber || 'Asset'}
-                                    </h1>
-                                    <p className="text-[#6B7280] text-sm">{currentAsset.metadata?.industry || 'Real World Asset'}</p>
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span> Sell Orders
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="text-right">
-                                <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#F0FDF4] mb-2">
-                                    <div className={`w-2 h-2 rounded-full mr-2 ${isTradeable ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                                    <span className={`text-sm font-medium ${isTradeable ? 'text-green-700' : 'text-gray-600'}`}>
-                                        {isTradeable ? 'Trading Active' : 'Trading Inactive'}
-                                    </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+                                {/* BUY ORDERS (Bids) - Left Pane */}
+                                <div className="min-h-[300px] max-h-[500px] overflow-y-auto">
+                                    <div className="sticky top-0 bg-white z-10 grid grid-cols-3 px-4 py-3 text-xs font-bold text-[#6B7280] border-b border-gray-100 uppercase tracking-wide">
+                                        <span>Price</span>
+                                        <span className="text-right">Amount</span>
+                                        <span className="text-right">Total</span>
+                                    </div>
+                                    <div className="py-1">
+                                        {orderbook?.bids?.length > 0 ? orderbook.bids.map((level: PriceLevel, i: number) => {
+                                            const maxVolume = Math.max(...(orderbook.bids?.map((b: PriceLevel) => parseFloat(b.amountFormatted)) || [1]));
+                                            const width = (parseFloat(level.amountFormatted) / maxVolume) * 100;
+                                            return (
+                                                <div key={i} className="group relative">
+                                                    {/* Depth Bar - positioned absolutely */}
+                                                    <div
+                                                        className="absolute top-0 right-0 bottom-0 bg-[#10B981] transition-all duration-300 group-hover:opacity-20"
+                                                        style={{ width: `${width}%`, opacity: 0.08 }}
+                                                    />
+
+                                                    {level.orders.map((order) => (
+                                                        <div
+                                                            key={order.orderId}
+                                                            onClick={() => setSelectedOrder(order)}
+                                                            className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-green-50/30 transition-colors"
+                                                        >
+                                                            <span className="font-bold text-[#10B981] font-mono">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                            <span className="text-right text-[#111111] font-mono font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
+                                                            <span className="text-right text-[#6B7280] font-mono">
+                                                                ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        }) : (
+                                            <div className="p-12 text-center text-[#9CA3AF] text-sm font-medium">No active buy orders</div>
+                                        )}
+                                    </div>
                                 </div>
-                                {!isTradeable && (
-                                    <p className="text-xs text-[#6B7280]">Asset status: {currentAsset.status}</p>
+
+                                {/* SELL ORDERS (Asks) - Right Pane */}
+                                <div className="min-h-[300px] max-h-[500px] overflow-y-auto">
+                                    <div className="sticky top-0 bg-white z-10 grid grid-cols-3 px-4 py-3 text-xs font-bold text-[#6B7280] border-b border-gray-100 uppercase tracking-wide">
+                                        <span>Price</span>
+                                        <span className="text-right">Amount</span>
+                                        <span className="text-right">Total</span>
+                                    </div>
+                                    <div className="py-1">
+                                        {orderbook?.asks?.length > 0 ? orderbook.asks.map((level: PriceLevel, i: number) => {
+                                            const maxVolume = Math.max(...(orderbook.asks?.map((a: PriceLevel) => parseFloat(a.amountFormatted)) || [1]));
+                                            const width = (parseFloat(level.amountFormatted) / maxVolume) * 100;
+                                            return (
+                                                <div key={i} className="group relative">
+                                                    {/* Depth Bar */}
+                                                    <div
+                                                        className="absolute top-0 right-0 bottom-0 bg-[#EF4444] transition-all duration-300 group-hover:opacity-20"
+                                                        style={{ width: `${width}%`, opacity: 0.08 }}
+                                                    />
+                                                    {level.orders.map((order) => (
+                                                        <div
+                                                            key={order.orderId}
+                                                            onClick={() => setSelectedOrder(order)}
+                                                            className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-red-50/30 transition-colors"
+                                                        >
+                                                            <span className="font-bold text-[#EF4444] font-mono">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                            <span className="text-right text-[#111111] font-mono font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
+                                                            <span className="text-right text-[#6B7280] font-mono">
+                                                                ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        }) : (
+                                            <div className="p-12 text-center text-[#9CA3AF] text-sm font-medium">No active sell orders</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. INSTITUTIONAL PRICE CHART */}
+                        <div className="bg-white rounded-[24px] p-8 shadow-sm border border-neutral-50">
+                            <div className="flex items-baseline gap-4 mb-2">
+                                <h2 className="text-[56px] font-bold text-[#111111] leading-none tracking-tight">
+                                    ${latestPrice.toFixed(2)}
+                                </h2>
+                                <div className={`flex items-center gap-1 text-sm font-semibold ${priceChange >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'
+                                    }`}>
+                                    {priceChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                                    {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+                                    <span className="text-[#9CA3AF] font-normal ml-2">24h</span>
+                                </div>
+                            </div>
+
+                            <div className="h-[320px] w-full">
+                                {chartData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={chartData}>
+                                            <defs>
+                                                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#0071C5" stopOpacity={0.15} />
+                                                    <stop offset="95%" stopColor="#0071C5" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis
+                                                dataKey="time"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                                                dy={10}
+                                                minTickGap={30}
+                                            />
+                                            <YAxis
+                                                orientation="right"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                                                domain={['auto', 'auto']}
+                                                tickFormatter={(val) => `$${val.toFixed(2)}`}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                                                itemStyle={{ color: '#0071C5', fontWeight: 600 }}
+                                                labelStyle={{ color: '#6B7280', marginBottom: '4px', fontSize: '12px' }}
+                                                formatter={(value: number | undefined) => value !== undefined ? [`$${value.toFixed(2)}`, 'Price'] : ['', 'Price']}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="price"
+                                                stroke="#0071C5"
+                                                strokeWidth={2}
+                                                fill="url(#chartGradient)"
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-[#9CA3AF] gap-2">
+                                        <Activity size={32} className="opacity-20" />
+                                        <p>No trade history available</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
+
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column - Chart and Orderbook */}
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Price Chart */}
-                            <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                                <div className="mb-6">
-                                    <h2 className="text-[48px] font-bold text-[#111111] leading-none tracking-tight">
-                                        ${latestPrice.toFixed(2)}
-                                    </h2>
-                                    <p className="text-[#6B7280] text-sm mt-2">Last Trade Price</p>
-                                </div>
+                    {/* === RIGHT COLUMN: EXECUTION ZONE (4 cols) === */}
+                    <div className="col-span-12 lg:col-span-4">
+                        <div className="sticky top-8">
+                            <div className="bg-white rounded-[24px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100">
 
-                                <div className="h-[300px] -mx-4">
-                                    {chartData.length > 0 ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={chartData}>
-                                                <XAxis dataKey="time" stroke="#6B7280" fontSize={12} />
-                                                <YAxis stroke="#6B7280" fontSize={12} domain={['auto', 'auto']} />
-                                                <Tooltip
-                                                    contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px' }}
-                                                    labelStyle={{ color: '#111111', fontWeight: 600 }}
-                                                />
-                                                <Line type="monotone" dataKey="price" stroke="#0071C5" strokeWidth={2} dot={false} />
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    ) : (
-                                        <div className="h-full flex items-center justify-center text-[#6B7280]">
-                                            No trade history available
+                                {/* CONTEXTUAL PANEL: Order Review State */}
+                                {selectedOrder ? (
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-200">
+                                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                                            <h2 className="text-xl font-bold text-[#111111] tracking-tight">Order Review</h2>
+                                            <button
+                                                onClick={() => setSelectedOrder(null)}
+                                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                            >
+                                                <X size={20} className="text-[#6B7280]" />
+                                            </button>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
 
-                            {/* Orderbook */}
-                            <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                                <h2 className="text-xl font-semibold text-[#111111] mb-6">Order Book</h2>
+                                        <div className="space-y-6">
+                                            {/* Settlement Summary */}
+                                            <div className="bg-[#F9FAFB] rounded-2xl p-6 space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm font-medium text-[#6B7280]">Price per Token</span>
+                                                    <span className="font-mono font-bold text-[#111111] text-lg">${selectedOrder.priceFormatted}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm font-medium text-[#6B7280]">Amount</span>
+                                                    <span className="font-mono font-bold text-[#111111] text-lg">
+                                                        {selectedOrder.amountFormatted} <span className="text-sm font-normal text-[#9CA3AF]">Tokens</span>
+                                                    </span>
+                                                </div>
+                                                <div className="h-px bg-gray-200 my-3"></div>
+                                                <div className="flex justify-between items-baseline">
+                                                    <span className="text-sm font-bold text-[#111111]">Total Settlement</span>
+                                                    <span className="text-3xl font-bold text-[#0071C5] tracking-tight">
+                                                        ${(parseFloat(selectedOrder.amountFormatted) * parseFloat(selectedOrder.priceFormatted)).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </div>
 
-                                {isLoadingOrderbook ? (
-                                    <div className="text-center py-8 text-[#6B7280]">Loading orderbook...</div>
+                                            {/* Transaction Progress */}
+                                            {(isTxPending || isTxConfirming) && (
+                                                <div className="bg-blue-50 rounded-2xl p-4 flex items-start gap-3 border border-blue-100">
+                                                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#0071C5] border-t-transparent mt-0.5"></div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-bold text-blue-900">Processing Transaction</p>
+                                                        <p className="text-xs text-blue-700 mt-1">
+                                                            {transactionStep === 'approving' ? 'Authorizing assets...' : 'Executing trade...'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Execute Button */}
+                                            <button
+                                                onClick={() => {
+                                                    const isBuyOrder = orderbook?.bids?.some((level: PriceLevel) =>
+                                                        level.orders.some(o => o.orderId === selectedOrder.orderId)
+                                                    ) || false;
+                                                    handleFillOrder(selectedOrder, isBuyOrder);
+                                                }}
+                                                disabled={isTxPending || isTxConfirming || !isTradeable}
+                                                className="w-full py-4 bg-[#111111] text-white rounded-2xl font-bold text-base hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                            >
+                                                {isTxPending || isTxConfirming ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                                        Processing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Zap size={18} /> Execute Fill
+                                                    </>
+                                                )}
+                                            </button>
+
+                                            <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] pt-2">
+                                                <ShieldCheck size={14} /> Secured by Mantle Network
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 gap-6">
-                                        {/* Buy Orders - Shows Asks (where you can buy tokens) */}
-                                        <div>
-                                            <h3 className="text-sm font-semibold text-green-600 mb-3">Buy Orders</h3>
-                                            {orderbook?.asks?.length > 0 ? (
-                                                <div className="space-y-2">
-                                                    {orderbook.asks.slice(0, 5).map((level: PriceLevel, i: number) => (
-                                                        <div key={i} className="bg-green-50 rounded-lg p-3">
-                                                            <div className="flex justify-between items-center mb-2">
-                                                                <span className="font-semibold text-green-700">${level.priceFormatted}</span>
-                                                                <span className="text-xs text-green-600">{level.orderCount} orders</span>
-                                                            </div>
-                                                            <p className="text-sm text-[#6B7280]">{level.amountFormatted} tokens</p>
-                                                            {level.orders.map((order) => (
-                                                                <button
-                                                                    key={order.orderId}
-                                                                    onClick={() => {
-                                                                        setSelectedOrder(order);
-                                                                        setIsOrderModalOpen(true);
-                                                                    }}
-                                                                    className="mt-2 w-full text-xs py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                                                                >
-                                                                    Buy Tokens
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    ))}
+                                    /* CONTEXTUAL PANEL: Place Order State */
+                                    <div className="animate-in fade-in slide-in-from-left-4 duration-200">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h2 className="text-xl font-bold text-[#111111] tracking-tight">Place Order</h2>
+                                            <div className="flex bg-[#F3F4F6] rounded-xl p-1">
+                                                <button
+                                                    onClick={() => setOrderType('buy')}
+                                                    className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${orderType === 'buy'
+                                                        ? 'bg-white shadow-sm text-[#10B981]'
+                                                        : 'text-[#6B7280] hover:text-[#111111]'
+                                                        }`}
+                                                >
+                                                    Buy
+                                                </button>
+                                                <button
+                                                    onClick={() => setOrderType('sell')}
+                                                    className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${orderType === 'sell'
+                                                        ? 'bg-white shadow-sm text-[#EF4444]'
+                                                        : 'text-[#6B7280] hover:text-[#111111]'
+                                                        }`}
+                                                >
+                                                    Sell
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Input Fields */}
+                                        <div className="space-y-4 mb-6">
+                                            <div>
+                                                <label className="block text-xs font-bold text-[#6B7280] mb-2 uppercase tracking-wider">Amount</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={amount}
+                                                        onChange={(e) => setAmount(e.target.value)}
+                                                        placeholder="0.00"
+                                                        className="w-full h-16 pl-5 pr-20 bg-[#F9FAFB] border border-gray-200 rounded-2xl font-mono text-xl font-bold text-[#111111] focus:ring-2 focus:ring-[#0071C5] focus:border-transparent outline-none transition-all placeholder:text-[#D1D5DB]"
+                                                        disabled={!isTradeable}
+                                                    />
+                                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#9CA3AF] tracking-wider">
+                                                        TOKENS
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                <p className="text-sm text-[#6B7280] py-4">No buy orders available</p>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-[#6B7280] mb-2 uppercase tracking-wider">Price per Token</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={price}
+                                                        onChange={(e) => setPrice(e.target.value)}
+                                                        placeholder="0.00"
+                                                        className="w-full h-16 pl-5 pr-20 bg-[#F9FAFB] border border-gray-200 rounded-2xl font-mono text-xl font-bold text-[#111111] focus:ring-2 focus:ring-[#0071C5] focus:border-transparent outline-none transition-all placeholder:text-[#D1D5DB]"
+                                                        disabled={!isTradeable}
+                                                    />
+                                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#9CA3AF] tracking-wider">
+                                                        USDC
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Balances & Info */}
+                                        <div className="space-y-3 mb-6">
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-[#6B7280] font-medium">Available {orderType === 'buy' ? 'USDC' : 'Tokens'}</span>
+                                                <span className="font-mono font-bold text-[#111111]">
+                                                    {orderType === 'buy'
+                                                        ? `$${usdcBalance ? parseFloat(formatUnits(usdcBalance, 6)).toFixed(2) : '0.00'}`
+                                                        : `${tokenBalance ? parseFloat(formatUnits(tokenBalance, 18)).toFixed(2) : '0.00'}`
+                                                    }
+                                                </span>
+                                            </div>
+
+                                            {orderType === 'sell' && needsTokenApproval && (
+                                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-2 text-xs text-yellow-900">
+                                                    <Info size={14} className="mt-0.5 shrink-0" />
+                                                    <span className="font-medium">One-time approval required to trade this asset</span>
+                                                </div>
+                                            )}
+                                            {orderType === 'buy' && needsUsdcApproval && (
+                                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-2 text-xs text-yellow-900">
+                                                    <Info size={14} className="mt-0.5 shrink-0" />
+                                                    <span className="font-medium">One-time approval required to spend USDC</span>
+                                                </div>
                                             )}
                                         </div>
 
-                                        {/* Sell Orders - Shows Bids (where you can sell tokens) */}
-                                        <div>
-                                            <h3 className="text-sm font-semibold text-red-600 mb-3">Sell Orders</h3>
-                                            {orderbook?.bids?.length > 0 ? (
-                                                <div className="space-y-2">
-                                                    {orderbook.bids.slice(0, 5).map((level: PriceLevel, i: number) => (
-                                                        <div key={i} className="bg-red-50 rounded-lg p-3">
-                                                            <div className="flex justify-between items-center mb-2">
-                                                                <span className="font-semibold text-red-700">${level.priceFormatted}</span>
-                                                                <span className="text-xs text-red-600">{level.orderCount} orders</span>
-                                                            </div>
-                                                            <p className="text-sm text-[#6B7280]">{level.amountFormatted} tokens</p>
-                                                            {level.orders.map((order) => (
-                                                                <button
-                                                                    key={order.orderId}
-                                                                    onClick={() => {
-                                                                        setSelectedOrder(order);
-                                                                        setIsOrderModalOpen(true);
-                                                                    }}
-                                                                    className="mt-2 w-full text-xs py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                                                                >
-                                                                    Sell Tokens
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    ))}
+                                        {/* Order Summary */}
+                                        {amount && price && (
+                                            <div className="mb-6 p-5 bg-[#F9FAFB] rounded-2xl border border-gray-100">
+                                                <div className="flex justify-between items-baseline">
+                                                    <span className="text-sm font-bold text-[#6B7280]">Estimated Total</span>
+                                                    <div className="text-right">
+                                                        <span className="text-2xl font-bold text-[#111111] tracking-tight">
+                                                            ${(parseFloat(amount) * parseFloat(price)).toFixed(2)}
+                                                        </span>
+                                                        <span className="text-xs font-medium text-[#9CA3AF] ml-2">USDC</span>
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                <p className="text-sm text-[#6B7280] py-4">No sell orders available</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            </div>
-                        </div>
+                                            </div>
+                                        )}
 
-                        {/* Right Column - Trading Panel */}
-                        <div className="lg:col-span-1">
-                            <div className="sticky top-8">
-                                <div className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                                    <h2 className="text-xl font-semibold text-[#111111] mb-6">Place Order</h2>
-
-                                    {/* Buy/Sell Toggle */}
-                                    <div className="flex gap-2 mb-6">
+                                        {/* Create Order Button */}
                                         <button
-                                            onClick={() => setOrderType('buy')}
-                                            className={`flex-1 py-3 rounded-lg font-medium transition-colors ${orderType === 'buy'
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-[#F7F8FA] text-[#6B7280] hover:bg-[#E5E7EB]'
+                                            onClick={() => handleCreateOrder()}
+                                            disabled={!isTradeable || isTxPending || isTxConfirming || !amount || !price}
+                                            className={`w-full py-4 rounded-2xl font-bold text-base text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed ${orderType === 'buy' ? 'bg-[#10B981] hover:bg-[#059669]' : 'bg-[#111111] hover:bg-black'
                                                 }`}
                                         >
-                                            Buy
+                                            {isTxPending || isTxConfirming
+                                                ? (transactionStep === 'approving' ? 'Authorizing Assets...' : 'Broadcasting Order...')
+                                                : (needsTokenApproval || needsUsdcApproval
+                                                    ? `Approve & Create ${orderType === 'buy' ? 'Buy' : 'Sell'} Order`
+                                                    : `Place ${orderType === 'buy' ? 'Buy' : 'Sell'} Order`)
+                                            }
                                         </button>
-                                        <button
-                                            onClick={() => setOrderType('sell')}
-                                            className={`flex-1 py-3 rounded-lg font-medium transition-colors ${orderType === 'sell'
-                                                ? 'bg-red-600 text-white'
-                                                : 'bg-[#F7F8FA] text-[#6B7280] hover:bg-[#E5E7EB]'
-                                                }`}
-                                        >
-                                            Sell
-                                        </button>
-                                    </div>
 
-                                    {/* Balance Display */}
-                                    <div className="mb-6 p-4 bg-[#F7F8FA] rounded-lg">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm text-[#6B7280]">Your Balance</span>
-                                            <span className="text-sm font-medium text-[#111111]">
-                                                {tokenBalance ? formatUnits(tokenBalance, 18) : '0'} tokens
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm text-[#6B7280]">Tradeable</span>
-                                            <span className="text-sm font-semibold text-green-600">
-                                                {tradeableBalance?.tradeableBalanceFormatted || '0'} tokens
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-[#6B7280]">USDC Balance</span>
-                                            <span className="text-sm font-medium text-[#111111]">
-                                                ${usdcBalance ? formatUnits(usdcBalance, 6) : '0'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Approval Status */}
-                                    {orderType === 'sell' && tokenAllowance !== undefined && (
-                                        <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-xs text-yellow-700">Token Allowance</span>
-                                                <span className="text-xs font-medium text-yellow-900">
-                                                    {formatUnits(tokenAllowance, 18)} tokens
-                                                </span>
-                                            </div>
-                                            {needsTokenApproval && (
-                                                <p className="text-xs text-yellow-700">⚠️ Approval required before creating order</p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {orderType === 'buy' && usdcAllowance !== undefined && (
-                                        <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-xs text-yellow-700">USDC Allowance</span>
-                                                <span className="text-xs font-medium text-yellow-900">
-                                                    ${formatUnits(usdcAllowance, 6)}
-                                                </span>
-                                            </div>
-                                            {needsUsdcApproval && (
-                                                <p className="text-xs text-yellow-700">⚠️ Approval required before creating order</p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Order Inputs */}
-                                    <div className="space-y-4 mb-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#111111] mb-2">
-                                                Amount (tokens)
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={amount}
-                                                onChange={(e) => setAmount(e.target.value)}
-                                                placeholder="0.00"
-                                                className="w-full px-4 py-3 bg-[#F7F8FA] border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-[#0071C5] focus:outline-none"
-                                                disabled={!isTradeable}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#111111] mb-2">
-                                                Price (USDC per token)
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={price}
-                                                onChange={(e) => setPrice(e.target.value)}
-                                                placeholder="0.00"
-                                                className="w-full px-4 py-3 bg-[#F7F8FA] border border-[#E5E7EB] rounded-lg focus:ring-2 focus:ring-[#0071C5] focus:outline-none"
-                                                disabled={!isTradeable}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Total Display */}
-                                    {amount && price && (
-                                        <div className="mb-6 p-4 bg-[#F7F8FA] rounded-lg">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm text-[#6B7280]">Total</span>
-                                                <span className="text-lg font-semibold text-[#111111]">
-                                                    ${(parseFloat(amount) * parseFloat(price)).toFixed(2)} USDC
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Submit Button */}
-                                    <button
-                                        onClick={() => handleCreateOrder()}
-                                        disabled={!isTradeable || isTxPending || isTxConfirming || !amount || !price}
-                                        className={`w-full py-4 rounded-xl font-semibold transition-colors ${orderType === 'buy'
-                                            ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300'
-                                            : 'bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-300'
-                                            }`}
-                                    >
-                                        {isTxPending || isTxConfirming
-                                            ? transactionStep === 'approving'
-                                                ? 'Approving...'
-                                                : transactionStep === 'executing'
-                                                    ? 'Creating Order...'
-                                                    : 'Processing...'
-                                            : needsTokenApproval || needsUsdcApproval
-                                                ? 'Approve & Create Order'
-                                                : `Create ${orderType === 'buy' ? 'Buy' : 'Sell'} Order`}
-                                    </button>
-
-                                    {!isTradeable && (
-                                        <p className="mt-4 text-xs text-center text-[#6B7280]">
-                                            Trading is currently disabled for this asset
-                                        </p>
-                                    )}
-
-                                    {/* Transaction Status */}
-                                    {(isTxPending || isTxConfirming) && txHash && (
-                                        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                                            <p className="text-xs text-blue-700 font-medium mb-1">Transaction in progress</p>
+                                        {(isTxPending || isTxConfirming) && txHash && (
                                             <a
                                                 href={`https://sepolia.mantlescan.xyz/tx/${txHash}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-xs text-blue-600 hover:underline break-all"
+                                                className="block mt-4 text-center text-xs text-[#0071C5] hover:underline font-medium"
                                             >
                                                 View on Explorer →
                                             </a>
+                                        )}
+
+                                        <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] mt-6 pt-4 border-t border-gray-100">
+                                            <ShieldCheck size={14} /> Secured by Mantle Network
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
-
-            {/* Order Detail Modal */}
-            {isOrderModalOpen && selectedOrder && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-[20px] p-8 max-w-md w-full">
-                        <h2 className="text-2xl font-semibold text-[#111111] mb-6">Order Details</h2>
-
-                        <div className="space-y-4 mb-6">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#6B7280]">Order ID</span>
-                                <span className="text-sm font-medium text-[#111111]">#{selectedOrder.orderId}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#6B7280]">Amount</span>
-                                <span className="text-sm font-semibold text-[#111111]">{selectedOrder.amountFormatted} tokens</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#6B7280]">Price</span>
-                                <span className="text-sm font-semibold text-[#111111]">${selectedOrder.priceFormatted}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#6B7280]">Total</span>
-                                <span className="text-lg font-bold text-[#111111]">
-                                    ${(parseFloat(selectedOrder.amountFormatted) * parseFloat(selectedOrder.priceFormatted)).toFixed(2)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    // Check if order is a bid (where we sell tokens to fill it)
-                                    const isBuyOrder = orderbook?.bids?.some((level: PriceLevel) =>
-                                        level.orders.some(o => o.orderId === selectedOrder.orderId)
-                                    ) || false;
-                                    handleFillOrder(selectedOrder, isBuyOrder);
-                                }}
-                                disabled={isTxPending || isTxConfirming}
-                                className="flex-1 py-3 bg-[#0071C5] text-white rounded-xl font-semibold hover:bg-[#0052A3] disabled:bg-gray-300 transition-colors"
-                            >
-                                {isTxPending || isTxConfirming ? 'Processing...' : 'Fill Order'}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setIsOrderModalOpen(false);
-                                    setSelectedOrder(null);
-                                }}
-                                className="flex-1 py-3 bg-[#F7F8FA] text-[#111111] rounded-xl font-semibold hover:bg-[#E5E7EB] transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </>
+            </div>
+        </div>
     );
 };
 

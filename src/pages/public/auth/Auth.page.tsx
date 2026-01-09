@@ -1,7 +1,7 @@
 // src/pages/public/auth/Auth.page.tsx
 
 
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import { Input } from '../../../components/ui/input';
 import { FileUpload } from '../../../components/ui/file-upload';
@@ -21,7 +21,6 @@ type AuthStep = 'new_user' | 'documents' | 'documents_uploaded' | 'kyc_submit';
 export default function AuthPage() {
 
   const navigate = useNavigate();
-  const location = useLocation();
   const { address } = useAccount();
 
   const { setLoading, user } = useAuthStore();
@@ -32,19 +31,30 @@ export default function AuthPage() {
   const [email, setEmail] = useState<string>('');
   const [isEmailValid, setIsEmailValid] = useState<boolean>(false);
   const [isVerifyingKyc, setIsVerifyingKyc] = useState<boolean>(false);
+  const [isUsingTestAadhar, setIsUsingTestAadhar] = useState(false);
 
 
-  /**
-   * Check if user is coming from Hero section after authentication
-   * If yes, show KYC form directly
-   */
+
   useEffect(() => {
-    const state = location.state as { showKycForm?: boolean } | null;
-    if (state?.showKycForm && address && user && !user.kyc) {
-      // User is authenticated but needs to complete KYC
       setStep('new_user');
+  }, [address]);
+
+  const toggleTestAadhar = async (checked: boolean) => {
+    setIsUsingTestAadhar(checked);
+    if (checked) {
+      try {
+        const response = await fetch('/AadharGenerated.png');
+        if (!response.ok) throw new Error('Failed to load test file');
+        const blob = await response.blob();
+        const file = new File([blob], 'AadharGenerated.png', { type: 'image/png' });
+        handleDocumentUpload({ aadhaar: file });
+      } catch (e) {
+        console.error("Error loading test file", e);
+      }
+    } else {
+      handleDocumentUpload({ aadhaar: null });
     }
-  }, [location.state, address, user]);
+  };
 
   /**
    * STEP 4: Wallet Status Pre-Check (CRITICAL)
@@ -133,7 +143,7 @@ export default function AuthPage() {
   return (
     <div className="w-full">
       <Wavy />
-      <img src="./ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover" />
+      <img src="./ALogo-removebg-preview.svg" alt="Background"  onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
       <div className="absolute top-0 left-0 w-full h-full mx-auto">
         <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
           <div className="flex gap-4 flex-col">
@@ -185,6 +195,7 @@ export default function AuthPage() {
               <p className="text-sm text-red-600 font-sans">{error}</p>
             </div>
           )}
+
           <div className='border border-gray-500/10 bg-transparent rounded-3xl shadow-xl p-10'>
             {step === 'new_user' && address && (
               <div className="space-y-4 animate-element animate-delay-300">
@@ -229,17 +240,32 @@ export default function AuthPage() {
                   <FileUpload
                     onChange={(files) => {
                       if (files.length > 0) {
+                        setIsUsingTestAadhar(false);
                         handleDocumentUpload({ aadhaar: files[0] });
                       }
                     }}
+                    value={kycDocuments.aadhaar ? [kycDocuments.aadhaar] : []}
                     text="Upload Aadhaar Card"
-                  />
+                  >
+                    <div className="flex items-center gap-2">
+                        <input 
+                            type="checkbox" 
+                            id="test-aadhar"
+                            checked={isUsingTestAadhar}
+                            onChange={(e) => toggleTestAadhar(e.target.checked)}
+                            className="w-4 h-4 text-violet-300 bg-gray-100 border-gray-300  focus:ring-violet-500 rounded-full"
+                        />
+                        <label htmlFor="test-aadhar" className="text-sm text-neutral-600 font-sans cursor-pointer">
+                            Use TOA test Aadhar card for KYC
+                        </label>
+                    </div>
+                  </FileUpload>
                 </div>
 
                 <Button
                   onClick={handleCompleteRegistration}
                   disabled={!kycDocuments.aadhaar || !isEmailValid || isVerifyingKyc}
-                  className="w-full rounded-2xl h-14 bg-transparent text-gray-800 hover:bg-neutral-500/60 font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-gray-500/50 shadow-xl"
+                  className="w-full rounded-2xl h-14 bg-transparent text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:border hover:border-gray-500/40 shadow-xl"
                   type="submit"
                 >
                   {isVerifyingKyc ? (
@@ -278,7 +304,7 @@ export default function AuthPage() {
 
                 <Button
                   onClick={handleCompleteRegistration}
-                  className="w-full rounded-2xl h-14 bg-transparent text-gray-800  border border-gray-500/50 shadow-xl font-medium border border-gray-500/50  transition-colors"
+                  className="w-full rounded-2xl h-14 bg-transparent text-gray-800  hover:border hover:border-gray-500/50 shadow-xl font-medium"
                   size="lg"
                 >
                   Complete Registration
@@ -298,6 +324,14 @@ export default function AuthPage() {
                 <p className="text-xs text-[#000000] font-sans">
                   This may take a few moments
                 </p>
+              </div>
+            )}
+            {!isEmailValid && step === 'documents' &&(
+              <div className='flex flex-row items-center justify-center gap-4 p-1'>
+                <Button className=' w-6 h-6 bg-transparent shadow-xl border border-neutral-200 rounded-full' onClick={() => { setStep('new_user') }}>
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                </Button>
+                <span>Invalid step, please try again</span>
               </div>
             )}
 

@@ -30,11 +30,13 @@ export const FileUpload = ({
   text,
   accept,
   value,
+  children,
 }: {
     onChange?: (files: File[]) => void;
     text: string;
     accept?: string;
     value?: File[];
+    children?: React.ReactNode;
 }) => {
   const [internalFiles, setInternalFiles] = useState<File[]>([]);
   const files = value || internalFiles;
@@ -85,6 +87,11 @@ export const FileUpload = ({
           <p className="relative z-20 font-sans font-normal text-neutral-800 text-base mt-2">
             Drag or drop your files here or click to upload
           </p>
+          {children && (
+            <div className="relative z-20 mt-4" onClick={(e) => e.stopPropagation()}>
+              {children}
+            </div>
+          )}
           <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&
               files.map((file, idx) => (
