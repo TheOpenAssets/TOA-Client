@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt ,useDisconnect} from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Info, X, ShieldCheck, Zap, Activity, TrendingUp, TrendingDown, ShoppingCart, Users } from 'lucide-react';
+import { Info, X, ShieldCheck, Zap, ShoppingCart, Users } from 'lucide-react';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { useToast } from '../../hooks/useToast';
 import { ToastContainer } from '../../components/ui/toast';
@@ -434,8 +434,8 @@ const TradingEngineProductionPage = () => {
     // Loading State
     if (isLoadingAsset && !currentAsset) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <PageLoader text="Loading Listings..." />
+            <div className="flex w-screen h-screen items-center justify-center">
+                <PageLoader text="Loading" />
             </div>
         );
     }
@@ -551,19 +551,26 @@ const TradingEngineProductionPage = () => {
                                                                 style={{ width: `${width}%`, opacity: 0.08 }}
                                                             />
 
-                                                            {level.orders.map((order) => (
-                                                                <div
-                                                                    key={order.orderId}
-                                                                    onClick={() => setSelectedOrder(order)}
-                                                                    className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-green-50/30 transition-colors"
-                                                                >
-                                                                    <span className="font-bold text-[#10B981] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
-                                                                    <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
-                                                                    <span className="text-right text-[#6B7280] font-gellix">
-                                                                        ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
+                                                            {level.orders.map((order) => {
+                                                                const isMyOrder = address && order.maker.toLowerCase() === address.toLowerCase();
+                                                                return (
+                                                                    <div
+                                                                        key={order.orderId}
+                                                                        onClick={() => !isMyOrder && setSelectedOrder(order)}
+                                                                        title={isMyOrder ? "Creator cannot fulfill its own orders" : undefined}
+                                                                        className={`relative grid grid-cols-3 px-4 py-3 text-sm transition-colors ${isMyOrder
+                                                                            ? 'cursor-not-allowed opacity-60'
+                                                                            : 'cursor-pointer hover:bg-green-50/30'
+                                                                            }`}
+                                                                    >
+                                                                        <span className="font-bold text-[#10B981] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                        <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
+                                                                        <span className="text-right text-[#6B7280] font-gellix">
+                                                                            ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     );
                                                 }) : (
@@ -590,19 +597,26 @@ const TradingEngineProductionPage = () => {
                                                                 className="absolute top-0 right-0 bottom-0 bg-[#EF4444] transition-all duration-300 group-hover:opacity-20"
                                                                 style={{ width: `${width}%`, opacity: 0.08 }}
                                                             />
-                                                            {level.orders.map((order) => (
-                                                                <div
-                                                                    key={order.orderId}
-                                                                    onClick={() => setSelectedOrder(order)}
-                                                                    className="relative grid grid-cols-3 px-4 py-3 text-sm cursor-pointer hover:bg-red-50/30 transition-colors"
-                                                                >
-                                                                    <span className="font-bold text-[#EF4444] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
-                                                                    <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
-                                                                    <span className="text-right text-[#6B7280] font-gellix">
-                                                                        ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
+                                                            {level.orders.map((order) => {
+                                                                const isMyOrder = address && order.maker.toLowerCase() === address.toLowerCase();
+                                                                return (
+                                                                    <div
+                                                                        key={order.orderId}
+                                                                        onClick={() => !isMyOrder && setSelectedOrder(order)}
+                                                                        title={isMyOrder ? "Creator cannot fulfill its own orders" : undefined}
+                                                                        className={`relative grid grid-cols-3 px-4 py-3 text-sm transition-colors ${isMyOrder
+                                                                            ? 'cursor-not-allowed opacity-60'
+                                                                            : 'cursor-pointer hover:bg-red-50/30'
+                                                                            }`}
+                                                                    >
+                                                                        <span className="font-bold text-[#EF4444] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                        <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
+                                                                        <span className="text-right text-[#6B7280] font-gellix">
+                                                                            ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     );
                                                 }) : (
