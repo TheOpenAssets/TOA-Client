@@ -493,10 +493,10 @@ const TradingEngineProductionPage = () => {
             <ToastContainer toasts={toasts} onClose={removeToast} />
 
             {/* Page Header */}
-            <div className="max-w-[90vw] mx-auto px-8 py-6">
+            <div className="max-w-[90vw] mx-auto px-8] py-5 border-b border-gray-200 mb-2">
                 <div className="flex flex-row items-center justify-between">
                     <div className="flex flex-row items-center gap-4">
-                        <h1 className="text-3xl font-semibold text-[#111111] font-gellix leading-none tracking-tight">
+                        <h1 className="text-3xl font-medium text-[#111111] font-gellix leading-none tracking-tight">
                             {currentAsset?.metadata?.invoiceNumber || 'Asset'}
                         </h1>
                         <span className="text-[#6B7280] text-lg font-medium font-gellix">
@@ -511,6 +511,12 @@ const TradingEngineProductionPage = () => {
                                 className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                             >
                                 Marketplace
+                            </button>
+                            <button
+                                onClick={() => navigate('/portfolio')}
+                                className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                            >
+                                Portfolio
                             </button>
                         </nav>
 
@@ -543,7 +549,7 @@ const TradingEngineProductionPage = () => {
             </div>
 
             {/* Main Content: 60/40 Split */}
-            <div className="max-w-[95vw] mx-auto px-8 pb-8">
+            <div className="max-w-[90vw] mx-auto px-8 pb-8">
                 <div className="grid grid-cols-14 gap-6">
                     {/* === LEFT COLUMN (60%): Orderbook + Charts (Scrollable) === */}
                     <div className="col-span-10 space-y-6 overflow-y-auto max-h-screen scrollbar-hide order-1 pb-10" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -557,7 +563,7 @@ const TradingEngineProductionPage = () => {
                             ) : (
                                 <>
                                     <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                                        <h3 className="text-xl font-bold text-[#111111] font-gellix tracking-tight">Market Depth</h3>
+                                        <h3 className="text-2xl font-medium text-[#111111] font-gellix tracking-tight">Market Depth</h3>
                                         <div className="text-xs text-[#6B7280] font-medium font-gellix flex gap-4">
                                             <span className="flex items-center gap-1.5">
                                                 <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span> Buy Orders
@@ -670,7 +676,7 @@ const TradingEngineProductionPage = () => {
                         <div className="border border-neutral-200 shadow-sm rounded-2xl p-6">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-semibold font-gellix text-[#111111] mb-2">Purchase Activity</h2>
+                                    <h2 className="text-2xl font-medium font-gellix text-[#111111] mb-2">Purchase Activity</h2>
                                     <p className="text-sm text-[#6B7280]">Token purchases over time</p>
                                 </div>
                                 <div className="flex gap-4">
@@ -793,15 +799,16 @@ const TradingEngineProductionPage = () => {
                         <SentimentChart data={sentimentData} isLoading={isChartLoading && sentimentData.length === 0} />
                         <TradeChart data={tradeData} isLoading={isChartLoading && tradeData.length === 0} />
                     </div>
+
                     {/* === RIGHT COLUMN (40%): Buy/Sell Panel + Asset Details (Sticky) === */}
                     <div className="col-span-4 sticky top-6 self-start space-y-6 order-2 ">
                         {/* EXECUTION ZONE (Buy/Sell Panel) */}
-                        <div className="bg-white rounded-3xl shadow-sm p-8">
+                        <div className="bg-white rounded-3xl shadow-lg border-t border-gray-200 p-8">
                             {/* CONTEXTUAL PANEL: Order Review State */}
                             {selectedOrder ? (
                                 <div className="animate-in fade-in slide-in-from-right-4 duration-200">
                                     <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                                        <h2 className="text-xl font-gellix font-bold text-[#111111] tracking-tight">Order Review</h2>
+                                        <h2 className="text-2xl font-gellix font-medium text-[#111111] tracking-tight">Order Review</h2>
                                         <button
                                             onClick={() => setSelectedOrder(null)}
                                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -877,7 +884,7 @@ const TradingEngineProductionPage = () => {
                                 /* CONTEXTUAL PANEL: Place Order State */
                                 <div className="animate-in fade-in slide-in-from-left-4 duration-200">
                                     <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-xl font-bold text-[#111111] tracking-tight">Place Order</h2>
+                                        <h2 className="text-2xl font-medium font-gellix text-[#111111] tracking-tight">Place Order</h2>
                                         <div className="flex bg-[#F3F4F6] rounded-xl p-1">
                                             <button
                                                 onClick={() => setOrderType('buy')}
@@ -1012,14 +1019,14 @@ const TradingEngineProductionPage = () => {
                         </div>
 
                         {/* ASSET DETAILS */}
-                        <div className="bg-white rounded-3xl shadow-sm p-6">
+                        <div className="bg-white rounded-3xl shadow-lg border-t border-gray-200  p-6">
                             {isLoadingAsset ? (
                                 <div className="flex items-center justify-center h-[450px]">
                                     <PageLoader text='' />
                                 </div>
                             ) : (
                                 <>
-                                    <h2 className="text-xl font-semibold text-[#111111] mb-6">Asset Details</h2>
+                                    <h2 className="text-2xl font-medium text-[#111111] mb-6">Asset Details</h2>
                                     <div className="grid grid-cols-2 gap-6 text-sm">
                                         <div className="space-y-1">
                                             <p className="text-[#6B7280] font-medium">Face Value</p>

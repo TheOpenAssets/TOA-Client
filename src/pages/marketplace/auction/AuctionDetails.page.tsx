@@ -9,6 +9,7 @@ import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { Button } from '../../../components/ui/button';
 import { ShaderAnimation } from '../../../components/ui/shimmer-lines';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -136,11 +137,9 @@ const AuctionDetailsPage = () => {
 
   if (isLoadingAsset) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-geist text-lg text-foreground">Loading auction...</div>
+        <div className="flex items-center justify-center h-screen">
+          <PageLoader text='' />
         </div>
-      </div>
     );
   }
 

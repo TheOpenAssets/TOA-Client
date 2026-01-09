@@ -432,12 +432,6 @@ const MarketplacePage = () => {
               Portfolio
             </button>
             <button
-              onClick={() => navigate('/trade')}
-              className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-            >
-              Trade
-            </button>
-            <button
               onClick={() => navigate('/borrow')}
               className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
@@ -566,8 +560,8 @@ const MarketplacePage = () => {
       <div className="bg-transparent relative z-40 flex items-center m-2">
         <div className="mx-auto w-[80%]">
           {isLoadingInfo ? (
-            <div className="flex items-center justify-center py-2">
-              <span className="font-gellix text-xs text-gray-900">Loading metrics...</span>
+            <div className="flex items-center justify-center h-[450px]">
+              <PageLoader text='' />
             </div>
           ) : marketplaceInfo ? (
             <div className="flex flex-row items-center justify-evenly">
@@ -640,8 +634,8 @@ const MarketplacePage = () => {
             </h2>
             <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
               {isLoadingAuctions ? (
-                <div className="text-center text-gray-400 font-gellix text-lg">
-                  Loading auctions...
+                <div className="flex items-center justify-center h-[450px]">
+                  <PageLoader text='' />
                 </div>
               ) : auctions.length === 0 ? (
                 <div className="text-center text-gray-400 font-gellix text-lg">
@@ -698,8 +692,8 @@ const MarketplacePage = () => {
 
             <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
               {isLoadingTrending ? (
-                <div className="text-center text-gray-400 font-gellix text-lg">
-                  Loading trending assets...
+                <div className="flex items-center justify-center h-[450px]">
+                  <PageLoader text='' />
                 </div>
               ) : trendingAssets.length === 0 ? (
                 <div className="text-center text-gray-400 font-gellix text-lg">
@@ -754,8 +748,8 @@ const MarketplacePage = () => {
             </h2>
             <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
               {isLoading ? (
-                <div className="text-center text-gray-400 font-gellix text-lg">
-                  Loading recent assets...
+                <div className="flex items-center justify-center h-[450px]">
+                  <PageLoader text='' />
                 </div>
               ) : listings.length === 0 ? (
                 <div className="text-center text-gray-400 font-gellix text-lg">
@@ -878,8 +872,8 @@ const MarketplacePage = () => {
               /* Grid View */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {isLoadingCharts && filteredAssets.length > 0 ? (
-                  <div className="col-span-full text-center text-gray-500 py-8">
-                    Loading charts...
+                  <div className="flex items-center justify-center h-[450px]">
+                    <PageLoader text='' />
                   </div>
                 ) : (
                   filteredAssets.map((asset) => {

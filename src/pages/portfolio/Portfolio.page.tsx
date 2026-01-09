@@ -16,6 +16,8 @@ import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
+import { TradesTable } from '../../components/portfolio/TradesTable';
+import { useCancelOrder } from '../../hooks/useSecondaryMarket';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
 import { PageLoader } from '../../components/ui/page-loader';
@@ -27,12 +29,16 @@ const PortfolioPage = () => {
   const navigate = useNavigate();
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
-  const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
+  const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
 
+  // Cancel order hook
+  const { cancelOrder, isSuccess: isCancelSuccess, reset: resetCancel } = useCancelOrder();
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
   // Tab state for portfolio sections
-  type PortfolioTab = 'assets' | 'bids' | 'positions';
+  type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades';
   const [activeTab, setActiveTab] = useState<PortfolioTab>('assets');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -64,6 +70,12 @@ const PortfolioPage = () => {
     false
   );
 
+  const filteredOrders = myOrders.filter(order =>
+    order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  );
+
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
     (sum, asset) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
@@ -91,6 +103,7 @@ const PortfolioPage = () => {
   useEffect(() => {
     fetchPortfolio();
     fetchUserBids();
+    fetchMyOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -124,11 +137,33 @@ const PortfolioPage = () => {
     }
   }, [settleError]);
 
+  // Handle cancel order success
+  useEffect(() => {
+    if (isCancelSuccess) {
+      success('Order Cancelled', 'Your order has been cancelled successfully.');
+      setCancellingOrderId(null);
+      resetCancel();
+      fetchMyOrders(); // Refresh orders
+    }
+  }, [isCancelSuccess]);
+
   // Helper functions
   const handlelogout = () => {
     authService.logout();
     disconnect();
     navigate('/'); // Redirect to home or login page after logout
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    setCancellingOrderId(orderId);
+    try {
+      await cancelOrder(orderId);
+    } catch (e) {
+      console.error("Cancel failed", e);
+      // We don't nullify cancellingOrderId here immediately to show loading state if retrying, 
+      // but usually we should if it failed. 
+      setCancellingOrderId(null);
+    }
   };
 
   const truncateAddress = (address: string): string => {
@@ -414,16 +449,6 @@ const PortfolioPage = () => {
                 >
                   Marketplace
                 </button>
-                <div className='relative group'>
-                  <button
-                    className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
-                  >
-                    Trade
-                  </button>
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-                    Coming Soon
-                  </div>
-                </div>
                 <button
                   onClick={() => navigate('/borrow')}
                   className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
@@ -505,6 +530,15 @@ const PortfolioPage = () => {
                       >
                         Leveraged Positions
                       </button>
+                      <button
+                        onClick={() => setActiveTab('trades')}
+                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'trades'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        Trades
+                      </button>
                     </div>
                   </div>
 
@@ -569,6 +603,31 @@ const PortfolioPage = () => {
                           positions={filteredPositions as any}
                           isLoading={isLoading}
                           onSelectPosition={setSelectedPosition}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Trades Tab */}
+                    <div
+                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'trades'
+                        ? 'opacity-100 translate-x-0 z-10'
+                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        }`}
+                    >
+                      <div className="h-full flex flex-col">
+                        <TradesTable
+                          orders={filteredOrders}
+                          isLoading={isLoadingMyOrders}
+                          onCancelOrder={async (orderId) => {
+                            setCancellingOrderId(orderId);
+                            try {
+                              await cancelOrder(orderId);
+                            } catch (e) {
+                              console.error("Cancel failed", e);
+                              setCancellingOrderId(null);
+                            }
+                          }}
+                          isCancellingId={cancellingOrderId}
                         />
                       </div>
                     </div>

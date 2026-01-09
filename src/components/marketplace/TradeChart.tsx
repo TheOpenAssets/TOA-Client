@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import * as echarts from 'echarts';
 import { format } from 'date-fns';
+import { PageLoader } from '../ui/page-loader';
 
 interface TradeChartProps {
     data: any[];
@@ -96,7 +97,8 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
                         const idx = Number(value);
                         return data[idx] ? format(new Date(data[idx].time), 'HH:mm') : '';
                     }
-                }
+                },
+                splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } }
             },
             yAxis: {
                 type: 'value',
@@ -104,6 +106,8 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
                 scale: true,
                 min: yMin,
                 max: yMax,
+                minInterval: 0.01,
+                splitNumber: 10,
                 axisLine: { show: true },
                 axisLabel: { color: '#94a3b8', fontSize: 10, fontWeight: 'bold', formatter: (val: number) => `$${val.toFixed(2)}` },
                 splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } }
@@ -114,7 +118,7 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
                     xAxisIndex: [0],
                     startValue: Math.max(0, data.length - 35),
                     endValue: data.length - 1,
-                    zoomLock: false
+                    zoomLock: true
                 },
                 {
                     type: 'slider',
@@ -174,7 +178,9 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
             </div>
              {isLoading && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-[32px]">
-                   <div className="animate-pulse text-xs font-bold text-slate-400">LOADING...</div>
+                    <div className="flex items-center justify-center h-[450px]">
+                        <PageLoader text='' />
+                    </div>
                 </div>
             )}
             <div ref={chartRef} style={{ height: '600px', width: '100%' }} className="bg-slate-50/20 rounded-3xl border border-slate-100 transition-all hover:border-slate-300" />

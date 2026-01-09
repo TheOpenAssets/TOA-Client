@@ -54,7 +54,9 @@ export const ActiveBidsTable = ({
 
   if (isLoading) {
     return (
-      <PageLoader text="Loading Active Bids..." />
+      <div className="flex items-center justify-center h-full">
+        <PageLoader text='' />
+      </div>
     );
   }
 

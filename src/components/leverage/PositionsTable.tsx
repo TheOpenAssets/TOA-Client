@@ -4,6 +4,7 @@ import { formatUnits } from 'viem';
 import { PositionSparkline } from './PositionSparkline';
 import type { LeveragePosition } from '../../types/leverage.types';
 import { Filter } from 'lucide-react';
+import { PageLoader } from '../ui/page-loader';
 
 // Portfolio API types
 interface PortfolioLeveragePosition {
@@ -146,10 +147,8 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center py-8">
-          <p className="font-gellix text-sm text-gray-500">Loading positions...</p>
-        </div>
+      <div className="flex items-center justify-center w-screen h-screen">
+        <PageLoader text='' />
       </div>
     );
   }

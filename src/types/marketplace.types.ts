@@ -362,3 +362,25 @@ export interface EndAuctionPayload {
   auctionId: string;
   clearingPrice: number;
 }
+
+// ============================================================================
+// SECONDARY MARKET TYPES
+// ============================================================================
+
+export interface SecondaryOrder {
+  _id: string;
+  orderId: string;
+  maker: string;
+  assetId: string;
+  tokenAddress: string;
+  isBuy: boolean;
+  initialAmount: string; // in wei
+  remainingAmount: string; // in wei
+  pricePerToken: string; // price in USDC (6 decimals)
+  status: 'OPEN' | 'FILLED' | 'CANCELLED';
+  txHash: string;
+  blockNumber: number;
+  blockTimestamp: string;
+  createdAt: string;
+  updatedAt: string;
+}

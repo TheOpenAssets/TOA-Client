@@ -7,6 +7,7 @@ import type {
   Auction,
   Bid,
   TrendingAsset,
+  SecondaryOrder,
 } from '../types/marketplace.types';
 import { marketplaceService } from '../lib/api/marketplace.service';
 
@@ -45,7 +46,7 @@ interface MarketplaceState {
   // P2P Trading state
   orderbook: any | null;
   tradeHistory: any[];
-  myOrders: any[];
+  myOrders: SecondaryOrder[];
   tradeableBalance: any | null;
   isLoadingOrderbook: boolean;
   isLoadingTrades: boolean;
@@ -648,7 +649,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
 
       // Filter by assetId if provided (client-side filtering since API returns all orders)
       const filteredOrders = Array.isArray(orders) ? orders : [];
-      const finalOrders = assetId
+      const finalOrders: SecondaryOrder[] = assetId
         ? filteredOrders.filter((order: any) => order.assetId === assetId)
         : filteredOrders;
 

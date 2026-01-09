@@ -200,7 +200,7 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
 
             <div className="flex-1 overflow-y-auto p-2">
               {isLoading ? (
-                <div className="flex items-center justify-center h-[450px]">
+                <div className="flex items-center justify-center h-full">
                   <PageLoader text='' />
                 </div>
               ) : filteredNotifications.length === 0 ? (

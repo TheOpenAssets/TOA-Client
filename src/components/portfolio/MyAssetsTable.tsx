@@ -284,7 +284,7 @@ export const MyAssetsTable = ({
                     }`}
                   onMouseEnter={() => setHoveredRow(rowKey)}
                   onMouseLeave={() => setHoveredRow(null)}
-                  onClick={() => navigate(`/marketplace/asset/${asset.assetId}`)}
+                  onClick={(e) => toggleRowExpansion(rowKey, e)}
                 >
                   {/* Expand Icon */}
                   <td className="px-4 py-4">
@@ -314,8 +314,8 @@ export const MyAssetsTable = ({
 
                   {/* Asset Name / Position */}
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-gellix text-sm font-medium text-foreground">
+                    <div className="flex flex-col gap-1" >
+                      <div className="font-gellix text-sm font-medium text-foreground hover:text-blue-500" onClick={() => { navigate(`/marketplace/asset/${asset.assetId}`) }}>
                         {asset.metadata?.assetName || asset.assetId.slice(0, 12) + '...'}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500">

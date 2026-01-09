@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import * as echarts from 'echarts';
 import { format } from 'date-fns';
+import { PageLoader } from '../ui/page-loader';
 
 interface SentimentChartProps {
     data: any[];
@@ -84,8 +85,9 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
             xAxis: {
                 type: 'category',
                 data: data.map((_, i) => i),
-                axisLine: { lineStyle: { color: '#f1f5f9' } },
-                axisTick: { show: false },
+                splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+                axisLine: { show: true },
+                axisTick: { show: true },
                 axisLabel: {
                     color: '#94a3b8',
                     fontSize: 10,
@@ -108,7 +110,7 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
                  */
                 minInterval: 0.01,
                 splitNumber: 10,
-                axisLine: { show: false },
+                axisLine: { show: true },
                 axisLabel: {
                     color: '#94a3b8',
                     fontSize: 10,
@@ -122,9 +124,9 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
                 {
                     type: 'inside',
                     xAxisIndex: [0],
-                    startValue: Math.max(0, data.length - 35),
+                    startValue: Math.min(0, data.length),
                     endValue: data.length - 1,
-                    zoomLock: true // Set to true to maintain the "Industrial" constant candle width
+                    zoomLock: false // Set to true to maintain the "Industrial" constant candle width
                 }
             ],
             series: [
@@ -163,11 +165,13 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
     return (
         <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 border border-neutral-100 space-y-4 select-none relative">
             <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">Market Sentiment</h2>
+                <h2 className="text-2xl font-medium font-gellix text-slate-900 tracking-tight">Market Sentiment</h2>
             </div>
             {isLoading && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-[32px]">
-                    <div className="animate-pulse text-xs font-black text-slate-400 uppercase tracking-widest">Compiling Intelligence...</div>
+                    <div className="flex items-center justify-center h-[450px]">
+                        <PageLoader text='' />
+                    </div>
                 </div>
             )}
             <div ref={chartRef} style={{ height: '600px', width: '100%' }} className="bg-slate-50/20 rounded-3xl border border-slate-100 transition-all hover:bg-white" />

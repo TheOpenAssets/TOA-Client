@@ -16,6 +16,7 @@ import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'rec
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 // USDC Contract Address
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
@@ -493,7 +494,9 @@ const AssetDetailsPage = () => {
     : true;
 
   if (isLoadingAsset) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">
+      <PageLoader text='' />
+    </div>;
   }
 
   if (error) {
@@ -651,11 +654,15 @@ const AssetDetailsPage = () => {
                   Invoice {asset.metadata.invoiceNumber}
                 </h1>
                 <div>
+                  <Button className="font-geist border border-gray-300  text-lg font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-lg" onClick={() => navigate(`/trade/asset/${asset.assetId}`)}>
+                    Trade
+                  </Button>
                 </div>
               </div>
               <p className="text-sm text-[#4f5258]">
                 Status: <span className="font-medium">{asset.status}</span>
               </p>
+        
             </div>
 
             {/* Chart Section */}
