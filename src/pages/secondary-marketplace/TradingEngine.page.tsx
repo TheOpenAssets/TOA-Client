@@ -11,7 +11,9 @@ import { marketplaceService } from '../../lib/api/marketplace.service';
 import type { PurchaseHistoryResponse } from '../../types/marketplace.types';
 import { PageLoader } from '../../components/ui/page-loader';
 import { useNavigate } from 'react-router-dom';
-import { P2PTradingChart } from '../../components/marketplace/P2PTradingChart';
+import * as echarts from 'echarts';
+import { SentimentChart } from '../../components/marketplace/SentimentChart';
+import { TradeChart } from '../../components/marketplace/TradeChart';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
 
@@ -100,6 +102,11 @@ const TradingEngineProductionPage = () => {
     const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistoryResponse | null>(null);
     const [formattedChartData, setFormattedChartData] = useState<any[]>([]);
 
+    // Chart State
+    const [sentimentData, setSentimentData] = useState<any[]>([]);
+    const [tradeData, setTradeData] = useState<any[]>([]);
+    const [isChartLoading, setIsChartLoading] = useState(false);
+
     const truncateAddress = (address: string): string => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
     };
@@ -110,6 +117,36 @@ const TradingEngineProductionPage = () => {
         disconnect();
         navigate('/'); // Redirect to home or login page after logout
       };
+
+    const formatEChartsData = (candles: any[]) => {
+        return (candles || []).map((c: any) => ({
+            value: [c.open, c.close, c.low, c.high],
+            time: c.time * 1000,
+            volume: c.volume || 0
+        }));
+    };
+
+    const fetchChartData = useCallback(async () => {
+        if (!assetId) return;
+        if (sentimentData.length === 0) setIsChartLoading(true);
+
+        try {
+            const res = await marketplaceService.getSecondaryMarketChartData(assetId, '5m');
+            setSentimentData(formatEChartsData(res.orderBookCandles));
+            setTradeData(formatEChartsData(res.tradeCandles));
+        } catch (error) {
+            console.error('Chart Sync Error:', error);
+        } finally {
+            setIsChartLoading(false);
+        }
+    }, [assetId]);
+
+    useEffect(() => {
+        fetchChartData();
+        const poll = setInterval(fetchChartData, 30000);
+        echarts.connect('trading-engine');
+        return () => clearInterval(poll);
+    }, [fetchChartData]);
 
     // Asset Token Info
     const tokenAddress = currentAsset?.token?.address as `0x${string}` | undefined;
@@ -752,8 +789,9 @@ const TradingEngineProductionPage = () => {
                             </div>
                         </div>
 
-                        {/* P2P TRADING CHART (Replaces Trade History) */}
-                        <P2PTradingChart assetId={assetId!} />
+                        {/* P2P TRADING CHARTS */}
+                        <SentimentChart data={sentimentData} isLoading={isChartLoading && sentimentData.length === 0} />
+                        <TradeChart data={tradeData} isLoading={isChartLoading && tradeData.length === 0} />
                     </div>
                     {/* === RIGHT COLUMN (40%): Buy/Sell Panel + Asset Details (Sticky) === */}
                     <div className="col-span-4 sticky top-6 self-start space-y-6 order-2 ">
