@@ -137,14 +137,14 @@ export default function AuthPage() {
       <div className="absolute top-0 left-0 w-full h-full mx-auto">
         <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
           <div className="flex gap-4 flex-col">
-            <h1 className="text-3xl md:text-5xl max-w-7xl tracking-tighter text-center font-regular text-white">
+            <h1 className="text-3xl md:text-5xl max-w-7xl tracking-tighter text-center font-regular text-black mb-4">
               <span className="font-gellix font-regular">Welcome to Open Assets</span>
               <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-5">
                 &nbsp;
                 {titles.map((title, index) => (
                   <motion.span
                     key={index}
-                    className="absolute font-light font-beau text-7xl text-neutral-100"
+                    className="absolute font-light font-beau text-7xl text-neutral-500"
                     initial={{ opacity: 0, y: "-100" }}
                     transition={{ type: "spring", stiffness: 50 }}
                     animate={
@@ -165,14 +165,14 @@ export default function AuthPage() {
               </span>
             </h1>
 
-            <p className="font-inter text-base md:text-lg text-white mb-3 max-w-2xl mx-auto">
+            <p className="font-inter text-base md:text-lg text-black mb-3 max-w-2xl mx-auto">
               Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
               <span className="font-beau text-xl md:text-2xl font-semibold">Tokenize. Invest. Borrow. Earn.</span> All in one unified execution layer.
             </p>
           </div>
 
           <div className="animate-element animate-delay-100">
-            <p className="text-[#ffffff] mt-1">
+            <p className="text-[#000000] mt-1">
               {step === 'new_user' && 'Complete your profile to get started'}
               {step === 'documents_uploaded' && 'Finalize your registration'}
               {step === 'kyc_submit' && 'Completing verification...'}
@@ -181,30 +181,30 @@ export default function AuthPage() {
 
           {/* Error Display */}
           {error && (
-            <div className="animate-element animate-delay-300 p-4 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="animate-element animate-delay-300 p-4 bg-neutral-500/10 border border-red-400 rounded-2xl">
               <p className="text-sm text-red-600 font-sans">{error}</p>
             </div>
           )}
-          <div className='border border-gray-500/60 bg-transparent rounded-3xl shadow-xl p-10'>
+          <div className='border border-gray-500/10 bg-transparent rounded-3xl shadow-xl p-10'>
             {step === 'new_user' && address && (
               <div className="space-y-4 animate-element animate-delay-300">
-                  <Button className='border border-neutral-200 bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
+                  <Button className=' bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
-                <div className="p-4 border border-gray-500/60 bg-transparent rounded-3xl shadow-2xl">
+                <div className="p-4 bg-transparent border border-gray-500/20 rounded-3xl shadow-3xl">
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-transparent rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-xs font-mono text-[#ffffff] break-all">
+                    <span className="text-xs font-mono text-[#000000] break-all">
                       {address}
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#ffffff] font-sans">
+                  <label className="text-sm font-medium text-[#000000] font-sans">
                     Email Address
                   </label>
-                  <div className="rounded-2xl border border-gray-500/60 bg-transparent shadow-lg focus-within:border-violet-400/70 focus-within:bg-transparent focus-within:shadow-none mt-3">
+                  <div className="rounded-2xl border border-gray-500/20 bg-transparent shadow-lg focus-within:border-violet-400/70 focus-within:bg-transparent focus-within:shadow-none mt-3">
                     <Input
                       type="email"
                       placeholder="Enter your email"
@@ -219,11 +219,11 @@ export default function AuthPage() {
 
             {step === 'documents' && isEmailValid && (
               <div className="space-y-6 animate-element animate-delay-300">
-                <Button className='border border-neutral-200 bg-transparent shadow-xl rounded-full' onClick={() => { setStep('new_user'); setEmail(''); setIsEmailValid(false); }}>
-                  <ArrowLeft className="w-4 h-4" />
+                <Button className=' bg-transparent shadow-xl rounded-full' onClick={() => { setStep('new_user'); setEmail(''); setIsEmailValid(false); }}>
+                  <ArrowLeft className="w-4 h-4 text-black" />
                 </Button>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#6B7280] font-sans">
+                  <label className="text-sm font-medium text-[#2b2b2b] font-sans">
                     KYC Document
                   </label>
                   <FileUpload
@@ -239,12 +239,12 @@ export default function AuthPage() {
                 <Button
                   onClick={handleCompleteRegistration}
                   disabled={!kycDocuments.aadhaar || !isEmailValid || isVerifyingKyc}
-                  className="w-full rounded-2xl h-14 bg-black text-white hover:bg-gray-900 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-2xl h-14 bg-transparent text-gray-800 hover:bg-neutral-500/60 font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-gray-500/50 shadow-xl"
                   type="submit"
                 >
                   {isVerifyingKyc ? (
                     <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                      <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" />
                       <span>Verifying KYC...</span>
                     </div>
                   ) : (
@@ -257,13 +257,13 @@ export default function AuthPage() {
             {/* CASE C: Documents Uploaded - Show Complete Registration */}
             {step === 'documents_uploaded' && address && (
               <div className="space-y-6 animate-element animate-delay-300">
-                <Button className='border border-neutral-200 bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
-                  <ArrowLeft className="w-4 h-4" />
+                <Button className=' bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
+                  <ArrowLeft className="w-4 h-4 text-black" />
                 </Button>
-                <div className="p-6 bg-[#F3F4F6] rounded-2xl space-y-4">
-                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg">
+                <div className="p-6 border border-gray-500/60 bg-transparent rounded-3xl space-y-4 shadow-2xl">
+                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-transparent rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-xs font-mono text-[#111111] break-all">
+                    <span className="text-xs font-mono text-[#000000] break-all">
                       {address}
                     </span>
                   </div>
@@ -271,14 +271,14 @@ export default function AuthPage() {
                     <CheckCircle className="w-5 h-5" />
                     <span className="text-sm font-medium font-sans">Documents Uploaded</span>
                   </div>
-                  <p className="text-sm text-[#6B7280] text-center font-sans">
+                  <p className="text-sm text-[#000000] text-center font-sans ">
                     Click below to complete your registration
                   </p>
                 </div>
 
                 <Button
                   onClick={handleCompleteRegistration}
-                  className="w-full rounded-2xl h-14 bg-black text-white hover:bg-gray-900 font-medium transition-colors"
+                  className="w-full rounded-2xl h-14 bg-transparent text-gray-800  border border-gray-500/50 shadow-xl font-medium border border-gray-500/50  transition-colors"
                   size="lg"
                 >
                   Complete Registration
@@ -288,14 +288,14 @@ export default function AuthPage() {
 
             {/* Submitting KYC */}
             {step === 'kyc_submit' && (
-              <div className="text-center space-y-4 animate-element animate-delay-300 p-8 bg-[#F3F4F6] rounded-2xl">
+              <div className="text-center space-y-4 animate-element animate-delay-300 p-8 border border-gray-500/60 bg-transparent rounded-3xl shadow-2xl">
                 <div className="flex items-center justify-center gap-3">
-                  <div className="animate-spin w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full" />
-                  <span className="text-sm text-[#111111] font-sans font-medium">
+                  <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
+                  <span className="text-sm text-[#ffffff] font-sans font-medium">
                     Completing verification...
                   </span>
                 </div>
-                <p className="text-xs text-[#6B7280] font-sans">
+                <p className="text-xs text-[#000000] font-sans">
                   This may take a few moments
                 </p>
               </div>
@@ -307,4 +307,3 @@ export default function AuthPage() {
     </div>
   );
 }
-

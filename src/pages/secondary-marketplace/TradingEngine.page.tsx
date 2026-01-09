@@ -608,86 +608,6 @@ const TradingEngineProductionPage = () => {
                                     </div>
                                 )}
                             </div>
-
-                            {/* My Active Orders */}
-                            <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                                <h2 className="text-xl font-semibold text-[#111111] mb-6">My Active Orders</h2>
-
-                                {isLoadingMyOrders ? (
-                                    <div className="text-center py-4 text-[#6B7280]">Loading your orders...</div>
-                                ) : myOrders?.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {myOrders
-                                            .filter((order: any) => order.remainingAmount && order.pricePerToken)
-                                            .map((order: any) => (
-                                                <div key={order.orderId} className="flex items-center justify-between p-4 bg-[#F7F8FA] rounded-lg">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className={`px-2 py-1 text-xs font-medium rounded ${order.isBuy ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                                }`}>
-                                                                {order.isBuy ? 'BUY' : 'SELL'}
-                                                            </span>
-                                                            <span className="text-sm font-medium text-[#111111]">
-                                                                {formatUnits(BigInt(order.remainingAmount), 18)} tokens @ ${formatUnits(BigInt(order.pricePerToken), 6)}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-xs text-[#6B7280]">Order #{order.orderId}</p>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleCancelOrder(order.orderId)}
-                                                        disabled={isTxPending}
-                                                        className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-[#6B7280] text-center py-4">You have no active orders</p>
-                                )}
-                            </div>
-
-                            {/* Recent Trades */}
-                            <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                                <h2 className="text-xl font-semibold text-[#111111] mb-6">Recent Trades</h2>
-
-                                {isLoadingTrades ? (
-                                    <div className="text-center py-4 text-[#6B7280]">Loading trades...</div>
-                                ) : tradeHistory?.length > 0 ? (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead className="text-left border-b border-gray-200">
-                                                <tr>
-                                                    <th className="pb-3 font-medium text-[#6B7280]">Time</th>
-                                                    <th className="pb-3 font-medium text-[#6B7280]">Price</th>
-                                                    <th className="pb-3 font-medium text-[#6B7280]">Amount</th>
-                                                    <th className="pb-3 font-medium text-[#6B7280]">Buyer</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {tradeHistory.slice(-10).reverse().map((trade: any, i: number) => (
-                                                    <tr key={i} className="border-b border-gray-100">
-                                                        <td className="py-3 text-[#111111]">
-                                                            {new Date(trade.blockTimestamp).toLocaleTimeString()}
-                                                        </td>
-                                                        <td className="py-3 font-medium text-[#111111]">
-                                                            ${formatUnits(BigInt(trade.pricePerToken), 6)}
-                                                        </td>
-                                                        <td className="py-3 text-[#111111]">
-                                                            {formatUnits(BigInt(trade.amount), 18)}
-                                                        </td>
-                                                        <td className="py-3 text-[#6B7280] font-mono text-xs">
-                                                            {trade.buyer.slice(0, 6)}...{trade.buyer.slice(-4)}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ) : (
-                                    <p className="text-[#6B7280] text-center py-4">No trades yet</p>
-                                )}
                             </div>
                         </div>
 
@@ -858,7 +778,6 @@ const TradingEngineProductionPage = () => {
                         </div>
                     </div>
                 </div>
-            </div>
 
             {/* Order Detail Modal */}
             {isOrderModalOpen && selectedOrder && (

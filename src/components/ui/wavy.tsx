@@ -23,13 +23,14 @@ interface HeroSectionProps {
 }
 
 export function Wavy({
-    colors = ["#72b9bb", "#b5d9d9", "#ffd1bd", "#ffebe0", "#8cc5b8", "#dbf4a4"],
+    // colors = ["#FFFEFA", "#FDFCF0", "#FAF7E6", "#F3EFE0", "#EFEBD8", "#E8E2CA"],
+    colors = ["#E0F2FE", "#FAF7E6", "#FFFFFF", "#F0F9FF", "#FDFCF0", "#FFFFFF"].reverse(),
     distortion = 0.8,
     swirl = 0.6,
     speed = 0.42,
     offsetX = 0.08,
     className = "",
-    veilOpacity = "bg-white/20 dark:bg-black/25",
+    veilOpacity = "bg-white/10",
 }: HeroSectionProps) {
     const [dimensions, setDimensions] = useState({ width: 1920, height: 1080 })
     const [mounted, setMounted] = useState(false)
