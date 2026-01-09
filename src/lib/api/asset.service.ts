@@ -128,11 +128,33 @@ class AssetService extends BaseService {
       }
 
       const responseData = await response.json();
-      const asset = responseData.data || responseData;
 
-      console.log('✅ Asset details received:', {
+      // Debug: Log full response structure
+      console.log('📦 Full API response:', JSON.stringify(responseData, null, 2));
+
+      // Extract asset from response (try different structures)
+      let asset = responseData.asset || responseData.data || responseData;
+
+      // Debug: Log extracted asset
+      console.log('📋 Extracted asset:', {
+        assetId: asset?.assetId,
+        hasMetadata: !!asset?.metadata,
+        dueDate: asset?.metadata?.dueDate,
+        metadataKeys: asset?.metadata ? Object.keys(asset.metadata) : [],
+      });
+
+      // Validate asset has required fields
+      if (!asset || !asset.metadata) {
+        throw new Error('Invalid asset response: Missing metadata object');
+      }
+
+      if (!asset.metadata.dueDate) {
+        throw new Error(`Invalid asset response: Missing dueDate in metadata. Metadata keys: ${Object.keys(asset.metadata).join(', ')}`);
+      }
+
+      console.log('✅ Asset details validated:', {
         assetId: asset.assetId,
-        dueDate: asset.metadata?.dueDate,
+        dueDate: asset.metadata.dueDate,
         status: asset.status,
       });
 
@@ -153,6 +175,7 @@ class AssetService extends BaseService {
    */
   calculateLoanDuration(asset: IssuerAsset): number {
     if (!asset.metadata?.dueDate) {
+      console.error('❌ Asset metadata missing dueDate:', asset.metadata?.dueDate);
       throw new Error('Asset does not have a maturity date. Cannot calculate loan duration.');
     }
 

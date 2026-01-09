@@ -26,6 +26,7 @@ export function adaptCreditResponse(
     const valueUSD = parseInt(line.creditLimit) / 1_000_000; // Credit limit is based on collateral value
 
     return {
+      positionId: line.solvencyPositionId, // Include the position ID for selection
       tokenAddress: line.collateralToken,
       tokenSymbol: 'UNKNOWN', // Backend doesn't return this, need to fetch from assets
       tokenName: 'UNKNOWN',

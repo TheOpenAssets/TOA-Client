@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { X, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
+import { assetService } from '../../../lib/api/asset.service';
 import { type OAIDCreditLine } from '../../../types/solvency.types';
+import type { IssuerAsset } from '../../../types/issuer.types';
 import { formatUSD } from '../../../utils/solvency/format-credit.util';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -19,8 +22,10 @@ interface BorrowOnlyModalProps {
 export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: BorrowOnlyModalProps) => {
   const [borrowAmount, setBorrowAmount] = useState('');
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
+  const [installments, setInstallments] = useState<number>(12);
   const [isBorrowing, setIsBorrowing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<IssuerAsset | null>(null);
 
   const availableCredit = creditData?.availableCredit ?? 0;
   const positions = creditData?.collateral ?? [];
@@ -28,27 +33,72 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
   // Reset state on open/close
   useEffect(() => {
     if (isOpen) {
-      // Pre-select the first position if available
       if (positions.length > 0 && !selectedPositionId) {
         setSelectedPositionId(String(positions[0].positionId));
       }
     } else {
       setBorrowAmount('');
       setSelectedPositionId(null);
+      setInstallments(12);
       setIsBorrowing(false);
       setError(null);
+      setSelectedAsset(null);
     }
   }, [isOpen, positions, selectedPositionId]);
+
+  // Fetch asset details when position changes
+  useEffect(() => {
+    const fetchAssetDetails = async () => {
+      if (selectedPositionId) {
+        const position = positions.find(p => String(p.positionId) === selectedPositionId);
+        if (position) {
+          try {
+            const assetDetails = await assetService.getAssetByTokenAddress(position.tokenAddress);
+            setSelectedAsset(assetDetails);
+          } catch (err) {
+            console.error("Failed to fetch asset details:", err);
+            setError("Could not load asset details for the selected position.");
+            setSelectedAsset(null);
+          }
+        }
+      } else {
+        setSelectedAsset(null);
+      }
+    };
+    fetchAssetDetails();
+  }, [selectedPositionId, positions]);
+
+  // Validate installment period against asset maturity
+  const { loanDuration, installmentError } = useMemo(() => {
+    if (!selectedAsset) {
+      return { loanDuration: 0, installmentError: null };
+    }
+    try {
+      const maxDuration = assetService.calculateLoanDuration(selectedAsset);
+      // Assuming monthly installments for this check
+      const requestedDuration = installments * 30 * 86400; 
+
+      if (requestedDuration > maxDuration) {
+        return { 
+          loanDuration: maxDuration, 
+          installmentError: `Too many installments. The loan must be repaid within ${Math.floor(maxDuration / 86400)} days.` 
+        };
+      }
+      return { loanDuration: maxDuration, installmentError: null };
+    } catch (err: any) {
+      return { loanDuration: 0, installmentError: err.message };
+    }
+  }, [selectedAsset, installments]);
 
   // Derived state for validation
   const isAmountInvalid = useMemo(() => {
     const amount = parseFloat(borrowAmount);
     if (isNaN(amount) || amount <= 0) return true;
-    return amount > availableCredit / 1e6; // availableCredit is in 1e6 format
+    return amount  > availableCredit;
   }, [borrowAmount, availableCredit]);
 
   const handleBorrow = async () => {
-    if (!selectedPositionId || isAmountInvalid || !borrowAmount) return;
+    if (!selectedPositionId || isAmountInvalid || !borrowAmount || installmentError) return;
 
     setIsBorrowing(true);
     setError(null);
@@ -56,7 +106,9 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
       const amountWei = ethers.parseUnits(borrowAmount, 6);
       const borrowResult = await solvencyContractService.borrowUSDC(
         parseInt(selectedPositionId),
-        amountWei
+        amountWei,
+        loanDuration,
+        installments
       );
 
       if (!borrowResult.success) {
@@ -89,41 +141,65 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
           </Button>
         </div>
 
-        <div className="space-y-6">
-          {/* Available Credit Display */}
+        <div className="space-y-4">
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <p className="text-sm text-gray-600 mb-1">Available to Borrow</p>
             <p className="text-4xl font-bold text-gray-900">{formatUSD(availableCredit)}</p>
           </div>
 
-          {/* Position Selector */}
           <div>
             <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-1">
               Borrow Against Position
             </label>
             <Select
               value={selectedPositionId ?? ''}
-              onValueChange={setSelectedPositionId}
+              onValueChange={(value) => setSelectedPositionId(value)}
               disabled={isBorrowing}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a position..." />
+              <SelectTrigger className="w-full h-12 px-4 bg-white border-2 border-gray-300 rounded-lg hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
+              <span className="text-gray-900 font-medium">
+                {selectedPositionId ? `Position #${selectedPositionId}` : 'Select a position...'}
+              </span>
+              <SelectValue className="sr-only" />
               </SelectTrigger>
-              <SelectContent>
-                {positions.length > 0 ? (
-                  positions.map(p => (
-                    <SelectItem key={p.positionId} value={String(p.positionId)}>
-                      Position #{p.positionId} ({p.tokenSymbol}) - {formatUSD(p.valueUSD)} Collateral
-                    </SelectItem>
-                  ))
-                ) : (
-                  <div className="px-4 py-2 text-sm text-gray-500">No positions available to borrow against.</div>
-                )}
+              <SelectContent className="bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-[300px] overflow-y-auto z-50">
+              {positions.length > 0 ? (
+                positions.map((position, index) => {
+                const posId = position.positionId ? String(position.positionId) : String(index);
+                const tokenAddr = position.tokenAddress ?? '';
+                const tokenSymbol= position.tokenSymbol ?? 'token';
+                const valueUSD= position.valueUSD ?? 0;
+                const shortAddr = tokenAddr ? `${tokenAddr.slice(0, 6)}...${tokenAddr.slice(-4)}` : 'Unknown token';
+                return (
+                  <SelectItem
+                  key={posId}
+                  value={posId}
+                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                  >
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500">{shortAddr}</span>
+                    <span className="font-medium text-gray-900"> $ {valueUSD}</span>
+                  </div>
+                  </SelectItem>
+                );
+                })
+              ) : (
+                <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                No positions available to borrow against.
+                </div>
+              )}
               </SelectContent>
             </Select>
+            {selectedPositionId && (
+              <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <p className="text-xs font-medium text-blue-700">
+                  Selected: Position #{selectedPositionId}
+                </p>
+              </div>
+            )}
           </div>
           
-          {/* Amount Input */}
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
               Borrow Amount
@@ -152,7 +228,28 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
             )}
           </div>
 
-          {/* Error Display */}
+          <div>
+            <label htmlFor="installments" className="block text-sm font-medium text-gray-700 mb-1">
+              Number of Installments
+            </label>
+            <Input
+              id="installments"
+              type="number"
+              value={installments}
+              onChange={(e) => setInstallments(parseInt(e.target.value, 10) || 1)}
+              placeholder="e.g., 12"
+              className="text-lg"
+              disabled={isBorrowing || !selectedAsset}
+              min="1"
+            />
+             {installmentError && (
+              <p className="mt-2 text-sm text-yellow-600">{installmentError}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Choose how many payments you want to make.
+            </p>
+          </div>
+
           {error && (
             <div className="bg-red-50 text-red-700 p-3 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-5 h-5" />
@@ -160,10 +257,9 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
             </div>
           )}
 
-          {/* Action Button */}
           <Button
             onClick={handleBorrow}
-            disabled={isBorrowing || isAmountInvalid || !selectedPositionId || !borrowAmount}
+            disabled={isBorrowing || isAmountInvalid || !selectedPositionId || !borrowAmount || !!installmentError}
             className="w-full text-lg py-6"
           >
             {isBorrowing ? (

@@ -9,23 +9,26 @@
 import { ethers } from 'ethers';
 
 // Contract addresses from environment
-const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '0x0849B8d12Ac2a7Fcab4FAe8a46154e9778579493';
+const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '0x3b3d70Fe12076f30E9999Fd65feC6C6DeB47B5eF';
 const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
 
 // Solvency Vault ABI - ✅ VERIFIED from deposit-to-vaultsolvency.js lines 115-121
+// Updated borrowUSDC to include loanDuration and numberOfInstallments per COMPLETE_LOAN.md
 const SOLVENCY_VAULT_ABI = [
   // Write functions
   'function depositCollateral(address collateralToken, uint256 collateralAmount, uint256 tokenValueUSD, uint8 tokenType, bool issueOAID) external returns (uint256 positionId)',
-  'function borrowUSDC(uint256 positionId, uint256 amount) external',
+  'function borrowUSDC(uint256 positionId, uint256 amount, uint256 loanDuration, uint256 numberOfInstallments) external returns (uint256 loanId)',
   'function repayLoan(uint256 positionId, uint256 amount) external',
   'function withdrawCollateral(uint256 positionId, uint256 amount) external',
 
   // Read functions
   'function positions(uint256) view returns (address user, address collateralToken, uint256 collateralAmount, uint256 usdcBorrowed, uint256 tokenValueUSD, uint256 createdAt, bool active, uint8 tokenType)',
+  'function seniorPool() view returns (address)',
 
   // Events
   'event PositionCreated(uint256 indexed positionId, address indexed user, address collateralToken, uint256 collateralAmount, uint256 tokenValueUSD, uint8 tokenType)',
   'event USDCBorrowed(uint256 indexed positionId, uint256 amount, uint256 totalDebt)',
+  'event RepaymentPlanCreated(uint256 indexed positionId, uint256 loanDuration, uint256 numberOfInstallments, uint256 installmentInterval)',
 ];
 
 // ERC20 Token ABI
@@ -43,6 +46,15 @@ const USDC_ABI = [
   'function allowance(address owner, address spender) view returns (uint256)',
   'function balanceOf(address account) view returns (uint256)',
   'function decimals() view returns (uint8)',
+];
+
+// SeniorPool ABI - For repayment flow per COMPLETE_LOAN.md
+const SENIOR_POOL_ABI = [
+  'function repayLoan(uint256 positionId, uint256 amount) external',
+  'function outstandingDebt(uint256 positionId) view returns (uint256)',
+
+  // Events
+  'event LoanRepaid(uint256 indexed positionId, uint256 amountPaid, uint256 principal, uint256 interest, uint256 remainingDebt)',
 ];
 
 export interface TransactionResult {
@@ -109,6 +121,16 @@ class SolvencyContractService {
   private async getUSDCContract() {
     const { signer } = await this.getProviderAndSigner();
     return new ethers.Contract(USDC_CONTRACT_ADDRESS, USDC_ABI, signer);
+  }
+
+  /**
+   * Get SeniorPool contract instance
+   * Per COMPLETE_LOAN.md: Repayments go directly to SeniorPool, not Vault
+   */
+  private async getSeniorPoolContract() {
+    const { signer } = await this.getProviderAndSigner();
+    const seniorPoolAddress = await this.getSeniorPoolAddress();
+    return new ethers.Contract(seniorPoolAddress, SENIOR_POOL_ABI, signer);
   }
 
   // ============================================
@@ -210,6 +232,22 @@ class SolvencyContractService {
     } catch (error: any) {
       console.error('❌ Error getting token symbol:', error);
       throw new Error(`Failed to get token symbol: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get SeniorPool address from vault
+   * Required for repayment flow per COMPLETE_LOAN.md
+   */
+  async getSeniorPoolAddress(): Promise<string> {
+    try {
+      const vault = await this.getVaultContract();
+      const seniorPoolAddress = await vault.seniorPool();
+      console.log(`   SeniorPool address: ${seniorPoolAddress}`);
+      return seniorPoolAddress;
+    } catch (error: any) {
+      console.error('❌ Error getting SeniorPool address:', error);
+      throw new Error(`Failed to get SeniorPool address: ${error.message}`);
     }
   }
 
@@ -358,24 +396,35 @@ class SolvencyContractService {
   /**
    * Borrow USDC from vault
    *
-   * ✅ VERIFIED: Based on deposit-to-vaultsolvency.js lines 258-302
+   * ✅ UPDATED: Based on COMPLETE_LOAN.md - Now includes loanDuration and numberOfInstallments
    *
    * @param positionId - Position ID to borrow against
    * @param amount - USDC amount in wei (6 decimals)
+   * @param loanDuration - Loan duration in seconds (calculated from asset maturity)
+   * @param numberOfInstallments - Number of repayment installments (e.g., 6, 12)
    * @returns Transaction result
    */
-  async borrowUSDC(positionId: number, amount: bigint): Promise<TransactionResult> {
+  async borrowUSDC(
+    positionId: number,
+    amount: bigint,
+    loanDuration: number,
+    numberOfInstallments: number
+  ): Promise<TransactionResult> {
     try {
       console.log('💸 Borrowing USDC:', {
         positionId,
         amount: amount.toString(),
+        loanDuration,
+        numberOfInstallments,
       });
 
       const vault = await this.getVaultContract();
 
       console.log(`   Borrowing $${ethers.formatUnits(amount, 6)} USDC from SeniorPool...`);
+      console.log(`   Loan Duration: ${loanDuration} seconds (~${Math.floor(loanDuration / 86400)} days)`);
+      console.log(`   Installments: ${numberOfInstallments}`);
 
-      const tx = await vault.borrowUSDC(positionId, amount);
+      const tx = await vault.borrowUSDC(positionId, amount, loanDuration, numberOfInstallments);
 
       console.log(`   Transaction submitted: ${tx.hash}`);
       console.log('⏳ Waiting for confirmation...');
@@ -397,7 +446,9 @@ class SolvencyContractService {
             totalDebt = parsed.args.totalDebt;
             console.log(`✅ Borrowed: $${ethers.formatUnits(borrowed, 6)} USDC`);
             console.log(`   Total Debt: $${ethers.formatUnits(totalDebt, 6)} USDC`);
-            break;
+          }
+          if (parsed && parsed.name === 'RepaymentPlanCreated') {
+            console.log(`✅ Repayment Plan Created: ${numberOfInstallments} installments`);
           }
         } catch (e) {
           // Skip non-matching logs
@@ -521,6 +572,120 @@ class SolvencyContractService {
       return {
         success: false,
         error: error.message || 'USDC approval failed',
+      };
+    }
+  }
+
+  /**
+   * Approve USDC for SeniorPool contract
+   * Per COMPLETE_LOAN.md: Repayments require approval to SeniorPool, not Vault
+   */
+  async approveUSDCForSeniorPool(amount: bigint): Promise<TransactionResult> {
+    try {
+      console.log('🔓 Approving USDC for SeniorPool:', amount.toString());
+
+      const seniorPoolAddress = await this.getSeniorPoolAddress();
+      const usdc = await this.getUSDCContract();
+
+      // Check current allowance
+      const { signer } = await this.getProviderAndSigner();
+      const userAddress = await signer.getAddress();
+      const currentAllowance = await usdc.allowance(userAddress, seniorPoolAddress);
+
+      console.log(`   Current allowance: ${ethers.formatUnits(currentAllowance, 6)} USDC`);
+
+      if (currentAllowance >= amount) {
+        console.log('✅ Sufficient allowance already granted');
+        return {
+          success: true,
+          txHash: '',
+          blockNumber: 0,
+        };
+      }
+
+      const tx = await usdc.approve(seniorPoolAddress, amount);
+
+      console.log('⏳ Waiting for USDC approval confirmation...', tx.hash);
+      const receipt = await tx.wait();
+
+      console.log('✅ USDC approved for SeniorPool successfully!', receipt.hash);
+      return {
+        success: true,
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error: any) {
+      console.error('❌ USDC approval for SeniorPool failed:', error);
+      return {
+        success: false,
+        error: error.message || 'USDC approval for SeniorPool failed',
+      };
+    }
+  }
+
+  /**
+   * Repay loan through SeniorPool
+   * Per COMPLETE_LOAN.md: Direct call to SeniorPool.repayLoan(), not Vault
+   *
+   * @param positionId - Position ID to repay
+   * @param amount - USDC amount to repay (6 decimals)
+   * @returns Transaction result
+   */
+  async repayLoanViaSeniorPool(positionId: number, amount: bigint): Promise<TransactionResult> {
+    try {
+      console.log('💵 Repaying loan via SeniorPool:', {
+        positionId,
+        amount: amount.toString(),
+      });
+
+      const seniorPool = await this.getSeniorPoolContract();
+
+      console.log(`   Repaying $${ethers.formatUnits(amount, 6)} USDC to SeniorPool...`);
+
+      const tx = await seniorPool.repayLoan(positionId, amount);
+
+      console.log(`   Transaction submitted: ${tx.hash}`);
+      console.log('⏳ Waiting for repayment confirmation...');
+
+      const receipt = await tx.wait();
+      console.log(`✅ Repayment confirmed in block ${receipt.blockNumber}`);
+
+      // Parse LoanRepaid event
+      for (const log of receipt.logs) {
+        try {
+          const parsed = seniorPool.interface.parseLog({
+            topics: log.topics as string[],
+            data: log.data
+          });
+          if (parsed && parsed.name === 'LoanRepaid') {
+            const amountPaid = parsed.args.amountPaid;
+            const principal = parsed.args.principal;
+            const interest = parsed.args.interest;
+            const remainingDebt = parsed.args.remainingDebt;
+            console.log(`✅ Loan Repaid:`);
+            console.log(`   Amount Paid: $${ethers.formatUnits(amountPaid, 6)} USDC`);
+            console.log(`   Principal: $${ethers.formatUnits(principal, 6)} USDC`);
+            console.log(`   Interest: $${ethers.formatUnits(interest, 6)} USDC`);
+            console.log(`   Remaining Debt: $${ethers.formatUnits(remainingDebt, 6)} USDC`);
+            break;
+          }
+        } catch (e) {
+          // Skip non-matching logs
+        }
+      }
+
+      console.log(`   Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+
+      return {
+        success: true,
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+      };
+    } catch (error: any) {
+      console.error('❌ Repayment via SeniorPool failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Repayment via SeniorPool failed',
       };
     }
   }

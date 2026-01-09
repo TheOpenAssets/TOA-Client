@@ -15,6 +15,7 @@ import OperationsViewPage from '../../pages/admin/operations/OperationsView.page
 import PayoutViewPage from '../../pages/admin/payout/PayoutView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
 import ListingsPage from '../../pages/admin/listings/Listings.page';
+import { LoansView } from '../../pages/admin/loans/LoansView.page';
 
 
 
@@ -120,6 +121,10 @@ export const publicRoutes: RouteObject[] = [
       {
         path: 'listings',
         element: <ListingsPage />,
+      },
+      {
+        path: 'loans',
+        element: <LoansView />,
       },
       {
         path: 'compliance',

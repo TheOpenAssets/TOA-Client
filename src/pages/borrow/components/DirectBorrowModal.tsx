@@ -16,6 +16,7 @@ import { ethers } from 'ethers';
 import { X, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
+import { assetService } from '../../../lib/api/asset.service';
 import { HealthFactorBar } from './HealthFactorBar';
 import type { Position } from '../../../types/solvency.types';
 
@@ -106,17 +107,31 @@ export const DirectBorrowModal = ({
       // Convert amount to wei (6 decimals for USDC)
       const amountWei = ethers.parseUnits(borrowAmount, 6);
 
-      // Step 1: Borrow USDC from vault
+      // Step 1: Fetch asset details to calculate loan duration
+      // Per COMPLETE_LOAN.md: GET /assets/token/:tokenAddress to get maturity date
+      const asset = await assetService.getAssetByTokenAddress(position.collateralToken.address);
+
+      // Step 2: Calculate loan duration from asset maturity date
+      const loanDuration = assetService.calculateLoanDuration(asset);
+
+      // Step 3: Set number of installments (standard is 12 per docs)
+      const numberOfInstallments = 12;
+
+      // Step 4: Borrow USDC from vault
       setStep('borrowing');
       console.log('📝 Borrowing USDC from vault:', {
         positionId: position.positionId,
         amount: borrowAmount,
         amountWei: amountWei.toString(),
+        loanDuration,
+        numberOfInstallments,
       });
 
       const borrowResult = await solvencyContractService.borrowUSDC(
         position.positionId,
-        amountWei
+        amountWei,
+        loanDuration,
+        numberOfInstallments
       );
 
       if (!borrowResult.success) {
@@ -126,17 +141,21 @@ export const DirectBorrowModal = ({
       console.log('✅ Borrow successful:', borrowResult.txHash);
       setTxHash(borrowResult.txHash!);
 
-      // Step 2: Sync position with backend (MANDATORY)
+      // Step 5: Sync position with backend
       setStep('syncing');
       console.log('🔄 Syncing position with backend...');
 
-      await solvencyService.syncPosition({
-        positionId: position.positionId.toString(),
-        txHash: borrowResult.txHash!,
-        blockNumber: borrowResult.blockNumber!,
-      });
-
-      console.log('✅ Position synced successfully');
+      try {
+        await solvencyService.syncPosition({
+          positionId: position.positionId.toString(),
+          txHash: borrowResult.txHash!,
+          blockNumber: borrowResult.blockNumber!,
+        });
+        console.log('✅ Position synced with backend');
+      } catch (syncError) {
+        // Non-blocking: Events will still sync it automatically
+        console.warn('⚠️ Manual sync failed (events will auto-sync):', syncError);
+      }
 
       // Success!
       setStep('success');

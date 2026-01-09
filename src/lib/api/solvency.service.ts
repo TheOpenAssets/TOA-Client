@@ -380,8 +380,300 @@ class SolvencyService extends BaseService {
     }
   }
 
+  // ============================================
+  // ADMIN ENDPOINTS
+  // ============================================
+
   /**
-   * Admin: Get all loans for monitoring
+   * Admin: Get all positions
+   *
+   * ✅ ENDPOINT: GET /admin/solvency/positions
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async getAllPositions(): Promise<{ positions: Position[] }> {
+    try {
+      console.log('🔍 Fetching all positions (admin)...');
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/positions`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch all positions');
+      }
+
+      const data = await response.json();
+      console.log('✅ All positions received:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching all positions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Get liquidatable positions
+   *
+   * ✅ ENDPOINT: GET /admin/solvency/liquidatable
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async getLiquidatablePositions(): Promise<{ positions: Position[] }> {
+    try {
+      console.log('⚠️ Fetching liquidatable positions (admin)...');
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/liquidatable`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch liquidatable positions');
+      }
+
+      const data = await response.json();
+      console.log('✅ Liquidatable positions received:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching liquidatable positions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Get positions with warnings
+   *
+   * ✅ ENDPOINT: GET /admin/solvency/warnings
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async getPositionsWithWarnings(): Promise<{ positions: Position[] }> {
+    try {
+      console.log('⚠️ Fetching positions with warnings (admin)...');
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/warnings`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch positions with warnings');
+      }
+
+      const data = await response.json();
+      console.log('✅ Positions with warnings received:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching positions with warnings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Manually sync a position
+   *
+   * ✅ ENDPOINT: POST /admin/solvency/position/:id/sync
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async adminSyncPosition(positionId: number): Promise<{ position: Position }> {
+    try {
+      console.log(`🔄 Manually syncing position ${positionId} (admin)...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/position/${positionId}/sync`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        },
+        60000 // 60 second timeout
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to sync position');
+      }
+
+      const data = await response.json();
+      console.log('✅ Position synced:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error syncing position:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Mark payment as missed
+   *
+   * ✅ ENDPOINT: POST /admin/solvency/position/:id/mark-missed-payment
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async markMissedPayment(positionId: number): Promise<{
+    success: boolean;
+    message: string;
+    txHash: string;
+    positionId: number;
+  }> {
+    try {
+      console.log(`⚠️ Marking missed payment for position ${positionId} (admin)...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/position/${positionId}/mark-missed-payment`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to mark missed payment');
+      }
+
+      const data = await response.json();
+      console.log('✅ Missed payment marked:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error marking missed payment:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Mark position as defaulted
+   *
+   * ✅ ENDPOINT: POST /admin/solvency/position/:id/mark-defaulted
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async markDefaulted(positionId: number): Promise<{
+    success: boolean;
+    message: string;
+    txHash: string;
+    positionId: number;
+  }> {
+    try {
+      console.log(`⚠️ Marking position ${positionId} as defaulted (admin)...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/position/${positionId}/mark-defaulted`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to mark as defaulted');
+      }
+
+      const data = await response.json();
+      console.log('✅ Position marked as defaulted:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error marking as defaulted:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Liquidate a position
+   *
+   * ✅ ENDPOINT: POST /admin/solvency/liquidate/:id
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async liquidatePosition(positionId: number): Promise<{
+    success: boolean;
+    message?: string;
+    txHash: string;
+    blockNumber: number;
+    marketplaceAssetId: string;
+    discountedPrice: string;
+    position: Position;
+  }> {
+    try {
+      console.log(`⚠️ Liquidating position ${positionId}...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/liquidate/${positionId}`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to liquidate position');
+      }
+
+      const data = await response.json();
+      console.log('✅ Position liquidated:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error liquidating position:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Settle liquidation
+   *
+   * ✅ ENDPOINT: POST /admin/solvency/position/:id/settle-liquidation
+   * Reference: FRONTEND_INTEGRATION_GUIDE.md
+   */
+  async settleLiquidation(positionId: number): Promise<{
+    success: boolean;
+    message: string;
+    txHash: string;
+    positionId: number;
+    yieldReceived: string;
+    debtRepaid: string;
+    liquidationFee: string;
+    userRefund: string;
+  }> {
+    try {
+      console.log(`💰 Settling liquidation for position ${positionId} (admin)...`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/admin/solvency/position/${positionId}/settle-liquidation`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to settle liquidation');
+      }
+
+      const data = await response.json();
+      console.log('✅ Liquidation settled:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error settling liquidation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin: Get all loans for monitoring (Legacy endpoint)
    *
    * ✅ ENDPOINT: GET /admin/solvency/loans
    * Reference: Specification Section 9 - Admin Flow
@@ -418,43 +710,6 @@ class SolvencyService extends BaseService {
       return data;
     } catch (error: any) {
       console.error('❌ Error fetching admin loans:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Admin: Liquidate a position
-   *
-   * ✅ ENDPOINT: POST /admin/solvency/liquidate/:positionId
-   * Reference: Specification Section 10 - Admin Liquidation
-   */
-  async liquidatePosition(positionId: number): Promise<{
-    success: boolean;
-    message: string;
-    txHash?: string;
-  }> {
-    try {
-      console.log(`⚠️ Liquidating position ${positionId}...`);
-
-      const response = await this.fetchWithTimeout(
-        `${this.baseURL}/admin/solvency/liquidate/${positionId}`,
-        {
-          method: 'POST',
-          headers: this.getAuthHeaders(),
-        },
-        120000 // 2 minute timeout for blockchain tx
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to liquidate position');
-      }
-
-      const data = await response.json();
-      console.log('✅ Position liquidated:', data);
-      return data;
-    } catch (error: any) {
-      console.error('❌ Error liquidating position:', error);
       throw error;
     }
   }

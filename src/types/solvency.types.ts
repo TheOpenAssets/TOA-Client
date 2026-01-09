@@ -22,6 +22,7 @@ export interface OAIDCreditLine {
 }
 
 export interface CollateralPosition {
+  positionId?: number; // Optional position ID from backend
   tokenAddress: string;
   tokenSymbol: string;
   tokenName: string;
@@ -278,9 +279,11 @@ export interface Position {
   usdcBorrowed: string;       // e.g., "50000000000" (6 decimals)
   outstandingDebt: string;    // e.g., "50041100000" (6 decimals)
   healthFactor: number;       // e.g., 15300 (representing 153.00%)
-  healthStatus: string;       // "HEALTHY", "WARNING", "CRITICAL"
-  status: string;             // "ACTIVE", "CLOSED"
+  healthStatus: string;       // "HEALTHY", "WARNING", "CRITICAL", "LIQUIDATABLE"
+  status: string;             // "ACTIVE", "CLOSED", "LIQUIDATED", "SETTLED", "REPAID"
   maxBorrowCapacity: string;  // e.g., "53550000000" (6 decimals)
+  missedPayments?: number;    // Number of missed payments (0-3)
+  isDefaulted?: boolean;      // Whether position has been marked as defaulted
   createdAt: string;
 }
 
