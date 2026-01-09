@@ -5,13 +5,16 @@ import Navbar from "./Navbar.page";
 import Footer from "./Footer.page";
 import FeaturePage from "./FeaturePage";
 import FadeIn from "../../components/ui/fadein"; // Adjust path as needed
+import { Wavy } from "../../components/ui/wavy";
 
 
 const HomePage = () => {
   return (
-    <main className="overflow-y-scroll snap-y snap-mandatory overflow-x-hidden h-screen">
+    <>
+      <Wavy />
+    <main className="absolute top-0 left-0 snap-y snap-mandatory overflow-x-hidden h-screen w-screen">
       {/* SECTION 1: HERO */}
-      <div className="snap-start min-h-screen">
+      <div className="snap-start min-h-screen z-20">
         {/* Background & Nav usually shouldn't fade in/out on scroll, they are structural */}
         <Navbar />
 
@@ -39,6 +42,7 @@ const HomePage = () => {
         </FadeIn>
       </div>
     </main>
+    </>
   );
 };
 
