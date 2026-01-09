@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
 import { UnifiedBorrowModal } from './components/UnifiedBorrowModal';
@@ -7,16 +7,22 @@ import { useCreditData } from './hooks/useCreditData';
 import { formatUSD } from '../../utils/solvency/format-credit.util';
 import { Button } from '../../components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { NotificationBell } from '../../components/notifications/NotificationBell';
+import { authService } from '../../lib/api/auth.service';
 
 const BorrowPage = () => {
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const navigate = useNavigate();
-
-  const [showBorrowModal, setShowBorrowModal] = useState(false);
 
   const { creditData, isLoading: isCreditLoading, refetch: refetchCredit } = useCreditData(address);
 
   const availableCredit = creditData?.availableCredit ?? 0;
+  const handlelogout = () => {
+      authService.logout();
+      disconnect();
+      navigate('/'); // Redirect to home or login page after logout
+    };
 
   useEffect(() => {
     if (isConnected) {
@@ -24,22 +30,97 @@ const BorrowPage = () => {
     }
   }, [isConnected, refetchCredit]);
 
+  const truncateAddress = (address: string): string => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
+    <div className="min-h-screen ">
       {/* Navbar */}
-      <div className="relative z-50 border-b border-gray-200 bg-white/50 backdrop-blur-sm">
+      <div className="relative z-50  bg-white/50 backdrop-blur-sm">
         <div className="max-w-[1400px] mx-auto px-6">
-          <Navbar />
+          <header className="w-full flex flex-row z-40 mt-2 mb-1">
+                 {/* Logo */}
+                 <img
+                   src="./ALogo-removebg-preview.svg"
+                   alt="Logo"
+                   className="h-16 w-auto object-contain cursor-pointer"
+                   onClick={() => navigate('/')}
+                 />
+                 <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
+         
+                   {/* Center: Navigation */}
+                   <nav className="flex items-center gap-4">
+                     <button
+                       onClick={() => navigate('/portfolio')}
+                       className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                     >
+                       Portfolio
+                     </button>
+                     <div className='relative group'>
+                       <button
+                       className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
+                       >
+                       Trade
+                       </button>
+                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
+                       Coming Soon
+                       </div>
+                     </div>
+                     <div className='relative group'>
+                       <button
+                         className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed"
+                       >
+                         Borrow
+                       </button>
+                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
+                         Coming Soon
+                       </div>
+                     </div>
+                   </nav>
+         
+                   {/* Right: Auth / Wallet Display */}
+                   <div className="flex items-center gap-3">
+                     {isConnected && address && (
+                       <NotificationBell role="INVESTOR" />
+                     )}
+                     {isConnected && address ? (
+                       <>
+                         <div className="px-6 py-2 bg-white rounded-lg font-mono text-sm font-medium text-foreground">
+                           {truncateAddress(address)}
+                         </div>
+                         <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-40">
+                           <button className='ml-2 px-4 py-2 bg-gray-900 text-white rounded-lg font-gellix text-sm font-medium hover:bg-black transition-colors hover:scale-[1.02]' onClick={handlelogout}>
+                             Logout
+                           </button>
+                         </div>
+                       </>
+         
+         
+                     ) : (
+                       <button
+                         onClick={() => navigate('/auth')}
+                         className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+                       >
+                         Sign Up / Log In
+                       </button>
+                     )}
+                   </div>
+                 </div>
+         
+               </header>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-[1400px] mx-auto px-8 py-16">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl font-bold text-[#111111] tracking-tight mb-3">
-            Borrow USDC
+          <h1 className="text-4xl font-gellix text-[#111111] tracking-tight mb-3">
+           Borrow USDC
           </h1>
-          <p className="text-lg text-[#6B7280] mb-8">
+          <p className="text-lg text-[#6B7280] mb-8 font-beau">
             Borrow against your existing credit line.
           </p>
 
@@ -53,17 +134,16 @@ const BorrowPage = () => {
               <p className="text-[#6B7280] mt-2">Please connect your wallet to view your borrowing options.</p>
             </div>
           ) : availableCredit > 0 ? (
-            <div className="bg-white rounded-[24px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-              <p className="text-sm text-[#6B7280]">Available to Borrow</p>
-              <p className="text-6xl font-bold text-[#111111] my-4">{formatUSD(availableCredit)}</p>
-              <Button
-                onClick={() => setShowBorrowModal(true)}
-                size="lg"
-                className="text-lg py-7 px-8 rounded-[16px]"
-              >
-                Borrow Now
-              </Button>
-            </div>
+            /* Show Borrow Interface Directly */
+            <UnifiedBorrowModal
+              isOpen={true}
+              onClose={() => {}}
+              onSuccess={() => {
+                refetchCredit();
+                navigate('/portfolio?tab=loans');
+              }}
+              creditData={creditData}
+            />
           ) : (
             <div className="bg-white rounded-[24px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
               <div className="max-w-md mx-auto">
@@ -93,17 +173,6 @@ const BorrowPage = () => {
           )}
         </div>
       </div>
-
-      <UnifiedBorrowModal
-        isOpen={showBorrowModal}
-        onClose={() => setShowBorrowModal(false)}
-        onSuccess={() => {
-          setShowBorrowModal(false);
-          refetchCredit();
-          navigate('/portfolio?tab=loans');
-        }}
-        creditData={creditData}
-      />
     </div>
   );
 };

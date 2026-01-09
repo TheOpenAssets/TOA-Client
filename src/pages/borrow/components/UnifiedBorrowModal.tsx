@@ -1,15 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
-import { X, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { X, ArrowDown, ChevronDown, Search, Loader2 } from 'lucide-react';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import { assetService } from '../../../lib/api/asset.service';
-import { type OAIDCreditLine } from '../../../types/solvency.types';
+import { type OAIDCreditLine, type CollateralPosition } from '../../../types/solvency.types';
 import type { IssuerAsset } from '../../../types/issuer.types';
-import { formatUSD } from '../../../utils/solvency/format-credit.util';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { formatCollateralAmount } from '../../../utils/solvency/formatters';
 
 interface BorrowOnlyModalProps {
   isOpen: boolean;
@@ -20,8 +17,10 @@ interface BorrowOnlyModalProps {
 
 export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: BorrowOnlyModalProps) => {
   const [borrowAmount, setBorrowAmount] = useState('');
-  const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
-  const [installments, setInstallments] = useState<number>(12);
+  const [selectedPosition, setSelectedPosition] = useState<CollateralPosition | null>(null);
+  const [showPositionSelector, setShowPositionSelector] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [installments, setInstallments] = useState<number>(1);
   const [isBorrowing, setIsBorrowing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<IssuerAsset | null>(null);
@@ -29,58 +28,42 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
   const availableCredit = creditData?.availableCredit ?? 0;
   const positions = creditData?.collateral ?? [];
 
-  // Reset state on open/close
+  // Auto-select first position
   useEffect(() => {
-    if (isOpen) {
-      if (positions.length > 0 && !selectedPositionId) {
-        setSelectedPositionId(String(positions[0].positionId));
-      }
-    } else {
-      setBorrowAmount('');
-      setSelectedPositionId(null);
-      setInstallments(12);
-      setIsBorrowing(false);
-      setError(null);
-      setSelectedAsset(null);
+    if (isOpen && positions.length > 0 && !selectedPosition) {
+      setSelectedPosition(positions[0]);
     }
-  }, [isOpen, positions, selectedPositionId]);
+  }, [isOpen, positions, selectedPosition]);
 
   // Fetch asset details when position changes
   useEffect(() => {
     const fetchAssetDetails = async () => {
-      if (selectedPositionId) {
-        const position = positions.find(p => String(p.positionId) === selectedPositionId);
-        if (position) {
-          try {
-            const assetDetails = await assetService.getAssetByTokenAddress(position.tokenAddress);
-            setSelectedAsset(assetDetails);
-          } catch (err) {
-            console.error("Failed to fetch asset details:", err);
-            setError("Could not load asset details for the selected position.");
-            setSelectedAsset(null);
-          }
+      if (selectedPosition) {
+        try {
+          const assetDetails = await assetService.getAssetByTokenAddress(selectedPosition.tokenAddress);
+          setSelectedAsset(assetDetails);
+        } catch (err) {
+          console.error("Failed to fetch asset details:", err);
+          setSelectedAsset(null);
         }
-      } else {
-        setSelectedAsset(null);
       }
     };
     fetchAssetDetails();
-  }, [selectedPositionId, positions]);
+  }, [selectedPosition]);
 
-  // Validate installment period against asset maturity
+  // Validate installments
   const { loanDuration, installmentError } = useMemo(() => {
     if (!selectedAsset) {
       return { loanDuration: 0, installmentError: null };
     }
     try {
       const maxDuration = assetService.calculateLoanDuration(selectedAsset);
-      // Assuming monthly installments for this check
-      const requestedDuration = installments * 30 * 86400; 
+      const requestedDuration = installments * 30 * 86400;
 
       if (requestedDuration > maxDuration) {
-        return { 
-          loanDuration: maxDuration, 
-          installmentError: `Too many installments. The loan must be repaid within ${Math.floor(maxDuration / 86400)} days.` 
+        return {
+          loanDuration: maxDuration,
+          installmentError: `Max ${Math.floor(maxDuration / (30 * 86400))} monthly payments allowed`
         };
       }
       return { loanDuration: maxDuration, installmentError: null };
@@ -89,22 +72,38 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
     }
   }, [selectedAsset, installments]);
 
-  // Derived state for validation
+  // Filter positions
+  const filteredPositions = useMemo(() => {
+    if (!searchQuery) return positions;
+    const query = searchQuery.toLowerCase();
+    return positions.filter(p =>
+      p.tokenSymbol.toLowerCase().includes(query) ||
+      p.tokenAddress.toLowerCase().includes(query) ||
+      p.tokenName.toLowerCase().includes(query)
+    );
+  }, [positions, searchQuery]);
+
+  // Validation
   const isAmountInvalid = useMemo(() => {
     const amount = parseFloat(borrowAmount);
     if (isNaN(amount) || amount <= 0) return true;
-    return amount  > availableCredit;
+    return amount > availableCredit;
   }, [borrowAmount, availableCredit]);
 
+  const borrowAmountUSD = useMemo(() => {
+    const amount = parseFloat(borrowAmount);
+    return isNaN(amount) ? 0 : amount;
+  }, [borrowAmount]);
+
   const handleBorrow = async () => {
-    if (!selectedPositionId || isAmountInvalid || !borrowAmount || installmentError) return;
+    if (!selectedPosition || isAmountInvalid || !borrowAmount || installmentError) return;
 
     setIsBorrowing(true);
     setError(null);
     try {
       const amountWei = ethers.parseUnits(borrowAmount, 6);
       const borrowResult = await solvencyContractService.borrowUSDC(
-        parseInt(selectedPositionId),
+        selectedPosition.positionId ?? 0,
         amountWei,
         loanDuration,
         installments
@@ -115,161 +114,249 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
       }
 
       await solvencyService.syncPosition({
-        positionId: selectedPositionId,
+        positionId: String(selectedPosition.positionId),
         txHash: borrowResult.txHash!,
         blockNumber: borrowResult.blockNumber!,
       });
 
       onSuccess();
+      setBorrowAmount('');
     } catch (err: any) {
       setError(err.message || 'An error occurred while borrowing.');
     } finally {
       setIsBorrowing(false);
     }
   };
-  
+
+  const handlePositionSelect = (position: CollateralPosition) => {
+    setSelectedPosition(position);
+    setShowPositionSelector(false);
+    setSearchQuery('');
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="max-w-md w-full mx-4 bg-white rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Borrow USDC</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} disabled={isBorrowing}>
-            <X className="w-5 h-5 text-gray-500" />
-          </Button>
+    <>
+      {/* Main Borrow Interface - Clean Swap Style */}
+      <div className="w-full max-w-[480px] mx-auto">
+        {/* Collateral Section (Top - Like "Sell") */}
+        <div className="bg-white rounded-3xl p-6 shadow-lg mb-3">
+          <div className="flex items-start justify-between mb-3">
+            {/* Label */}
+            <span className="text-sm text-gray-500">Collateral Position</span>
+
+            {/* Token Selector - Right aligned */}
+            <button
+              onClick={() => setShowPositionSelector(true)}
+              disabled={isBorrowing}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 transition-colors rounded-full px-4 py-2"
+            >
+              {selectedPosition ? (
+                <>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+                    {selectedPosition.tokenSymbol.charAt(0)}
+                  </div>
+                  <span className="font-semibold text-gray-900">{selectedPosition.tokenSymbol}</span>
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                </>
+              ) : (
+                <>
+                  <span className="text-gray-600">Select</span>
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Large Amount Display */}
+          <div className="mb-1">
+            <div className="text-5xl font-light text-gray-900">
+              {selectedPosition ? formatCollateralAmount(selectedPosition.amount, 18).toFixed(2) : '0'}
+            </div>
+          </div>
+
+          {/* USD Value */}
+          <div className="text-sm text-gray-500">
+            ${selectedPosition ? selectedPosition.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">Available to Borrow</p>
-            <p className="text-4xl font-bold text-gray-900">{formatUSD(availableCredit)}</p>
+        {/* Arrow Separator */}
+        <div className="flex justify-center my-2">
+          <div className="w-10 h-10 flex items-center justify-center">
+            <ArrowDown className="w-6 h-6 text-gray-900" />
           </div>
+        </div>
 
-          <div>
-            <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-1">
-              Borrow Against Position
-            </label>
-            <Select
-              value={selectedPositionId ?? ''}
-              onValueChange={(value) => setSelectedPositionId(value)}
-              disabled={isBorrowing}
-            >
-              <SelectTrigger className="w-full h-12 px-4 bg-white border-2 border-gray-300 rounded-lg hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
-              <span className="text-gray-900 font-medium">
-                {selectedPositionId ? `Position #${selectedPositionId}` : 'Select a position...'}
-              </span>
-              <SelectValue className="sr-only" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-[300px] overflow-y-auto z-50">
-              {positions.length > 0 ? (
-                positions.map((position, index) => {
-                const posId = position.positionId ? String(position.positionId) : String(index);
-                const tokenAddr = position.tokenAddress ?? '';
-                const valueUSD= position.valueUSD ?? 0;
-                const shortAddr = tokenAddr ? `${tokenAddr.slice(0, 6)}...${tokenAddr.slice(-4)}` : 'Unknown token';
-                return (
-                  <SelectItem
-                  key={posId}
-                  value={posId}
-                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
-                  >
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">{shortAddr}</span>
-                    <span className="font-medium text-gray-900"> $ {valueUSD}</span>
-                  </div>
-                  </SelectItem>
-                );
-                })
-              ) : (
-                <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                No positions available to borrow against.
-                </div>
-              )}
-              </SelectContent>
-            </Select>
-            {selectedPositionId && (
-              <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <p className="text-xs font-medium text-blue-700">
-                  Selected: Position #{selectedPositionId}
-                </p>
+        {/* Borrow Section (Bottom - Like "Buy") */}
+        <div className="bg-white rounded-3xl p-6 shadow-lg mb-3">
+          <div className="flex items-start justify-between mb-3">
+            {/* Label */}
+            <span className="text-sm text-gray-500">Borrow</span>
+
+            {/* USDC Display - Fixed, not selectable */}
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
+              <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">
+                $
               </div>
-            )}
-          </div>
-          
-          <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-              Borrow Amount
-            </label>
-            <div className="relative">
-              <Input
-                id="amount"
-                type="text"
-                value={borrowAmount}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9.]/g, '');
-                  setBorrowAmount(val);
-                }}
-                placeholder="0.00"
-                className="pr-16 text-lg"
-                disabled={isBorrowing}
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-lg text-gray-500">
-                USDC
-              </div>
+              <span className="font-semibold text-gray-900">USDC</span>
             </div>
-            {isAmountInvalid && parseFloat(borrowAmount) > 0 && (
-              <p className="mt-2 text-sm text-red-600">
-                Amount exceeds your available credit of {formatUSD(availableCredit)}.
-              </p>
-            )}
           </div>
 
-          <div>
-            <label htmlFor="installments" className="block text-sm font-medium text-gray-700 mb-1">
-              Number of Installments
-            </label>
-            <Input
-              id="installments"
-              type="number"
-              value={installments}
-              onChange={(e) => setInstallments(parseInt(e.target.value, 10) || 1)}
-              placeholder="e.g., 12"
-              className="text-lg"
-              disabled={isBorrowing || !selectedAsset}
-              min="1"
+          {/* Large Input */}
+          <div className="mb-1">
+            <input
+              type="text"
+              value={borrowAmount}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9.]/g, '');
+                setBorrowAmount(val);
+              }}
+              placeholder="0"
+              disabled={isBorrowing}
+              className="w-full text-5xl font-light text-gray-900 placeholder-gray-300 bg-transparent border-none outline-none focus:outline-none"
             />
-             {installmentError && (
-              <p className="mt-2 text-sm text-yellow-600">{installmentError}</p>
-            )}
-            <p className="mt-1 text-xs text-gray-500">
-              Choose how many payments you want to make.
-            </p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-5 h-5" />
-              <p className="text-sm">{error}</p>
+          {/* USD Value */}
+          <div className="text-sm text-gray-500">
+            ${borrowAmountUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+
+          {/* Error Message - Inline */}
+          {isAmountInvalid && parseFloat(borrowAmount) > 0 && (
+            <div className="mt-3 text-sm text-red-600">
+              Amount exceeds available credit (${availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })})
             </div>
           )}
+        </div>
 
-          <Button
-            onClick={handleBorrow}
-            disabled={isBorrowing || isAmountInvalid || !selectedPositionId || !borrowAmount || !!installmentError}
-            className="w-full text-lg py-6"
-          >
-            {isBorrowing ? (
-              <RefreshCw className="w-6 h-6 animate-spin" />
-            ) : (
-              <>
-                Borrow Now <ArrowRight className="w-5 h-5 ml-2" />
-              </>
-            )}
-          </Button>
+        {/* Installments - Minimal Design */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm mb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500">Repayment period</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={installments}
+                onChange={(e) => setInstallments(parseInt(e.target.value, 10) || 1)}
+                min="1"
+                disabled={isBorrowing || !selectedAsset}
+                className="w-16 px-3 py-2 text-right font-semibold text-gray-900 bg-gray-100 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-600">months</span>
+            </div>
+          </div>
+          {installmentError && (
+            <div className="mt-2 text-xs text-amber-600">{installmentError}</div>
+          )}
+        </div>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-3">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Borrow Button - Clean Pink Design */}
+        <button
+          onClick={handleBorrow}
+          disabled={isBorrowing || isAmountInvalid || !selectedPosition || !borrowAmount || !!installmentError}
+          className="w-full bg-gradient-to-r from-pink-100 to-pink-50 hover:from-pink-200 hover:to-pink-100 disabled:from-gray-100 disabled:to-gray-50 text-pink-600 disabled:text-gray-400 font-semibold text-lg py-4 rounded-3xl transition-all disabled:cursor-not-allowed"
+        >
+          {isBorrowing ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : (
+            'Borrow now'
+          )}
+        </button>
+
+        {/* Available Credit - Subtle Info */}
+        <div className="text-center mt-3 text-sm text-gray-500">
+          Available credit: ${availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
       </div>
-    </div>
+
+      {/* Position Selection Modal - Clean Token Selector Style */}
+      {showPositionSelector && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Select a position</h3>
+              <button
+                onClick={() => {
+                  setShowPositionSelector(false);
+                  setSearchQuery('');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Search Bar - Clean Design */}
+            <div className="px-6 py-4 border-b border-gray-100">
+              <div className="relative bg-gray-100 rounded-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tokens"
+                  className="w-full pl-12 pr-4 py-3 bg-transparent border-none outline-none text-gray-900 placeholder-gray-400"
+                />
+              </div>
+            </div>
+
+            {/* Position List - Clean Design */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredPositions.length === 0 ? (
+                <div className="flex items-center justify-center py-16">
+                  <p className="text-gray-400">No positions found</p>
+                </div>
+              ) : (
+                <div>
+                  {filteredPositions.map((position, index) => (
+                    <button
+                      key={position.positionId || position.tokenAddress}
+                      onClick={() => handlePositionSelect(position)}
+                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
+                    >
+                      {/* Token Icon */}
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                        {position.tokenSymbol.charAt(0)}
+                      </div>
+
+                      {/* Token Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-base mb-0.5">
+                          {position.tokenName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {position.tokenSymbol} • {position.tokenAddress.slice(0, 6)}...{position.tokenAddress.slice(-4)}
+                        </p>
+                      </div>
+
+                      {/* Value */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-semibold text-gray-900">
+                          ${position.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

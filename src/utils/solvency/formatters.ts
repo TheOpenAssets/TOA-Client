@@ -64,3 +64,30 @@ export const formatPosition = (position: Position): PositionView => {
     }),
   };
 };
+
+/**
+ * Format collateral amount from raw value to human-readable number
+ * @param value Raw amount as number or string (e.g., 90000000000000000000)
+ * @param decimals Token decimals (default: 18 for most ERC20 tokens)
+ * @returns Formatted number (e.g., 90.00)
+ */
+export const formatCollateralAmount = (
+  value: number | string | null | undefined,
+  decimals: number = 18
+): number => {
+  if (value === null || value === undefined || value === 0 || value === '0') {
+    return 0;
+  }
+
+  try {
+    // Convert to string if it's a number
+    const valueStr = typeof value === 'number' ? value.toString() : value;
+
+    // Use ethers to properly handle large numbers
+    const formatted = ethers.formatUnits(valueStr, decimals);
+    return parseFloat(formatted);
+  } catch (error) {
+    console.error('Error formatting collateral amount:', error, { value, decimals });
+    return 0;
+  }
+};
