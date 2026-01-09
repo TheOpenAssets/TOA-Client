@@ -139,7 +139,7 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
   return (
     <>
       {/* Main Borrow Interface - Clean Swap Style */}
-      <div className="w-full max-w-[480px] mx-auto">
+      <div className="w-full max-w-[500px] mx-auto bg-white/30 rounded-3xl shadow-2xl p-6 relative z-50">
         {/* Collateral Section (Top - Like "Sell") */}
         <div className="bg-white rounded-3xl p-6 shadow-lg mb-3">
           <div className="flex items-start justify-between mb-3">
@@ -243,7 +243,7 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
                 onChange={(e) => setInstallments(parseInt(e.target.value, 10) || 1)}
                 min="1"
                 disabled={isBorrowing || !selectedAsset}
-                className="w-16 px-3 py-2 text-right font-semibold text-gray-900 bg-gray-100 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-16 px-3 py-2 text-right font-semibold text-gray-900 bg-gray-50 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-600">months</span>
             </div>

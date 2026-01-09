@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
+import HeroBackground from '../landing/HeroBackground';
 
 const BorrowPage = () => {
   const { address, isConnected } = useAccount();
@@ -38,8 +39,10 @@ const BorrowPage = () => {
 
   return (
     <div className="min-h-screen ">
+
+      <HeroBackground />
       {/* Navbar */}
-      <div className="relative z-50  bg-white/50 backdrop-blur-sm">
+      <div className="relative z-50 backdrop-blur-sm">
         <div className="max-w-[1400px] mx-auto px-6">
           <header className="w-full flex flex-row z-40 mt-2 mb-1">
                  {/* Logo */}
@@ -115,9 +118,9 @@ const BorrowPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-8 py-16">
+      <div className="max-w-[1400px] mx-auto px-8 py-16 z-50 relative">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl font-gellix text-[#111111] tracking-tight mb-3">
+          <h1 className="text-5xl font-gellix text-[#111111] tracking-tight mb-3">
            Borrow USDC
           </h1>
           <p className="text-lg text-[#6B7280] mb-8 font-beau">
