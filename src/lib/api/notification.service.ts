@@ -16,7 +16,12 @@ export type NotificationType =
   | 'BID_REFUNDED'
   | 'TOKEN_PURCHASED'
   | 'YIELD_DISTRIBUTED'
-  | 'SYSTEM_ALERT';
+  | 'SYSTEM_ALERT'
+  | 'ORDER_FILLED'
+  | 'ORDER_CANCELED'
+  | 'ORDER_ACTIVE'
+  | 'ORDER_CREATED'
+  | 'ORDER_CANCELLED';
 
 /**
  * Notification severity levels
@@ -537,7 +542,12 @@ class NotificationService extends BaseService {
         'BID_REFUNDED',
         'TOKEN_PURCHASED',
         'YIELD_DISTRIBUTED',
-        'ASSET_STATUS'
+        'ASSET_STATUS',
+        'ORDER_FILLED',
+        'ORDER_CANCELED',
+        'ORDER_ACTIVE',
+        'ORDER_CREATED',
+        'ORDER_CANCELLED',
       ],
       ADMIN: ['ASSET_STATUS', 'YIELD_DISTRIBUTED'],
     };

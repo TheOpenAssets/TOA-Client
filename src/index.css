@@ -6,6 +6,17 @@
 
 @import "tailwindcss";
 
+/* Hide scrollbars globally for specific utility class */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 /* Orion Design System - Soft Premium Modern Aesthetic */
 
 @layer base {
