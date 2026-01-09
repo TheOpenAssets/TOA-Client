@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { X, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
@@ -167,7 +166,6 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
                 positions.map((position, index) => {
                 const posId = position.positionId ? String(position.positionId) : String(index);
                 const tokenAddr = position.tokenAddress ?? '';
-                const tokenSymbol= position.tokenSymbol ?? 'token';
                 const valueUSD= position.valueUSD ?? 0;
                 const shortAddr = tokenAddr ? `${tokenAddr.slice(0, 6)}...${tokenAddr.slice(-4)}` : 'Unknown token';
                 return (

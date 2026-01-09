@@ -6,6 +6,7 @@
  */
 
 import type { GetPositionsResponse, Position } from '../../types/solvency.types';
+import type { AdminPositionsResponse } from '../../types/admin.types';
 import BaseService from './base.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
@@ -390,7 +391,7 @@ class SolvencyService extends BaseService {
    * ✅ ENDPOINT: GET /admin/solvency/positions
    * Reference: FRONTEND_INTEGRATION_GUIDE.md
    */
-  async getAllPositions(): Promise<{ positions: Position[] }> {
+  async getAllPositions(): Promise<AdminPositionsResponse> {
     try {
       console.log('🔍 Fetching all positions (admin)...');
 
@@ -407,7 +408,7 @@ class SolvencyService extends BaseService {
         throw new Error(error.message || 'Failed to fetch all positions');
       }
 
-      const data = await response.json();
+      const data: AdminPositionsResponse = await response.json();
       console.log('✅ All positions received:', data);
       return data;
     } catch (error: any) {

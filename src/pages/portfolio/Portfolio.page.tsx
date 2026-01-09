@@ -30,7 +30,7 @@ import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
 const PortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { address , isConnected} = useAccount();
+  const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();

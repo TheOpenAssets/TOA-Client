@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { AlertCircle, RefreshCw, AlertTriangle, TrendingDown, CheckCircle } from 'lucide-react';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import { Button } from '../../../components/ui/button';
-import type { Position } from '../../../types/solvency.types';
+import type { AdminPosition } from '../../../types/admin.types';
 import { ethers } from 'ethers';
 
-interface PositionView extends Position {
+// View model for formatted display
+interface AdminPositionView extends AdminPosition {
   collateralValueFormatted: string;
   borrowedAmountFormatted: string;
   outstandingDebtFormatted: string;
@@ -15,84 +16,75 @@ interface PositionView extends Position {
 type FilterType = 'all' | 'warnings' | 'liquidatable';
 
 export function LoansView() {
-  const [positions, setPositions] = useState<PositionView[]>([]);
-  const [filteredPositions, setFilteredPositions] = useState<PositionView[]>([]);
+  const [positions, setPositions] = useState<AdminPositionView[]>([]);
+  const [filteredPositions, setFilteredPositions] = useState<AdminPositionView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Safe formatting helper for USDC values
+  const formatUSDC = (value: string | null | undefined): string => {
+    if (!value || value === '0') return '$0.00';
+    try {
+      const parsed = parseFloat(ethers.formatUnits(value, 6));
+      return `$${parsed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    } catch {
+      return '$0.00';
+    }
+  };
+
+  // Safe formatting helper for health factor
+  const formatHealthFactor = (hf: number | null | undefined): string => {
+    if (hf === null || hf === undefined || !isFinite(hf) || hf === 2147483647) {
+      return 'N/A'; // Max int often indicates no debt
+    }
+    return `${(hf / 100).toFixed(2)}%`;
+  };
+
   const fetchPositions = async () => {
     try {
       setLoading(true);
       setError(null);
+
       const data = await solvencyService.getAllPositions();
 
-      console.log('📊 Fetched positions data:', {
+      console.log('📊 Fetched admin positions:', {
         count: data.positions?.length ?? 0,
-        sample: data.positions?.[0] ?? 'No positions',
+        sample: data.positions?.[0],
       });
 
-      // Format positions for display with null safety
-      const formatted: PositionView[] = data.positions.map(pos => {
-        // Helper to safely format USDC values
-        const formatUSDC = (value: string | null | undefined): string => {
-          if (!value || value === '0' || value === null || value === undefined) {
-            return '$0.00';
-          }
-          try {
-            const parsed = parseFloat(ethers.formatUnits(value, 6));
-            return `$${parsed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          } catch {
-            return '$0.00';
-          }
-        };
-
-        // Helper to safely format health factor
-        const formatHealthFactor = (hf: number | null | undefined): string => {
-          if (hf === null || hf === undefined || hf === 0) {
-            return 'N/A';
-          }
-          return `${(hf / 100).toFixed(2)}%`;
-        };
-
-        return {
-          ...pos,
-          collateralValueFormatted: formatUSDC(pos.tokenValueUSD),
-          borrowedAmountFormatted: formatUSDC(pos.usdcBorrowed),
-          outstandingDebtFormatted: formatUSDC(pos.outstandingDebt),
-          healthFactorFormatted: formatHealthFactor(pos.healthFactor),
-        };
-      });
+      // Format positions for display
+      const formatted: AdminPositionView[] = data.positions.map(pos => ({
+        ...pos,
+        collateralValueFormatted: formatUSDC(pos.tokenValueUSD),
+        borrowedAmountFormatted: formatUSDC(pos.usdcBorrowed),
+        outstandingDebtFormatted: formatUSDC(pos.usdcBorrowed), // AdminPosition uses usdcBorrowed for debt
+        healthFactorFormatted: formatHealthFactor(pos.currentHealthFactor),
+      }));
 
       setPositions(formatted);
       applyFilter(formatted, activeFilter);
     } catch (err: any) {
-      console.error('Error fetching positions:', err);
+      console.error('❌ Error fetching positions:', err);
       setError(err.message || 'Failed to fetch loan positions');
     } finally {
       setLoading(false);
     }
   };
 
-  const applyFilter = (positionsToFilter: PositionView[], filter: FilterType) => {
+  const applyFilter = (positionsToFilter: AdminPositionView[], filter: FilterType) => {
     let filtered = positionsToFilter;
 
     if (filter === 'warnings') {
-      // Health factor between 110% and 125%
-      filtered = positionsToFilter.filter(p => {
-        const hf = p.healthFactor ?? 0;
-        return hf >= 11000 && hf < 12500;
-      });
+      filtered = positionsToFilter.filter(p => p.healthStatus === 'WARNING');
     } else if (filter === 'liquidatable') {
-      // Health factor < 110% OR isDefaulted OR missed payments >= 3
-      filtered = positionsToFilter.filter(p => {
-        const hf = p.healthFactor ?? 0;
-        return hf < 11000 && hf > 0 || // Only include if health factor is actually set
-          p.healthStatus === 'LIQUIDATABLE' ||
-          p.status === 'LIQUIDATED';
-      });
+      filtered = positionsToFilter.filter(p =>
+        p.healthStatus === 'LIQUIDATABLE' ||
+        p.healthStatus === 'CRITICAL' ||
+        p.status === 'LIQUIDATED'
+      );
     }
 
     setFilteredPositions(filtered);
@@ -106,6 +98,7 @@ export function LoansView() {
     applyFilter(positions, activeFilter);
   }, [activeFilter, positions]);
 
+  // Admin Operation: Mark Missed Payment
   const handleMarkMissedPayment = async (positionId: number) => {
     if (!confirm(`Mark payment as missed for position #${positionId}?`)) return;
 
@@ -115,8 +108,8 @@ export function LoansView() {
 
     try {
       const result = await solvencyService.markMissedPayment(positionId);
-      setSuccessMessage(`Missed payment marked successfully! TX: ${result.txHash?.slice(0, 10)}...`);
-      await fetchPositions(); // Refresh data
+      setSuccessMessage(`✅ Missed payment marked! TX: ${result.txHash?.slice(0, 10)}...`);
+      await fetchPositions();
     } catch (err: any) {
       setError(err.message || 'Failed to mark missed payment');
     } finally {
@@ -124,8 +117,9 @@ export function LoansView() {
     }
   };
 
+  // Admin Operation: Mark Defaulted
   const handleMarkDefaulted = async (positionId: number) => {
-    if (!confirm(`Mark position #${positionId} as DEFAULTED? This action is irreversible.`)) return;
+    if (!confirm(`⚠️ Mark position #${positionId} as DEFAULTED? This action is irreversible.`)) return;
 
     setProcessingId(positionId);
     setError(null);
@@ -133,8 +127,8 @@ export function LoansView() {
 
     try {
       const result = await solvencyService.markDefaulted(positionId);
-      setSuccessMessage(`Position marked as defaulted! TX: ${result.txHash?.slice(0, 10)}...`);
-      await fetchPositions(); // Refresh data
+      setSuccessMessage(`✅ Position marked as defaulted! TX: ${result.txHash?.slice(0, 10)}...`);
+      await fetchPositions();
     } catch (err: any) {
       setError(err.message || 'Failed to mark as defaulted');
     } finally {
@@ -142,8 +136,9 @@ export function LoansView() {
     }
   };
 
+  // Admin Operation: Liquidate Position
   const handleLiquidate = async (positionId: number) => {
-    if (!confirm(`Liquidate position #${positionId}? Collateral will be transferred to YieldVault.`)) return;
+    if (!confirm(`⚠️ Liquidate position #${positionId}? Collateral will be transferred to YieldVault.`)) return;
 
     setProcessingId(positionId);
     setError(null);
@@ -151,8 +146,11 @@ export function LoansView() {
 
     try {
       const result = await solvencyService.liquidatePosition(positionId);
-      setSuccessMessage(`Position liquidated! TX: ${result.txHash?.slice(0, 10)}... | Marketplace ID: ${result.marketplaceAssetId?.slice(0, 10)}...`);
-      await fetchPositions(); // Refresh data
+      setSuccessMessage(
+        `✅ Position liquidated! TX: ${result.txHash?.slice(0, 10)}... | ` +
+        `Marketplace ID: ${result.marketplaceAssetId?.slice(0, 10)}...`
+      );
+      await fetchPositions();
     } catch (err: any) {
       setError(err.message || 'Failed to liquidate position');
     } finally {
@@ -160,6 +158,7 @@ export function LoansView() {
     }
   };
 
+  // Admin Operation: Settle Liquidation
   const handleSettleLiquidation = async (positionId: number) => {
     if (!confirm(`Settle liquidation for position #${positionId}? This will burn tokens and distribute yield.`)) return;
 
@@ -170,7 +169,6 @@ export function LoansView() {
     try {
       const result = await solvencyService.settleLiquidation(positionId);
 
-      // Safely format values with null checks
       const yieldReceived = result.yieldReceived
         ? parseFloat(ethers.formatUnits(result.yieldReceived, 6))
         : 0;
@@ -182,10 +180,10 @@ export function LoansView() {
         : 0;
 
       setSuccessMessage(
-        `Liquidation settled! TX: ${result.txHash?.slice(0, 10)}... | ` +
-        `Yield: $${yieldReceived.toFixed(2)} | Debt Repaid: $${debtRepaid.toFixed(2)} | User Refund: $${userRefund.toFixed(2)}`
+        `✅ Liquidation settled! TX: ${result.txHash?.slice(0, 10)}... | ` +
+        `Yield: $${yieldReceived.toFixed(2)} | Debt: $${debtRepaid.toFixed(2)} | Refund: $${userRefund.toFixed(2)}`
       );
-      await fetchPositions(); // Refresh data
+      await fetchPositions();
     } catch (err: any) {
       setError(err.message || 'Failed to settle liquidation');
     } finally {
@@ -193,6 +191,7 @@ export function LoansView() {
     }
   };
 
+  // Admin Operation: Manual Sync Position
   const handleSyncPosition = async (positionId: number) => {
     setProcessingId(positionId);
     setError(null);
@@ -200,8 +199,8 @@ export function LoansView() {
 
     try {
       await solvencyService.adminSyncPosition(positionId);
-      setSuccessMessage(`Position #${positionId} synced successfully!`);
-      await fetchPositions(); // Refresh data
+      setSuccessMessage(`✅ Position #${positionId} synced successfully!`);
+      await fetchPositions();
     } catch (err: any) {
       setError(err.message || 'Failed to sync position');
     } finally {
@@ -209,6 +208,7 @@ export function LoansView() {
     }
   };
 
+  // UI Helper: Status Badge
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string; label: string }> = {
       ACTIVE: { bg: 'bg-green-100', text: 'text-green-700', label: 'Active' },
@@ -227,7 +227,10 @@ export function LoansView() {
     );
   };
 
-  const getHealthStatusBadge = (healthStatus: string) => {
+  // UI Helper: Health Status Badge
+  const getHealthStatusBadge = (healthStatus: string | undefined) => {
+    if (!healthStatus) return null;
+
     if (healthStatus === 'HEALTHY') {
       return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Healthy</span>;
     } else if (healthStatus === 'WARNING') {
@@ -235,20 +238,19 @@ export function LoansView() {
     } else if (healthStatus === 'CRITICAL' || healthStatus === 'LIQUIDATABLE') {
       return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Critical</span>;
     }
+
     return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">{healthStatus}</span>;
   };
 
+  // Calculate statistics
   const stats = {
     total: positions.length,
     active: positions.filter(p => p.status === 'ACTIVE').length,
-    warnings: positions.filter(p => {
-      const hf = p.healthFactor ?? 0;
-      return hf >= 11000 && hf < 12500;
-    }).length,
-    liquidatable: positions.filter(p => {
-      const hf = p.healthFactor ?? 0;
-      return (hf < 11000 && hf > 0) || p.healthStatus === 'LIQUIDATABLE';
-    }).length,
+    warnings: positions.filter(p => p.healthStatus === 'WARNING').length,
+    liquidatable: positions.filter(p =>
+      p.healthStatus === 'LIQUIDATABLE' ||
+      p.healthStatus === 'CRITICAL'
+    ).length,
   };
 
   return (
@@ -324,23 +326,23 @@ export function LoansView() {
           <Button
             variant={activeFilter === 'warnings' ? 'default' : 'outline'}
             onClick={() => setActiveFilter('warnings')}
-            className={activeFilter === 'warnings' ? 'bg-yellow-500' : ''}
+            className={activeFilter === 'warnings' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
           >
             Warnings ({stats.warnings})
           </Button>
           <Button
             variant={activeFilter === 'liquidatable' ? 'default' : 'outline'}
             onClick={() => setActiveFilter('liquidatable')}
-            className={activeFilter === 'liquidatable' ? 'bg-red-500' : ''}
+            className={activeFilter === 'liquidatable' ? 'bg-red-500 hover:bg-red-600' : ''}
           >
             Liquidatable ({stats.liquidatable})
           </Button>
         </div>
 
-        {/* Messages */}
+        {/* Error Message */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-red-800">Error</p>
               <p className="text-sm text-red-700">{error}</p>
@@ -348,9 +350,10 @@ export function LoansView() {
           </div>
         )}
 
+        {/* Success Message */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-green-800">Success</p>
               <p className="text-sm text-green-700">{successMessage}</p>
@@ -391,13 +394,13 @@ export function LoansView() {
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                         #{position.positionId}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                        {position.collateralToken?.address.slice(0, 6)}...{position.collateralToken?.address.slice(-4)}
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono" title={position.userAddress}>
+                        {position.userAddress.slice(0, 6)}...{position.userAddress.slice(-4)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                         <div>
                           <p className="font-medium">{position.collateralValueFormatted}</p>
-                          <p className="text-xs text-gray-500">{position.collateralToken?.symbol}</p>
+                          <p className="text-xs text-gray-500">{position.collateralTokenType}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
@@ -409,11 +412,11 @@ export function LoansView() {
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <div className="flex flex-col gap-1">
                           <span className={`font-medium ${
-                            !position.healthFactor || position.healthFactor === 0
+                            !position.currentHealthFactor || position.currentHealthFactor === 2147483647
                               ? 'text-gray-600'
-                              : position.healthFactor < 11000
+                              : position.currentHealthFactor < 11000
                                 ? 'text-red-600'
-                                : position.healthFactor < 12500
+                                : position.currentHealthFactor < 12500
                                   ? 'text-yellow-600'
                                   : 'text-green-600'
                           }`}>
@@ -423,8 +426,10 @@ export function LoansView() {
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(position.missedPayments ?? 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
-                          {position.missedPayments ?? 0} / 3
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          position.missedPayments > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {position.missedPayments} / 3
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
@@ -432,7 +437,8 @@ export function LoansView() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <div className="flex flex-col gap-1">
-                          {position.status === 'ACTIVE' && (position.missedPayments ?? 0) < 3 && (
+                          {/* Mark Missed Payment - Available for active positions */}
+                          {position.status === 'ACTIVE' && position.missedPayments < 3 && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -444,7 +450,8 @@ export function LoansView() {
                             </Button>
                           )}
 
-                          {position.status === 'ACTIVE' && (position.missedPayments ?? 0) >= 3 && !position.isDefaulted && (
+                          {/* Mark Defaulted - Available after 3 missed payments */}
+                          {position.status === 'ACTIVE' && position.missedPayments >= 3 && !position.isDefaulted && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -456,10 +463,8 @@ export function LoansView() {
                             </Button>
                           )}
 
-                          {position.status === 'ACTIVE' && (
-                            (position.healthFactor && position.healthFactor < 11000) ||
-                            position.healthStatus === 'LIQUIDATABLE'
-                          ) && (
+                          {/* Liquidate - Available for liquidatable positions */}
+                          {position.healthStatus === 'LIQUIDATABLE' && position.status === 'ACTIVE' && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -471,6 +476,7 @@ export function LoansView() {
                             </Button>
                           )}
 
+                          {/* Settle Liquidation - Available for liquidated positions after maturity */}
                           {position.status === 'LIQUIDATED' && (
                             <Button
                               size="sm"
@@ -483,6 +489,7 @@ export function LoansView() {
                             </Button>
                           )}
 
+                          {/* Sync - Always available */}
                           <Button
                             size="sm"
                             variant="ghost"
