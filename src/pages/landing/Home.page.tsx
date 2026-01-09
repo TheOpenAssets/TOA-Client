@@ -5,6 +5,7 @@ import Navbar from "./Navbar.page";
 import Footer from "./Footer.page";
 import FeaturePage from "./FeaturePage";
 import FadeIn from "../../components/ui/fadein"; // Adjust path as needed
+import HeroBackground from "./HeroBackground";
 
 
 const HomePage = () => {
@@ -12,6 +13,7 @@ const HomePage = () => {
     <main className="overflow-y-scroll snap-y snap-mandatory overflow-x-hidden h-screen">
       {/* SECTION 1: HERO */}
       <div className="snap-start min-h-screen">
+        <HeroBackground />
         {/* Background & Nav usually shouldn't fade in/out on scroll, they are structural */}
         <Navbar />
 
