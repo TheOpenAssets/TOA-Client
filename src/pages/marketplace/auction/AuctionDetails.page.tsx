@@ -8,6 +8,8 @@ import { useSubmitBid } from '../../../hooks/useAuctionContracts';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { Button } from '../../../components/ui/button';
+import { ShaderAnimation } from '../../../components/ui/shimmer-lines';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -135,25 +137,34 @@ const AuctionDetailsPage = () => {
 
   if (isLoadingAsset) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-geist text-lg text-foreground">Loading auction...</div>
+        <div className="flex items-center justify-center h-screen">
+          <PageLoader text='' />
         </div>
-      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-geist text-lg text-red-600 mb-4">Error: {error}</div>
-          <button
+      <div className="relative w-full h-screen overflow-hidden bg-black">
+        {/* Background Animation */}
+        <div className="absolute inset-0 z-0">
+          <ShaderAnimation />
+        </div>
+
+        {/* Content Overlay */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-center px-4">
+          <p className="text-2xl md:text-4xl text-white mb-10 font-bold tracking-[0.2em] uppercase">
+            Looks like we had an error !
+          </p>
+
+          <Button
             onClick={() => navigate('/marketplace')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
+            variant="outline"
+            size="lg"
+            className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
           >
-            Back to Marketplace
-          </button>
+            Let's try again !
+          </Button>
         </div>
       </div>
     );

@@ -17,11 +17,15 @@ import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
+import { TradesTable } from '../../components/portfolio/TradesTable';
+import { useCancelOrder } from '../../hooks/useSecondaryMarket';
 import { MyLoansTable } from '../../components/portfolio/MyLoansTable';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
 import type { Position as SolvencyPosition } from '../../types/solvency.types';
 import { PageLoader } from '../../components/ui/page-loader';
+import { Button } from '../../components/ui/button';
+import { ShaderAnimation } from '../../components/ui/shimmer-lines';
 import { useCreditData } from '../borrow/hooks/useCreditData';
 import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
 import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
@@ -32,14 +36,19 @@ const PortfolioPage = () => {
   const [searchParams] = useSearchParams();
   const { address } = useAccount();
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
-  const { userBids, isLoadingBids, fetchUserBids } = useMarketplaceStore();
+  const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
-  const { creditData , refetch: refetchCredit } = useCreditData(address);
+  const { creditData, refetch: refetchCredit } = useCreditData(address);
 
+
+  // Cancel order hook
+  const { cancelOrder, isSuccess: isCancelSuccess, reset: resetCancel } = useCancelOrder();
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   // Tab state for portfolio sections
-  type PortfolioTab = 'assets' | 'bids' | 'loans' | 'positions';
+  type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades' | 'loans';
+
   const initialTab = searchParams.get('tab') as PortfolioTab | null;
   const [activeTab, setActiveTab] = useState<PortfolioTab>(initialTab || 'assets');
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,9 +59,6 @@ const PortfolioPage = () => {
 
   // Leverage position detail chart state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
-
-  
-  
 
 
   // Solvency loans state
@@ -101,6 +107,12 @@ const PortfolioPage = () => {
     false
   );
 
+  const filteredOrders = myOrders.filter(order =>
+    order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  );
+
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
     (sum, asset) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
@@ -128,6 +140,7 @@ const PortfolioPage = () => {
   useEffect(() => {
     fetchPortfolio();
     fetchUserBids();
+    fetchMyOrders();
     fetchMyLoans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -162,6 +175,15 @@ const PortfolioPage = () => {
     }
   }, [settleError]);
 
+  // Handle cancel order success
+  useEffect(() => {
+    if (isCancelSuccess) {
+      success('Order Cancelled', 'Your order has been cancelled successfully.');
+      setCancellingOrderId(null);
+      resetCancel();
+      fetchMyOrders(); // Refresh orders
+    }
+  }, [isCancelSuccess]);
   const handleIncreaseCreditLimit = () => {
     if (portfolio && portfolio.portfolio.length > 0) {
       setShowDepositModal(true);
@@ -180,6 +202,18 @@ const PortfolioPage = () => {
     authService.logout();
     disconnect();
     navigate('/'); // Redirect to home or login page after logout
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    setCancellingOrderId(orderId);
+    try {
+      await cancelOrder(orderId);
+    } catch (e) {
+      console.error("Cancel failed", e);
+      // We don't nullify cancellingOrderId here immediately to show loading state if retrying, 
+      // but usually we should if it failed. 
+      setCancellingOrderId(null);
+    }
   };
 
   const truncateAddress = (address: string): string => {
@@ -402,31 +436,26 @@ const PortfolioPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-red-600 mb-4">Error: {error}</div>
-          <button
-            onClick={() => fetchPortfolio()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            Retry
-          </button>
+      <div className="relative w-full h-screen overflow-hidden bg-black">
+        {/* Background Animation */}
+        <div className="absolute inset-0 z-0">
+          <ShaderAnimation />
         </div>
-      </div>
-    );
-  }
 
-  if (!allPortfolioItems.length && !userBids.length) {
-    return (
-      <div className="min-h-screen bg-[#f6fbff] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-gellix text-lg text-foreground mb-4">No assets in your portfolio yet.</div>
-          <button
-            onClick={() => navigate('/marketplace')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-medium hover:bg-blue-700 transition-colors"
+        {/* Content Overlay */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full text-center px-4">
+          <p className="text-2xl md:text-4xl text-white mb-10 font-bold tracking-[0.2em] uppercase">
+            Looks like we had an error !
+          </p>
+
+          <Button
+            onClick={fetchPortfolio}
+            variant="outline"
+            size="lg"
+            className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
           >
-            Explore Marketplace
-          </button>
+            Let's try again !
+          </Button>
         </div>
       </div>
     );
@@ -440,7 +469,7 @@ const PortfolioPage = () => {
 
         {/* Top Navigation Bar - Fixed Height */}
         <header className="bg-transparent  z-40 relative flex-shrink-0">
-          <div className="max-w-[1400px] mx-auto px-6 py-4">
+          <div className="max-w-[90vw] mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               {/* Left: Logo + Search */}
               <div className="flex items-center gap-6">
@@ -462,6 +491,9 @@ const PortfolioPage = () => {
                 </div>
               </div>
 
+
+              {/* Right: Wallet Display */}
+              <div className="flex items-center gap-3">
               {/* Center: Navigation */}
               <nav className="flex items-center gap-4">
                 <button
@@ -470,25 +502,12 @@ const PortfolioPage = () => {
                 >
                   Marketplace
                 </button>
-                <div className='relative group'>
-                  <button
-                    className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
-                  >
-                    Trade
-                  </button>
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-                    Coming Soon
-                  </div>
-                </div>
                 <button
                   onClick={() => navigate('/borrow')}
                   className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
                   Borrow
                 </button>
               </nav>
-
-              {/* Right: Wallet Display */}
-              <div className="flex items-center gap-3">
                 {address && (
                   <>
                     <NotificationBell role="INVESTOR" />
@@ -511,9 +530,9 @@ const PortfolioPage = () => {
         {/* Main Content - Fills remaining height to make 100vh */}
         <div className="flex-1 overflow-hidden">
           <div className="w-[100vw] mx-auto p-10 h-full z-40 relative">
-            <div className="grid grid-cols-5 lg:grid-cols-4 gap-6 h-full">
+            <div className="grid grid-cols-5 lg:grid-cols-9 gap-6 h-full">
               {/* Left Sidebar - 1/4 width, stats cards */}
-              <div className="lg:col-span-1 h-full">
+              <div className="lg:col-span-2 h-full">
                 <PortfolioStats
                   totalAssetValue={totalAssetValue}
                   portfolioAssets={filteredAssets}
@@ -523,15 +542,15 @@ const PortfolioPage = () => {
               </div>
 
               {/* Right Main Area - 3/4 width, tabbed content */}
-              <div className="lg:col-span-3 h-full flex flex-col">
+              <div className="lg:col-span-7 h-full flex flex-col">
                 {/* Single Table Container with Tabs */}
                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col" style={{
                   boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(150, 151, 151, 0.06),
-            12px 12px 36px rgba(92, 92, 93, 0.04),
-            16px 16px 48px rgba(45, 46, 47, 0.02)
-          `,
+                            4px 4px 12px rgba(243, 244, 245, 0.08),
+                            8px 8px 24px rgba(150, 151, 151, 0.06),
+                            12px 12px 36px rgba(92, 92, 93, 0.04),
+                            16px 16px 48px rgba(45, 46, 47, 0.02)
+             `,
                 }}>
                   {/* Tab Header */}
                   <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
@@ -557,8 +576,8 @@ const PortfolioPage = () => {
                       <button
                         onClick={() => setActiveTab('loans')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'loans'
-                            ? 'bg-gray-900 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         My Loans
@@ -571,6 +590,15 @@ const PortfolioPage = () => {
                           }`}
                       >
                         Leveraged Positions
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('trades')}
+                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'trades'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        Trades
                       </button>
                     </div>
                   </div>
@@ -655,6 +683,24 @@ const PortfolioPage = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Trades Tab */}
+                    <div
+                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'trades'
+                        ? 'opacity-100 translate-x-0 z-10'
+                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
+                        }`}
+                    >
+                      <div className="h-full flex flex-col">
+                        <TradesTable
+                          assets={filteredAssets as any}
+                          orders={filteredOrders}
+                          isLoading={isLoadingMyOrders}
+                          onCancelOrder={handleCancelOrder}
+                          isCancellingId={cancellingOrderId}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -671,7 +717,7 @@ const PortfolioPage = () => {
           />
         )}
 
-        <DepositCollateralModal 
+        <DepositCollateralModal
           isOpen={showDepositModal}
           onClose={() => setShowDepositModal(false)}
           onSuccess={() => {

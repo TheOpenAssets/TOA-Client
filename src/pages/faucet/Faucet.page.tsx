@@ -46,7 +46,7 @@ const FaucetPage = () => {
               tokenName="mETH"
               tokenSymbol="mETH"
               tokenDecimals={18}
-              tokenImage="/public/meth-crystal.svg"
+              tokenImage="/meth-crystal.svg"
               tokenAddress="0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6"
               faucetAmount={10}
               description="Receive 10 testnet mETH for leveraged buy."

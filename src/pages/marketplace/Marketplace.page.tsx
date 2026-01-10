@@ -231,13 +231,11 @@ const MarketplacePage = () => {
     }
   };
 
-const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLButtonElement>) => {
-  if (asset.listingType === 'STATIC') {
-    navigate(`/trade/${asset.id}`); 
-    e.preventDefault();
-    e.stopPropagation();
-  } 
-};
+  const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLButtonElement>) => {
+      navigate(`/trade/asset/${asset.id}`);
+      e.preventDefault();
+      e.stopPropagation();
+  };
 
   // Truncate wallet address for display
   const truncateAddress = (address: string): string => {
@@ -308,7 +306,6 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
   const filters: { value: FilterCategory; label: string }[] = [
     { value: 'all', label: 'All Assets' },
     { value: 'invoices', label: 'Invoices' },
-
     { value: 'high-yield', label: 'High Yield (>10%)' },
     { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
@@ -320,7 +317,7 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
     const numDays = typeof days === 'string' ? parseFloat(days) : days;
     if (numDays < 30) return `${numDays} days`;
     if (numDays < 365) return `${Math.floor(numDays / 30)} months`;
-    return `Matured`;
+    return `Payout Requested`;
   };
 
   // Calculate time remaining for auction
@@ -433,26 +430,13 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
             >
               Portfolio
             </button>
-            <div className='relative group'>
-              <button
-              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
-              >
-              Trade
-              </button>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-              Coming Soon
-              </div>
-            </div>
-            <div className='relative group'>
-              <button
-                className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed"
-              >
-                Borrow
-              </button>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-                Coming Soon
-              </div>
-            </div>
+            <button
+              onClick={() => navigate('/borrow')}
+              className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+            >
+              Borrow
+            </button>
+
           </nav>
 
           {/* Right: Auth / Wallet Display */}
@@ -575,8 +559,8 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
       <div className="bg-transparent relative z-40 flex items-center m-2">
         <div className="mx-auto w-[80%]">
           {isLoadingInfo ? (
-            <div className="flex items-center justify-center py-2">
-              <span className="font-gellix text-xs text-gray-900">Loading metrics...</span>
+            <div className="flex items-center justify-center h-[450px]">
+              <PageLoader text='' />
             </div>
           ) : marketplaceInfo ? (
             <div className="flex flex-row items-center justify-evenly">
@@ -649,8 +633,8 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
             </h2>
             <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
               {isLoadingAuctions ? (
-                <div className="text-center text-gray-400 font-gellix text-lg">
-                  Loading auctions...
+                <div className="flex items-center justify-center h-[450px]">
+                  <PageLoader text='' />
                 </div>
               ) : auctions.length === 0 ? (
                 <div className="text-center text-gray-400 font-gellix text-lg">
@@ -707,8 +691,8 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
 
             <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
               {isLoadingTrending ? (
-                <div className="text-center text-gray-400 font-gellix text-lg">
-                  Loading trending assets...
+                <div className="flex items-center justify-center h-[450px]">
+                  <PageLoader text='' />
                 </div>
               ) : trendingAssets.length === 0 ? (
                 <div className="text-center text-gray-400 font-gellix text-lg">
@@ -763,8 +747,8 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
             </h2>
             <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
               {isLoading ? (
-                <div className="text-center text-gray-400 font-gellix text-lg">
-                  Loading recent assets...
+                <div className="flex items-center justify-center h-[450px]">
+                  <PageLoader text='' />
                 </div>
               ) : listings.length === 0 ? (
                 <div className="text-center text-gray-400 font-gellix text-lg">
@@ -887,8 +871,8 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
               /* Grid View */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {isLoadingCharts && filteredAssets.length > 0 ? (
-                  <div className="col-span-full text-center text-gray-500 py-8">
-                    Loading charts...
+                  <div className="flex items-center justify-center h-[450px]">
+                    <PageLoader text='' />
                   </div>
                 ) : (
                   filteredAssets.map((asset) => {
@@ -899,7 +883,7 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
                     return (
                       <div
                         key={asset.id}
-                        
+
                         className="group relative bg-white rounded-3xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl"
                       >
                         {/* Header Section */}
@@ -1095,7 +1079,7 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
                                 (typeof asset.maturityDays === 'number' && asset.maturityDays <= 0) ||
                                 asset.fundingProgress === 100;
 
-                              return isMatured ? (
+                              return isMatured && asset.status === 'PAYOUT_COMPLETE' ? (
                                 <button
                                   onClick={() => handleTableNavigate(asset)}
                                   className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 hover:scale-[1.07] transition-colors"
@@ -1112,18 +1096,14 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
                               );
                             })()}
                             <span className="text-gray-400">|</span>
-                            <div className="relative group">
-                              <button
+                            <button
                               onClick={(e) => handleTradeNavigate(asset, e)}
-                              disabled={true}
-                              className="px-4 py-2 text-gray-400 rounded-lg font-inter text-sm font-medium cursor-not-allowed"
-                              >
+                              className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 hover:scale-[1.07] transition-colors"
+                            
+                            >
                               Trade
-                              </button>
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                              Coming Soon
-                              </div>
-                            </div>
+                            </button>
+
                           </div>
                         </td>
                       </tr>
@@ -1140,4 +1120,3 @@ const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLBu
 };
 
 export default MarketplacePage;
-

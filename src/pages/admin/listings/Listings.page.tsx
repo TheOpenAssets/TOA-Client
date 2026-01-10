@@ -265,7 +265,7 @@ const ListingsPage = () => {
             </div>
             {isLoadingInfo ? (
               <div className="col-span-2 flex items-center justify-center h-48">
-                <Loader2 className="h-6 w-6 animate-spin" />
+                  <PageLoader text='' />
               </div>
             ) : clearingInfo && (
               <div className="col-span-2 space-y-4">

@@ -29,16 +29,23 @@ export const FileUpload = ({
   onChange,
   text,
   accept,
+  value,
+  children,
 }: {
     onChange?: (files: File[]) => void;
     text: string;
     accept?: string;
+    value?: File[];
+    children?: React.ReactNode;
 }) => {
-  const [files, setFiles] = useState<File[]>([]);
+  const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  const files = value || internalFiles;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: File[]) => {
-    setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    if (value === undefined) {
+      setInternalFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    }
     onChange && onChange(newFiles);
   };
 
@@ -74,12 +81,17 @@ export const FileUpload = ({
         <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
         </div>
         <div className="flex flex-col items-center justify-center">
-          <p className="relative z-20 font-sans font-bold text-black  text-base">
+          <p className="relative z-20 font-sans font-bold text-gray-800  text-base">
             {text}
           </p>
-          <p className="relative z-20 font-sans font-normal text-neutral-400 text-base mt-2">
+          <p className="relative z-20 font-sans font-normal text-neutral-800 text-base mt-2">
             Drag or drop your files here or click to upload
           </p>
+          {children && (
+            <div className="relative z-20 mt-4" onClick={(e) => e.stopPropagation()}>
+              {children}
+            </div>
+          )}
           <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&
               files.map((file, idx) => (
@@ -87,7 +99,7 @@ export const FileUpload = ({
                   key={"file" + idx}
                   layoutId={idx === 0 ? "file-upload" : "file-upload-" + idx}
                   className={cn(
-                    "relative overflow-hidden z-40 bg-white flex flex-col items-start justify-start md:h-24 p-4 mt-4 w-full mx-auto rounded-md",
+                    "relative overflow-hidden z-40 bg-transparent flex flex-col items-start justify-start md:h-24 p-4 mt-4 w-full mx-auto rounded-md",
                     "shadow-sm"
                   )}
                 >
@@ -115,7 +127,7 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="px-1 py-0.5 rounded-md bg-gray-100  "
+                      className="px-1 py-0.5 rounded-md bg-gray-400/10  "
                     >
                       {file.type}
                     </motion.p>
@@ -141,7 +153,7 @@ export const FileUpload = ({
                   damping: 20,
                 }}
                 className={cn(
-                  "relative group-hover/file:shadow-2xl z-40 bg-white  flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md",
+                  "relative group-hover/file:shadow-2xl z-40 bg-gray-400/10  flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md",
                   "shadow-[0px_10px_50px_rgba(0,0,0,0.1)]"
                 )}
               >

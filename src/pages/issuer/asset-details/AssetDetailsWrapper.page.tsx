@@ -4,8 +4,9 @@ import { useParams, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { assetService } from '../../../lib/api/asset.service';
 import AssetDetailsPage from './AssetDetails.page';
-import { Loader2 } from 'lucide-react';
+// import { Loader2 } from 'lucide-react';
 import { type IssuerAsset } from '../../../types/issuer.types';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 const AssetDetailsWrapper = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -45,8 +46,8 @@ const AssetDetailsWrapper = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center h-full">
+        <PageLoader text='' />
       </div>
     );
   }

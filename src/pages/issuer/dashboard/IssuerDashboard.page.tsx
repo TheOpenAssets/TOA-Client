@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
-import { Plus, TrendingUp, Package, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, TrendingUp, Package, Clock, CheckCircle } from 'lucide-react';
 import { type IssuerAsset } from '../../../types/issuer.types';
 import { AssetUploadModal } from '../../../components/issuer/AssetUploadModal';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
 import { assetService } from '../../../lib/api/asset.service';
 import { authService } from '../../../lib/api/auth.service';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 // Calculate stats from assets
 const calculateStats = (assets: any[]) => {
@@ -349,8 +350,9 @@ const IssuerDashboardPage = () => {
           {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              <p className="ml-3 font-geist text-[#6B7280]">Loading assets...</p>
+              <div className="flex items-center justify-center h-full">
+                <PageLoader text='' />
+              </div>
             </div>
           )}
 

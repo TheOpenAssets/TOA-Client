@@ -3,7 +3,7 @@
  * Calculations and helpers for health factor management
  */
 
-import  type{ HealthFactorData, HealthFactorPreview, HealthStatus } from '../../types/solvency.types';
+import type { HealthFactorData, HealthFactorPreview, HealthStatus } from '../../types/solvency.types';
 import { SOLVENCY_CONFIG } from '../../constants/solvency.constants';
 
 /**
@@ -15,18 +15,18 @@ import { SOLVENCY_CONFIG } from '../../constants/solvency.constants';
  * @returns Health factor as percentage (e.g., 150 means 150%)
  */
 export const calculateHealthFactor = (
-  collateralValueUSD: number,
-  debtValueUSD: number
+    collateralValueUSD: number,
+    debtValueUSD: number
 ): number => {
-  if (debtValueUSD === 0) {
-    return Infinity; // No debt means infinite health
-  }
+    if (debtValueUSD === 0) {
+        return Infinity; // No debt means infinite health
+    }
 
-  if (collateralValueUSD === 0) {
-    return 0; // No collateral with debt is critical
-  }
+    if (collateralValueUSD === 0) {
+        return 0; // No collateral with debt is critical
+    }
 
-  return (collateralValueUSD / debtValueUSD) * 100;
+    return (collateralValueUSD / debtValueUSD) * 100;
 };
 
 /**
@@ -36,19 +36,19 @@ export const calculateHealthFactor = (
  * @returns HealthStatus enum
  */
 export const getHealthStatus = (healthFactor: number): HealthStatus => {
-  if (healthFactor === Infinity || isNaN(healthFactor)) {
-    return 'unknown';
-  }
+    if (healthFactor === Infinity || isNaN(healthFactor)) {
+        return 'unknown';
+    }
 
-  if (healthFactor >= SOLVENCY_CONFIG.healthThresholds.HEALTHY) {
-    return 'healthy';
-  }
+    if (healthFactor >= SOLVENCY_CONFIG.healthThresholds.HEALTHY) {
+        return 'healthy';
+    }
 
-  if (healthFactor >= SOLVENCY_CONFIG.healthThresholds.WARNING) {
-    return 'warning';
-  }
+    if (healthFactor >= SOLVENCY_CONFIG.healthThresholds.WARNING) {
+        return 'warning';
+    }
 
-  return 'critical';
+    return 'critical';
 };
 
 /**
@@ -59,19 +59,19 @@ export const getHealthStatus = (healthFactor: number): HealthStatus => {
  * @returns HealthFactorData object
  */
 export const getHealthFactorData = (
-  collateralValueUSD: number,
-  debtValueUSD: number
+    collateralValueUSD: number,
+    debtValueUSD: number
 ): HealthFactorData => {
-  const current = calculateHealthFactor(collateralValueUSD, debtValueUSD);
-  const status = getHealthStatus(current);
+    const current = calculateHealthFactor(collateralValueUSD, debtValueUSD);
+    const status = getHealthStatus(current);
 
-  return {
-    current,
-    status,
-    thresholdWarning: SOLVENCY_CONFIG.healthThresholds.HEALTHY,
-    thresholdCritical: SOLVENCY_CONFIG.healthThresholds.WARNING,
-    thresholdLiquidation: SOLVENCY_CONFIG.healthThresholds.LIQUIDATION,
-  };
+    return {
+        current,
+        status,
+        thresholdWarning: SOLVENCY_CONFIG.healthThresholds.HEALTHY,
+        thresholdCritical: SOLVENCY_CONFIG.healthThresholds.WARNING,
+        thresholdLiquidation: SOLVENCY_CONFIG.healthThresholds.LIQUIDATION,
+    };
 };
 
 /**
@@ -84,31 +84,31 @@ export const getHealthFactorData = (
  * @returns HealthFactorPreview object
  */
 export const previewHealthFactorChange = (
-  currentCollateralUSD: number,
-  currentDebtUSD: number,
-  collateralChange: number,
-  debtChange: number
+    currentCollateralUSD: number,
+    currentDebtUSD: number,
+    collateralChange: number,
+    debtChange: number
 ): HealthFactorPreview => {
-  const currentHealth = calculateHealthFactor(currentCollateralUSD, currentDebtUSD);
-  const statusBefore = getHealthStatus(currentHealth);
+    const currentHealth = calculateHealthFactor(currentCollateralUSD, currentDebtUSD);
+    const statusBefore = getHealthStatus(currentHealth);
 
-  const newCollateralUSD = currentCollateralUSD + collateralChange;
-  const newDebtUSD = currentDebtUSD + debtChange;
+    const newCollateralUSD = currentCollateralUSD + collateralChange;
+    const newDebtUSD = currentDebtUSD + debtChange;
 
-  const afterActionHealth = calculateHealthFactor(newCollateralUSD, newDebtUSD);
-  const statusAfter = getHealthStatus(afterActionHealth);
+    const afterActionHealth = calculateHealthFactor(newCollateralUSD, newDebtUSD);
+    const statusAfter = getHealthStatus(afterActionHealth);
 
-  const change = afterActionHealth - currentHealth;
-  const isSafe = afterActionHealth >= SOLVENCY_CONFIG.healthThresholds.WARNING;
+    const change = afterActionHealth - currentHealth;
+    const isSafe = afterActionHealth >= SOLVENCY_CONFIG.healthThresholds.WARNING;
 
-  return {
-    current: currentHealth,
-    afterAction: afterActionHealth,
-    change,
-    statusBefore,
-    statusAfter,
-    isSafe,
-  };
+    return {
+        current: currentHealth,
+        afterAction: afterActionHealth,
+        change,
+        statusBefore,
+        statusAfter,
+        isSafe,
+    };
 };
 
 /**
@@ -120,19 +120,19 @@ export const previewHealthFactorChange = (
  * @returns Maximum borrowable amount in USD
  */
 export const calculateMaxBorrowable = (
-  collateralValueUSD: number,
-  currentDebtUSD: number,
-  minHealthFactor: number = SOLVENCY_CONFIG.healthThresholds.WARNING
+    collateralValueUSD: number,
+    currentDebtUSD: number,
+    minHealthFactor: number = SOLVENCY_CONFIG.healthThresholds.WARNING
 ): number => {
-  if (collateralValueUSD === 0) {
-    return 0;
-  }
+    if (collateralValueUSD === 0) {
+        return 0;
+    }
 
-  // Formula: maxBorrow = (collateral / (minHealthFactor / 100)) - currentDebt
-  const maxTotalDebt = collateralValueUSD / (minHealthFactor / 100);
-  const maxBorrowable = maxTotalDebt - currentDebtUSD;
+    // Formula: maxBorrow = (collateral / (minHealthFactor / 100)) - currentDebt
+    const maxTotalDebt = collateralValueUSD / (minHealthFactor / 100);
+    const maxBorrowable = maxTotalDebt - currentDebtUSD;
 
-  return Math.max(0, maxBorrowable);
+    return Math.max(0, maxBorrowable);
 };
 
 /**
@@ -144,19 +144,19 @@ export const calculateMaxBorrowable = (
  * @returns Maximum withdrawable amount in USD
  */
 export const calculateMaxWithdrawable = (
-  collateralValueUSD: number,
-  currentDebtUSD: number,
-  minHealthFactor: number = SOLVENCY_CONFIG.healthThresholds.WARNING
+    collateralValueUSD: number,
+    currentDebtUSD: number,
+    minHealthFactor: number = SOLVENCY_CONFIG.healthThresholds.WARNING
 ): number => {
-  if (currentDebtUSD === 0) {
-    return collateralValueUSD; // Can withdraw all if no debt
-  }
+    if (currentDebtUSD === 0) {
+        return collateralValueUSD; // Can withdraw all if no debt
+    }
 
-  // Formula: minCollateral = debt * (minHealthFactor / 100)
-  const minRequiredCollateral = currentDebtUSD * (minHealthFactor / 100);
-  const maxWithdrawable = collateralValueUSD - minRequiredCollateral;
+    // Formula: minCollateral = debt * (minHealthFactor / 100)
+    const minRequiredCollateral = currentDebtUSD * (minHealthFactor / 100);
+    const maxWithdrawable = collateralValueUSD - minRequiredCollateral;
 
-  return Math.max(0, maxWithdrawable);
+    return Math.max(0, maxWithdrawable);
 };
 
 /**
@@ -166,15 +166,15 @@ export const calculateMaxWithdrawable = (
  * @returns Formatted string with % symbol
  */
 export const formatHealthFactor = (healthFactor: number): string => {
-  if (healthFactor === Infinity) {
-    return '∞ (No debt)';
-  }
+    if (healthFactor === Infinity) {
+        return '∞ (No debt)';
+    }
 
-  if (isNaN(healthFactor)) {
-    return 'N/A';
-  }
+    if (isNaN(healthFactor)) {
+        return 'N/A';
+    }
 
-  return `${healthFactor.toFixed(2)}%`;
+    return `${healthFactor.toFixed(2)}%`;
 };
 
 /**
@@ -184,7 +184,7 @@ export const formatHealthFactor = (healthFactor: number): string => {
  * @returns true if can borrow, false otherwise
  */
 export const canBorrow = (healthFactor: number): boolean => {
-  return healthFactor >= SOLVENCY_CONFIG.healthThresholds.WARNING;
+    return healthFactor >= SOLVENCY_CONFIG.healthThresholds.WARNING;
 };
 
 /**
@@ -194,7 +194,7 @@ export const canBorrow = (healthFactor: number): boolean => {
  * @returns true if can withdraw, false otherwise
  */
 export const canWithdraw = (healthFactor: number): boolean => {
-  return healthFactor >= SOLVENCY_CONFIG.healthThresholds.WARNING;
+    return healthFactor >= SOLVENCY_CONFIG.healthThresholds.WARNING;
 };
 
 /**
@@ -204,14 +204,14 @@ export const canWithdraw = (healthFactor: number): boolean => {
  * @returns Human-readable description
  */
 export const getHealthStatusMessage = (status: HealthStatus): string => {
-  switch (status) {
-    case 'healthy':
-      return 'Your account is healthy. You can safely borrow more.';
-    case 'warning':
-      return 'Your health factor is getting low. Consider adding collateral or repaying debt.';
-    case 'critical':
-      return 'Critical! Your account is at risk of liquidation. Add collateral or repay debt immediately.';
-    case 'unknown':
-      return 'Unable to determine health status.';
-  }
+    switch (status) {
+        case 'healthy':
+            return 'Your account is healthy. You can safely borrow more.';
+        case 'warning':
+            return 'Your health factor is getting low. Consider adding collateral or repaying debt.';
+        case 'critical':
+            return 'Critical! Your account is at risk of liquidation. Add collateral or repay debt immediately.';
+        case 'unknown':
+            return 'Unable to determine health status.';
+    }
 };

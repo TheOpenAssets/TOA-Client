@@ -7,6 +7,7 @@ import type {
   Auction,
   Bid,
   TrendingAsset,
+  SecondaryOrder,
 } from '../types/marketplace.types';
 import { marketplaceService } from '../lib/api/marketplace.service';
 
@@ -42,6 +43,17 @@ interface MarketplaceState {
   trendingAssets: TrendingAsset[];
   isLoadingTrending: boolean;
 
+  // P2P Trading state
+  orderbook: any | null;
+  tradeHistory: any[];
+  myOrders: SecondaryOrder[];
+  tradeableBalance: any | null;
+  isLoadingOrderbook: boolean;
+  isLoadingTrades: boolean;
+  isLoadingMyOrders: boolean;
+  isLoadingBalance: boolean;
+  p2pError: string | null;
+
   // Existing actions
   fetchListings: () => Promise<void>;
   fetchAssetDetails: (assetId: string) => Promise<void>;
@@ -57,6 +69,13 @@ interface MarketplaceState {
   // New actions for marketplace info and trending assets
   fetchMarketplaceInfo: () => Promise<void>;
   fetchTrendingAssets: (limit?: number) => Promise<void>;
+
+  // P2P Trading actions
+  fetchOrderbook: (assetId: string) => Promise<void>;
+  fetchTradeHistory: (assetId: string) => Promise<void>;
+  fetchMyOrders: (assetId?: string) => Promise<void>;
+  fetchTradeableBalance: (assetId: string) => Promise<void>;
+  clearP2PError: () => void;
 }
 
 export const useMarketplaceStore = create<MarketplaceState>((set) => ({
@@ -85,6 +104,17 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
   // Trending Assets state
   trendingAssets: [],
   isLoadingTrending: false,
+
+  // P2P Trading state
+  orderbook: null,
+  tradeHistory: [],
+  myOrders: [],
+  tradeableBalance: null,
+  isLoadingOrderbook: false,
+  isLoadingTrades: false,
+  isLoadingMyOrders: false,
+  isLoadingBalance: false,
+  p2pError: null,
 
   // Existing actions
   fetchListings: async () => {
@@ -584,5 +614,65 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
       console.error('❌ Error fetching trending assets:', error);
       set({ isLoadingTrending: false, trendingAssets: [] });
     }
+  },
+
+  // P2P Trading actions
+  fetchOrderbook: async (assetId: string) => {
+    set({ isLoadingOrderbook: true, p2pError: null });
+    try {
+      const orderbook = await marketplaceService.getOrderbook(assetId);
+      console.log('✅ Fetched orderbook:', orderbook);
+      set({ orderbook, isLoadingOrderbook: false });
+    } catch (error: any) {
+      console.error('❌ Error fetching orderbook:', error);
+      set({ p2pError: error.message, isLoadingOrderbook: false });
+    }
+  },
+
+  fetchTradeHistory: async (assetId: string) => {
+    set({ isLoadingTrades: true, p2pError: null });
+    try {
+      const trades = await marketplaceService.getTradeHistory(assetId);
+      console.log('✅ Fetched trade history:', trades);
+      set({ tradeHistory: Array.isArray(trades) ? trades : [], isLoadingTrades: false });
+    } catch (error: any) {
+      console.error('❌ Error fetching trade history:', error);
+      set({ p2pError: error.message, isLoadingTrades: false, tradeHistory: [] });
+    }
+  },
+
+  fetchMyOrders: async (assetId?: string) => {
+    set({ isLoadingMyOrders: true, p2pError: null });
+    try {
+      const orders = await marketplaceService.getMyOrders(assetId);
+      console.log('✅ Fetched my orders:', orders);
+
+      // Filter by assetId if provided (client-side filtering since API returns all orders)
+      const filteredOrders = Array.isArray(orders) ? orders : [];
+      const finalOrders: SecondaryOrder[] = assetId
+        ? filteredOrders.filter((order: any) => order.assetId === assetId)
+        : filteredOrders;
+
+      set({ myOrders: finalOrders, isLoadingMyOrders: false });
+    } catch (error: any) {
+      console.error('❌ Error fetching my orders:', error);
+      set({ p2pError: error.message, isLoadingMyOrders: false, myOrders: [] });
+    }
+  },
+
+  fetchTradeableBalance: async (assetId: string) => {
+    set({ isLoadingBalance: true, p2pError: null });
+    try {
+      const balance = await marketplaceService.getTradeableBalance(assetId);
+      console.log('✅ Fetched tradeable balance:', balance);
+      set({ tradeableBalance: balance, isLoadingBalance: false });
+    } catch (error: any) {
+      console.error('❌ Error fetching tradeable balance:', error);
+      set({ p2pError: error.message, isLoadingBalance: false });
+    }
+  },
+
+  clearP2PError: () => {
+    set({ p2pError: null });
   },
 }));

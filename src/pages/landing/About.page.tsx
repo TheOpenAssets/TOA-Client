@@ -4,6 +4,7 @@ import { VerticalCutReveal } from "../../components/ui/vertical-cut-reveal";
 import { useRef, useEffect } from "react";
 import { useChangelogStore } from "../../stores/changelog.store";
 import Navbar from "./Navbar.page";
+import { PageLoader } from "../../components/ui/page-loader";
 
 export default function AboutPage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -188,7 +189,9 @@ export default function AboutPage() {
         {isLoadingMetrics ? (
           // Loading state
           <div className="col-span-full flex items-center justify-center text-gray-500">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex items-center justify-center">
+              <PageLoader text='' />
+            </div>
           </div>
         ) : contributors.length > 0 ? (
           // Render contributors dynamically

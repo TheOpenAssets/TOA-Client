@@ -186,6 +186,14 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
     <>
       {/* Main Borrow Interface - Clean Swap Style */}
       <div className="w-full max-w-[500px] mx-auto bg-white/30 rounded-3xl shadow-2xl p-6 relative z-50">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 hover:bg-white/50 rounded-full transition-colors z-10"
+        >
+          <X className="w-5 h-5 text-gray-700" />
+        </button>
+
         {/* Collateral Section (Top - Like "Sell") */}
         <div className="bg-white rounded-3xl p-6 shadow-lg mb-3">
           <div className="flex items-start justify-between mb-3">

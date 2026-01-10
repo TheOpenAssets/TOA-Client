@@ -159,7 +159,7 @@ class MarketplaceService extends BaseService {
    * - Marketplace page to display active auctions
    * - Admin dashboard to view all auctions
    */
-  async getAuctionAnnouncements(_type: 'AUCTION_LIVE'  = 'AUCTION_LIVE', _status: 'ACTIVE'  = 'ACTIVE'): Promise<any[]> {
+  async getAuctionAnnouncements(_type: 'AUCTION_LIVE' = 'AUCTION_LIVE', _status: 'ACTIVE' = 'ACTIVE'): Promise<any[]> {
     try {
       const response = await fetch(`${this.baseURL}/announcements`, {
         method: 'GET',
@@ -594,6 +594,211 @@ class MarketplaceService extends BaseService {
       return data;
     } catch (error) {
       console.error(`Error fetching purchase history for asset ID ${assetId}:`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // P2P TRADING ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Get user's tradeable balance for an asset
+   * GET /marketplace/secondary/:assetId/my-balance
+   */
+  async getTradeableBalance(assetId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/my-balance`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch tradeable balance');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching tradeable balance:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get orderbook for an asset
+   * GET /marketplace/secondary/:assetId/orderbook
+   */
+  async getOrderbook(assetId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/orderbook`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch orderbook');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching orderbook:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get trade history for an asset
+   * GET /marketplace/secondary/:assetId/trades
+   */
+  async getTradeHistory(assetId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/trades`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch trade history');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching trade history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user's active orders
+   * GET /marketplace/secondary/orders/user
+   * Note: assetId parameter kept for backwards compatibility but filtering happens client-side in store
+   */
+  async getMyOrders(_assetId?: string): Promise<any> {
+    try {
+      const url = `${this.baseURL}/marketplace/secondary/orders/user`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch my orders');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching my orders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction data for creating an order
+   * POST /marketplace/secondary/tx/create-order
+   */
+  async getCreateOrderTxData(payload: {
+    tokenAddress: string;
+    amount: string;
+    pricePerToken: string;
+    isBuy: boolean;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/tx/create-order`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to get create order transaction data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting create order tx data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction data for filling an order
+   * POST /marketplace/secondary/tx/fill-order
+   */
+  async getFillOrderTxData(payload: {
+    orderId: string;
+    amountToFill: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/tx/fill-order`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to get fill order transaction data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting fill order tx data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction data for canceling an order
+   * POST /marketplace/secondary/tx/cancel-order
+   */
+  async getCancelOrderTxData(orderId: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/tx/cancel-order`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to get cancel order transaction data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting cancel order tx data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get chart data for the secondary market (execution and sentiment)
+   * GET /marketplace/secondary/:assetId/chart
+   */
+  async getSecondaryMarketChartData(assetId: string, interval: string = '1h'): Promise<{
+    tradeCandles: any[];
+    orderBookCandles: any[];
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/chart?interval=${interval}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch chart data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
       throw error;
     }
   }

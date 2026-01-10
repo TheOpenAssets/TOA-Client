@@ -57,16 +57,11 @@ export const PortfolioStats = ({
         }}
       >
         <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
-          Total Asset Value
+          Total Value Invested
         </h3>
         <p className="font-gellix text-3xl font-semibold text-foreground">
           ${formatCurrency(totalAssetValue)}
         </p>
-        <div className="flex items-center gap-1 text-green-600 mt-2">
-          <TrendingUp className="w-3 h-3" />
-          <span className="font-gellix text-xs">+0.00%</span>
-        </div>
-
         {/* Blue Area Chart */}
         <MiniAreaChart
           data={assetChartData}

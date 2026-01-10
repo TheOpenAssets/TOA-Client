@@ -225,7 +225,7 @@ const PayoutViewPage = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center h-full">
           <PageLoader text="Loading Assets..." />
         </div>
       )}
