@@ -306,7 +306,6 @@ const MarketplacePage = () => {
   const filters: { value: FilterCategory; label: string }[] = [
     { value: 'all', label: 'All Assets' },
     { value: 'invoices', label: 'Invoices' },
-
     { value: 'high-yield', label: 'High Yield (>10%)' },
     { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
@@ -318,7 +317,7 @@ const MarketplacePage = () => {
     const numDays = typeof days === 'string' ? parseFloat(days) : days;
     if (numDays < 30) return `${numDays} days`;
     if (numDays < 365) return `${Math.floor(numDays / 30)} months`;
-    return `Matured`;
+    return `Payout Requested`;
   };
 
   // Calculate time remaining for auction
@@ -1080,7 +1079,7 @@ const MarketplacePage = () => {
                                 (typeof asset.maturityDays === 'number' && asset.maturityDays <= 0) ||
                                 asset.fundingProgress === 100;
 
-                              return isMatured ? (
+                              return isMatured && asset.status === 'PAYOUT_COMPLETE' ? (
                                 <button
                                   onClick={() => handleTableNavigate(asset)}
                                   className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 hover:scale-[1.07] transition-colors"

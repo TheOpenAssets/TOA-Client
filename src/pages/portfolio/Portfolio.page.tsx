@@ -469,7 +469,7 @@ const PortfolioPage = () => {
 
         {/* Top Navigation Bar - Fixed Height */}
         <header className="bg-transparent  z-40 relative flex-shrink-0">
-          <div className="max-w-[1400px] mx-auto px-6 py-4">
+          <div className="max-w-[90vw] mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               {/* Left: Logo + Search */}
               <div className="flex items-center gap-6">
@@ -491,6 +491,9 @@ const PortfolioPage = () => {
                 </div>
               </div>
 
+
+              {/* Right: Wallet Display */}
+              <div className="flex items-center gap-3">
               {/* Center: Navigation */}
               <nav className="flex items-center gap-4">
                 <button
@@ -505,9 +508,6 @@ const PortfolioPage = () => {
                   Borrow
                 </button>
               </nav>
-
-              {/* Right: Wallet Display */}
-              <div className="flex items-center gap-3">
                 {address && (
                   <>
                     <NotificationBell role="INVESTOR" />
@@ -693,6 +693,7 @@ const PortfolioPage = () => {
                     >
                       <div className="h-full flex flex-col">
                         <TradesTable
+                          assets={filteredAssets as any}
                           orders={filteredOrders}
                           isLoading={isLoadingMyOrders}
                           onCancelOrder={handleCancelOrder}
