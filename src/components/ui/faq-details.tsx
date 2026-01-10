@@ -106,7 +106,7 @@ const FaqDetails = ({
                 description:
                     "Use mETH as collateral to create leveraged exposure while yield services interest automatically.",
                 buttonText: "Use mETH",
-                videoSrc: "",
+                videoSrc: "https://youtu.be/c7CdBkcVZPQ",
             },
         },
         {
@@ -119,7 +119,7 @@ const FaqDetails = ({
                 description:
                     "View owned tokens, auction bids, leveraged positions, loans, yield history, and health metrics.",
                 buttonText: "View Portfolio",
-                videoSrc: "",
+                videoSrc: "https://youtu.be/NtLOZqsX5U8",
             },
         },
         {
