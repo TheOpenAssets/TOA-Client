@@ -79,7 +79,7 @@ export const ActiveBidsTable = ({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Filter Bar */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-3">
+      <div className="sticky top-0 z-20 bg-transparent border-b border-gray-300 px-6 py-3">
         <div className="flex items-center justify-end gap-3">
           <Filter className="w-4 h-4 text-gray-500" />
           <span className="text-xs font-medium text-gray-700">Filter by Status:</span>
@@ -106,7 +106,7 @@ export const ActiveBidsTable = ({
       </div>
 
       <table className="w-full">
-        <thead className="sticky top-0 bg-white z-10">
+        <thead className="sticky top-0 bg-transparent z-10">
           <tr className="border-b border-gray-200 text-black">
             <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Asset ID

@@ -177,7 +177,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
   if (positions.length === 0) {
     return (
-      <div className="bg-white rounded-[24px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
+      <div className="bg-transparent rounded-[24px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)] h-full w-full flex items-center justify-center text-center">
+        <div className=''>
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F3F4F6] flex items-center justify-center">
           <Wallet className="w-8 h-8 text-[#6B7280]" />
         </div>
@@ -194,6 +195,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           Start Borrowing
         </button>
       </div>
+        </div>
     );
   }
 
@@ -249,7 +251,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortType)}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#111111] font-medium outline-none focus:ring-2 focus:ring-[#111111]"
+            className="px-3 py-2 bg-transparent border border-gray-200 rounded-lg text-sm text-[#111111] font-medium outline-none focus:ring-2 focus:ring-[#111111]"
           >
             <option value="date">Newest First</option>
             <option value="health">Health Factor</option>
@@ -260,7 +262,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
       {/* Card Grid */}
       {filteredAndSortedPositions.length === 0 ? (
-        <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
+        <div className="bg-transparent rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
           <p className="text-sm text-[#6B7280]">No loans match the selected filter.</p>
         </div>
       ) : (
@@ -273,7 +275,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
             return (
               <div
                 key={position.positionId}
-                className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-shadow overflow-hidden"
+                className="bg-transparent rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-shadow overflow-hidden"
               >
                 {/* Main Card Content */}
                 <div className="p-6">
@@ -377,19 +379,19 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
                         {/* Schedule Summary */}
                         <div className="grid grid-cols-4 gap-4 mb-6">
-                          <div className="bg-white rounded-lg p-3">
+                          <div className="bg-transparent rounded-lg p-3">
                             <div className="text-xs text-[#6B7280] mb-1">Installments Paid</div>
                             <div className="text-lg font-bold text-[#111111]">
                               {schedule.installmentsPaid} / {schedule.numberOfInstallments}
                             </div>
                           </div>
-                          <div className="bg-white rounded-lg p-3">
+                          <div className="bg-transparent rounded-lg p-3">
                             <div className="text-xs text-[#6B7280] mb-1">Missed Payments</div>
                             <div className="text-lg font-bold text-[#EF4444]">
                               {schedule.missedPayments}
                             </div>
                           </div>
-                          <div className="bg-white rounded-lg p-3">
+                          <div className="bg-transparent rounded-lg p-3">
                             <div className="text-xs text-[#6B7280] mb-1">Next Payment Due</div>
                             <div className="text-sm font-semibold text-[#111111]">
                               {new Date(schedule.nextPaymentDue * 1000) > new Date()
@@ -398,7 +400,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                               }
                             </div>
                           </div>
-                          <div className="bg-white rounded-lg p-3">
+                          <div className="bg-transparent rounded-lg p-3">
                             <div className="text-xs text-[#6B7280] mb-1">Payment Interval</div>
                             <div className="text-sm font-semibold text-[#111111]">
                               {Math.floor(schedule.installmentInterval / 86400)} days
@@ -416,7 +418,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                   ? 'bg-[#D1FAE5]'
                                   : installment.status === 'MISSED'
                                   ? 'bg-[#FEE2E2]'
-                                  : 'bg-white'
+                                  : 'bg-transparent'
                               }`}
                             >
                               <div className="flex items-center gap-3">

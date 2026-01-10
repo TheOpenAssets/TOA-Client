@@ -179,7 +179,7 @@ export const RepayLoanModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="max-w-md w-full mx-4 bg-white rounded-2xl p-6 shadow-lg">
+      <div className="max-w-md w-full mx-4 bg-transparent rounded-2xl p-6 shadow-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Repay Loan</h2>

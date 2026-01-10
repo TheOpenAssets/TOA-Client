@@ -15,7 +15,7 @@ export const NoAssetsModal = ({ isOpen, onClose }: NoAssetsModalProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="max-w-2xl w-full mx-4 bg-white rounded-2xl p-8 shadow-lg relative">
+      <div className="max-w-2xl w-full mx-4 bg-transparent rounded-2xl p-8 shadow-lg relative">
         <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4">
           <X className="w-5 h-5 text-gray-500" />
         </Button>

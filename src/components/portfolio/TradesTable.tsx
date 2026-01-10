@@ -125,7 +125,7 @@ export const TradesTable = ({
     <>
       <div className="flex-1 overflow-y-auto">
         {/* Filter Bar */}
-        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-20 bg-transparent border-b border-gray-200 px-6 py-3 flex items-center justify-between">
           {/* Type Filter */}
           <div className="flex items-center gap-3">
             <Filter className="w-4 h-4 text-gray-500" />
@@ -173,7 +173,7 @@ export const TradesTable = ({
         </div>
 
         <table className="w-full">
-          <thead className="sticky top-[57px] bg-white z-10">
+          <thead className="sticky top-[57px] bg-transparent z-10">
             <tr className="border-b border-gray-200">
               <th className="px-4 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider w-10">
                 
@@ -215,7 +215,7 @@ export const TradesTable = ({
                 <>
                   <tr
                     key={order._id}
-                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-transparent' : 'bg-gray-50/50'
                       }`}
                     onClick={(e) => toggleRowExpansion(rowKey, e)}
                   >
@@ -316,7 +316,7 @@ export const TradesTable = ({
                               setOrderToCancel(order.orderId);
                             }}
                             disabled={isCancellingId === order.orderId}
-                            className="flex items-center gap-1 px-3 py-1 bg-white border border-red-200 text-red-600 rounded-lg font-gellix text-xs font-medium hover:bg-red-50 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="flex items-center gap-1 px-3 py-1 bg-transparent border border-red-200 text-red-600 rounded-lg font-gellix text-xs font-medium hover:bg-red-50 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           >
                             {isCancellingId === order.orderId ? (
                               <div className="animate-spin h-3 w-3 border-b-2 border-red-600 rounded-full"></div>

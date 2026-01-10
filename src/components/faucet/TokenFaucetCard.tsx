@@ -92,7 +92,7 @@ export const TokenFaucetCard = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6">
+    <div className="bg-transparent rounded-3xl p-6">
       {/* Card Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">

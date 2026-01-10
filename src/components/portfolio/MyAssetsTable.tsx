@@ -194,7 +194,7 @@ export const MyAssetsTable = ({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Filter Bar */}
-      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-white border-b border-gray-200 px-6 py-3 ">
+      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-300 px-6 py-3 ">
         {/* Type Filter */}
         <div className="flex items-center gap-3">
           <Filter className="w-4 h-4 text-gray-500" />
@@ -242,8 +242,8 @@ export const MyAssetsTable = ({
       </div>
 
       <table className="w-full">
-        <thead className="sticky top-0 bg-white z-10">
-          <tr className="border-b border-gray-200">
+        <thead className="sticky top-0 bg-transparent z-10">
+          <tr className="border-b border-gray-300">
             <th className="px-4 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
 
             </th>
@@ -283,7 +283,7 @@ export const MyAssetsTable = ({
               <>
                 <tr
                   key={rowKey}
-                  className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                  className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-transparent' : 'bg-gray-50/50'
                     }`}
                   onMouseEnter={() => setHoveredRow(rowKey)}
                   onMouseLeave={() => setHoveredRow(null)}
@@ -485,7 +485,7 @@ export const MyAssetsTable = ({
 
                 {/* Expanded Row Details */}
                 {isExpanded && (
-                  <tr className="bg-gray-50/80 border-b border-gray-200">
+                  <tr className="bg-transparent border-b border-gray-300">
                     <td colSpan={9} className="px-6 py-4">
                       {/* Basic Details Grid */}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm mb-6">
@@ -603,7 +603,7 @@ export const MyAssetsTable = ({
                           </h4>
                           <div className="overflow-x-auto">
                             <table className="w-full text-xs">
-                              <thead className="bg-gray-100 border-b border-gray-200">
+                              <thead className="bg-transparent border-b border-gray-300">
                                 <tr>
                                   <th className="px-3 py-2 text-left font-medium text-gray-700">Date</th>
                                   <th className="px-3 py-2 text-left font-medium text-gray-700">Type</th>
@@ -617,9 +617,9 @@ export const MyAssetsTable = ({
                                   <th className="px-3 py-2 text-center font-medium text-gray-700">Tx</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-gray-200">
+                              <tbody className="divide-y divide-gray-300">
                                 {asset.transactionHistory.map((tx: any, txIndex: number) => (
-                                  <tr key={txIndex} className="hover:bg-white transition-colors">
+                                  <tr key={txIndex} className="hover:bg-transparent transition-colors">
                                     <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
                                       {new Date(tx.date).toLocaleDateString('en-US', {
                                         month: 'short',

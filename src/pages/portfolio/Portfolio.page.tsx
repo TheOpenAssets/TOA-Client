@@ -29,6 +29,7 @@ import { ShaderAnimation } from '../../components/ui/shimmer-lines';
 import { useCreditData } from '../borrow/hooks/useCreditData';
 import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
 import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
+import { Wavy } from '../../components/ui/wavy';
 
 
 const PortfolioPage = () => {
@@ -452,7 +453,7 @@ const PortfolioPage = () => {
             onClick={fetchPortfolio}
             variant="outline"
             size="lg"
-            className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
+            className="bg-black/20 border-white/30 text-white hover:bg-transparent hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
           >
             Let's try again !
           </Button>
@@ -463,10 +464,17 @@ const PortfolioPage = () => {
 
   return (
     <>
+      {/* <Wavy colors={["#FFFFFF", "#F9FBFF", "#F1F8FF", "#F4FFF9", "#FFFBEA", "#EFFFF7"]} />
+       */}
+      {/* <Wavy colors={["#F5F9FF", "#EEF3FF", "#F3EEFF", "#EDE7FF", "#F2F2F2", "#E6E6E6"]} />
+       */}
+      <Wavy colors={["#FFFFFF", "#F5F8FF", "#EAF1FF", "#F3F0FF", "#EDE8FF", "#F9FAFF"]} />
+
+
+
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      <div className="h-screen flex flex-col bg-[#ffffff] overflow-hidden">
-
+      <div className="h-screen absolute top-0 left-0 flex flex-col bg-transparent overflow-hidden">
         {/* Top Navigation Bar - Fixed Height */}
         <header className="bg-transparent  z-40 relative flex-shrink-0">
           <div className="max-w-[90vw] mx-auto px-6 py-4">
@@ -498,20 +506,20 @@ const PortfolioPage = () => {
               <nav className="flex items-center gap-4">
                 <button
                   onClick={() => navigate('/marketplace')}
-                  className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                  className="font-geist border border-gray-300  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                 >
                   Marketplace
                 </button>
                 <button
                   onClick={() => navigate('/borrow')}
-                  className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
+                  className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
                   Borrow
                 </button>
               </nav>
                 {address && (
                   <>
                     <NotificationBell role="INVESTOR" />
-                    <div className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
+                    <div className="px-6 py-2 bg-transparent border border-gray-300 rounded-lg font-mono text-sm font-medium text-foreground">
                       {truncateAddress(address)}
                     </div>
                     <div className="bottom-0 flex items-start sticky justify-start  bg-transparent z-80">
@@ -544,7 +552,7 @@ const PortfolioPage = () => {
               {/* Right Main Area - 3/4 width, tabbed content */}
               <div className="lg:col-span-7 h-full flex flex-col">
                 {/* Single Table Container with Tabs */}
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col" style={{
+                <div className="bg-transparent rounded-2xl border border-gray-300 overflow-hidden h-full flex flex-col" style={{
                   boxShadow: `
                             4px 4px 12px rgba(243, 244, 245, 0.08),
                             8px 8px 24px rgba(150, 151, 151, 0.06),
@@ -553,7 +561,7 @@ const PortfolioPage = () => {
              `,
                 }}>
                   {/* Tab Header */}
-                  <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+                  <div className="px-6 py-4 border-b border-gray-300 flex-shrink-0">
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setActiveTab('assets')}
@@ -737,7 +745,7 @@ const PortfolioPage = () => {
         {showClaimModal && selectedAssetForClaim && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-lg flex items-center justify-center z-50 p-4">
             <div
-              className="rounded-2xl p-8 max-w-md w-full bg-white"
+              className="rounded-2xl p-8 max-w-md w-full bg-transparent"
               style={{
                 boxShadow: `
                   4px 4px 12px rgba(243, 244, 245, 0.08),
@@ -767,7 +775,7 @@ const PortfolioPage = () => {
                       {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
                     </p>
                   </div>
-                  <div className="pt-4 border-t border-gray-200">
+                  <div className="pt-4 border-t border-gray-300">
                     <p className="font-inter text-xs text-gray-500 mb-1.5">Expected USDC</p>
                     <p className="font-gellix text-2xl font-semibold text-foreground">
                       ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
