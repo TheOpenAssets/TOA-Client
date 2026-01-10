@@ -16,6 +16,7 @@ import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'rec
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 // USDC Contract Address
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
@@ -261,7 +262,7 @@ const AssetDetailsPage = () => {
     console.log('Token Address:', asset.token?.address || 'N/A');
     console.log('Buyer Address:', address);
     console.log('==============================================\n');
-
+    setIsPurchasing(true);
     setLeveragePurchaseStatus(null);
 
     try {
@@ -354,11 +355,13 @@ const AssetDetailsPage = () => {
           setIsApproving(false);
           // Reset form and reload wallet data
           setLeverageTokenInput('');
+          setIsPurchasing(false);
           await loadWalletData();
 
           // Briefly show success then reset button state
           setTimeout(() => {
             setLeveragePurchaseStatus(null);
+            setIsPurchasing(false);
           }, 2500);
           console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
           return;
@@ -469,6 +472,7 @@ const AssetDetailsPage = () => {
       // Briefly show success then reset button state
       setTimeout(() => {
         setLeveragePurchaseStatus(null);
+        setIsPurchasing(false);
       }, 2500);
 
       console.log('\n✨ ===== LEVERAGED PURCHASE COMPLETED =====\n');
@@ -479,6 +483,7 @@ const AssetDetailsPage = () => {
       // Reset status after showing failure briefly
       setTimeout(() => {
         setLeveragePurchaseStatus(null);
+        setIsPurchasing(false);
       }, 3000);
       console.log('\n===== LEVERAGED PURCHASE FLOW FAILED =====\n');
     }
@@ -489,7 +494,9 @@ const AssetDetailsPage = () => {
     : true;
 
   if (isLoadingAsset) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">
+      <PageLoader text='' />
+    </div>;
   }
 
   if (error) {
@@ -647,11 +654,15 @@ const AssetDetailsPage = () => {
                   Invoice {asset.metadata.invoiceNumber}
                 </h1>
                 <div>
+                  <Button className="font-geist border border-gray-300  text-lg font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-lg" onClick={() => navigate(`/trade/asset/${asset.assetId}`)}>
+                    Trade
+                  </Button>
                 </div>
               </div>
               <p className="text-sm text-[#4f5258]">
                 Status: <span className="font-medium">{asset.status}</span>
               </p>
+        
             </div>
 
             {/* Chart Section */}
@@ -735,6 +746,7 @@ const AssetDetailsPage = () => {
                               <p className="font-bold text-[#111111]">{tokens} Tokens</p>
                               {props.payload.purchaseMethod && (
                                 <p className="text-xs text-gray-500">
+                    
                                   Method: <span className={props.payload.purchaseMethod === 'LEVERAGE' ? 'text-blue-600 font-medium' : 'text-green-600 font-medium'}>
                                     {props.payload.purchaseMethod}
                                   </span>
@@ -1035,8 +1047,8 @@ const AssetDetailsPage = () => {
 
                       <Button
                         onClick={handleOpenLeveragePosition}
-                        disabled={isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
-                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 cursor-pointer hover:shadow-lg hover:scale-[1.02] "
+                        disabled={isPurchasing ||isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
+                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
                       >
                         {(() => {
                           const enteredAmount = parseFloat(leverageTokenInput || '0');
