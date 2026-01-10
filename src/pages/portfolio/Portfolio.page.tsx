@@ -39,7 +39,7 @@ const PortfolioPage = () => {
   const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   const { disconnect } = useDisconnect();
-  const { creditData , refetch: refetchCredit } = useCreditData(address);
+  const { creditData, refetch: refetchCredit } = useCreditData(address);
 
 
   // Cancel order hook
@@ -48,7 +48,7 @@ const PortfolioPage = () => {
 
   // Tab state for portfolio sections
   type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades' | 'loans';
-  
+
   const initialTab = searchParams.get('tab') as PortfolioTab | null;
   const [activeTab, setActiveTab] = useState<PortfolioTab>(initialTab || 'assets');
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,9 +59,6 @@ const PortfolioPage = () => {
 
   // Leverage position detail chart state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
-
-  
-  
 
 
   // Solvency loans state
@@ -533,9 +530,9 @@ const PortfolioPage = () => {
         {/* Main Content - Fills remaining height to make 100vh */}
         <div className="flex-1 overflow-hidden">
           <div className="w-[100vw] mx-auto p-10 h-full z-40 relative">
-            <div className="grid grid-cols-5 lg:grid-cols-4 gap-6 h-full">
+            <div className="grid grid-cols-5 lg:grid-cols-9 gap-6 h-full">
               {/* Left Sidebar - 1/4 width, stats cards */}
-              <div className="lg:col-span-1 h-full">
+              <div className="lg:col-span-2 h-full">
                 <PortfolioStats
                   totalAssetValue={totalAssetValue}
                   portfolioAssets={filteredAssets}
@@ -545,15 +542,15 @@ const PortfolioPage = () => {
               </div>
 
               {/* Right Main Area - 3/4 width, tabbed content */}
-              <div className="lg:col-span-3 h-full flex flex-col">
+              <div className="lg:col-span-7 h-full flex flex-col">
                 {/* Single Table Container with Tabs */}
                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col" style={{
                   boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(150, 151, 151, 0.06),
-            12px 12px 36px rgba(92, 92, 93, 0.04),
-            16px 16px 48px rgba(45, 46, 47, 0.02)
-          `,
+                            4px 4px 12px rgba(243, 244, 245, 0.08),
+                            8px 8px 24px rgba(150, 151, 151, 0.06),
+                            12px 12px 36px rgba(92, 92, 93, 0.04),
+                            16px 16px 48px rgba(45, 46, 47, 0.02)
+             `,
                 }}>
                   {/* Tab Header */}
                   <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
@@ -579,8 +576,8 @@ const PortfolioPage = () => {
                       <button
                         onClick={() => setActiveTab('loans')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'loans'
-                            ? 'bg-gray-900 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         My Loans
@@ -719,7 +716,7 @@ const PortfolioPage = () => {
           />
         )}
 
-        <DepositCollateralModal 
+        <DepositCollateralModal
           isOpen={showDepositModal}
           onClose={() => setShowDepositModal(false)}
           onSuccess={() => {

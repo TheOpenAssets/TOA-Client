@@ -139,6 +139,9 @@ export const MyAssetsTable = ({
   };
 
   const formatCurrency = (value: number): string => {
+    if (value < 0) {
+      return `${formatCurrency(-value)}`;
+    }
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
@@ -370,7 +373,10 @@ export const MyAssetsTable = ({
                         </div>
                       ) : (
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500">Invested</span>
+                            <span className="text-xs text-gray-500"> {(formatUSDCAmount(asset.totalInvested || '0') > 0) ?
+                              (<span className=''>Capital Invested</span>)
+                              : (<span>Capital Received</span>)
+                            }</span>
                           <span className={`font-medium ${formatUSDCAmount(asset.totalInvested || '0') > 0
                             ? 'text-red-600'
                             : 'text-green-600'
