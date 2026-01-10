@@ -69,6 +69,8 @@ export interface AssetMetadata {
     buyerName: string;
     industry: string;
     riskTier: string;
+    name?: string;
+    image?: string;
 }
 
 export interface TokenParams {

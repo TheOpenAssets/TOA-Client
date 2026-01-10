@@ -23,6 +23,7 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
   const [isBorrowing, setIsBorrowing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<IssuerAsset | null>(null);
+  const [assetDetailsMap, setAssetDetailsMap] = useState<Record<string, IssuerAsset>>({});
 
   const availableCredit = creditData?.availableCredit ?? 0;
   const positions = creditData?.collateral ?? [];
@@ -34,10 +35,34 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
     }
   }, [isOpen, positions, selectedPosition]);
 
-  // Fetch asset details when position changes
+  // Fetch asset details for all positions
   useEffect(() => {
-    const fetchAssetDetails = async () => {
-      if (selectedPosition) {
+    const fetchAllAssetDetails = async () => {
+      if (isOpen && positions.length > 0) {
+        const detailsMap: Record<string, IssuerAsset> = {};
+        await Promise.all(positions.map(async (position) => {
+          try {
+            const assetDetails = await assetService.getAssetByTokenAddress(position.tokenAddress);
+            if (assetDetails) {
+              detailsMap[position.tokenAddress] = assetDetails;
+            }
+          } catch (err) {
+            console.error(`Failed to fetch asset details for ${position.tokenAddress}:`, err);
+          }
+        }));
+        setAssetDetailsMap(detailsMap);
+      }
+    };
+    fetchAllAssetDetails();
+  }, [isOpen, positions]);
+
+  // Set selected asset from map when position changes
+  useEffect(() => {
+    if (selectedPosition && assetDetailsMap[selectedPosition.tokenAddress]) {
+      setSelectedAsset(assetDetailsMap[selectedPosition.tokenAddress]);
+    } else if (selectedPosition) {
+      // Fallback to fetch if not in map (should be rare)
+      const fetchAssetDetails = async () => {
         try {
           const assetDetails = await assetService.getAssetByTokenAddress(selectedPosition.tokenAddress);
           setSelectedAsset(assetDetails);
@@ -45,10 +70,12 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
           console.error("Failed to fetch asset details:", err);
           setSelectedAsset(null);
         }
-      }
-    };
-    fetchAssetDetails();
-  }, [selectedPosition]);
+      };
+      fetchAssetDetails();
+    } else {
+      setSelectedAsset(null);
+    }
+  }, [selectedPosition, assetDetailsMap]);
 
   // Validate installments
   const { loanDuration, installmentError } = useMemo(() => {
@@ -57,15 +84,23 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
     }
     try {
       const maxDuration = assetService.calculateLoanDuration(selectedAsset);
-      const requestedDuration = installments * 30 * 86400;
+      const requestedDuration = installments * 86400; // Assuming 30 days per installment
+
+      if (installments > 24) {
+        return { loanDuration: 0, installmentError: 'Maximum 24 installments allowed.' };
+      }
+      if (installments < 1) {
+        return { loanDuration: 0, installmentError: 'Minimum 1 installment required.' };
+      }
 
       if (requestedDuration > maxDuration) {
+        const maxInstallments = Math.floor(maxDuration / (86400));
         return {
-          loanDuration: maxDuration,
-          installmentError: `Max ${Math.floor(maxDuration / (30 * 86400))} monthly payments allowed`
+          loanDuration: 0,
+          installmentError: `This asset only allows up to ${maxInstallments} installments.`
         };
       }
-      return { loanDuration: maxDuration, installmentError: null };
+      return { loanDuration: requestedDuration, installmentError: null };
     } catch (err: any) {
       return { loanDuration: 0, installmentError: err.message };
     }
@@ -75,12 +110,14 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
   const filteredPositions = useMemo(() => {
     if (!searchQuery) return positions;
     const query = searchQuery.toLowerCase();
-    return positions.filter(p =>
-      p.tokenSymbol.toLowerCase().includes(query) ||
-      p.tokenAddress.toLowerCase().includes(query) ||
-      p.tokenName.toLowerCase().includes(query)
-    );
-  }, [positions, searchQuery]);
+    return positions.filter(p => {
+        const asset = assetDetailsMap[p.tokenAddress];
+        const name = asset?.metadata.invoiceNumber || p.tokenName;
+        return name.toLowerCase().includes(query) ||
+            p.tokenSymbol.toLowerCase().includes(query) ||
+            p.tokenAddress.toLowerCase().includes(query)
+    });
+  }, [positions, searchQuery, assetDetailsMap]);
 
   // Validation
   const isAmountInvalid = useMemo(() => {
@@ -154,9 +191,9 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
               {selectedPosition ? (
                 <>
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
-                    {selectedPosition.tokenSymbol.charAt(0)}
+                    {(selectedAsset?.metadata.invoiceNumber || selectedPosition.tokenSymbol).charAt(0)}
                   </div>
-                  <span className="font-semibold text-gray-900">{selectedPosition.tokenSymbol}</span>
+                  <span className="font-semibold text-gray-900">{selectedAsset?.metadata.invoiceNumber || selectedPosition.tokenSymbol}</span>
                   <ChevronDown className="w-4 h-4 text-gray-600" />
                 </>
               ) : (
@@ -234,17 +271,23 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
         {/* Installments - Minimal Design */}
         <div className="bg-white rounded-3xl p-6 shadow-sm mb-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">Repayment period</span>
+            <span className="text-sm text-gray-500">Number of Installments</span>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 value={installments}
-                onChange={(e) => setInstallments(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) => {
+                  let value = parseInt(e.target.value, 10);
+                  if (isNaN(value)) value = 1;
+                  if (value > 24) value = 24;
+                  if (value < 1) value = 1;
+                  setInstallments(value);
+                }}
                 min="1"
+                max="24"
                 disabled={isBorrowing || !selectedAsset}
-                className="w-16 px-3 py-2 text-right font-semibold text-gray-900 bg-gray-50 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-20 px-3 py-2 text-right font-semibold text-gray-900 bg-gray-50 rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-600">months</span>
             </div>
           </div>
           {installmentError && (
@@ -321,7 +364,13 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
                 </div>
               ) : (
                 <div>
-                  {filteredPositions.map((position) => (
+                  {filteredPositions.map((position) => {
+                    const asset = assetDetailsMap[position.tokenAddress];
+                    const name = asset?.metadata.invoiceNumber || position.tokenName;
+                    const symbol = asset?.metadata.invoiceNumber || position.tokenSymbol;
+                                        const industry = asset?.metadata.industry || position.tokenSymbol;
+
+                    return (
                     <button
                       key={position.positionId || position.tokenAddress}
                       onClick={() => handlePositionSelect(position)}
@@ -329,16 +378,16 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
                     >
                       {/* Token Icon */}
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                        {position.tokenSymbol.charAt(0)}
+                        {symbol.charAt(0)}
                       </div>
 
                       {/* Token Info */}
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-900 text-base mb-0.5">
-                          {position.tokenName}
+                          {name}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {position.tokenSymbol} • {position.tokenAddress.slice(0, 6)}...{position.tokenAddress.slice(-4)}
+                          {industry} • {position.tokenAddress.slice(0, 6)}...{position.tokenAddress.slice(-4)}
                         </p>
                       </div>
 
@@ -349,7 +398,8 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
                         </p>
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
