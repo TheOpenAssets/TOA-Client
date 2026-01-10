@@ -118,7 +118,7 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
                     xAxisIndex: [0],
                     startValue: Math.max(0, data.length - 35),
                     endValue: data.length - 1,
-                    zoomLock: true
+                    zoomLock: false
                 },
                 {
                     type: 'slider',
