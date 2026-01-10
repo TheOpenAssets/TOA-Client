@@ -35,6 +35,16 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
     }
   }, [isOpen, positions, selectedPosition]);
 
+
+    useEffect(() => {
+    if (!error) return;
+
+    const timer = setTimeout(() => {
+      setError(null);
+    }, 5000); // ⏱ 5 seconds
+
+    return () => clearTimeout(timer);
+  }, [error]);
   // Fetch asset details for all positions
   useEffect(() => {
     const fetchAllAssetDetails = async () => {
@@ -291,14 +301,25 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnly
             </div>
           </div>
           {installmentError && (
-            <div className="mt-2 text-xs text-amber-600">{installmentError}</div>
+            <div className="mt-2 text-xs text-amber-600 ">{installmentError}</div>
           )}
         </div>
 
         {/* Error Banner */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-3">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-3 max-w-full max-h-40 overflow-auto break-words whitespace-pre-wrap">
+            <p className="text-sm text-red-700">
+              {(() => {
+          // Extract revert reason from error message
+          const reasonMatch = error.match(/reason="([^"]+)"/);
+          if (reasonMatch && reasonMatch[1]) {
+            return reasonMatch[1];
+          }
+          
+          // Fallback to showing the full error if no reason found
+          return error;
+              })()}
+            </p>
           </div>
         )}
 
