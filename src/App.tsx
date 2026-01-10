@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { router } from './app/router';
 import { WalletProvider } from './app/providers/WalletProvider';
 import { WalletIntegrityProvider } from './app/providers/WalletIntegrityProvider';
+import "./styles/HeroBackground.css";
 
 
 function App() {

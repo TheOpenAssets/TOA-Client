@@ -1,17 +1,24 @@
 // src/components/portfolio/PortfolioStats.tsx
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Plus } from 'lucide-react';
 import { MiniAreaChart } from './MiniAreaChart';
 import { generateAssetValueChart, generateYieldChart } from '../../lib/utils/portfolioChartGenerator';
 import type { PortfolioAsset } from '../../lib/api/portfolio.service';
+import type { OAIDCreditLine } from '../../types/solvency.types';
+import { Button } from '../ui/button';
+import { formatUSD } from '../../utils/solvency/format-credit.util';
 
 interface PortfolioStatsProps {
   totalAssetValue: number;
   portfolioAssets: PortfolioAsset[];
+  creditData: OAIDCreditLine | null;
+  onIncreaseLimit: () => void;
 }
 
 export const PortfolioStats = ({
   totalAssetValue,
-  portfolioAssets
+  portfolioAssets,
+  creditData,
+  onIncreaseLimit,
 }: PortfolioStatsProps) => {
   const formatCurrency = (value: number): string => {
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -110,7 +117,7 @@ export const PortfolioStats = ({
         />
       </div>
 
-      {/* Loan Taken/Pending Card */}
+      {/* OAID Credit Limit Card */}
       <div
         className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col relative overflow-hidden"
          style={{
@@ -123,14 +130,21 @@ export const PortfolioStats = ({
         }}
       >
         <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
-          Loan Taken/Pending
+          OAID Credit Limit
         </h3>
         <p className="font-gellix text-3xl font-semibold text-foreground">
-          $0.00
+          {formatUSD(creditData?.creditLimit ?? 0)}
         </p>
         <p className="font-gellix text-xs text-gray-500 mt-2">
-          No active loans
+          Available: {formatUSD(creditData?.availableCredit ?? 0)}
         </p>
+        <div className="mt-auto pt-4">
+          <Button onClick={onIncreaseLimit}               className=" mx-auto items-center flex text-center text-md py-4 px-6 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
+>
+            <Plus className="w-4 h-4 mr-2" />
+            Increase Limit
+          </Button>
+        </div>
       </div>
     </div>
   );

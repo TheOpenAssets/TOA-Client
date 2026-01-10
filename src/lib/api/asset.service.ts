@@ -98,6 +98,101 @@ class AssetService extends BaseService {
   }
 
   /**
+   * Get asset details by token address
+   * Used to fetch maturity date for loan duration calculation
+   *
+   * ✅ ENDPOINT: GET /assets/token/:tokenAddress
+   * Reference: COMPLETE_LOAN.md line 100-101
+   *
+   * @param tokenAddress - The token contract address
+   * @returns Promise with asset data including maturity date
+   */
+  async getAssetByTokenAddress(tokenAddress: string): Promise<IssuerAsset> {
+    try {
+      console.log(`📋 Fetching asset details for token: ${tokenAddress}`);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/assets/token/${tokenAddress}`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(),
+        },
+        30000
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || 'Failed to fetch asset details. Asset may not exist or maturity date unavailable.'
+        );
+      }
+
+      const responseData = await response.json();
+
+      // Debug: Log full response structure
+      console.log('📦 Full API response:', JSON.stringify(responseData, null, 2));
+
+      // Extract asset from response (try different structures)
+      let asset = responseData.asset || responseData.data || responseData;
+
+      // Debug: Log extracted asset
+      console.log('📋 Extracted asset:', {
+        assetId: asset?.assetId,
+        hasMetadata: !!asset?.metadata,
+        dueDate: asset?.metadata?.dueDate,
+        metadataKeys: asset?.metadata ? Object.keys(asset.metadata) : [],
+      });
+
+      // Validate asset has required fields
+      if (!asset || !asset.metadata) {
+        throw new Error('Invalid asset response: Missing metadata object');
+      }
+
+      if (!asset.metadata.dueDate) {
+        throw new Error(`Invalid asset response: Missing dueDate in metadata. Metadata keys: ${Object.keys(asset.metadata).join(', ')}`);
+      }
+
+      console.log('✅ Asset details validated:', {
+        assetId: asset.assetId,
+        dueDate: asset.metadata.dueDate,
+        status: asset.status,
+      });
+
+      return asset;
+    } catch (error: any) {
+      console.error('❌ Error fetching asset by token address:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Calculate loan duration in seconds from asset maturity date
+   * Used for borrowUSDC contract call
+   *
+   * @param asset - Asset data with maturity date
+   * @returns Loan duration in seconds
+   * @throws Error if asset has already matured
+   */
+  calculateLoanDuration(asset: IssuerAsset): number {
+    if (!asset.metadata?.dueDate) {
+      console.error('❌ Asset metadata missing dueDate:', asset.metadata?.dueDate);
+      throw new Error('Asset does not have a maturity date. Cannot calculate loan duration.');
+    }
+
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const maturityDate = new Date(asset.metadata.dueDate).getTime() / 1000; // Asset maturity in seconds
+    const loanDuration = Math.floor(maturityDate - now);
+
+    if (loanDuration <= 0) {
+      throw new Error('Asset has already matured. Cannot borrow against matured assets.');
+    }
+
+    console.log(`📅 Loan duration calculated: ${loanDuration}s (~${Math.floor(loanDuration / 86400)} days)`);
+
+    return loanDuration;
+  }
+
+  /**
    * Upload a new asset
    *
    * Endpoint: POST /assets/upload

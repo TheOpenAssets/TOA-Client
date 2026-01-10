@@ -9,6 +9,7 @@ import {
   DollarSign,
   List,
   LogOut,
+  TrendingDown,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
@@ -90,6 +91,11 @@ const AdminLayout = () => {
       name: 'Listings',
       path: '/admin/listings',
       icon: List,
+    },
+    {
+      name: 'Loans',
+      path: '/admin/loans',
+      icon: TrendingDown,
     },
     {
       name: 'Compliance',

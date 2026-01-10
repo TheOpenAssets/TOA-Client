@@ -321,3 +321,47 @@ export interface AuctionClearingPriceInfo {
   allBids: AuctionBid[];
   priceBreakdown: AuctionPricePoint[];
 }
+
+
+// ============================================
+// ADMIN SOLVENCY/LOAN MANAGEMENT TYPES
+// ============================================
+
+export interface AdminPosition {
+  _id: string;
+  positionId: number;
+  userAddress: string;
+  collateralTokenAddress: string;
+  collateralTokenType: string;
+  collateralAmount: string;
+  tokenValueUSD: string;
+  usdcBorrowed: string;
+  initialLTV: number;
+  currentHealthFactor: number;
+  healthStatus: string;
+  status: string;
+  totalRepaid: string;
+  loanDuration: number;
+  numberOfInstallments: number;
+  installmentInterval: number;
+  installmentsPaid: number;
+  missedPayments: number;
+  repaymentSchedule: any[];
+  isDefaulted: boolean;
+  oaidCreditIssued: boolean;
+  partnerLoans: any[];
+  totalPartnerDebt: string;
+  depositTxHash: string;
+  depositBlockNumber: number;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  nextPaymentDueDate?: string;
+}
+
+export interface AdminPositionsResponse {
+    success: boolean;
+    count: number;
+    positions: AdminPosition[];
+}
+
