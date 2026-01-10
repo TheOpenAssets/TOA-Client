@@ -1036,7 +1036,7 @@ const AssetDetailsPage = () => {
                       <Button
                         onClick={handleOpenLeveragePosition}
                         disabled={isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
-                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 cursor-pointer hover:shadow-lg hover:scale-[1.02] "
                       >
                         {(() => {
                           const enteredAmount = parseFloat(leverageTokenInput || '0');
