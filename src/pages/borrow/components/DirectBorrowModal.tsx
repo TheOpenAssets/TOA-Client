@@ -17,7 +17,7 @@ import { X, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import { assetService } from '../../../lib/api/asset.service';
-import { HealthFactorBar } from './HealthFactorBar';
+import { HealthFactorBar } from './HealthFactorBar.tsx';
 import type { Position } from '../../../types/solvency.types';
 
 interface DirectBorrowModalProps {
