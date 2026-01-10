@@ -80,7 +80,7 @@ export const ActiveBidsTable = ({
     <div className="flex-1 overflow-y-auto">
       {/* Filter Bar */}
       <div className="sticky top-0 z-20 bg-transparent border-b border-gray-300 px-6 py-3">
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-end gap-3 bg-transparent">
           <Filter className="w-4 h-4 text-gray-500" />
           <span className="text-xs font-medium text-gray-700">Filter by Status:</span>
           <div className="flex gap-2">

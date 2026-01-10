@@ -144,7 +144,7 @@ const TradingEngineProductionPage = () => {
 
     useEffect(() => {
         fetchChartData();
-        const poll = setInterval(fetchChartData, 30000);
+        const poll = setInterval(fetchChartData, 30000000);
         echarts.connect('trading-engine');
         return () => clearInterval(poll);
     }, [fetchChartData]);
@@ -218,7 +218,7 @@ const TradingEngineProductionPage = () => {
         if (!assetId) return;
         fetchOrderbook(assetId);
         setPolling(true);
-        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 2000);
+        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 200000000);
         return () => { clearInterval(poll); setPolling(false); };
     }, [fetchOrderbook]);
 

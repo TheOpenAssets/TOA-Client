@@ -173,7 +173,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
     <>
       <div className="flex-1 overflow-y-auto">
         {/* Filter Bar */}
-        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-white">
+        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-transparent">
           <div className="flex items-center justify-end gap-3">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-xs font-medium text-gray-700">Filter by Status:</span>
@@ -200,13 +200,16 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
         </div>
 
         <table className="w-full">
-          <thead className="sticky top-0 bg-white z-10">
+          <thead className="sticky top-0 bg-transparent z-10">
             <tr className="border-b border-gray-200 text-black">
               <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                 Asset
               </th>
               <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
                 Amount Invested
+              </th>
+              <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Tokens
               </th>
               <th className="px-6 py-3 text-right font-gellix text-xs font-medium text-black uppercase tracking-wider">
                 Collateral
@@ -227,6 +230,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
               const health = getHealthFactor(pos);
               const collateral = formatMETH(pos.mETHCollateral);
               const invested = formatUSDC(pos.usdcBorrowed);
+              const totalAmount = isPortfolioPosition(pos) ? formatMETH(pos.totalAmount) : (parseFloat(formatMETH((pos as LeveragePosition).rwaTokenAmount || '0' ))).toFixed(2);
               const status = getStatus(pos);
               const positionStatusStyle = getPositionStatusStyle(status);
               const isActivePosition = status === 'ACTIVE';
@@ -256,6 +260,13 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
                   <td className="px-6 py-4 text-right">
                     <div className="font-gellix text-sm font-normal text-foreground">
                       ${invested} USDC
+                    </div>
+                  </td>
+
+                  {/* Tokens */}
+                  <td className="px-6 py-4 text-right">
+                    <div className="font-gellix text-sm font-normal text-foreground">
+                      {totalAmount}
                     </div>
                   </td>
 

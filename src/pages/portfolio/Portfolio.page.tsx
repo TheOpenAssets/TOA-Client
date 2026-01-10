@@ -65,23 +65,21 @@ const PortfolioPage = () => {
   // Solvency loans state
   const [myLoans, setMyLoans] = useState<SolvencyPosition[]>([]);
   const [isLoadingMyLoans, setIsLoadingMyLoans] = useState(true);
+  const { settleBid, status: settleStatus, error: settleError, isLoading: isSettling, isSuccess } = useSettleBid();
+  const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
 
-  // Fetch solvency loans
-  const fetchMyLoans = useCallback(async () => {
-    if (!address) return;
-    setIsLoadingMyLoans(true);
-    try {
-      const response = await solvencyService.getMyPositions('ACTIVE', 100, 0);
-      const loans = response.positions.filter(p => parseFloat(p.usdcBorrowed) > 0);
-      setMyLoans(loans);
-    } catch (err) {
-      console.error("Error fetching solvency loans:", err);
-      showError("Failed to fetch loans", "Could not retrieve your loan positions.");
-    } finally {
-      setIsLoadingMyLoans(false);
-    }
-  }, [address, showError]);
-
+  // Yield claiming state (investor-claim-yield.sh burn-to-claim model)
+  const [claimingAssetId, setClaimingAssetId] = useState<string | null>(null);
+  const [claimStatus, setClaimStatus] = useState<string>('');
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [selectedAssetForClaim, setSelectedAssetForClaim] = useState<{
+    assetId: string;
+    tokenAddress: string;
+    tokenSymbol: string;
+    investorBalance: string;
+    expectedUsdc: string;
+    allowance: string;
+  } | null>(null);
 
   // Filtered data based on search term
   // Get all portfolio items (both STATIC and LEVERAGE)
@@ -120,23 +118,22 @@ const PortfolioPage = () => {
     0
   );
 
-  // Contract interaction for settling bids (investor-settle.sh verified)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { settleBid, status: settleStatus, error: settleError, isLoading: isSettling, isSuccess } = useSettleBid();
-  const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
 
-  // Yield claiming state (investor-claim-yield.sh burn-to-claim model)
-  const [claimingAssetId, setClaimingAssetId] = useState<string | null>(null);
-  const [claimStatus, setClaimStatus] = useState<string>('');
-  const [showClaimModal, setShowClaimModal] = useState(false);
-  const [selectedAssetForClaim, setSelectedAssetForClaim] = useState<{
-    assetId: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    investorBalance: string;
-    expectedUsdc: string;
-    allowance: string;
-  } | null>(null);
+  // Fetch solvency loans
+  const fetchMyLoans = useCallback(async () => {
+    if (!address) return;
+    setIsLoadingMyLoans(true);
+    try {
+      const response = await solvencyService.getMyPositions('ACTIVE', 100, 0);
+      const loans = response.positions.filter(p => parseFloat(p.usdcBorrowed) > 0);
+      setMyLoans(loans);
+    } catch (err) {
+      console.error("Error fetching solvency loans:", err);
+      showError("Failed to fetch loans", "Could not retrieve your loan positions.");
+    } finally {
+      setIsLoadingMyLoans(false);
+    }
+  }, [address, showError]);
 
   useEffect(() => {
     fetchPortfolio();
@@ -185,6 +182,7 @@ const PortfolioPage = () => {
       fetchMyOrders(); // Refresh orders
     }
   }, [isCancelSuccess]);
+
   const handleIncreaseCreditLimit = () => {
     if (portfolio && portfolio.portfolio.length > 0) {
       setShowDepositModal(true);
@@ -468,9 +466,7 @@ const PortfolioPage = () => {
        */}
       {/* <Wavy colors={["#F5F9FF", "#EEF3FF", "#F3EEFF", "#EDE7FF", "#F2F2F2", "#E6E6E6"]} />
        */}
-      <Wavy colors={["#FFFFFF", "#F5F8FF", "#EAF1FF", "#F3F0FF", "#EDE8FF", "#F9FAFF"]} />
-
-
+      <Wavy />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
