@@ -70,6 +70,7 @@ const TradingEngineProductionPage = () => {
     const { address, isConnected } = useAccount();
     const { toasts, success, error: showError, warning, removeToast } = useToast();
     const navigate = useNavigate();
+    const [polling, setPolling] = useState(false);
 
     // Store State
     const {
@@ -188,9 +189,9 @@ const TradingEngineProductionPage = () => {
         if (!assetId) return;
         fetchAssetDetails(assetId);
         fetchOrderbook(assetId);
-        fetchTradeHistory(assetId);
+        // fetchTradeHistory(assetId);
         if (address) {
-            fetchMyOrders(assetId);
+            // fetchMyOrders(assetId);
             fetchTradeableBalance(assetId);
         }
 
@@ -210,6 +211,15 @@ const TradingEngineProductionPage = () => {
         };
         fetchPurchaseData();
     }, [assetId, address, fetchAssetDetails, fetchOrderbook, fetchTradeHistory, fetchMyOrders, fetchTradeableBalance]);
+
+
+    useEffect(() => {
+        if(!assetId) return;
+        fetchOrderbook(assetId);
+        setPolling(true);
+        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 2000);
+        return () => { clearInterval(poll); setPolling(false); };
+    }, [fetchOrderbook]);
 
     // Aggregate purchase data into time blocks
     const aggregateIntoTimeBlocks = (chartData: any[], intervalMinutes: number = 0.05) => {
@@ -541,7 +551,7 @@ const TradingEngineProductionPage = () => {
 
                         {/* MARKET DEPTH (Orderbook) */}
                         <div className="border border-neutral-200 shadow-sm rounded-2xl h-[70vh]">
-                            {isLoadingOrderbook ? (
+                            {isLoadingOrderbook && !polling ? (
                                 <div className="flex items-center justify-center h-[450px]">
                                     <PageLoader text='' />
                                 </div>
@@ -825,7 +835,7 @@ const TradingEngineProductionPage = () => {
                                         </div>
 
                                         {/* Transaction Progress */}
-                                        {(isTxPending || isTxConfirming) && (
+                                        {/* {(isTxPending || isTxConfirming) && (
                                             <div className="bg-blue-50 rounded-2xl p-4 flex items-start gap-3 border border-blue-100">
                                                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#0071C5] border-t-transparent mt-0.5"></div>
                                                 <div className="flex-1">
@@ -835,7 +845,7 @@ const TradingEngineProductionPage = () => {
                                                     </p>
                                                 </div>
                                             </div>
-                                        )}
+                                        )} */}
 
                                         {/* Execute Button */}
                                         <button
