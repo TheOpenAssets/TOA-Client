@@ -3,8 +3,8 @@
  * Visual indicator of account health with color coding
  */
 
-import { getHealthStatus, formatHealthFactor } from '../../../utils/solvency/health-factor.util';
-import { HEALTH_FACTOR_COLORS, SOLVENCY_CONFIG } from '../../../constants/solvency.constants';
+import { getHealthStatus, formatHealthFactor } from '../../../utils/solvency/health-factor.util.ts';
+import { HEALTH_FACTOR_COLORS, SOLVENCY_CONFIG } from '../../../constants/solvency.constants.ts';
 
 interface HealthFactorBarProps {
     healthFactor: number;
