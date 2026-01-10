@@ -6,31 +6,70 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok
 
 /**
  * Notification types from backend
+ * export enum NotificationType {
+  ASSET_STATUS = 'ASSET_STATUS',
+  KYC_STATUS = 'KYC_STATUS',
+  YIELD_DISTRIBUTED = 'YIELD_DISTRIBUTED',
+  PAYOUT_SETTLED = 'PAYOUT_SETTLED',
+  TOKEN_PURCHASED = 'TOKEN_PURCHASED',
+  TOKEN_DEPLOYED = 'TOKEN_DEPLOYED',
+  SYSTEM_ALERT = 'SYSTEM_ALERT',
+  MARKETPLACE_LISTING = 'MARKETPLACE_LISTING',
+  BID_PLACED = 'BID_PLACED',
+  AUCTION_WON = 'AUCTION_WON',
+  BID_REFUNDED = 'BID_REFUNDED',
+  ORDER_FILLED = 'ORDER_FILLED',
+  ORDER_CANCELED = 'ORDER_CANCELED',
+  ORDER_ACTIVE = 'ORDER_ACTIVE',
+  ORDER_CREATED = 'ORDER_CREATED',
+  ORDER_CANCELLED = 'ORDER_CANCELLED',
+
+}
+
+export enum NotificationSeverity {
+  INFO = 'info',
+  SUCCESS = 'success',
+  WARNING = 'warning',
+  ERROR = 'error',
+}
+
+export enum NotificationAction {
+  VIEW_ASSET = 'VIEW_ASSET',
+  VIEW_PORTFOLIO = 'VIEW_PORTFOLIO',
+  CLAIM_YIELD = 'CLAIM_YIELD',
+  VIEW_MARKETPLACE = 'VIEW_MARKETPLACE',
+  VIEW_KYC = 'VIEW_KYC',
+  NONE = 'NONE',
+}
+
+ * 
+ * 
  */
 export type NotificationType =
   | 'ASSET_STATUS'
-  | 'TOKEN_DEPLOYED'
   | 'KYC_STATUS'
+  | 'YIELD_DISTRIBUTED'
+  | 'PAYOUT_SETTLED'
+  | 'TOKEN_PURCHASED'
+  | 'TOKEN_DEPLOYED'
+  | 'SYSTEM_ALERT'
+  | 'MARKETPLACE_LISTING'
   | 'BID_PLACED'
   | 'AUCTION_WON'
   | 'BID_REFUNDED'
-  | 'TOKEN_PURCHASED'
-  | 'YIELD_DISTRIBUTED'
-  | 'SYSTEM_ALERT';
+  | 'ORDER_FILLED'
+  | 'ORDER_CANCELED'
+  | 'ORDER_ACTIVE'
+  | 'ORDER_CREATED'
+  | 'ORDER_CANCELLED';
 
-/**
- * Notification severity levels
- */
-export type NotificationSeverity = 'SUCCESS' | 'INFO' | 'WARNING' | 'ERROR';
+export type NotificationSeverity = 'info' | 'success' | 'warning' | 'error';
 
-/**
- * Notification actions
- */
 export type NotificationAction =
   | 'VIEW_ASSET'
   | 'VIEW_PORTFOLIO'
-  | 'VIEW_MARKETPLACE'
   | 'CLAIM_YIELD'
+  | 'VIEW_MARKETPLACE'
   | 'VIEW_KYC'
   | 'NONE';
 
@@ -537,7 +576,7 @@ class NotificationService extends BaseService {
         'BID_REFUNDED',
         'TOKEN_PURCHASED',
         'YIELD_DISTRIBUTED',
-        'ASSET_STATUS'
+        'ASSET_STATUS',
       ],
       ADMIN: ['ASSET_STATUS', 'YIELD_DISTRIBUTED'],
     };

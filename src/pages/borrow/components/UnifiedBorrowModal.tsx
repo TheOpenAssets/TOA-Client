@@ -10,12 +10,11 @@ import { formatCollateralAmount } from '../../../utils/solvency/formatters';
 
 interface BorrowOnlyModalProps {
   isOpen: boolean;
-  onClose: () => void;
   onSuccess: () => void;
   creditData: OAIDCreditLine | null;
 }
 
-export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: BorrowOnlyModalProps) => {
+export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData }: BorrowOnlyModalProps) => {
   const [borrowAmount, setBorrowAmount] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<CollateralPosition | null>(null);
   const [showPositionSelector, setShowPositionSelector] = useState(false);
@@ -322,7 +321,7 @@ export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData }: B
                 </div>
               ) : (
                 <div>
-                  {filteredPositions.map((position, index) => (
+                  {filteredPositions.map((position) => (
                     <button
                       key={position.positionId || position.tokenAddress}
                       onClick={() => handlePositionSelect(position)}
