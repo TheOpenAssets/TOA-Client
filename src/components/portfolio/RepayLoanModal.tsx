@@ -64,8 +64,32 @@ export const RepayLoanModal = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [currentStep, setCurrentStep] = useState<'input' | 'approving' | 'repaying' | 'syncing'>('input');
+  const [actualDebt, setActualDebt] = useState<bigint | null>(null);
+  const [isFetchingDebt, setIsFetchingDebt] = useState(false);
 
-  const outstandingDebt = parseFloat(position.outstandingDebt) / 1e6;
+  const outstandingDebt = actualDebt ? parseFloat(ethers.formatUnits(actualDebt, 6)) : parseFloat(position.outstandingDebt) / 1e6;
+
+  // Fetch actual outstanding debt when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchDebt = async () => {
+        setIsFetchingDebt(true);
+        try {
+          console.log('📊 Fetching actual outstanding debt from chain...');
+          const debt = await solvencyContractService.getOutstandingDebt(position.positionId);
+          setActualDebt(debt);
+          console.log(`✅ Fetched debt: $${ethers.formatUnits(debt, 6)} USDC`);
+        } catch (err) {
+          console.error('Failed to fetch debt:', err);
+          // Fall back to position's outstanding debt
+          setActualDebt(null);
+        } finally {
+          setIsFetchingDebt(false);
+        }
+      };
+      fetchDebt();
+    }
+  }, [isOpen, position.positionId]);
 
   // Calculate next installment amount
   const nextInstallmentAmount = useMemo(() => {
@@ -96,6 +120,7 @@ export const RepayLoanModal = ({
       setCurrentStep('input');
       setIsApproving(false);
       setIsRepaying(false);
+      setActualDebt(null);
     }
   }, [isOpen]);
 
@@ -114,31 +139,50 @@ export const RepayLoanModal = ({
     setIsApproving(true);
 
     try {
-      const amountWei = ethers.parseUnits(repayAmount, 6);
+      let amountWei = ethers.parseUnits(repayAmount, 6);
 
-      // Step 1: Approve USDC for SeniorPool
-      // Per COMPLETE_LOAN.md: Approve SeniorPool to spend USDC, not Vault
-      console.log('📝 Approving USDC for SeniorPool...');
+      // Step 0: Fetch actual outstanding debt and cap repayment amount
+      // Per repay-solvency-loan.js: Prevent "Amount exceeds debt" error
+      console.log('📊 Checking outstanding debt...');
+      const actualDebtWei = await solvencyContractService.getOutstandingDebt(position.positionId);
+      
+      if (actualDebtWei === 0n) {
+        setError('No outstanding debt for this position!');
+        setCurrentStep('input');
+        setIsApproving(false);
+        return;
+      }
+
+      // Cap repayment to actual debt
+      if (amountWei > actualDebtWei) {
+        console.log(`⚠️ Repayment amount ($${repayAmount}) exceeds actual debt ($${ethers.formatUnits(actualDebtWei, 6)})`);
+        console.log('   Capping repayment to exact outstanding debt...');
+        amountWei = actualDebtWei;
+      }
+
+      console.log(`💰 Final Repayment Amount: $${ethers.formatUnits(amountWei, 6)} USDC`);
+
+      // Step 1: Approve USDC for Vault
+      console.log('📝 Approving USDC for Vault...');
       const approvalResult = await solvencyContractService.approveUSDCForSeniorPool(amountWei);
 
       if (!approvalResult.success) {
-        throw new Error(approvalResult.error || 'USDC approval for SeniorPool failed');
+        throw new Error(approvalResult.error || 'USDC approval for Vault failed');
       }
 
       setIsApproving(false);
       setCurrentStep('repaying');
       setIsRepaying(true);
 
-      // Step 2: Direct wallet call to SeniorPool.repayLoan()
-      // Per COMPLETE_LOAN.md: Call SeniorPool directly, not backend API
-      console.log('💵 Repaying loan via SeniorPool...');
+      // Step 2: Repay loan via Vault
+      console.log('💵 Repaying loan via Vault...');
       const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
         position.positionId,
         amountWei
       );
 
       if (!repayResult.success) {
-        throw new Error(repayResult.error || 'Repayment via SeniorPool failed');
+        throw new Error(repayResult.error || 'Repayment via Vault failed');
       }
 
       setCurrentStep('syncing');
@@ -219,9 +263,16 @@ export const RepayLoanModal = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Outstanding Debt</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {formatUSD(position.outstandingDebt)}
-                </span>
+                {isFetchingDebt ? (
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />
+                    <span className="text-sm text-gray-500">Loading...</span>
+                  </div>
+                ) : (
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatUSD(outstandingDebt)}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -288,8 +339,14 @@ export const RepayLoanModal = ({
                 Half
               </button>
               <button
-                onClick={() => setRepayAmount(outstandingDebt.toFixed(2))}
-                disabled={isApproving || isRepaying}
+                onClick={() => {
+                  // Use actualDebt with full precision (6 decimals) to avoid rounding errors
+                  const fullAmount = actualDebt 
+                    ? ethers.formatUnits(actualDebt, 6) 
+                    : outstandingDebt.toFixed(6);
+                  setRepayAmount(fullAmount);
+                }}
+                disabled={isApproving || isRepaying || isFetchingDebt}
                 className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-900 transition-colors disabled:opacity-50"
               >
                 Full Amount

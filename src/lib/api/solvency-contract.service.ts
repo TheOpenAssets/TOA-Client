@@ -51,7 +51,7 @@ const USDC_ABI = [
 // SeniorPool ABI - For repayment flow per COMPLETE_LOAN.md
 const SENIOR_POOL_ABI = [
   'function repayLoan(uint256 positionId, uint256 amount) external',
-  'function outstandingDebt(uint256 positionId) view returns (uint256)',
+  'function getOutstandingDebt(uint256 positionId) view returns (uint256)',
 
   // Events
   'event LoanRepaid(uint256 indexed positionId, uint256 amountPaid, uint256 principal, uint256 interest, uint256 remainingDebt)',
@@ -263,6 +263,23 @@ class SolvencyContractService {
     } catch (error: any) {
       console.error('❌ Error getting SeniorPool address:', error);
       throw new Error(`Failed to get SeniorPool address: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get outstanding debt for a position
+   * Per repay-solvency-loan.js: Used to cap repayment amount
+   */
+  async getOutstandingDebt(positionId: number): Promise<bigint> {
+    try {
+      console.log(`📊 Fetching outstanding debt for position ${positionId}...`);
+      const seniorPool = await this.getSeniorPoolContract();
+      const debt = await seniorPool.getOutstandingDebt(positionId);
+      console.log(`   Outstanding Debt: $${ethers.formatUnits(debt, 6)} USDC`);
+      return debt;
+    } catch (error: any) {
+      console.error('❌ Error getting outstanding debt:', error);
+      throw new Error(`Failed to get outstanding debt: ${error.message}`);
     }
   }
 
@@ -633,20 +650,21 @@ class SolvencyContractService {
   }
 
   /**
-   * Approve USDC for SeniorPool contract
-   * Per COMPLETE_LOAN.md: Repayments require approval to SeniorPool, not Vault
+   * Approve USDC for Vault contract (FIXED: Was incorrectly approving SeniorPool)
+   * Per repay-solvency-loan.js: Repayments require approval to Vault, not SeniorPool
    */
   async approveUSDCForSeniorPool(amount: bigint): Promise<TransactionResult> {
     try {
-      console.log('🔓 Approving USDC for SeniorPool:', amount.toString());
+      console.log('🔓 Approving USDC for Vault (Repayment):', amount.toString());
 
-      const seniorPoolAddress = await this.getSeniorPoolAddress();
+      // Approve the Vault contract, not SeniorPool
+      const vaultAddress = VAULT_CONTRACT_ADDRESS;
       const usdc = await this.getUSDCContract();
 
       // Check current allowance
       const { signer } = await this.getProviderAndSigner();
       const userAddress = await signer.getAddress();
-      const currentAllowance = await usdc.allowance(userAddress, seniorPoolAddress);
+      const currentAllowance = await usdc.allowance(userAddress, vaultAddress);
 
       console.log(`   Current allowance: ${ethers.formatUnits(currentAllowance, 6)} USDC`);
 
@@ -659,29 +677,39 @@ class SolvencyContractService {
         };
       }
 
-      const tx = await usdc.approve(seniorPoolAddress, amount);
+      console.log('⏳ WAITING FOR USER: Please approve USDC spending in your wallet!');
+      const tx = await usdc.approve(vaultAddress, amount);
 
       console.log('⏳ Waiting for USDC approval confirmation...', tx.hash);
       const receipt = await tx.wait();
 
-      console.log('✅ USDC approved for SeniorPool successfully!', receipt.hash);
+      console.log('✅ USDC approved for Vault successfully!', receipt.hash);
       return {
         success: true,
         txHash: receipt.hash,
         blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
-      console.error('❌ USDC approval for SeniorPool failed:', error);
+      console.error('❌ USDC approval for Vault failed:', error);
+      
+      // Check for user rejection
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        return {
+          success: false,
+          error: 'Approval rejected by user',
+        };
+      }
+      
       return {
         success: false,
-        error: error.message || 'USDC approval for SeniorPool failed',
+        error: error.message || 'USDC approval failed',
       };
     }
   }
 
   /**
-   * Repay loan through SeniorPool
-   * Per COMPLETE_LOAN.md: Direct call to SeniorPool.repayLoan(), not Vault
+   * Repay loan through Vault (FIXED: Was incorrectly calling SeniorPool)
+   * Per repay-solvency-loan.js: Call SolvencyVault.repayLoan(), not SeniorPool
    *
    * @param positionId - Position ID to repay
    * @param amount - USDC amount to repay (6 decimals)
@@ -689,16 +717,19 @@ class SolvencyContractService {
    */
   async repayLoanViaSeniorPool(positionId: number, amount: bigint): Promise<TransactionResult> {
     try {
-      console.log('💵 Repaying loan via SeniorPool:', {
+      console.log('💵 Repaying loan via Vault:', {
         positionId,
         amount: amount.toString(),
       });
 
-      const seniorPool = await this.getSeniorPoolContract();
+      // Get vault contract (NOT SeniorPool - that was the bug!)
+      const vault = await this.getVaultContract();
 
-      console.log(`   Repaying $${ethers.formatUnits(amount, 6)} USDC to SeniorPool...`);
+      console.log(`   Repaying $${ethers.formatUnits(amount, 6)} USDC via Vault...`);
+      console.log('⏳ WAITING FOR USER: Please approve the transaction in your wallet!');
 
-      const tx = await seniorPool.repayLoan(positionId, amount);
+      // Call Vault.repayLoan() like the working script does
+      const tx = await vault.repayLoan(positionId, amount);
 
       console.log(`   Transaction submitted: ${tx.hash}`);
       console.log('⏳ Waiting for repayment confirmation...');
@@ -706,15 +737,15 @@ class SolvencyContractService {
       const receipt = await tx.wait();
       console.log(`✅ Repayment confirmed in block ${receipt.blockNumber}`);
 
-      // Parse LoanRepaid event
+      // Parse LoanRepaid event from Vault
       for (const log of receipt.logs) {
         try {
-          const parsed = seniorPool.interface.parseLog({
+          const parsed = vault.interface.parseLog({
             topics: log.topics as string[],
             data: log.data
           });
           if (parsed && parsed.name === 'LoanRepaid') {
-            const amountPaid = parsed.args.amountPaid;
+            const amountPaid = parsed.args.amount;
             const principal = parsed.args.principal;
             const interest = parsed.args.interest;
             const remainingDebt = parsed.args.remainingDebt;
@@ -738,10 +769,19 @@ class SolvencyContractService {
         blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
-      console.error('❌ Repayment via SeniorPool failed:', error);
+      console.error('❌ Repayment via Vault failed:', error);
+      
+      // Check for user rejection
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        return {
+          success: false,
+          error: 'Transaction rejected by user',
+        };
+      }
+      
       return {
         success: false,
-        error: error.message || 'Repayment via SeniorPool failed',
+        error: error.message || 'Repayment transaction failed',
       };
     }
   }
