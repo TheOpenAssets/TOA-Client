@@ -15,6 +15,7 @@
 
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Wallet, Filter, Calendar, AlertCircle, Info, Clock, DollarSign } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
@@ -439,7 +440,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
                     {/* Actions */}
                     <td className="px-4 py-4 text-center">
-                      {hasDebt && !position.isDefaulted ? (
+                      {!position.isDefaulted ? (
                         <button
                           onClick={(e) => handleRepayClick(position, e)}
                           className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -613,8 +614,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
         </table>
       )}
 
-      {/* Repay Modal */}
-      {selectedPosition && (
+      {/* Repay Modal - Rendered at document body level using Portal */}
+      {selectedPosition && createPortal(
         <RepayLoanModal
           isOpen={showRepayModal}
           onClose={() => {
@@ -624,7 +625,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           onSuccess={handleRepaySuccess}
           position={selectedPosition}
           schedule={scheduleData[selectedPosition.positionId]}
-        />
+        />,
+        document.body
       )}
     </div>
   );
