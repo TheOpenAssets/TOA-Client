@@ -375,6 +375,53 @@ class SolvencyService extends BaseService {
     }
   }
 
+  /**
+   * Withdraw collateral from position (Backend API - not smart contract)
+   *
+   * ✅ ENDPOINT: POST /solvency/withdraw
+   * 
+   * Backend handles:
+   * - Position verification
+   * - On-chain withdrawCollateral call
+   * - Database update
+   * - Private asset collateral tracking update
+   */
+  async withdrawCollateral(request: {
+    positionId: string;
+    amount: string; // Amount in wei (18 decimals)
+  }): Promise<{
+    success: boolean;
+    txHash?: string;
+    blockNumber?: number;
+    position: Position;
+  }> {
+    try {
+      console.log('💰 Initiating collateral withdrawal:', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/withdraw`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to withdraw collateral');
+      }
+
+      const data = await response.json();
+      console.log('✅ Withdrawal successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error withdrawing collateral:', error);
+      throw error;
+    }
+  }
+
   // ============================================
   // ADMIN ENDPOINTS
   // ============================================

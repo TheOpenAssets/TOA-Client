@@ -26,15 +26,82 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: B
   const [error, setError] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<IssuerAsset | null>(null);
   const [assetDetailsMap, setAssetDetailsMap] = useState<Record<string, IssuerAsset>>({});
+  const [positionValidation, setPositionValidation] = useState<Record<number, { valid: boolean; reason?: string }>>({});
 
   const availableCredit = creditData?.availableCredit ?? 0;
   const positions = creditData?.collateral ?? [];
 
-  // Auto-select first position
+  // Validate all positions on open
   useEffect(() => {
-    if (isOpen && positions.length > 0 && !selectedPosition) {
-      setSelectedPosition(positions[0]);
-    }
+    const validatePositions = async () => {
+      if (isOpen && positions.length > 0) {
+        const validationMap: Record<number, { valid: boolean; reason?: string }> = {};
+        
+        await Promise.all(positions.map(async (position) => {
+          try {
+            // Check if position has a positionId
+            if (!position.positionId) {
+              validationMap[position.positionId ?? 0] = { valid: false, reason: 'Invalid position ID' };
+              return;
+            }
+
+            // Get position data from contract
+            const positionData = await solvencyContractService.getPosition(position.positionId);
+            
+            if (!positionData) {
+              validationMap[position.positionId] = { valid: false, reason: 'Position not found' };
+              return;
+            }
+
+            // Check if position is active
+            if (!positionData.active) {
+              validationMap[position.positionId] = { valid: false, reason: 'Position not active' };
+              return;
+            }
+
+            // Get repayment plan
+            const plan = await solvencyContractService.getRepaymentPlan(position.positionId);
+            
+            // Check if plan already exists and is active
+            if (plan && plan.isActive) {
+              validationMap[position.positionId] = { valid: false, reason: 'Active loan exists - must fully repay first' };
+              return;
+            }
+
+            // Get outstanding debt
+            const outstandingDebt = await solvencyContractService.getOutstandingDebt(position.positionId);
+            
+            // Calculate available credit
+            const ltv = positionData.tokenType === 0 ? 7000 : 6000; // RWA: 70%, PRIVATE_ASSET: 60%
+            const maxBorrow = (BigInt(positionData.tokenValueUSD) * BigInt(ltv)) / BigInt(10000);
+            const availableCredit = maxBorrow - outstandingDebt;
+
+            if (availableCredit <= 0) {
+              validationMap[position.positionId] = { valid: false, reason: 'No available credit - LTV limit reached' };
+              return;
+            }
+
+            // Position is valid
+            validationMap[position.positionId] = { valid: true };
+          } catch (err) {
+            console.error(`Failed to validate position ${position.positionId}:`, err);
+            validationMap[position.positionId ?? 0] = { valid: false, reason: 'Failed to validate position' };
+          }
+        }));
+
+        setPositionValidation(validationMap);
+
+        // Auto-select first valid position
+        if (!selectedPosition) {
+          const firstValid = positions.find(p => validationMap[p.positionId ?? 0]?.valid);
+          if (firstValid) {
+            setSelectedPosition(firstValid);
+          }
+        }
+      }
+    };
+
+    validatePositions();
   }, [isOpen, positions, selectedPosition]);
 
 
@@ -402,36 +469,66 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: B
                     const asset = assetDetailsMap[position.tokenAddress];
                     const name = asset?.metadata.invoiceNumber || position.tokenName;
                     const symbol = asset?.metadata.invoiceNumber || position.tokenSymbol;
-                                        const industry = asset?.metadata.industry || position.tokenSymbol;
+                    const industry = asset?.metadata.industry || position.tokenSymbol;
+                    const validation = positionValidation[position.positionId ?? 0];
+                    const isValid = validation?.valid !== false; // Default to true if not yet validated
+                    const reason = validation?.reason;
 
                     return (
-                    <button
+                    <div
                       key={position.positionId || position.tokenAddress}
-                      onClick={() => handlePositionSelect(position)}
-                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
+                      className="relative group"
                     >
-                      {/* Token Icon */}
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                        {symbol.charAt(0)}
-                      </div>
+                      <button
+                        onClick={() => isValid && handlePositionSelect(position)}
+                        disabled={!isValid}
+                        className={`w-full flex items-center gap-4 px-6 py-4 transition-colors text-left border-b border-gray-50 last:border-b-0 ${
+                          isValid 
+                            ? 'hover:bg-gray-50 cursor-pointer' 
+                            : 'opacity-40 cursor-not-allowed'
+                        }`}
+                      >
+                        {/* Token Icon */}
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 ${
+                          isValid 
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600' 
+                            : 'bg-gray-400'
+                        }`}>
+                          {symbol.charAt(0)}
+                        </div>
 
-                      {/* Token Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-base mb-0.5">
-                          {name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {industry} • {position.tokenAddress.slice(0, 6)}...{position.tokenAddress.slice(-4)}
-                        </p>
-                      </div>
+                        {/* Token Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold text-base mb-0.5 ${
+                            isValid ? 'text-gray-900' : 'text-gray-500'
+                          }`}>
+                            {name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {industry} • {position.tokenAddress.slice(0, 6)}...{position.tokenAddress.slice(-4)}
+                          </p>
+                        </div>
 
-                      {/* Value */}
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-semibold text-gray-900">
-                          ${position.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </button>
+                        {/* Value */}
+                        <div className="text-right flex-shrink-0">
+                          <p className={`font-semibold ${
+                            isValid ? 'text-gray-900' : 'text-gray-500'
+                          }`}>
+                            ${position.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      </button>
+                      
+                      {/* Tooltip showing reason on hover */}
+                      {!isValid && reason && (
+                        <div className="absolute left-0 right-0 top-full mt-1 mx-6 hidden group-hover:block z-10">
+                          <div className="bg-red-600 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+                            <p className="font-medium mb-0.5">Cannot borrow from this position</p>
+                            <p className="text-red-100">{reason}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     );
                   })}
                 </div>
