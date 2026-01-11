@@ -340,7 +340,7 @@ export const TradesTable = ({
                         
                         {order.stlTxHash && (
                           <button
-                            onClick={(e) => openTxHash(order.txHash, e)}
+                            onClick={(e) => openTxHash(order.stlTxHash, e)}
                             className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />

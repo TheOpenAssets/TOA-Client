@@ -68,7 +68,7 @@ const SettlementViewPage = () => {
 
   useEffect(() => {
     fetchAdminDashboardData();
-    fetchAllSettlements();
+    // fetchAllSettlements();
   }, [fetchAdminDashboardData]);
 
   const fetchAllSettlements = async () => {
