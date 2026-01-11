@@ -46,14 +46,14 @@ export const DirectBorrowModal = ({
   const formatted = useMemo(() => {
     const collateralValueNum = parseFloat(ethers.formatUnits(position.tokenValueUSD, 6));
     const usdcBorrowedNum = parseFloat(ethers.formatUnits(position.usdcBorrowed, 6));
-    const maxBorrowCapacityNum = parseFloat(ethers.formatUnits(position.maxBorrowCapacity, 6));
+    const maxBorrowCapacityNum = parseFloat(ethers.formatUnits(position.maxBorrowCapacity || '0', 6));
 
     return {
       collateralAmount: parseFloat(ethers.formatUnits(position.collateralAmount, 18)).toFixed(4),
       collateralValueUSD: collateralValueNum,
       usdcBorrowed: usdcBorrowedNum,
       availableCredit: maxBorrowCapacityNum - usdcBorrowedNum,
-      tokenSymbol: position.collateralToken.symbol,
+      tokenSymbol: position.collateralToken?.symbol || 'UNKNOWN',
     };
   }, [position]);
 
@@ -70,7 +70,7 @@ export const DirectBorrowModal = ({
   // Calculate new health factor after borrow
   const newHealthFactor = useMemo(() => {
     if (!borrowAmount || parseFloat(borrowAmount) === 0) {
-      return position.healthFactor;
+      return position.healthFactor || 10000; // Default to 10000 if not set
     }
 
     const additionalDebt = parseFloat(borrowAmount);
@@ -92,7 +92,7 @@ export const DirectBorrowModal = ({
   }, [borrowAmount, formatted.availableCredit]);
 
   const isHealthFactorSafe = useMemo(() => {
-    return newHealthFactor >= 11000; // Must be >= 110%
+    return (newHealthFactor || 0) >= 11000; // Must be >= 110%
   }, [newHealthFactor]);
 
   const canBorrow = isValidAmount && isHealthFactorSafe;
@@ -109,6 +109,9 @@ export const DirectBorrowModal = ({
 
       // Step 1: Fetch asset details to calculate loan duration
       // Per COMPLETE_LOAN.md: GET /assets/token/:tokenAddress to get maturity date
+      if (!position.collateralToken?.address) {
+        throw new Error('Position missing collateral token information');
+      }
       const asset = await assetService.getAssetByTokenAddress(position.collateralToken.address);
 
       // Step 2: Calculate loan duration from asset maturity date
@@ -246,10 +249,10 @@ export const DirectBorrowModal = ({
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-600">Current Health Factor</span>
                     <span className="text-sm font-semibold text-[#111111]">
-                      {(position.healthFactor / 100).toFixed(2)}%
+                      {((position.healthFactor || 10000) / 100).toFixed(2)}%
                     </span>
                   </div>
-                  <HealthFactorBar healthFactor={position.healthFactor} />
+                  <HealthFactorBar healthFactor={position.healthFactor || 10000} />
                 </div>
               </div>
 
@@ -302,17 +305,17 @@ export const DirectBorrowModal = ({
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">New Health Factor</span>
                       <span className={`font-semibold ${
-                        newHealthFactor >= 15000 ? 'text-[#00A878]' :
-                        newHealthFactor >= 11000 ? 'text-[#F59E0B]' :
+                        (newHealthFactor || 0) >= 15000 ? 'text-[#00A878]' :
+                        (newHealthFactor || 0) >= 11000 ? 'text-[#F59E0B]' :
                         'text-[#EF4444]'
                       }`}>
-                        {(newHealthFactor / 100).toFixed(2)}%
+                        {((newHealthFactor || 0) / 100).toFixed(2)}%
                       </span>
                     </div>
                   </div>
 
                   <div className="pt-2 border-t border-gray-200">
-                    <HealthFactorBar healthFactor={newHealthFactor} />
+                    <HealthFactorBar healthFactor={newHealthFactor || 10000} />
                   </div>
 
                   {/* Health Factor Warning */}

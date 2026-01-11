@@ -61,6 +61,10 @@ export function adaptCreditResponse(
  * Convert new Position to old CollateralPosition format
  */
 export function adaptPosition(position: Position): CollateralPosition {
+  if (!position.collateralToken) {
+    throw new Error('Position missing collateralToken');
+  }
+
   const tokenValueUSD = parseInt(position.tokenValueUSD) / 1_000_000;
   const collateralAmount = parseInt(position.collateralAmount);
 
@@ -80,14 +84,22 @@ export function adaptPosition(position: Position): CollateralPosition {
  * Health Factor = (Collateral Value × LTV) / Debt
  */
 export function calculateHealthFactor(position: Position): number {
+  if (!position.collateralToken) {
+    throw new Error('Position missing collateralToken');
+  }
+
+  if (!position.outstandingDebt) {
+    return 10000; // 10000% if no debt
+  }
+
   const collateralValue = parseInt(position.tokenValueUSD) / 1_000_000;
   const debt = parseInt(position.outstandingDebt) / 1_000_000;
-  
+
   if (debt === 0) return 10000; // 10000% if no debt
-  
+
   const ltv = position.collateralToken.type === 'RWA' ? 0.70 : 0.60;
   const maxBorrow = collateralValue * ltv;
-  
+
   return Math.floor((maxBorrow / debt) * 100);
 }
 

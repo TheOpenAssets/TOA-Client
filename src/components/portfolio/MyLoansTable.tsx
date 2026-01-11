@@ -49,13 +49,6 @@ const formatCollateralAmount = (value: string, decimals: number = 18) => {
   return num.toFixed(2);
 };
 
-// Format health factor (value like 15300 = 153.00%, or 2147483647 for no debt)
-const formatHealthFactor = (value: number) => {
-  // MAX_INT means no debt - show as infinite/perfect health
-  if (value >= 2000000) return 'N/A (No Debt)';
-  return `${(value / 100).toFixed(2)}%`;
-};
-
 // Derive token symbol from address (simple heuristic)
 const getTokenSymbol = (address: string) => {
   // You can maintain a map of known addresses or derive from first/last chars
@@ -68,14 +61,6 @@ const getOutstandingDebt = (position: Position): string => {
   const borrowed = parseFloat(position.usdcBorrowed || '0');
   const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
   return (borrowed + partnerDebt).toString();
-};
-
-const getHealthColor = (healthFactor: number) => {
-  // MAX_INT (2147483647) means no debt - perfectly healthy
-  if (healthFactor >= 2000000) return 'text-[#10B981]';
-  if (healthFactor >= 15000) return 'text-[#10B981]';
-  if (healthFactor >= 12000) return 'text-[#F59E0B]';
-  return 'text-[#EF4444]';
 };
 
 const getHealthBadgeColor = (healthStatus: string) => {
