@@ -59,7 +59,11 @@ const AuctionDetailsPage = () => {
       const checkForExistingBids = async () => {
         try {
           const myBids = await marketplaceService.getUserBids();
-          const hasBid = myBids.some(bid => bid.assetId === assetId && bid.status === 'PENDING');
+          // Check for any active bid (PENDING, PLACED, or FINALIZED) for this asset
+          const hasBid = myBids.some(bid => 
+            bid.assetId === assetId && 
+            (bid.status === 'PENDING' || bid.status === 'PLACED' || bid.status === 'FINALIZED')
+          );
 
           setHasAlreadyBidded(hasBid);
         } catch (error) {

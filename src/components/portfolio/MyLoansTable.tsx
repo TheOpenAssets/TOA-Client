@@ -19,6 +19,7 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Wallet, Filter, Calendar, AlertCircle, Info, Clock, DollarSign } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
+import { solvencyContractService } from '../../lib/api/solvency-contract.service';
 import { format } from 'date-fns';
 import { RepayLoanModal } from './RepayLoanModal';
 
@@ -119,7 +120,10 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
   const [scheduleData, setScheduleData] = useState<Record<number, LoanSchedule>>({});;
   const [loadingSchedule, setLoadingSchedule] = useState<Record<number, boolean>>({});
   const [showRepayModal, setShowRepayModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [withdrawingPositionId, setWithdrawingPositionId] = useState<number | null>(null);
+  const [withdrawnPositions, setWithdrawnPositions] = useState<Set<number>>(new Set());
 
   // Filter positions
   const filteredPositions = useMemo(() => {
@@ -184,6 +188,43 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       const newScheduleData = { ...scheduleData };
       delete newScheduleData[selectedPosition.positionId];
       setScheduleData(newScheduleData);
+    }
+  };
+
+  const handleWithdrawClick = (position: Position, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedPosition(position);
+    setShowWithdrawModal(true);
+  };
+
+  const handleWithdrawConfirm = async () => {
+    if (!selectedPosition) return;
+
+    setWithdrawingPositionId(selectedPosition.positionId);
+
+    try {
+      // Call smart contract directly to withdraw collateral
+      const amountBigInt = BigInt(selectedPosition.collateralAmount);
+      const result = await solvencyContractService.withdrawCollateral(
+        selectedPosition.positionId,
+        amountBigInt
+      );
+
+      if (result.success) {
+        // Mark position as withdrawn
+        setWithdrawnPositions(prev => new Set([...prev, selectedPosition.positionId]));
+        
+        setShowWithdrawModal(false);
+        setSelectedPosition(null);
+        if (onRefresh) onRefresh();
+      } else {
+        throw new Error(result.error || 'Withdrawal failed');
+      }
+    } catch (error: any) {
+      console.error('Withdrawal error:', error);
+      alert(`Withdrawal failed: ${error.message}`);
+    } finally {
+      setWithdrawingPositionId(null);
     }
   };
 
@@ -303,9 +344,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
                 USDC Borrowed
               </th>
-              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
-                Health Factor
-              </th>
+             
               <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
                 Status
               </th>
@@ -325,6 +364,9 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               const isOverdue = isPaymentOverdue(position.nextPaymentDueDate);
               const outstandingDebt = parseFloat(getOutstandingDebt(position));
               const hasDebt = outstandingDebt > 0;
+              const hasCollateral = parseFloat(position.collateralAmount) > 0;
+              const wasWithdrawn = withdrawnPositions.has(position.positionId);
+              const canWithdraw = hasCollateral && !position.oaidCreditIssued && !position.isDefaulted && !wasWithdrawn;
 
               return (
                 <>
@@ -403,12 +445,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       </div>
                     </td>
 
-                    {/* Health Factor */}
-                    <td className="px-4 py-4 text-center">
-                      <div className={`font-gellix text-sm font-medium ${getHealthColor(position.currentHealthFactor)}`}>
-                        {formatHealthFactor(position.currentHealthFactor)}
-                      </div>
-                    </td>
+
 
                     {/* Status */}
                     <td className="px-4 py-4 text-center">
@@ -440,22 +477,41 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
                     {/* Actions */}
                     <td className="px-4 py-4 text-center">
-                      {!position.isDefaulted ? (
-                        <button
-                          onClick={(e) => handleRepayClick(position, e)}
-                          className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            isOverdue
-                              ? 'bg-red-600 hover:bg-red-700 text-white'
-                              : 'bg-blue-600 hover:bg-blue-700 text-white'
-                          }`}
-                        >
-                          {isOverdue ? 'Overdue - Repay' : 'Repay'}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-gray-400">
-                          {position.isDefaulted ? 'Defaulted' : 'No Action'}
-                        </span>
-                      )}
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Repay Button - Only show when loan was issued (oaidCreditIssued = true) */}
+                        {!position.isDefaulted && ! position.oaidCreditIssued && hasDebt && (
+                          <button
+                            onClick={(e) => handleRepayClick(position, e)}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              isOverdue
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
+                          >
+                            {isOverdue ? 'Overdue - Repay' : 'Repay'}
+                          </button>
+                        )}
+
+                        {/* Withdraw Button - Show when no loan issued yet and collateral exists */}
+                        {canWithdraw && (
+                          <button
+                            onClick={(e) => handleWithdrawClick(position, e)}
+                            disabled={withdrawingPositionId === position.positionId}
+                            className="px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {withdrawingPositionId === position.positionId ? 'Withdrawing...' : 'Withdraw'}
+                          </button>
+                        )}
+
+                        {/* No Action State */}
+                        {!position.oaidCreditIssued && !canWithdraw && !position.isDefaulted && (
+                          <span className="text-xs text-gray-400">No Actions</span>
+                        )}
+
+                        {position.isDefaulted && (
+                          <span className="text-xs text-gray-400">Defaulted</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
 
@@ -624,8 +680,101 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           }}
           onSuccess={handleRepaySuccess}
           position={selectedPosition}
-          schedule={scheduleData[selectedPosition.positionId]}
         />,
+        document.body
+      )}
+
+      {/* Withdraw Confirmation Modal */}
+      {selectedPosition && showWithdrawModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md">
+          <div className="bg-white rounded-[20px] p-8 max-w-md w-full mx-4 shadow-2xl">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-[#111111] mb-1">
+                  Withdraw Collateral
+                </h2>
+                <p className="text-sm text-[#6B7280]">
+                  Confirm withdrawal from Position #{selectedPosition.positionId}
+                </p>
+              </div>
+              {!withdrawingPositionId && (
+                <button
+                  onClick={() => {
+                    setShowWithdrawModal(false);
+                    setSelectedPosition(null);
+                  }}
+                  className="text-[#6B7280] hover:text-[#111111] transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Withdrawal Details */}
+            <div className="space-y-4 mb-6">
+              <div className="p-4 bg-[#F7F8FA] rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-[#6B7280]">{getTokenSymbol(selectedPosition.collateralTokenAddress)}</span>
+                  <span className="text-lg font-semibold text-[#111111]">
+                    {formatCollateralAmount(selectedPosition.collateralAmount, 18)} tokens
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#6B7280]">
+                    Collateral Value
+                  </span>
+                  <span className="text-sm font-medium text-[#111111]">
+                    {formatUSD(selectedPosition.tokenValueUSD)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-xs text-yellow-800">
+                    Your collateral will be returned to your wallet. Please confirm the transaction in your wallet.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Processing State */}
+            {withdrawingPositionId === selectedPosition.positionId && (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111] mb-4"></div>
+                <p className="text-sm text-[#6B7280] text-center">Processing withdrawal...</p>
+                <p className="text-xs text-[#6B7280] text-center mt-2">Please confirm in your wallet</p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {!withdrawingPositionId && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowWithdrawModal(false);
+                    setSelectedPosition(null);
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-300 rounded-lg font-medium text-[#111111] hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleWithdrawConfirm}
+                  className="flex-1 px-6 py-3 bg-[#10B981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
+                >
+                  Confirm Withdrawal
+                </button>
+              </div>
+            )}
+          </div>
+        </div>,
         document.body
       )}
     </div>
