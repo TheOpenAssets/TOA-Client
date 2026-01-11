@@ -298,7 +298,7 @@ const TradingEngineProductionPage = () => {
         }
     }, [p2pError]);
 
-    const isTradeable = currentAsset?.status === 'LISTED' || currentAsset?.status === 'ACTIVE' || currentAsset?.status !== 'PAYOUT_COMPLETE';
+    const isTradeable = currentAsset?.status === 'LISTED' || currentAsset?.status === 'ACTIVE' || false;
 
     // Calculation Helpers
     const getRequiredTokenApproval = useCallback(() => {
