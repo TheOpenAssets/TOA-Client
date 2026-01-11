@@ -310,15 +310,25 @@ export const DepositCollateralModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-[20px] p-8 max-w-lg w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-lg border p-4">
+      <div
+        className="rounded-2xl p-8 max-w-lg w-full bg-transparent border-neutral-300 border max-h-[90vh] overflow-y-auto"
+        style={{
+          boxShadow: `
+            4px 4px 12px rgba(243, 244, 245, 0.08),
+            8px 8px 24px rgba(150, 151, 151, 0.06),
+            12px 12px 36px rgba(92, 92, 93, 0.04),
+            16px 16px 48px rgba(45, 46, 47, 0.02)
+          `,
+        }}
+      >
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-        <h2 className="text-2xl font-bold text-[#111111] mb-1">
+        <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
           {initialAsset ? 'Add More Collateral' : 'Deposit Collateral'}
         </h2>
-        <p className="text-sm text-[#6B7280]">
+        <p className="font-inter text-sm text-gray-600">
           {initialAsset 
           ? `Add more ${initialAsset?.metadata.assetName} to your position.`
           : 'Deposit RWA tokens to create a credit line'}
@@ -327,9 +337,9 @@ export const DepositCollateralModal = ({
           {!isProcessing && (
             <button
               onClick={onClose}
-              className="text-[#6B7280] hover:text-[#111111] transition-colors"
+              className="text-gray-500 hover:text-gray-700 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -339,20 +349,18 @@ export const DepositCollateralModal = ({
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111] mb-4"></div>
-            <p className="text-[#6B7280]">Loading your portfolio...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-4"></div>
+            <p className="font-inter text-sm text-gray-600">Loading your portfolio...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && !isLoading && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
+          <div className="mb-6 p-4 bg-gray-100 rounded-xl">
+            <p className="font-inter text-xs text-gray-700 flex items-start gap-2">
+              <span className="text-gray-500">⚠️</span>
+              <span>{error}</span>
+            </p>
           </div>
         )}
 
@@ -492,7 +500,7 @@ export const DepositCollateralModal = ({
                   <button
                     onClick={handleDeposit}
                     disabled={!depositAmount || parseFloat(depositAmount) <= 0 || !!depositError}
-                    className="flex-1 px-6 py-3 bg-[#111111] text-white rounded-lg font-medium hover:bg-[#2d2d2d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Deposit Collateral
                   </button>
@@ -505,11 +513,11 @@ export const DepositCollateralModal = ({
         {/* Approval Progress */}
         {step === 'approve' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#111111] mb-6"></div>
-            <h3 className="text-lg font-semibold text-[#111111] mb-2">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
+            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               Step 1 of 3: Approving Tokens
             </h3>
-            <p className="text-sm text-[#6B7280] text-center mb-4">
+            <p className="font-inter text-sm text-gray-600 text-center mb-4">
               Please confirm the approval transaction in your wallet
             </p>
             {txHash && (
@@ -517,7 +525,7 @@ export const DepositCollateralModal = ({
                 href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-blue-600 hover:underline"
+                className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
               >
                 View transaction →
               </a>
@@ -528,14 +536,14 @@ export const DepositCollateralModal = ({
         {/* Deposit Progress */}
         {step === 'deposit' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#111111] mb-6"></div>
-            <h3 className="text-lg font-semibold text-[#111111] mb-2">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
+            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               Step 2 of 3: Depositing Collateral
             </h3>
-            <p className="text-sm text-[#6B7280] text-center mb-4">
+            <p className="font-inter text-sm text-gray-600 text-center mb-4">
               Please confirm the deposit transaction in your wallet
             </p>
-            <p className="text-xs text-[#6B7280] text-center">
+            <p className="font-inter text-xs text-gray-600 text-center">
               This may take up to 5 minutes...
             </p>
             {txHash && (
@@ -543,7 +551,7 @@ export const DepositCollateralModal = ({
                 href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 text-xs text-blue-600 hover:underline"
+                className="mt-4 font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
               >
                 View transaction →
               </a>
@@ -554,11 +562,11 @@ export const DepositCollateralModal = ({
         {/* Syncing Progress */}
         {step === 'syncing' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#111111] mb-6"></div>
-            <h3 className="text-lg font-semibold text-[#111111] mb-2">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
+            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               Step 3 of 3: Syncing with Platform
             </h3>
-            <p className="text-sm text-[#6B7280] text-center">
+            <p className="font-inter text-sm text-gray-600 text-center">
               Updating your credit line...
             </p>
           </div>
@@ -567,21 +575,21 @@ export const DepositCollateralModal = ({
         {/* Success State */}
         {step === 'success' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-5">
               <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-[#111111] mb-2">
+            <h3 className="font-gellix text-xl font-semibold text-foreground mb-2">
               Deposit Successful!
             </h3>
-            <p className="text-sm text-[#6B7280] text-center mb-4">
+            <p className="font-inter text-sm text-gray-600 text-center mb-4">
               Your collateral has been deposited and credit line created
             </p>
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200 w-full">
+            <div className="bg-gray-100 rounded-xl p-5 w-full">
               <div className="text-center">
-                <p className="text-sm text-green-700 mb-1">Credit Line Created</p>
-                <p className="text-2xl font-bold text-green-900">
+                <p className="font-inter text-xs text-gray-500 mb-1.5">Credit Line Created</p>
+                <p className="font-gellix text-2xl font-semibold text-foreground">
                   ${parseFloat(estimatedCreditLine).toFixed(2)}
                 </p>
               </div>

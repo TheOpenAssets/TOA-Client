@@ -19,7 +19,7 @@ import { authService } from '../../lib/api/auth.service';
 // import { Wavy } from '../../components/ui/wavy';
 
 // Contract addresses from environment
-const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0x69d2e2B05eDdB11774A132e2b61B9D10486bd33A') as `0x${string}`;
+const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0x23f5c5893333199B3E166aCB8D48479D5E5B32CA') as `0x${string}`;
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
 
 // Minimal ERC20 ABI
@@ -144,7 +144,7 @@ const TradingEngineProductionPage = () => {
 
     useEffect(() => {
         fetchChartData();
-        const poll = setInterval(fetchChartData, 30000);
+        const poll = setInterval(fetchChartData, 3000000);
         echarts.connect('trading-engine');
         return () => clearInterval(poll);
     }, [fetchChartData]);
@@ -218,7 +218,7 @@ const TradingEngineProductionPage = () => {
         if (!assetId) return;
         fetchOrderbook(assetId);
         setPolling(true);
-        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 3000);
+        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 3000000);
         return () => { clearInterval(poll); setPolling(false); };
     }, [fetchOrderbook]);
 

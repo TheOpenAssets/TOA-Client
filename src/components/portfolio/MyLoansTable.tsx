@@ -22,6 +22,7 @@ import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
 import { format } from 'date-fns';
 import { RepayLoanModal } from './RepayLoanModal';
+import { PageLoader } from '../ui/page-loader';
 
 interface MyLoansTableProps {
   positions: Position[];
@@ -230,8 +231,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111]"></div>
+       <div className="flex items-center justify-center h-full">
+        <PageLoader text='' />
       </div>
     );
   }
@@ -258,7 +259,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Filter Bar */}
-      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-white border-b border-gray-200 px-6 py-3">
+      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-200 px-6 py-3">
         <div className="flex items-center gap-3">
           <Filter className="w-4 h-4 text-gray-500" />
           <span className="text-xs font-medium text-gray-700">Filter:</span>
@@ -329,7 +330,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
         </div>
       ) : (
         <table className="w-full">
-          <thead className="sticky top-0 bg-white z-10">
+          <thead className="sticky top-0 bg-transparent z-10">
             <tr className="border-b border-gray-200">
               <th className="px-4 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider"></th>
               <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
@@ -373,7 +374,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                   <tr
                     key={position.positionId}
                     className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                      index % 2 === 0 ? 'bg-transparent' : 'bg-gray-50/50'
                     } ${position.isDefaulted ? 'opacity-50' : ''}`}
                     onClick={(e) => toggleRowExpansion(position.positionId, e)}
                   >
@@ -477,15 +478,15 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
                     {/* Actions */}
                     <td className="px-4 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex flex-col items-center justify-center gap-2">
                         {/* Repay Button - Only show when loan was issued (oaidCreditIssued = true) */}
                         {!position.isDefaulted && ! position.oaidCreditIssued && hasDebt && (
                           <button
                             onClick={(e) => handleRepayClick(position, e)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                               isOverdue
-                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                ? 'border-2 border-red-400 hover:border-red-600 hover:bg-red-100 text-black'
+                                : 'border-2 border-blue-400 hover:border-blue-600 hover:bg-blue-100 text-black'
                             }`}
                           >
                             {isOverdue ? 'Overdue - Repay' : 'Repay'}
@@ -497,7 +498,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                           <button
                             onClick={(e) => handleWithdrawClick(position, e)}
                             disabled={withdrawingPositionId === position.positionId}
-                            className="px-4 py-1.5 rounded-lg text-xs font-medium transition-colors bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="text-black px-2 py-1.5 rounded-lg text-xs font-medium border-2 hover:bg-green-100 hover:border-green-600 border-green-400 disabled:bg-gray-400 disabled:cursor-not-allowed"
                           >
                             {withdrawingPositionId === position.positionId ? 'Withdrawing...' : 'Withdraw'}
                           </button>
@@ -529,7 +530,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                               {/* Loan Details Header */}
                               <div className="grid grid-cols-4 gap-6 mb-6">
                                 {/* LTV Ratio */}
-                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                <div className="bg-transparent rounded-lg p-4 border border-gray-200">
                                   <div className="flex items-center gap-2 mb-2">
                                     <DollarSign className="w-4 h-4 text-gray-500" />
                                     <span className="text-xs font-medium text-gray-600">LTV Ratio</span>
@@ -540,7 +541,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                 </div>
 
                                 {/* Total Installments */}
-                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                <div className="bg-transparent rounded-lg p-4 border border-gray-200">
                                   <div className="flex items-center gap-2 mb-2">
                                     <Calendar className="w-4 h-4 text-gray-500" />
                                     <span className="text-xs font-medium text-gray-600">Installments</span>
@@ -551,7 +552,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                 </div>
 
                                 {/* Missed Payments */}
-                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                <div className="bg-transparent rounded-lg p-4 border border-gray-200">
                                   <div className="flex items-center gap-2 mb-2">
                                     <AlertCircle className="w-4 h-4 text-red-500" />
                                     <span className="text-xs font-medium text-gray-600">Missed</span>
@@ -562,7 +563,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                 </div>
 
                                 {/* Payment Interval */}
-                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                <div className="bg-transparent rounded-lg p-4 border border-gray-200">
                                   <div className="flex items-center gap-2 mb-2">
                                     <Clock className="w-4 h-4 text-gray-500" />
                                     <span className="text-xs font-medium text-gray-600">Interval</span>
@@ -589,7 +590,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                           ? 'bg-green-50 border-green-200'
                                           : installment.status === 'MISSED'
                                           ? 'bg-red-50 border-red-200'
-                                          : 'bg-white border-gray-200'
+                                          : 'bg-transparent border-gray-200'
                                       }`}
                                     >
                                       <div className="flex items-center gap-3">
@@ -687,7 +688,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       {/* Withdraw Confirmation Modal */}
       {selectedPosition && showWithdrawModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md">
-          <div className="bg-white rounded-[20px] p-8 max-w-md w-full mx-4 shadow-2xl">
+          <div className="bg-transparent rounded-[20px] p-8 max-w-md w-full mx-4 shadow-2xl">
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
               <div>

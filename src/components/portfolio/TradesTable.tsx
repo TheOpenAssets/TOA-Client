@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, ChevronDown, ChevronUp, Filter, XCircle } from 'lucide-react';
 import type { SecondaryOrder } from '../../types/marketplace.types';
-import type { PortfolioAsset } from '@/lib/api/portfolio.service';
+import type { PortfolioAsset } from './../../lib/api/portfolio.service';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { PageLoader } from '../ui/page-loader';
 
 interface TradesTableProps {
   orders: SecondaryOrder[];
@@ -99,8 +100,8 @@ export const TradesTable = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+       <div className="flex items-center justify-center h-full">
+        <PageLoader text='' />
       </div>
     );
   }
