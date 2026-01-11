@@ -1,21 +1,21 @@
 /**
- * My Loans Table - Enhanced with Loan Schedule & Repayment
+ * My Loans Table - Redesigned to match MyAssetsTable
  *
  * ✅ SPECIFICATION COMPLIANT
  * Reference: Solvency Vault End-to-End Flow - Sections 5, 6, 7
  *
  * Features:
- * - Expandable rows to show loan schedule (like My Assets table)
- * - Calls GET /solvency/position/:id/schedule on expand
- * - Shows: loan duration, installments, next payment, missed payments, full schedule
- * - Repay button pre-fills next unpaid installment
- * - Filters: All, Healthy, At Risk, Critical
- * - Sort: Date, Health Factor, Debt Amount
+ * - Table layout matching MyAssetsTable design
+ * - Expandable rows to show loan schedule details
+ * - Proper health factor display (Infinite ∞ for no debt)
+ * - Defaulted loan visual indicators
+ * - Overdue payment warnings
+ * - Filters: All, Healthy, At Risk, Critical, Defaulted
  */
 
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Wallet, ArrowUpDown, Calendar, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Wallet, Filter, Calendar, AlertCircle, Info, Clock, DollarSign } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { format } from 'date-fns';
@@ -46,12 +46,30 @@ const formatCollateralAmount = (value: string, decimals: number = 18) => {
   return num.toFixed(2);
 };
 
-// Format health factor (value like 15300 = 153.00%)
+// Format health factor (value like 15300 = 153.00%, or 2147483647 for no debt)
 const formatHealthFactor = (value: number) => {
+  // MAX_INT means no debt - show as infinite/perfect health
+  if (value >= 2000000) return 'N/A (No Debt)';
   return `${(value / 100).toFixed(2)}%`;
 };
 
+// Derive token symbol from address (simple heuristic)
+const getTokenSymbol = (address: string) => {
+  // You can maintain a map of known addresses or derive from first/last chars
+  const shortAddr = address.slice(2, 8).toUpperCase();
+  return `TKN-${shortAddr}`;
+};
+
+// Calculate outstanding debt from usdcBorrowed and totalPartnerDebt
+const getOutstandingDebt = (position: Position): string => {
+  const borrowed = parseFloat(position.usdcBorrowed || '0');
+  const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
+  return (borrowed + partnerDebt).toString();
+};
+
 const getHealthColor = (healthFactor: number) => {
+  // MAX_INT (2147483647) means no debt - perfectly healthy
+  if (healthFactor >= 2000000) return 'text-[#10B981]';
   if (healthFactor >= 15000) return 'text-[#10B981]';
   if (healthFactor >= 12000) return 'text-[#F59E0B]';
   return 'text-[#EF4444]';
@@ -70,8 +88,13 @@ const getHealthBadgeColor = (healthStatus: string) => {
   }
 };
 
-type FilterType = 'all' | 'healthy' | 'warning' | 'critical';
-type SortType = 'date' | 'health' | 'debt';
+// Check if payment is overdue
+const isPaymentOverdue = (nextPaymentDueDate?: string): boolean => {
+  if (!nextPaymentDueDate) return false;
+  return new Date(nextPaymentDueDate) < new Date();
+};
+
+type FilterType = 'all' | 'healthy' | 'warning' | 'critical' | 'defaulted';
 
 interface LoanSchedule {
   loanDuration: number;
@@ -91,50 +114,45 @@ interface LoanSchedule {
 export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTableProps) => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [sortBy, setSortBy] = useState<SortType>('date');
-  const [expandedPositionId, setExpandedPositionId] = useState<number | null>(null);
-  const [scheduleData, setScheduleData] = useState<Record<number, LoanSchedule>>({});
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [scheduleData, setScheduleData] = useState<Record<number, LoanSchedule>>({});;
   const [loadingSchedule, setLoadingSchedule] = useState<Record<number, boolean>>({});
   const [showRepayModal, setShowRepayModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
 
-  // Filter and sort positions
-  const filteredAndSortedPositions = useMemo(() => {
+  // Filter positions
+  const filteredPositions = useMemo(() => {
     let filtered = [...positions];
 
     if (activeFilter !== 'all') {
       filtered = filtered.filter(p => {
-        if (activeFilter === 'healthy') return p.healthStatus === 'HEALTHY';
+        if (activeFilter === 'healthy') return p.healthStatus === 'HEALTHY' && !p.isDefaulted;
         if (activeFilter === 'warning') return p.healthStatus === 'WARNING';
         if (activeFilter === 'critical') return p.healthStatus === 'CRITICAL';
+        if (activeFilter === 'defaulted') return p.isDefaulted;
         return true;
       });
     }
 
-    filtered.sort((a, b) => {
-      if (sortBy === 'date') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      if (sortBy === 'health') {
-        return a.healthFactor - b.healthFactor;
-      }
-      if (sortBy === 'debt') {
-        return parseFloat(b.outstandingDebt) - parseFloat(a.outstandingDebt);
-      }
-      return 0;
-    });
+    // Sort by creation date (newest first)
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return filtered;
-  }, [positions, activeFilter, sortBy]);
+  }, [positions, activeFilter]);
 
   // Toggle expanded row and load schedule
-  const handleToggleExpand = async (positionId: number) => {
-    if (expandedPositionId === positionId) {
-      setExpandedPositionId(null);
+  const toggleRowExpansion = async (positionId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newExpanded = new Set(expandedRows);
+    
+    if (newExpanded.has(positionId)) {
+      newExpanded.delete(positionId);
+      setExpandedRows(newExpanded);
       return;
     }
 
-    setExpandedPositionId(positionId);
+    newExpanded.add(positionId);
+    setExpandedRows(newExpanded);
 
     // Load schedule if not already loaded
     if (!scheduleData[positionId] && !loadingSchedule[positionId]) {
@@ -150,7 +168,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
     }
   };
 
-  const handleRepayClick = (position: Position) => {
+  const handleRepayClick = (position: Position, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedPosition(position);
     setShowRepayModal(true);
   };
@@ -177,297 +196,421 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
   if (positions.length === 0) {
     return (
-      <div className="bg-white rounded-[24px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F3F4F6] flex items-center justify-center">
-          <Wallet className="w-8 h-8 text-[#6B7280]" />
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F3F4F6] flex items-center justify-center">
+            <Wallet className="w-8 h-8 text-[#6B7280]" />
+          </div>
+          <p className="font-gellix text-sm text-gray-500 mb-4">No active loans yet</p>
+          <button
+            onClick={() => navigate('/borrow')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-gellix text-sm font-normal hover:bg-blue-700 transition-colors"
+          >
+            Start Borrowing
+          </button>
         </div>
-        <h3 className="text-xl font-semibold text-[#111111] mb-2">
-          No Active Loans
-        </h3>
-        <p className="text-sm text-[#6B7280] mb-6 max-w-md mx-auto">
-          You haven't borrowed against your assets yet. Start borrowing USDC using your RWA tokens as collateral.
-        </p>
-        <button
-          onClick={() => navigate('/borrow')}
-          className="px-6 py-3 bg-[#111111] hover:bg-[#1a1a1a] text-white rounded-[12px] font-medium transition-all"
-        >
-          Start Borrowing
-        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filters and Sort */}
-      <div className="flex items-center justify-between">
+    <div className="flex-1 overflow-y-auto">
+      {/* Filter Bar */}
+      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-white border-b border-gray-200 px-6 py-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeFilter === 'all'
-                ? 'bg-[#F3F4F6] text-[#111111]'
-                : 'text-[#6B7280] hover:bg-[#F9FAFB]'
-            }`}
-          >
-            All Loans
-          </button>
-          <button
-            onClick={() => setActiveFilter('healthy')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeFilter === 'healthy'
-                ? 'bg-[#F3F4F6] text-[#111111]'
-                : 'text-[#6B7280] hover:bg-[#F9FAFB]'
-            }`}
-          >
-            Healthy
-          </button>
-          <button
-            onClick={() => setActiveFilter('warning')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeFilter === 'warning'
-                ? 'bg-[#F3F4F6] text-[#111111]'
-                : 'text-[#6B7280] hover:bg-[#F9FAFB]'
-            }`}
-          >
-            At Risk
-          </button>
-          <button
-            onClick={() => setActiveFilter('critical')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeFilter === 'critical'
-                ? 'bg-[#F3F4F6] text-[#111111]'
-                : 'text-[#6B7280] hover:bg-[#F9FAFB]'
-            }`}
-          >
-            Critical
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <ArrowUpDown className="w-4 h-4 text-[#6B7280]" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortType)}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-[#111111] font-medium outline-none focus:ring-2 focus:ring-[#111111]"
-          >
-            <option value="date">Newest First</option>
-            <option value="health">Health Factor</option>
-            <option value="debt">Debt Amount</option>
-          </select>
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-xs font-medium text-gray-700">Filter:</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                activeFilter === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              onClick={() => setActiveFilter('healthy')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                activeFilter === 'healthy'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              HEALTHY
+            </button>
+            <button
+              onClick={() => setActiveFilter('warning')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                activeFilter === 'warning'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              AT RISK
+            </button>
+            <button
+              onClick={() => setActiveFilter('critical')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                activeFilter === 'critical'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              CRITICAL
+            </button>
+            <button
+              onClick={() => setActiveFilter('defaulted')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                activeFilter === 'defaulted'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              DEFAULTED
+            </button>
+          </div>
+          {activeFilter !== 'all' && (
+            <span className="text-xs text-gray-500 ml-2">
+              ({filteredPositions.length} of {positions.length})
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Card Grid */}
-      {filteredAndSortedPositions.length === 0 ? (
-        <div className="bg-white rounded-[20px] p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
-          <p className="text-sm text-[#6B7280]">No loans match the selected filter.</p>
+      {/* Table */}
+      {filteredPositions.length === 0 ? (
+        <div className="flex items-center justify-center p-12">
+          <p className="text-sm text-gray-500">No loans match the selected filter.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {filteredAndSortedPositions.map((position) => {
-            const isExpanded = expandedPositionId === position.positionId;
-            const schedule = scheduleData[position.positionId];
-            const isLoadingSchedule = loadingSchedule[position.positionId];
+        <table className="w-full">
+          <thead className="sticky top-0 bg-white z-10">
+            <tr className="border-b border-gray-200">
+              <th className="px-4 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider"></th>
+              <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Position
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Collateral Type
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Collateral Amount
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                USDC Borrowed
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Health Factor
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Next Payment
+              </th>
+              <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPositions?.map((position, index) => {
+              const isExpanded = expandedRows.has(position.positionId);
+              const schedule = scheduleData[position.positionId];
+              const isLoadingSchedule = loadingSchedule[position.positionId];
+              const isOverdue = isPaymentOverdue(position.nextPaymentDueDate);
+              const outstandingDebt = parseFloat(getOutstandingDebt(position));
+              const hasDebt = outstandingDebt > 0;
 
-            return (
-              <div
-                key={position.positionId}
-                className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-shadow overflow-hidden"
-              >
-                {/* Main Card Content */}
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    {/* Left: Position Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-[#6B7280]">Position</span>
-                          <span className="font-semibold text-[#111111]">#{position.positionId}</span>
-                        </div>
-                        <span
-                          className={`px-3 py-1 rounded-lg text-xs font-medium ${getHealthBadgeColor(
-                            position.healthStatus
-                          )}`}
-                        >
-                          {position.healthStatus}
-                        </span>
-                      </div>
-
-                      {/* Collateral */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">
-                            {position.collateralToken.symbol.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-[#111111]">
-                            {position.collateralToken.symbol}
-                          </div>
-                          <div className="text-xs text-[#6B7280]">
-                            {formatCollateralAmount(position.collateralAmount, 18)} tokens • {formatUSD(position.tokenValueUSD)}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Debt & Health */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-xs text-[#6B7280] mb-1">Outstanding Debt</div>
-                          <div className="text-xl font-bold text-[#111111]">
-                            {formatUSD(position.outstandingDebt)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-[#6B7280] mb-1">Health Factor</div>
-                          <div className={`text-xl font-bold ${getHealthColor(position.healthFactor)}`}>
-                            {formatHealthFactor(position.healthFactor)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Actions */}
-                    <div className="flex flex-col gap-2 ml-6">
+              return (
+                <>
+                  <tr
+                    key={position.positionId}
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                    } ${position.isDefaulted ? 'opacity-50' : ''}`}
+                    onClick={(e) => toggleRowExpansion(position.positionId, e)}
+                  >
+                    {/* Expand Icon */}
+                    <td className="px-4 py-4">
                       <button
-                        onClick={() => handleRepayClick(position)}
-                        className="px-6 py-2 bg-[#111111] hover:bg-[#1a1a1a] text-white rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Repay
-                      </button>
-                      <button
-                        onClick={() => handleToggleExpand(position.positionId)}
-                        className="px-6 py-2 bg-[#F3F4F6] hover:bg-[#E5E7EB] rounded-lg text-sm font-medium text-[#111111] transition-colors flex items-center gap-2"
+                        onClick={(e) => toggleRowExpansion(position.positionId, e)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
                       >
                         {isExpanded ? (
-                          <>
-                            <ChevronUp className="w-4 h-4" />
-                            Hide Schedule
-                          </>
+                          <ChevronUp className="w-4 h-4" />
                         ) : (
-                          <>
-                            <ChevronDown className="w-4 h-4" />
-                            View Schedule
-                          </>
+                          <ChevronDown className="w-4 h-4" />
                         )}
                       </button>
-                    </div>
-                  </div>
+                    </td>
 
-                  {/* Date */}
-                  <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-[#6B7280]">
-                    Created {format(new Date(position.createdAt), 'MMM d, yyyy')}
-                  </div>
-                </div>
-
-                {/* Expanded Schedule Section */}
-                {isExpanded && (
-                  <div className="border-t border-gray-200 bg-[#F9FAFB] p-6">
-                    {isLoadingSchedule ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#111111]"></div>
+                    {/* Position ID */}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="font-gellix text-sm font-medium text-foreground flex items-center gap-2">
+                          Position #{position.positionId}
+                          {position.isDefaulted && (
+                            <div className="relative group">
+                              <Info className="w-4 h-4 text-red-600 cursor-help" />
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-black text-white text-xs rounded shadow-lg z-50">
+                                Defaulted: 3+ missed payments
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {getTokenSymbol(position.collateralTokenAddress)}
+                        </div>
                       </div>
-                    ) : schedule ? (
-                      <div>
-                        <h4 className="text-sm font-semibold text-[#111111] mb-4 flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          Repayment Schedule
-                        </h4>
+                    </td>
 
-                        {/* Schedule Summary */}
-                        <div className="grid grid-cols-4 gap-4 mb-6">
-                          <div className="bg-white rounded-lg p-3">
-                            <div className="text-xs text-[#6B7280] mb-1">Installments Paid</div>
-                            <div className="text-lg font-bold text-[#111111]">
-                              {schedule.installmentsPaid} / {schedule.numberOfInstallments}
-                            </div>
-                          </div>
-                          <div className="bg-white rounded-lg p-3">
-                            <div className="text-xs text-[#6B7280] mb-1">Missed Payments</div>
-                            <div className="text-lg font-bold text-[#EF4444]">
-                              {schedule.missedPayments}
-                            </div>
-                          </div>
-                          <div className="bg-white rounded-lg p-3">
-                            <div className="text-xs text-[#6B7280] mb-1">Next Payment Due</div>
-                            <div className="text-sm font-semibold text-[#111111]">
-                              {new Date(schedule.nextPaymentDue * 1000) > new Date()
-                                ? format(new Date(schedule.nextPaymentDue * 1000), 'MMM d, yyyy')
-                                : <span className="text-[#EF4444]">OVERDUE</span>
-                              }
-                            </div>
-                          </div>
-                          <div className="bg-white rounded-lg p-3">
-                            <div className="text-xs text-[#6B7280] mb-1">Payment Interval</div>
-                            <div className="text-sm font-semibold text-[#111111]">
-                              {Math.floor(schedule.installmentInterval / 86400)} days
-                            </div>
-                          </div>
-                        </div>
+                    {/* Collateral Type */}
+                    <td className="px-4 py-4 text-center">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          position.collateralTokenType === 'RWA'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-purple-100 text-purple-700'
+                        }`}
+                      >
+                        {position.collateralTokenType}
+                      </span>
+                    </td>
 
-                        {/* Installment List */}
-                        <div className="space-y-2">
-                          {schedule.installments.map((installment) => (
-                            <div
-                              key={installment.installmentNumber}
-                              className={`flex items-center justify-between p-3 rounded-lg ${
-                                installment.status === 'PAID'
-                                  ? 'bg-[#D1FAE5]'
-                                  : installment.status === 'MISSED'
-                                  ? 'bg-[#FEE2E2]'
-                                  : 'bg-white'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="text-sm font-medium text-[#111111]">
-                                  Installment #{installment.installmentNumber}
-                                </div>
-                                <div className="text-xs text-[#6B7280]">
-                                  Due: {format(new Date(installment.dueDate * 1000), 'MMM d, yyyy')}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <div className="text-sm font-semibold text-[#111111]">
-                                  {formatUSD(installment.amount)}
-                                </div>
-                                <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    installment.status === 'PAID'
-                                      ? 'bg-[#065F46] text-white'
-                                      : installment.status === 'MISSED'
-                                      ? 'bg-[#991B1B] text-white'
-                                      : 'bg-[#F59E0B] text-white'
-                                  }`}
-                                >
-                                  {installment.status}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Collateral Amount */}
+                    <td className="px-4 py-4 text-center">
+                      <div className="flex flex-col">
+                        <span className="font-gellix text-sm font-normal text-foreground">
+                          {formatCollateralAmount(position.collateralAmount, 18)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatUSD(position.tokenValueUSD)}
+                        </span>
+                      </div>
+                    </td>
 
-                        {schedule.missedPayments > 0 && (
-                          <div className="mt-4 p-3 bg-[#FEE2E2] rounded-lg flex items-start gap-2">
-                            <AlertCircle className="w-5 h-5 text-[#991B1B] flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-[#991B1B]">
-                              You have {schedule.missedPayments} missed payment{schedule.missedPayments > 1 ? 's' : ''}.
-                              Please repay immediately to avoid liquidation.
-                            </div>
-                          </div>
+                    {/* USDC Borrowed */}
+                    <td className="px-4 py-4 text-center">
+                      <div className="font-gellix text-sm font-medium text-foreground">
+                        {hasDebt ? formatUSD(getOutstandingDebt(position)) : (
+                          <span className="text-gray-400">No Debt</span>
                         )}
                       </div>
-                    ) : (
-                      <div className="text-center py-8 text-sm text-[#6B7280]">
-                        No repayment schedule available for this position.
+                    </td>
+
+                    {/* Health Factor */}
+                    <td className="px-4 py-4 text-center">
+                      <div className={`font-gellix text-sm font-medium ${getHealthColor(position.currentHealthFactor)}`}>
+                        {formatHealthFactor(position.currentHealthFactor)}
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-4 py-4 text-center">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${getHealthBadgeColor(
+                          position.healthStatus
+                        )}`}
+                      >
+                        {position.healthStatus}
+                      </span>
+                    </td>
+
+                    {/* Next Payment */}
+                    <td className="px-4 py-4 text-center">
+                      {position.nextPaymentDueDate && hasDebt ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <div className={`flex items-center gap-1 text-xs ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
+                            <Clock className="w-3 h-3" />
+                            {format(new Date(position.nextPaymentDueDate), 'MMM d, yyyy')}
+                          </div>
+                          {isOverdue && (
+                            <span className="text-xs font-medium text-red-600">OVERDUE</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">N/A</span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-4 text-center">
+                      {hasDebt && !position.isDefaulted ? (
+                        <button
+                          onClick={(e) => handleRepayClick(position, e)}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            isOverdue
+                              ? 'bg-red-600 hover:bg-red-700 text-white'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                        >
+                          {isOverdue ? 'Overdue - Repay' : 'Repay'}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          {position.isDefaulted ? 'Defaulted' : 'No Action'}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Expanded Detail Row */}
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={9} className="px-0 py-0">
+                        <div className="bg-gray-50 border-b border-gray-200">
+                          {isLoadingSchedule ? (
+                            <div className="flex items-center justify-center py-8">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                          ) : schedule ? (
+                            <div className="p-6">
+                              {/* Loan Details Header */}
+                              <div className="grid grid-cols-4 gap-6 mb-6">
+                                {/* LTV Ratio */}
+                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <DollarSign className="w-4 h-4 text-gray-500" />
+                                    <span className="text-xs font-medium text-gray-600">LTV Ratio</span>
+                                  </div>
+                                  <div className="text-lg font-bold text-foreground">
+                                    {position.initialLTV ? (position.initialLTV / 100).toFixed(0) : 'N/A'}%
+                                  </div>
+                                </div>
+
+                                {/* Total Installments */}
+                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Calendar className="w-4 h-4 text-gray-500" />
+                                    <span className="text-xs font-medium text-gray-600">Installments</span>
+                                  </div>
+                                  <div className="text-lg font-bold text-foreground">
+                                    {schedule.installmentsPaid} / {schedule.numberOfInstallments}
+                                  </div>
+                                </div>
+
+                                {/* Missed Payments */}
+                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <AlertCircle className="w-4 h-4 text-red-500" />
+                                    <span className="text-xs font-medium text-gray-600">Missed</span>
+                                  </div>
+                                  <div className="text-lg font-bold text-red-600">
+                                    {schedule.missedPayments}
+                                  </div>
+                                </div>
+
+                                {/* Payment Interval */}
+                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Clock className="w-4 h-4 text-gray-500" />
+                                    <span className="text-xs font-medium text-gray-600">Interval</span>
+                                  </div>
+                                  <div className="text-lg font-bold text-foreground">
+                                    {Math.floor(schedule.installmentInterval / 86400)}d
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Repayment Schedule */}
+                              <div>
+                                <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                  <Calendar className="w-4 h-4" />
+                                  Repayment Schedule
+                                </h4>
+
+                                <div className="space-y-2">
+                                  {schedule.installments?.map((installment) => (
+                                    <div
+                                      key={installment.installmentNumber}
+                                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                                        installment.status === 'PAID'
+                                          ? 'bg-green-50 border-green-200'
+                                          : installment.status === 'MISSED'
+                                          ? 'bg-red-50 border-red-200'
+                                          : 'bg-white border-gray-200'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="text-sm font-medium text-foreground">
+                                          #{installment.installmentNumber}
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                          Due: {format(new Date(installment.dueDate * 1000), 'MMM d, yyyy')}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        <div className="text-sm font-semibold text-foreground">
+                                          {formatUSD(installment.amount)}
+                                        </div>
+                                        <span
+                                          className={`px-2 py-1 rounded text-xs font-medium ${
+                                            installment.status === 'PAID'
+                                              ? 'bg-green-600 text-white'
+                                              : installment.status === 'MISSED'
+                                              ? 'bg-red-600 text-white'
+                                              : 'bg-yellow-600 text-white'
+                                          }`}
+                                        >
+                                          {installment.status}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {schedule.missedPayments > 0 && (
+                                  <div className="mt-4 p-3 bg-red-50 rounded-lg flex items-start gap-2 border border-red-200">
+                                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                    <div className="text-sm text-red-700">
+                                      <strong>Warning:</strong> You have {schedule.missedPayments} missed payment
+                                      {schedule.missedPayments > 1 ? 's' : ''}. Please repay immediately to avoid liquidation.
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Transaction Info */}
+                              <div className="mt-6 pt-6 border-t border-gray-200">
+                                <div className="grid grid-cols-2 gap-4 text-xs">
+                                  <div>
+                                    <span className="text-gray-600">Deposit TX:</span>
+                                    <a
+                                      href={`https://sepolia.mantlescan.xyz/tx/${position.depositTxHash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="ml-2 text-blue-600 hover:underline font-mono"
+                                    >
+                                      {position.depositTxHash.slice(0, 10)}...
+                                    </a>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Created:</span>
+                                    <span className="ml-2 text-foreground">
+                                      {format(new Date(position.createdAt), 'MMM d, yyyy HH:mm')}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-sm text-gray-500">
+                              No repayment schedule available for this position.
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
+          </tbody>
+        </table>
       )}
 
       {/* Repay Modal */}

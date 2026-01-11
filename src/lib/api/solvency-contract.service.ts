@@ -10,7 +10,7 @@ import { ethers } from 'ethers';
 
 // Contract addresses from environment
 const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '0x3b3d70Fe12076f30E9999Fd65feC6C6DeB47B5eF';
-const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
+const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3';
 
 // Solvency Vault ABI - ✅ VERIFIED from deposit-to-vaultsolvency.js lines 115-121
 // Updated borrowUSDC to include loanDuration and numberOfInstallments per COMPLETE_LOAN.md

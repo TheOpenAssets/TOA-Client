@@ -51,6 +51,19 @@ const formatUSD = (value: string | number) => {
   }).format(num);
 };
 
+// Derive token symbol from address
+const getTokenSymbol = (address: string) => {
+  const shortAddr = address.slice(2, 8).toUpperCase();
+  return `TKN-${shortAddr}`;
+};
+
+// Calculate outstanding debt
+const getOutstandingDebt = (position: Position): string => {
+  const borrowed = parseFloat(position.usdcBorrowed || '0');
+  const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
+  return (borrowed + partnerDebt).toString();
+};
+
 export const RepayLoanModal = ({
   isOpen,
   onClose,
@@ -65,7 +78,7 @@ export const RepayLoanModal = ({
   const [success, setSuccess] = useState(false);
   const [currentStep, setCurrentStep] = useState<'input' | 'approving' | 'repaying' | 'syncing'>('input');
 
-  const outstandingDebt = parseFloat(position.outstandingDebt) / 1e6;
+  const outstandingDebt = parseFloat(getOutstandingDebt(position)) / 1e6;
 
   // Calculate next installment amount
   const nextInstallmentAmount = useMemo(() => {
@@ -213,13 +226,13 @@ export const RepayLoanModal = ({
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Position #{position.positionId}</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {position.collateralToken.symbol}
+                  {getTokenSymbol(position.collateralTokenAddress)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Outstanding Debt</span>
                 <span className="text-lg font-bold text-gray-900">
-                  {formatUSD(position.outstandingDebt)}
+                  {formatUSD(getOutstandingDebt(position))}
                 </span>
               </div>
             </div>
@@ -262,7 +275,7 @@ export const RepayLoanModal = ({
               {!isAmountValid && parseFloat(repayAmount) > 0 && (
                 <p className="mt-2 text-sm text-red-600">
                   {parseFloat(repayAmount) > outstandingDebt
-                    ? `Amount exceeds outstanding debt of ${formatUSD(position.outstandingDebt)}`
+                    ? `Amount exceeds outstanding debt of ${formatUSD(getOutstandingDebt(position))}`
                     : 'Please enter a valid amount'}
                 </p>
               )}
