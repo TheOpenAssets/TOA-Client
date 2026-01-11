@@ -71,15 +71,15 @@ const PortfolioPage = () => {
     setIsLoadingMyLoans(true);
     try {
       const response = await solvencyService.getMyPositions();
-      const loans = response.positions.filter(p => parseFloat(p.usdcBorrowed) > 0);
-      setMyLoans(loans);
+      console.log("loans find", response);
+      setMyLoans(response.positions);
     } catch (err) {
       console.error("Error fetching solvency loans:", err);
       showError("Failed to fetch loans", "Could not retrieve your loan positions.");
     } finally {
       setIsLoadingMyLoans(false);
     }
-  }, [address, showError]);
+  }, []);
 
 
   // Filtered data based on search term

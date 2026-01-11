@@ -268,7 +268,32 @@ export interface TokenApprovalState {
  */
 export interface Position {
   positionId: number;
-  userAddress?: string; // Address of the user
+  collateralTokenAddress: string;  // Token contract address
+  collateralTokenType: string;     // "RWA" or "PRIVATE_ASSET"
+  collateralAmount: string;        // e.g., "90000000000000000000" (18 decimals)
+  tokenValueUSD: string;           // e.g., "76500000000" (6 decimals)
+  usdcBorrowed: string;            // e.g., "50000000000" (6 decimals)
+  totalPartnerDebt: string;        // e.g., "0" (6 decimals)
+  totalRepaid: string;             // e.g., "0" (6 decimals)
+  initialLTV: number;              // e.g., 6000 (representing 60.00%)
+  currentHealthFactor: number;     // e.g., 15300 (representing 153.00%) or 2147483647 for no debt
+  healthStatus: string;            // "HEALTHY", "WARNING", "CRITICAL", "LIQUIDATABLE"
+  status: string;                  // "ACTIVE", "CLOSED", "LIQUIDATED", "SETTLED", "REPAID"
+  loanDuration: number;            // Duration in seconds
+  numberOfInstallments: number;    // Number of installments
+  installmentInterval: number;     // Interval in seconds
+  installmentsPaid: number;        // Number of installments paid
+  missedPayments: number;          // Number of missed payments (0-3)
+  isDefaulted: boolean;            // Whether position has been marked as defaulted
+  oaidCreditIssued: boolean;       // Whether OAID credit was issued
+  repaymentSchedule: any[];        // Repayment schedule array
+  nextPaymentDueDate?: string;     // Optional next payment due date
+  depositTxHash: string;           // Deposit transaction hash
+  depositBlockNumber: number;      // Deposit block number
+  createdAt: string;
+  updatedAt: string;
+  
+  // Optional legacy fields for backward compatibility
   collateralToken?: {
     address: string;
     symbol: string;
@@ -276,23 +301,16 @@ export interface Position {
     type: string; // "RWA" or "PRIVATE_ASSET"
   };
   collateralAmount: string;   // e.g., "90000000000000000000" (18 decimals)
-  tokenValueUSD?: string;      // e.g., "76500000000" (6 decimals)
-  usdcBorrowed?: string;       // Legacy field, prefer 'borrowed'
-  borrowed?: string;          // e.g., "50000000000" (6 decimals)
+  tokenValueUSD: string;      // e.g., "76500000000" (6 decimals)
+  usdcBorrowed: string;       // e.g., "50000000000" (6 decimals)
   outstandingDebt: string;    // e.g., "50041100000" (6 decimals)
-  healthFactor: number;       // e.g., 15300 (basis points) or 2.5 (direct ratio)
-  healthStatus?: string;       // "HEALTHY", "WARNING", "CRITICAL", "LIQUIDATABLE"
+  healthFactor: number;       // e.g., 15300 (representing 153.00%)
+  healthStatus: string;       // "HEALTHY", "WARNING", "CRITICAL", "LIQUIDATABLE"
   status: string;             // "ACTIVE", "CLOSED", "LIQUIDATED", "SETTLED", "REPAID"
-  maxBorrowCapacity?: string;  // e.g., "53550000000" (6 decimals)
+  maxBorrowCapacity: string;  // e.g., "53550000000" (6 decimals)
   missedPayments?: number;    // Number of missed payments (0-3)
   isDefaulted?: boolean;      // Whether position has been marked as defaulted
-  createdAt?: string;
-  
-  // New fields from backend update
-  oaidIssued?: boolean;
-  oaidTokenId?: number;
-  partnerLoans?: any[]; // Array of partner loans
-  totalPartnerDebt?: string;
+  createdAt: string;
 }
 
 /**

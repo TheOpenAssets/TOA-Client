@@ -133,7 +133,7 @@ class SolvencyService extends BaseService {
       }
 
       const data: GetPositionsResponse = await response.json();
-      console.log('✅ Positions received:', data);
+      console.log('✅ Loan Positions received:', data);
       return data;
     } catch (error: any) {
       console.error('❌ Error fetching positions:', error);

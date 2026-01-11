@@ -51,6 +51,19 @@ const formatUSD = (value: string | number) => {
   }).format(num);
 };
 
+// Derive token symbol from address
+const getTokenSymbol = (address: string) => {
+  const shortAddr = address.slice(2, 8).toUpperCase();
+  return `TKN-${shortAddr}`;
+};
+
+// Calculate outstanding debt
+const getOutstandingDebt = (position: Position): string => {
+  const borrowed = parseFloat(position.usdcBorrowed || '0');
+  const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
+  return (borrowed + partnerDebt).toString();
+};
+
 export const RepayLoanModal = ({
   isOpen,
   onClose,
@@ -223,8 +236,8 @@ export const RepayLoanModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="max-w-md w-full mx-4 bg-white rounded-2xl p-6 shadow-lg">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md">
+      <div className="max-w-md w-full mx-4 bg-white rounded-2xl p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Repay Loan</h2>
@@ -258,7 +271,7 @@ export const RepayLoanModal = ({
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Position #{position.positionId}</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {position.collateralToken?.symbol || 'Unknown Token'}
+                  {getTokenSymbol(position.collateralTokenAddress)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -314,7 +327,7 @@ export const RepayLoanModal = ({
               {!isAmountValid && parseFloat(repayAmount) > 0 && (
                 <p className="mt-2 text-sm text-red-600">
                   {parseFloat(repayAmount) > outstandingDebt
-                    ? `Amount exceeds outstanding debt of ${formatUSD(position.outstandingDebt)}`
+                    ? `Amount exceeds outstanding debt of ${formatUSD(getOutstandingDebt(position))}`
                     : 'Please enter a valid amount'}
                 </p>
               )}
