@@ -22,7 +22,7 @@ const SOLVENCY_VAULT_ABI = [
   'function withdrawCollateral(uint256 positionId, uint256 amount) external',
 
   // Read functions
-  'function positions(uint256) view returns (address user, address collateralToken, uint256 collateralAmount, uint256 usdcBorrowed, uint256 tokenValueUSD, uint256 createdAt, bool active, uint8 tokenType)',
+  'function positions(uint256) view returns (address user, address collateralToken, uint256 collateralAmount, uint256 usdcBorrowed, uint256 tokenValueUSD, uint256 createdAt, uint256 liquidatedAt, uint256 creditLineId, bool active, uint8 tokenType)',
   'function repaymentPlans(uint256) view returns (uint256 loanDuration, uint256 numberOfInstallments, uint256 installmentInterval, uint256 installmentsPaid, uint256 missedPayments, uint256 nextPaymentDue, bool isActive)',
   'function seniorPool() view returns (address)',
 
@@ -73,6 +73,8 @@ export interface Position {
   usdcBorrowed: bigint;
   tokenValueUSD: bigint;
   createdAt: bigint;
+  liquidatedAt: bigint;
+  creditLineId: bigint;
   active: boolean;
   tokenType: number; // 0 = RWA, 1 = PRIVATE_ASSET
 }
@@ -172,15 +174,30 @@ class SolvencyContractService {
       const vault = await this.getVaultContract();
       const position = await vault.positions(positionId);
 
+      console.log(`📋 Position ${positionId} data:`, {
+        user: position[0],
+        collateralToken: position[1],
+        collateralAmount: position[2].toString(),
+        usdcBorrowed: position[3].toString(),
+        tokenValueUSD: position[4].toString(),
+        createdAt: position[5].toString(),
+        liquidatedAt: position[6].toString(),
+        creditLineId: position[7].toString(),
+        active: position[8],
+        tokenType: position[9],
+      });
+
       return {
-        user: position.user,
-        collateralToken: position.collateralToken,
-        collateralAmount: position.collateralAmount,
-        usdcBorrowed: position.usdcBorrowed,
-        tokenValueUSD: position.tokenValueUSD,
-        createdAt: position.createdAt,
-        active: position.active,
-        tokenType: position.tokenType,
+        user: position[0],
+        collateralToken: position[1],
+        collateralAmount: position[2],
+        usdcBorrowed: position[3],
+        tokenValueUSD: position[4],
+        createdAt: position[5],
+        liquidatedAt: position[6],
+        creditLineId: position[7],
+        active: position[8],
+        tokenType: position[9],
       };
     } catch (error: any) {
       console.error('❌ Error fetching position:', error);
@@ -657,6 +674,11 @@ class SolvencyContractService {
     }
   }
 
+
+
+
+
+  
   /**
    * Approve USDC for vault contract
    */

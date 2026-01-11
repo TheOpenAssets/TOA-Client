@@ -282,9 +282,11 @@ export const RepayLoanModal = ({
                     <span className="text-sm text-gray-500">Loading...</span>
                   </div>
                 ) : (
-                  <span className="text-lg font-bold text-gray-900">
-                    {formatUSD(outstandingDebt)}
-                  </span>
+                    <span className="text-lg font-bold text-gray-900">
+                    {actualDebt 
+                      ? `$${ethers.formatUnits(actualDebt, 6)}` 
+                      : formatUSD(outstandingDebt)}
+                    </span>
                 )}
               </div>
             </div>
@@ -345,7 +347,10 @@ export const RepayLoanModal = ({
                 </button>
               )}
               <button
-                onClick={() => setRepayAmount((outstandingDebt / 2).toFixed(2))}
+                onClick={() => {const fullAmount = actualDebt 
+                    ? ethers.formatUnits(actualDebt, 6) 
+                    : outstandingDebt.toFixed(6);
+                  setRepayAmount((parseFloat(fullAmount) / 2).toFixed(6));}}
                 disabled={isApproving || isRepaying}
                 className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-900 transition-colors disabled:opacity-50"
               >

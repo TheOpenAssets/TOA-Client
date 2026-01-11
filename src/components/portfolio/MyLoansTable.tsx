@@ -123,6 +123,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [withdrawingPositionId, setWithdrawingPositionId] = useState<number | null>(null);
+  const [withdrawnPositions, setWithdrawnPositions] = useState<Set<number>>(new Set());
 
   // Filter positions
   const filteredPositions = useMemo(() => {
@@ -210,6 +211,9 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       );
 
       if (result.success) {
+        // Mark position as withdrawn
+        setWithdrawnPositions(prev => new Set([...prev, selectedPosition.positionId]));
+        
         setShowWithdrawModal(false);
         setSelectedPosition(null);
         if (onRefresh) onRefresh();
@@ -361,7 +365,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               const outstandingDebt = parseFloat(getOutstandingDebt(position));
               const hasDebt = outstandingDebt > 0;
               const hasCollateral = parseFloat(position.collateralAmount) > 0;
-              const canWithdraw = hasCollateral && !position.oaidCreditIssued && !position.isDefaulted;
+              const wasWithdrawn = withdrawnPositions.has(position.positionId);
+              const canWithdraw = hasCollateral && !position.oaidCreditIssued && !position.isDefaulted && !wasWithdrawn;
 
               return (
                 <>
