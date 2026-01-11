@@ -18,27 +18,12 @@ import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 
 interface RepayLoanModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   position: Position;
-  schedule?: {
-    loanDuration: number;
-    numberOfInstallments: number;
-    installmentInterval: number;
-    installmentsPaid: number;
-    missedPayments: number;
-    nextPaymentDue: number;
-    installments: Array<{
-      installmentNumber: number;
-      dueDate: number;
-      amount: string;
-      status: 'PAID' | 'PENDING' | 'MISSED';
-    }>;
-  };
 }
 
 const formatUSD = (value: string | number) => {
@@ -57,21 +42,13 @@ const getTokenSymbol = (address: string) => {
   return `TKN-${shortAddr}`;
 };
 
-// Calculate outstanding debt
-const getOutstandingDebt = (position: Position): string => {
-  const borrowed = parseFloat(position.usdcBorrowed || '0');
-  const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
-  return (borrowed + partnerDebt).toString();
-};
-
 export const RepayLoanModal = ({
   isOpen,
   onClose,
   onSuccess,
   position,
-  schedule,
 }: RepayLoanModalProps) => {
-  const [repayAmount, setRepayAmount] = useState('');
+  const [selectedInstallment, setSelectedInstallment] = useState<number | null>(null);
   const [isApproving, setIsApproving] = useState(false);
   const [isRepaying, setIsRepaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +58,19 @@ export const RepayLoanModal = ({
   const [isFetchingDebt, setIsFetchingDebt] = useState(false);
 
   const outstandingDebt = actualDebt ? parseFloat(ethers.formatUnits(actualDebt, 6)) : parseFloat(position.outstandingDebt) / 1e6;
+
+  // Calculate total installment amounts and interest
+  const { totalInstallmentAmount, interestAmount } = useMemo(() => {
+    if (!position.repaymentSchedule || position.repaymentSchedule.length === 0 || !actualDebt) {
+      return { totalInstallmentAmount: 0, interestAmount: 0 };
+    }
+    
+    const total = position.repaymentSchedule.reduce((sum, inst) => sum + parseFloat(inst.amount), 0) / 1e6;
+    const actualDebtUSD = parseFloat(ethers.formatUnits(actualDebt, 6));
+    const interest = actualDebtUSD - total;
+    
+    return { totalInstallmentAmount: total, interestAmount: Math.max(0, interest) };
+  }, [position.repaymentSchedule, actualDebt]);
 
   // Fetch actual outstanding debt when modal opens
   useEffect(() => {
@@ -106,28 +96,21 @@ export const RepayLoanModal = ({
 
   // Calculate next installment amount
   const nextInstallmentAmount = useMemo(() => {
-    if (!schedule) return null;
+    if (!position.repaymentSchedule || position.repaymentSchedule.length === 0) return null;
 
-    const nextUnpaid = schedule.installments?.find(
+    const nextUnpaid = position.repaymentSchedule.find(
       i => i.status === 'PENDING' || i.status === 'MISSED'
     );
 
     if (!nextUnpaid) return null;
 
     return parseFloat(nextUnpaid.amount) / 1e6;
-  }, [schedule]);
-
-  // Pre-fill next installment amount on modal open
-  useEffect(() => {
-    if (isOpen && nextInstallmentAmount) {
-      setRepayAmount(nextInstallmentAmount.toFixed(2));
-    }
-  }, [isOpen, nextInstallmentAmount]);
+  }, [position.repaymentSchedule]);
 
   // Reset state on close
   useEffect(() => {
     if (!isOpen) {
-      setRepayAmount('');
+      setSelectedInstallment(null);
       setError(null);
       setSuccess(false);
       setCurrentStep('input');
@@ -137,73 +120,67 @@ export const RepayLoanModal = ({
     }
   }, [isOpen]);
 
-  const isAmountValid = useMemo(() => {
-    const amount = parseFloat(repayAmount);
-    if (isNaN(amount) || amount <= 0) return false;
-    if (amount > outstandingDebt) return false;
-    return true;
-  }, [repayAmount, outstandingDebt]);
-
-  const handleRepay = async () => {
-    if (!isAmountValid || !repayAmount) return;
+  const handleInstallmentPay = async (installmentNumber: number) => {
+    if (!position.repaymentSchedule || position.repaymentSchedule.length === 0 || !actualDebt) return;
 
     setError(null);
+    setSelectedInstallment(installmentNumber);
     setCurrentStep('approving');
     setIsApproving(true);
 
     try {
-      let amountWei = ethers.parseUnits(repayAmount, 6);
+      // Find the installment
+      const installment = position.repaymentSchedule.find(i => i.installmentNumber === installmentNumber);
+      if (!installment) {
+        throw new Error('Installment not found');
+      }
 
-      // Step 0: Fetch actual outstanding debt and cap repayment amount
-      // Per repay-solvency-loan.js: Prevent "Amount exceeds debt" error
-      console.log('📊 Checking outstanding debt...');
-      const actualDebtWei = await solvencyContractService.getOutstandingDebt(position.positionId);
+      // Calculate amount: base installment + interest (if last installment)
+      const isLastInstallment = installmentNumber === position.numberOfInstallments;
+      const baseAmount = parseFloat(installment.amount) / 1e6;
+      const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
       
-      if (actualDebtWei === 0n) {
-        setError('No outstanding debt for this position!');
-        setCurrentStep('input');
-        setIsApproving(false);
-        return;
+      let amountWei = ethers.parseUnits(finalAmount.toFixed(6), 6);
+
+      console.log(`💰 Paying Installment #${installmentNumber}:`, {
+        baseAmount: `$${baseAmount.toFixed(6)}`,
+        interest: isLastInstallment ? `$${interestAmount.toFixed(6)}` : '$0',
+        finalAmount: `$${finalAmount.toFixed(6)}`,
+      });
+
+      // Cap to actual debt (safety check)
+      if (amountWei > actualDebt) {
+        console.log(`⚠️ Capping payment to actual debt`);
+        amountWei = actualDebt;
       }
 
-      // Cap repayment to actual debt
-      if (amountWei > actualDebtWei) {
-        console.log(`⚠️ Repayment amount ($${repayAmount}) exceeds actual debt ($${ethers.formatUnits(actualDebtWei, 6)})`);
-        console.log('   Capping repayment to exact outstanding debt...');
-        amountWei = actualDebtWei;
-      }
-
-      console.log(`💰 Final Repayment Amount: $${ethers.formatUnits(amountWei, 6)} USDC`);
-
-      // Step 1: Approve USDC for Vault
+      // Step 1: Approve USDC
       console.log('📝 Approving USDC for Vault...');
       const approvalResult = await solvencyContractService.approveUSDCForSeniorPool(amountWei);
 
       if (!approvalResult.success) {
-        throw new Error(approvalResult.error || 'USDC approval for Vault failed');
+        throw new Error(approvalResult.error || 'USDC approval failed');
       }
 
       setIsApproving(false);
       setCurrentStep('repaying');
       setIsRepaying(true);
 
-      // Step 2: Repay loan via Vault
-      console.log('💵 Repaying loan via Vault...');
+      // Step 2: Repay loan
+      console.log('💵 Repaying loan...');
       const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
         position.positionId,
         amountWei
       );
 
       if (!repayResult.success) {
-        throw new Error(repayResult.error || 'Repayment via Vault failed');
+        throw new Error(repayResult.error || 'Repayment failed');
       }
 
       setCurrentStep('syncing');
 
-      // Step 3: Notify backend of loan repayment
-      setCurrentStep('syncing');
-      console.log('🔄 Notifying backend of loan repayment...');
-
+      // Step 3: Notify backend
+      console.log('🔄 Notifying backend...');
       try {
         await solvencyService.notifyLoanRepayment({
           txHash: repayResult.txHash!,
@@ -211,9 +188,7 @@ export const RepayLoanModal = ({
           repaymentAmount: amountWei.toString(),
           blockNumber: repayResult.blockNumber?.toString(),
         });
-        console.log('✅ Backend notified of loan repayment');
       } catch (syncError) {
-        // Non-blocking: Events will still sync it automatically
         console.warn('⚠️ Manual notification failed (events will auto-sync):', syncError);
       }
 
@@ -227,6 +202,7 @@ export const RepayLoanModal = ({
       console.error('❌ Repayment error:', err);
       setError(err.message || 'An error occurred during repayment');
       setCurrentStep('input');
+      setSelectedInstallment(null);
     } finally {
       setIsApproving(false);
       setIsRepaying(false);
@@ -292,84 +268,89 @@ export const RepayLoanModal = ({
             </div>
 
             {/* Next Installment Hint */}
-            {nextInstallmentAmount && (
+            {nextInstallmentAmount && interestAmount > 0 && (
               <div className="bg-blue-50 rounded-lg p-3 flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-800">
-                  <span className="font-medium">Next installment:</span> {formatUSD(nextInstallmentAmount)}
-                  {schedule && schedule.missedPayments > 0 && (
-                    <span className="text-red-600 font-medium ml-1">(OVERDUE)</span>
+                  <div><span className="font-medium">Principal:</span> {formatUSD(totalInstallmentAmount)}</div>
+                  <div><span className="font-medium">Interest:</span> {interestAmount.toFixed(6)}</div>
+                  <div className="mt-1 pt-1 border-t border-blue-200">
+                    <span className="font-medium">Total Debt:</span> {outstandingDebt.toFixed(6)}
+                  </div>
+                  {position.missedPayments > 0 && (
+                    <div className="text-red-600 font-medium mt-1">⚠️ {position.missedPayments} payment(s) overdue</div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Amount Input */}
-            <div>
-              <label htmlFor="repay-amount" className="block text-sm font-medium text-gray-700 mb-1">
-                Repayment Amount
-              </label>
-              <div className="relative">
-                <Input
-                  id="repay-amount"
-                  type="text"
-                  value={repayAmount}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9.]/g, '');
-                    setRepayAmount(val);
-                  }}
-                  placeholder="0.00"
-                  className="pr-16 text-lg"
-                  disabled={isApproving || isRepaying}
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-lg text-gray-500">
-                  USDC
+            {/* Installment Buttons */}
+            {position.repaymentSchedule && position.repaymentSchedule.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Installment to Pay
+                </label>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {position.repaymentSchedule.map((installment) => {
+                    const isLastInstallment = installment.installmentNumber === position.numberOfInstallments;
+                    const baseAmount = parseFloat(installment.amount) / 1e6;
+                    const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
+                    const isPaid = installment.status === 'PAID';
+                    const isOverdue = installment.status === 'MISSED';
+                    const isPending = installment.status === 'PENDING';
+
+                    return (
+                      <button
+                        key={installment.installmentNumber}
+                        onClick={() => !isPaid && handleInstallmentPay(installment.installmentNumber)}
+                        disabled={isPaid || isApproving || isRepaying || selectedInstallment !== null}
+                        className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                          isPaid
+                            ? 'bg-green-50 border-green-200 opacity-60 cursor-not-allowed'
+                            : isOverdue
+                            ? 'bg-red-50 border-red-300 hover:border-red-400 hover:bg-red-100'
+                            : isPending
+                            ? 'bg-white border-gray-300 hover:border-blue-500 hover:bg-blue-50'
+                            : 'bg-gray-50 border-gray-200'
+                        } ${selectedInstallment === installment.installmentNumber ? 'ring-2 ring-blue-500' : ''}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">
+                                Installment #{installment.installmentNumber}
+                              </span>
+                              {isPaid && (
+                                <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded-full">PAID</span>
+                              )}
+                              {isOverdue && (
+                                <span className="px-2 py-0.5 bg-red-600 text-white text-xs rounded-full">OVERDUE</span>
+                              )}
+                              {isPending && (
+                                <span className="px-2 py-0.5 bg-yellow-600 text-white text-xs rounded-full">PENDING</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              Due: {new Date(installment.dueDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-gray-900">
+                              {formatUSD(finalAmount)}
+                            </div>
+                            {isLastInstallment && interestAmount > 0 && (
+                              <div className="text-xs text-gray-500">
+                                +${interestAmount.toFixed(6)} interest
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              {!isAmountValid && parseFloat(repayAmount) > 0 && (
-                <p className="mt-2 text-sm text-red-600">
-                  {parseFloat(repayAmount) > outstandingDebt
-                    ? `Amount exceeds outstanding debt of ${formatUSD(getOutstandingDebt(position))}`
-                    : 'Please enter a valid amount'}
-                </p>
-              )}
-            </div>
-
-            {/* Quick Amount Buttons */}
-            <div className="grid grid-cols-3 gap-2">
-              {nextInstallmentAmount && (
-                <button
-                  onClick={() => setRepayAmount(nextInstallmentAmount.toFixed(2))}
-                  disabled={isApproving || isRepaying}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-900 transition-colors disabled:opacity-50"
-                >
-                  Next Payment
-                </button>
-              )}
-              <button
-                onClick={() => {const fullAmount = actualDebt 
-                    ? ethers.formatUnits(actualDebt, 6) 
-                    : outstandingDebt.toFixed(6);
-                  setRepayAmount((parseFloat(fullAmount) / 2).toFixed(6));}}
-                disabled={isApproving || isRepaying}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-900 transition-colors disabled:opacity-50"
-              >
-                Half
-              </button>
-              <button
-                onClick={() => {
-                  // Use actualDebt with full precision (6 decimals) to avoid rounding errors
-                  const fullAmount = actualDebt 
-                    ? ethers.formatUnits(actualDebt, 6) 
-                    : outstandingDebt.toFixed(6);
-                  setRepayAmount(fullAmount);
-                }}
-                disabled={isApproving || isRepaying || isFetchingDebt}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-900 transition-colors disabled:opacity-50"
-              >
-                Full Amount
-              </button>
-            </div>
+            )}
 
             {/* Error Display */}
             {error && (
@@ -380,35 +361,23 @@ export const RepayLoanModal = ({
             )}
 
             {/* Progress Steps */}
-            {(isApproving || isRepaying) && (
+            {(isApproving || isRepaying) && selectedInstallment && (
               <div className="bg-blue-50 rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
                   <div className="text-sm text-blue-800">
-                    {currentStep === 'approving' && 'Approving USDC...'}
-                    {currentStep === 'repaying' && 'Processing repayment...'}
+                    {currentStep === 'approving' && `Approving USDC for Installment #${selectedInstallment}...`}
+                    {currentStep === 'repaying' && `Processing payment for Installment #${selectedInstallment}...`}
                     {currentStep === 'syncing' && 'Syncing with backend...'}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Action Button */}
-            <Button
-              onClick={handleRepay}
-              disabled={!isAmountValid || !repayAmount || isApproving || isRepaying}
-              className="w-full text-lg py-6"
-            >
-              {isApproving || isRepaying ? (
-                <RefreshCw className="w-6 h-6 animate-spin" />
-              ) : (
-                `Repay ${repayAmount ? formatUSD(parseFloat(repayAmount)) : '$0.00'}`
-              )}
-            </Button>
-
+            {/* Action Button - Removed since we have installment buttons */}
             {/* Info */}
             <div className="text-xs text-gray-500 text-center">
-              After repayment, your loan schedule and available credit will be updated automatically.
+              Click on any pending installment to make a payment. Interest will be added to the last installment.
             </div>
           </div>
         )}

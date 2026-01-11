@@ -286,7 +286,12 @@ export interface Position {
   missedPayments: number;          // Number of missed payments (0-3)
   isDefaulted: boolean;            // Whether position has been marked as defaulted
   oaidCreditIssued: boolean;       // Whether OAID credit was issued
-  repaymentSchedule: any[];        // Repayment schedule array
+  repaymentSchedule: Array<{
+    installmentNumber: number;
+    dueDate: string;
+    amount: string;
+    status: 'PAID' | 'PENDING' | 'MISSED';
+  }>;                               // Repayment schedule array
   nextPaymentDueDate?: string;     // Optional next payment due date
   depositTxHash: string;           // Deposit transaction hash
   depositBlockNumber: number;      // Deposit block number
