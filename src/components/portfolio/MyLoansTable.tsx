@@ -687,8 +687,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
       {/* Withdraw Confirmation Modal */}
       {selectedPosition && showWithdrawModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md">
-          <div className="bg-transparent rounded-[20px] p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-transparent backdrop-blur-md">
+          <div className="bg-transparent rounded-[20px] p-8 max-w-lg w-full mx-4 shadow-2xl">
             {/* Header */}
             <div className="flex items-start justify-between mb-6">
               <div>
@@ -716,7 +716,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
             {/* Withdrawal Details */}
             <div className="space-y-4 mb-6">
-              <div className="p-4 bg-[#F7F8FA] rounded-lg">
+              <div className="p-4 bg-transparent backdrop-blur-lg rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-[#6B7280]">{getTokenSymbol(selectedPosition.collateralTokenAddress)}</span>
                   <span className="text-lg font-semibold text-[#111111]">
