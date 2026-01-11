@@ -68,7 +68,7 @@ const PayoutViewPage = () => {
 
       // Filter for LISTED, ENDED, or AUCTION_DECLARED assets
       const filteredAssets = allAssets.filter((asset: any) => 
-        ['LISTED', 'ENDED', 'AUCTION_DECLARED'].includes(asset.status)
+        ['LISTED', 'ENDED', 'AUCTION_DECLARED','TOKENIZED'].includes(asset.status)
       );
 
       console.log('Filtered assets for payout:', filteredAssets);

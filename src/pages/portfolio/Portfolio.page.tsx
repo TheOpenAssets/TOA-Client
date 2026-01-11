@@ -739,9 +739,9 @@ const PortfolioPage = () => {
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
         {showClaimModal && selectedAssetForClaim && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-transparent backdrop-blur-lg border flex items-center justify-center z-50 p-4">
             <div
-              className="rounded-2xl p-8 max-w-md w-full bg-transparent"
+              className="rounded-2xl p-8 max-w-md w-full bg-transparent border-neutral-300 border"
               style={{
                 boxShadow: `
                   4px 4px 12px rgba(243, 244, 245, 0.08),
@@ -764,7 +764,7 @@ const PortfolioPage = () => {
                   This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
                 </p>
 
-                <div className="bg-gray-50 rounded-xl p-5 mb-6 space-y-5">
+                <div className="bg-gray-100 rounded-xl p-5 mb-6 space-y-5">
                   <div>
                     <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
                     <p className="font-gellix text-xl font-semibold text-foreground">
@@ -779,7 +779,7 @@ const PortfolioPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="bg-gray-100 rounded-xl p-4 mb-6">
                   <p className="font-inter text-xs text-gray-700 text-left">
                     <span className="text-gray-500">⚠️</span> <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
                   </p>

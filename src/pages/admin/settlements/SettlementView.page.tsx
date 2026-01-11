@@ -919,38 +919,6 @@ const SettlementViewPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6">
-                  <h4 className="font-geist text-lg font-semibold text-foreground mb-4">
-                    Distribution Results
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 font-inter text-sm">
-                    <div>
-                      <span className="text-foreground/60">Total Distributed:</span>
-                      <p className="text-green-600 font-semibold text-lg mt-1">
-                        {formatUSDC(distributionResults.totalDistributed)} USDC
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-foreground/60">Token Holders:</span>
-                      <p className="text-foreground font-semibold text-lg mt-1">
-                        {distributionResults.holders}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-foreground/60">Total Token-Days:</span>
-                      <p className="text-foreground font-medium mt-1">
-                        {parseFloat(distributionResults.totalTokenDays).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-foreground/60">Effective Yield:</span>
-                      <p className="text-blue-600 font-semibold text-lg mt-1">
-                        {distributionResults.effectiveYield}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
