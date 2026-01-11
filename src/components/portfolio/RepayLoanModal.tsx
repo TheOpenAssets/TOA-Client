@@ -108,7 +108,7 @@ export const RepayLoanModal = ({
   const nextInstallmentAmount = useMemo(() => {
     if (!schedule) return null;
 
-    const nextUnpaid = schedule.installments.find(
+    const nextUnpaid = schedule.installments?.find(
       i => i.status === 'PENDING' || i.status === 'MISSED'
     );
 
