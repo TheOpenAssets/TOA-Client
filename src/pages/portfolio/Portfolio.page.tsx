@@ -70,7 +70,7 @@ const PortfolioPage = () => {
     if (!address) return;
     setIsLoadingMyLoans(true);
     try {
-      const response = await solvencyService.getMyPositions('ACTIVE', 100, 0);
+      const response = await solvencyService.getMyPositions();
       const loans = response.positions.filter(p => parseFloat(p.usdcBorrowed) > 0);
       setMyLoans(loans);
     } catch (err) {

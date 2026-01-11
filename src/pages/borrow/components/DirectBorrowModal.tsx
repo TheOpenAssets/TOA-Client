@@ -141,20 +141,23 @@ export const DirectBorrowModal = ({
       console.log('✅ Borrow successful:', borrowResult.txHash);
       setTxHash(borrowResult.txHash!);
 
-      // Step 5: Sync position with backend
+      // Step 5: Notify backend of loan borrow
       setStep('syncing');
-      console.log('🔄 Syncing position with backend...');
+      console.log('🔄 Notifying backend of loan borrow...');
 
       try {
-        await solvencyService.syncPosition({
-          positionId: position.positionId.toString(),
+        await solvencyService.notifyLoanBorrow({
           txHash: borrowResult.txHash!,
-          blockNumber: borrowResult.blockNumber!,
+          positionId: position.positionId.toString(),
+          borrowAmount: amountWei.toString(),
+          loanDuration: loanDuration.toString(),
+          numberOfInstallments: numberOfInstallments.toString(),
+          blockNumber: borrowResult.blockNumber?.toString(),
         });
-        console.log('✅ Position synced with backend');
+        console.log('✅ Backend notified of loan borrow');
       } catch (syncError) {
         // Non-blocking: Events will still sync it automatically
-        console.warn('⚠️ Manual sync failed (events will auto-sync):', syncError);
+        console.warn('⚠️ Manual notification failed (events will auto-sync):', syncError);
       }
 
       // Success!

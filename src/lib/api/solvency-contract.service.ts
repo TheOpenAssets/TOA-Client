@@ -81,12 +81,18 @@ class SolvencyContractService {
    * Get provider and signer from browser wallet
    */
   private async getProviderAndSigner() {
+    console.log('🔌 Getting provider and signer...');
+    
     if (!window.ethereum) {
       throw new Error('No wallet found. Please install MetaMask or another Web3 wallet.');
     }
 
+    console.log('   Creating BrowserProvider...');
     const provider = new ethers.BrowserProvider(window.ethereum);
+    
+    console.log('   Getting network...');
     const network = await provider.getNetwork();
+    console.log(`   Connected to network: chainId ${network.chainId}`);
 
     // Check if on Mantle Sepolia (chainId: 5003)
     if (network.chainId !== 5003n) {
@@ -95,7 +101,10 @@ class SolvencyContractService {
       );
     }
 
+    console.log('   Getting signer...');
     const signer = await provider.getSigner();
+    console.log(`   Signer address: ${await signer.getAddress()}`);
+    
     return { provider, signer };
   }
 
@@ -103,8 +112,14 @@ class SolvencyContractService {
    * Get vault contract instance
    */
   private async getVaultContract() {
+    console.log('📄 Getting vault contract instance...');
+    console.log(`   Vault address: ${VAULT_CONTRACT_ADDRESS}`);
+    
     const { signer } = await this.getProviderAndSigner();
-    return new ethers.Contract(VAULT_CONTRACT_ADDRESS, SOLVENCY_VAULT_ABI, signer);
+    const contract = new ethers.Contract(VAULT_CONTRACT_ADDRESS, SOLVENCY_VAULT_ABI, signer);
+    
+    console.log('✅ Vault contract created successfully');
+    return contract;
   }
 
   /**
@@ -418,21 +433,34 @@ class SolvencyContractService {
         numberOfInstallments,
       });
 
+      console.log('🔍 Step 1: Getting vault contract...');
       const vault = await this.getVaultContract();
+      console.log('✅ Vault contract obtained:', vault.target);
 
+      console.log(`📝 Step 2: Preparing transaction...`);
       console.log(`   Borrowing $${ethers.formatUnits(amount, 6)} USDC from SeniorPool...`);
       console.log(`   Loan Duration: ${loanDuration} seconds (~${Math.floor(loanDuration / 86400)} days)`);
       console.log(`   Installments: ${numberOfInstallments}`);
 
+      console.log('🚀 Step 3: Calling vault.borrowUSDC()...');
+      console.log('   Parameters:', {
+        positionId,
+        amount: amount.toString(),
+        loanDuration,
+        numberOfInstallments
+      });
+
       const tx = await vault.borrowUSDC(positionId, amount, loanDuration, numberOfInstallments);
 
-      console.log(`   Transaction submitted: ${tx.hash}`);
-      console.log('⏳ Waiting for confirmation...');
+      console.log(`✅ Step 4: Transaction submitted successfully!`);
+      console.log(`   Transaction hash: ${tx.hash}`);
+      console.log('⏳ Step 5: Waiting for confirmation...');
 
       const receipt = await tx.wait();
-      console.log(`✅ Borrow confirmed in block ${receipt.blockNumber}`);
+      console.log(`✅ Step 6: Transaction confirmed in block ${receipt.blockNumber}`);
 
       // Parse USDCBorrowed event
+      console.log('🔍 Step 7: Parsing events...');
       let borrowed = null;
       let totalDebt = null;
       for (const log of receipt.logs) {
@@ -455,7 +483,8 @@ class SolvencyContractService {
         }
       }
 
-      console.log(`   Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`🔗 Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log('✅ Step 8: Borrow completed successfully!');
 
       return {
         success: true,
@@ -463,7 +492,12 @@ class SolvencyContractService {
         blockNumber: receipt.blockNumber,
       };
     } catch (error: any) {
-      console.error('❌ Borrow failed:', error);
+      console.error('❌ Borrow failed at some step:', error);
+      console.error('   Error name:', error.name);
+      console.error('   Error message:', error.message);
+      console.error('   Error code:', error.code);
+      if (error.reason) console.error('   Error reason:', error.reason);
+      if (error.data) console.error('   Error data:', error.data);
       return {
         success: false,
         error: error.message || 'Borrow transaction failed',

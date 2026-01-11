@@ -161,10 +161,13 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: B
         throw new Error(borrowResult.error || 'Borrow transaction failed');
       }
 
-      await solvencyService.syncPosition({
-        positionId: String(selectedPosition.positionId),
+      await solvencyService.notifyLoanBorrow({
         txHash: borrowResult.txHash!,
-        blockNumber: borrowResult.blockNumber!,
+        positionId: String(selectedPosition.positionId),
+        borrowAmount: amountWei.toString(),
+        loanDuration: loanDuration.toString(),
+        numberOfInstallments: installments.toString(),
+        blockNumber: borrowResult.blockNumber?.toString(),
       });
 
       onSuccess();

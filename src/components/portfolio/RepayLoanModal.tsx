@@ -143,20 +143,21 @@ export const RepayLoanModal = ({
 
       setCurrentStep('syncing');
 
-      // Step 3: Sync position with backend
+      // Step 3: Notify backend of loan repayment
       setCurrentStep('syncing');
-      console.log('🔄 Syncing position with backend...');
+      console.log('🔄 Notifying backend of loan repayment...');
 
       try {
-        await solvencyService.syncPosition({
-          positionId: position.positionId.toString(),
+        await solvencyService.notifyLoanRepayment({
           txHash: repayResult.txHash!,
-          blockNumber: repayResult.blockNumber!,
+          positionId: position.positionId.toString(),
+          repaymentAmount: amountWei.toString(),
+          blockNumber: repayResult.blockNumber?.toString(),
         });
-        console.log('✅ Position synced with backend');
+        console.log('✅ Backend notified of loan repayment');
       } catch (syncError) {
         // Non-blocking: Events will still sync it automatically
-        console.warn('⚠️ Manual sync failed (events will auto-sync):', syncError);
+        console.warn('⚠️ Manual notification failed (events will auto-sync):', syncError);
       }
 
       // Success
