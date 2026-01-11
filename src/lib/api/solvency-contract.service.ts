@@ -450,6 +450,9 @@ class SolvencyContractService {
         numberOfInstallments
       });
 
+      console.log('⏳ WAITING FOR USER: Please approve the transaction in your wallet!');
+      console.log('   Check MetaMask or your wallet extension...');
+
       const tx = await vault.borrowUSDC(positionId, amount, loanDuration, numberOfInstallments);
 
       console.log(`✅ Step 4: Transaction submitted successfully!`);
@@ -498,6 +501,25 @@ class SolvencyContractService {
       console.error('   Error code:', error.code);
       if (error.reason) console.error('   Error reason:', error.reason);
       if (error.data) console.error('   Error data:', error.data);
+      
+      // Check for user rejection
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        console.log('👤 User rejected the transaction in wallet');
+        return {
+          success: false,
+          error: 'Transaction rejected by user',
+        };
+      }
+      
+      // Check for insufficient funds
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        console.log('💰 Insufficient funds for transaction');
+        return {
+          success: false,
+          error: 'Insufficient funds to complete transaction',
+        };
+      }
+      
       return {
         success: false,
         error: error.message || 'Borrow transaction failed',

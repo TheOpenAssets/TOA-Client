@@ -214,7 +214,7 @@ export const RepayLoanModal = ({
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Position #{position.positionId}</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {position.collateralToken.symbol}
+                  {position.collateralToken?.symbol || 'Unknown Token'}
                 </span>
               </div>
               <div className="flex justify-between items-center">

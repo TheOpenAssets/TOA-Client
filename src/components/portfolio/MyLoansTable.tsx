@@ -298,12 +298,12 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                           <span className="text-white text-sm font-bold">
-                            {position.collateralToken.symbol.substring(0, 2).toUpperCase()}
+                            {position.collateralToken?.symbol ? position.collateralToken.symbol.substring(0, 2).toUpperCase() : 'TK'}
                           </span>
                         </div>
                         <div>
                           <div className="text-sm font-medium text-[#111111]">
-                            {position.collateralToken.symbol}
+                            {position.collateralToken?.symbol || 'Unknown Token'}
                           </div>
                           <div className="text-xs text-[#6B7280]">
                             {formatCollateralAmount(position.collateralAmount, 18)} tokens • {formatUSD(position.tokenValueUSD)}
