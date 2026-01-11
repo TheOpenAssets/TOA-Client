@@ -79,5 +79,5 @@ export const MIN_BORROW_AMOUNT = 100; // Minimum 100 USDC
 export const MIN_DEPOSIT_AMOUNT = 0.01; // Minimum deposit amount in tokens
 
 // Contract addresses (to be configured per environment)
-export const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '0x0849B8d12Ac2a7Fcab4FAe8a46154e9778579493';
-export const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '';
+export const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_VAULT_CONTRACT_ADDRESS || '0x3b3d70Fe12076f30E9999Fd65feC6C6DeB47B5eF';
+export const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3';

@@ -30,16 +30,20 @@ export const ActiveBidsTable = ({
     ? bids
     : bids.filter(bid => bid.status === statusFilter);
 
-  const statusOptions: Array<BidStatus | 'ALL'> = ['ALL', 'PENDING', 'WON', 'LOST', 'SETTLED', 'REFUNDED'];
+  const statusOptions: Array<BidStatus | 'ALL'> = ['ALL', 'PENDING', 'PLACED', 'FINALIZED', 'WON', 'LOST', 'SETTLED', 'REFUNDED'];
 
   const getBidStatusStyle = (status: BidStatus) => {
     switch (status) {
+      case 'PLACED':
+        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Placed' };
+      case 'FINALIZED':
+        return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Finalized' };
       case 'WON':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Won' };
+        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Won' };
       case 'LOST':
         return { bg: 'bg-red-100', text: 'text-red-700', label: 'Lost' };
       case 'SETTLED':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Settled' };
+        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Settled' };
       case 'REFUNDED':
         return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Refunded' };
       case 'PENDING':

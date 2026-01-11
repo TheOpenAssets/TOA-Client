@@ -15,6 +15,7 @@ import { assetService } from '../../../lib/api/asset.service';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import type { IssuerAsset } from '../../../types/issuer.types';
+import { marketplaceService } from '../../../lib/api/marketplace.service';
 
 interface DepositCollateralModalProps {
   isOpen: boolean;
@@ -264,8 +265,17 @@ export const DepositCollateralModal = ({
       setStep('syncing');
       console.log('🔄 Step 3/3: Syncing with platform...');
 
+      // Sync portfolio (notify purchase)
+      await marketplaceService.notifyPurchase({
+        assetId: asset.assetId,
+        txHash: depositResult.txHash!,
+        amount: `-${depositAmount}`,
+        blockNumber: depositResult.blockNumber!.toString(),
+      });
+
+      // Sync position with solvency system
       await solvencyService.syncPosition({
-        positionId: depositResult.positionId,
+        positionId: depositResult.positionId!.toString(),
         txHash: depositResult.txHash!,
         blockNumber: depositResult.blockNumber!,
       });

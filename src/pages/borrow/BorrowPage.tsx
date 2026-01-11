@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
-// import Navbar from '../../components/common/Navbar';
+
 import { UnifiedBorrowModal } from './components/UnifiedBorrowModal';
 import { useCreditData } from './hooks/useCreditData';
-// import { formatUSD } from '../../utils/solvency/format-credit.util';
+
 import { Button } from '../../components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
