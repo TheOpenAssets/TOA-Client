@@ -115,18 +115,12 @@ class SolvencyService extends BaseService {
    *   meta: { total, limit, offset }
    * }
    */
-  async getMyPositions(status: string = 'ACTIVE', limit: number = 20, offset: number = 0): Promise<GetPositionsResponse> {
+  async getMyPositions(): Promise<GetPositionsResponse> {
     try {
       console.log('📊 Fetching user positions...');
 
-      const params = new URLSearchParams({
-        status,
-        limit: limit.toString(),
-        offset: offset.toString(),
-      });
-
       const response = await this.fetchWithTimeout(
-        `${this.baseURL}/solvency/positions/my?${params}`,
+        `${this.baseURL}/solvency/positions/my`,
         {
           method: 'GET',
           headers: this.getAuthHeaders(),
@@ -139,7 +133,7 @@ class SolvencyService extends BaseService {
       }
 
       const data: GetPositionsResponse = await response.json();
-      console.log('✅ Positions received:', data);
+      console.log('✅ Loan Positions received:', data);
       return data;
     } catch (error: any) {
       console.error('❌ Error fetching positions:', error);
