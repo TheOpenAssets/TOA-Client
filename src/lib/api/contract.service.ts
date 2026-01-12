@@ -32,7 +32,7 @@ const MARKETPLACE_ABI = [
   'function buyTokens(bytes32 assetId, uint256 amount) external',
 
   // Universal listings function (from end-auction script, more up-to-date)
-  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 reservePrice, uint256 endTime, uint256 clearingPrice, uint8 auctionPhase, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
+  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 minPrice,uint256 reservePrice, uint256 endTime, uint256 clearingPrice, uint8 auctionPhase, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
 
   // Event
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
@@ -392,16 +392,31 @@ class ContractService {
       try {
         const listing = await marketplaceContract.listings(assetIdBytes32);
 
-        // Correct field mapping from actual contract:
-        // [0] tokenAddress, [1] assetId, [2] listingType, [3] staticPrice,
-        // [4] startPrice, [5] endPrice, [6] duration, [7] startTime,
-        // [8] totalSupply, [9] sold, [10] active, [11] minInvestment
+
+        // struct Listing {
+        // 0 address tokenAddress;
+        // 1 bytes32 assetId;
+        // 2 ListingType listingType;
+        // // Static params
+        // 3 uint256 staticPrice;
+        // // Auction params
+        // 4 uint256 minPrice;       // Minimum bid price (lower bound of range)
+        // 5 uint256 reservePrice;   // Reserve price (avg of min/max, used for clearing)
+        // 6 uint256 endTime;
+        // 7 uint256 clearingPrice;  // Set when auction ends
+        // 8 AuctionPhase auctionPhase;
+        // // Common params
+        // 9 uint256 totalSupply;
+        // 10 uint256 sold;           // For static: amount sold. For auction: tokens allocated.
+        // 11 bool active;
+        // 12 uint256 minInvestment;
+        // }
 
         const tokenAddress = listing[0];
-        const totalSupply = listing[8];
-        const sold = listing[9];
-        const active = listing[10];
-        const minInvestment = listing[11];
+        const totalSupply = listing[9];
+        const sold = listing[10];
+        const active = listing[11];
+        const minInvestment = listing[12];
 
         const listingType = listing[2]; // 0 = STATIC, 1 = DUTCH_AUCTION
         const staticPrice = listing[3];
