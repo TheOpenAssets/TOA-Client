@@ -124,10 +124,17 @@ const PortfolioPage = () => {
   );
 
   const filteredOrders = myOrders.filter(order =>
-    order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (filteredAssets.find(asset => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
   );
+
+  const filteredLoans = myLoans.filter(loan =>
+    loan.positionId.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  );
+
 
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
@@ -135,22 +142,8 @@ const PortfolioPage = () => {
     0
   );
 
+  
 
-  // // Fetch solvency loans
-  // const fetchMyLoans = useCallback(async () => {
-  //   if (!address) return;
-  //   setIsLoadingMyLoans(true);
-  //   try {
-  //     const response = await solvencyService.getMyPositions('ACTIVE', 100, 0);
-  //     const loans = response.positions.filter(p => parseFloat(p.usdcBorrowed) > 0);
-  //     setMyLoans(loans);
-  //   } catch (err) {
-  //     console.error("Error fetching solvency loans:", err);
-  //     showError("Failed to fetch loans", "Could not retrieve your loan positions.");
-  //   } finally {
-  //     setIsLoadingMyLoans(false);
-  //   }
-  // }, [address, showError]);
 
   useEffect(() => {
     fetchPortfolio();
@@ -201,7 +194,8 @@ const PortfolioPage = () => {
   }, [isCancelSuccess]);
 
   const handleIncreaseCreditLimit = () => {
-    if (portfolio && portfolio.portfolio.length > 0) {
+    const validAssets = staticAssets.filter(asset => asset.yieldInfo?.settlementDistributed === false);
+    if (validAssets.length > 0) {
       setShowDepositModal(true);
     } else {
       setShowNoAssetsModal(true);
@@ -515,20 +509,21 @@ const PortfolioPage = () => {
 
               {/* Right: Wallet Display */}
               <div className="flex items-center gap-3">
-              {/* Center: Navigation */}
-              <nav className="flex items-center gap-4">
-                <button
-                  onClick={() => navigate('/marketplace')}
-                  className="font-geist border border-gray-300  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-                >
-                  Marketplace
-                </button>
-                <button
-                  onClick={() => navigate('/borrow')}
-                  className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
-                  Borrow
-                </button>
-              </nav>
+                {/* Center: Navigation */}
+                <nav className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate('/marketplace')}
+                    className="font-geist border border-gray-300  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                  >
+                    Marketplace
+                  </button>
+                  <button
+                    onClick={() => navigate('/borrow')}
+                    disabled={true}
+                    className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
+                    Borrow
+                  </button>
+                </nav>
                 {address && (
                   <>
                     <NotificationBell role="INVESTOR" />
@@ -596,6 +591,7 @@ const PortfolioPage = () => {
                       </button>
                       <button
                         onClick={() => setActiveTab('loans')}
+                        disabled={true}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'loans'
                           ? 'bg-gray-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -635,10 +631,10 @@ const PortfolioPage = () => {
 
                       style={{
                         boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(173, 173, 173, 0.06),
-            12px 12px 36px rgba(123, 123, 123, 0.04),
-            16px 16px 48px rgba(57, 57, 57, 0.02)
+                        4px 4px 12px rgba(243, 244, 245, 0.08),
+                        8px 8px 24px rgba(173, 173, 173, 0.06),
+                        12px 12px 36px rgba(123, 123, 123, 0.04),
+                        16px 16px 48px rgba(57, 57, 57, 0.02)
           `,
                       }}>
                       <div className="h-full flex flex-col"  >
@@ -682,7 +678,7 @@ const PortfolioPage = () => {
                     >
                       <div className="h-full flex flex-col overflow-y-auto">
                         <MyLoansTable
-                          positions={myLoans}
+                          positions={filteredLoans}
                           isLoading={isLoadingMyLoans}
                           onRefresh={fetchMyLoans}
                         />

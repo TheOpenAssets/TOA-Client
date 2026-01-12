@@ -580,7 +580,7 @@ export const MyAssetsTable = ({
                             <div>
                               <div className="text-xs text-gray-500 mb-1">Tokens Leveraged</div>
                               <div className="font-medium">
-                                {asset.totalAmount}
+                                {asset.totalAmount ? formatTokenAmount(asset.totalAmount) : '0'}
                               </div>
                             </div>
                           )}

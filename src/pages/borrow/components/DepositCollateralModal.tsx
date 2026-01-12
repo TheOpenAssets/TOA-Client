@@ -382,7 +382,7 @@ export const DepositCollateralModal = ({
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#111111] focus:border-transparent"
                 >
                   <option value="">Choose an asset...</option>
-                  {portfolio.map((asset) => (
+                  {portfolio.filter(asset => (asset.purchaseType === 'STATIC' && !asset?.yieldInfo?.settlementDistributed)).map((asset) => (
                     <option key={asset.assetId} value={asset.assetId}>
                       {asset.metadata.assetName} - {parseFloat(ethers.formatUnits(asset.totalAmount, 18)).toFixed(2)} tokens
                     </option>
