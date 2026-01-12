@@ -88,25 +88,25 @@ class ContractService {
   async waitForTransaction(txHash: string, provider: ethers.Provider): Promise<ethers.TransactionReceipt> {
     const POLL_INTERVAL = 5000; // 5 seconds
     const MAX_ATTEMPTS = 240; // 20 minutes (240 * 5s = 1200s)
-    
+
     console.log(`⏳ Polling for TX ${txHash} (Interval: 5s, Timeout: 20m)...`);
 
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
       try {
         const receipt = await provider.getTransactionReceipt(txHash);
         if (receipt) {
-            if (receipt.status === 1) {
-                console.log(`✅ TX Confirmed in block ${receipt.blockNumber} after ${(i + 1) * 5}s`);
-                return receipt;
-            } else {
-                 throw new Error(`Transaction failed (status: 0)`);
-            }
+          if (receipt.status === 1) {
+            console.log(`✅ TX Confirmed in block ${receipt.blockNumber} after ${(i + 1) * 5}s`);
+            return receipt;
+          } else {
+            throw new Error(`Transaction failed (status: 0)`);
+          }
         }
       } catch (error: any) {
-         // Ignore "not found" errors during polling, rethrow others if critical
-         if (error.message && !error.message.includes('not found')) {
-            console.warn(`Polling error (attempt ${i+1}):`, error);
-         }
+        // Ignore "not found" errors during polling, rethrow others if critical
+        if (error.message && !error.message.includes('not found')) {
+          console.warn(`Polling error (attempt ${i + 1}):`, error);
+        }
       }
 
       // Wait for next poll
@@ -199,8 +199,9 @@ class ContractService {
       // Get listing to determine type and price
       const listing = await marketplaceContract.listings(assetId);
       const staticPrice = listing[3];
-      const totalSupply = listing[8]; // totalSupply is at index 8
-      const minInvestmentRaw = listing[11]; // minInvestment is at index 11 (matches buyTokens)
+      const totalSupply = listing[9]; // totalSupply is at index 9
+      const minInvestmentRaw = listing[12]; // minInvestment is at index 12
+
 
       // FIX: Backend sends minInvestment in 1e18 format (token decimals)
       // but contract expects 1e6 format (USDC decimals)
@@ -293,11 +294,11 @@ class ContractService {
         const listing1 = await marketplaceContract.listings(format1);
         console.log('✅ Format 1 FOUND:', {
           tokenAddress: listing1[0],
-          totalSupply: listing1[8].toString(),
-          sold: listing1[9].toString(),
-          availableSupply: (listing1[8] - listing1[9]).toString(),
-          minInvestment: listing1[11].toString(),
-          isActive: listing1[10],
+          totalSupply: listing1[9].toString(),
+          sold: listing1[10].toString(),
+          availableSupply: (listing1[9] - listing1[10]).toString(),
+          minInvestment: listing1[12].toString(),
+          isActive: listing1[11],
         });
       } catch (e) {
         console.log('❌ Format 1 not found');
@@ -310,11 +311,11 @@ class ContractService {
         const listing2 = await marketplaceContract.listings(format2);
         console.log('✅ Format 2 FOUND:', {
           tokenAddress: listing2[0],
-          totalSupply: listing2[8].toString(),
-          sold: listing2[9].toString(),
-          availableSupply: (listing2[8] - listing2[9]).toString(),
-          minInvestment: listing2[11].toString(),
-          isActive: listing2[10],
+          totalSupply: listing2[9].toString(),
+          sold: listing2[10].toString(),
+          availableSupply: (listing2[9] - listing2[10]).toString(),
+          minInvestment: listing2[12].toString(),
+          isActive: listing2[11],
         });
       } catch (e) {
         console.log('❌ Format 2 not found');
@@ -327,11 +328,11 @@ class ContractService {
         const listing3 = await marketplaceContract.listings(format3);
         console.log('✅ Format 3 FOUND:', {
           tokenAddress: listing3[0],
-          totalSupply: listing3[8].toString(),
-          sold: listing3[9].toString(),
-          availableSupply: (listing3[8] - listing3[9]).toString(),
-          minInvestment: listing3[11].toString(),
-          isActive: listing3[10],
+          totalSupply: listing3[9].toString(),
+          sold: listing3[10].toString(),
+          availableSupply: (listing3[9] - listing3[10]).toString(),
+          minInvestment: listing3[12].toString(),
+          isActive: listing3[11],
         });
       } catch (e) {
         console.log('❌ Format 3 not found');
@@ -344,11 +345,11 @@ class ContractService {
         const listing4 = await marketplaceContract.listings(format4);
         console.log('✅ Format 4 FOUND:', {
           tokenAddress: listing4[0],
-          totalSupply: listing4[8].toString(),
-          sold: listing4[9].toString(),
-          availableSupply: (listing4[8] - listing4[9]).toString(),
-          minInvestment: listing4[11].toString(),
-          isActive: listing4[10],
+          totalSupply: listing4[9].toString(),
+          sold: listing4[10].toString(),
+          availableSupply: (listing4[9] - listing4[10]).toString(),
+          minInvestment: listing4[12].toString(),
+          isActive: listing4[11],
         });
       } catch (e) {
         console.log('❌ Format 4 not found');
@@ -437,14 +438,14 @@ class ContractService {
           // Try alternative format: keccak256 of UUID
           const altAssetId = ethers.keccak256(ethers.toUtf8Bytes(assetId));
           console.log('Trying alternative format:', altAssetId);
-          
+
           try {
             const altListing = await marketplaceContract.listings(altAssetId);
             const altTokenAddress = altListing[0];
             const altStaticPrice = altListing[3];
-            const altTotalSupply = altListing[8];
-            const altSold = altListing[9];
-            const altActive = altListing[10];
+            const altTotalSupply = altListing[9];
+            const altSold = altListing[10];
+            const altActive = altListing[11];
 
             if (altTokenAddress !== ethers.ZeroAddress) {
               console.log('✅ Found listing with keccak256 format!');
@@ -560,9 +561,9 @@ class ContractService {
       const listing = await marketplaceContract.listings(assetIdBytes32);
       const tokenAddress = listing[0];
       const staticPrice = listing[3];
-      const totalSupply = listing[8];
-      const sold = listing[9];
-      const minInvestmentRaw = listing[11];
+      const totalSupply = listing[9];
+      const sold = listing[10];
+      const minInvestmentRaw = listing[12];
 
       // FIX: Backend sends minInvestment in 1e18 format (token decimals)
       // but contract expects 1e6 format (USDC decimals)
@@ -593,7 +594,7 @@ class ContractService {
       console.log('Payment >= MinInvestment?', payment >= minInvestment ? '✅ YES' : '❌ NO');
 
       // Check if payment meets minimum investment requirement
-     
+
 
       // Check USDC balance
       const usdcBalance = await usdcContract.balanceOf(userAddress);
@@ -656,7 +657,7 @@ class ContractService {
       // Step 0: Verify listing is available
       console.log('Step 0: Verifying listing...');
       const verification = await this.verifyListing(params.assetId, tokenAddress);
-      
+
       if (!verification.isValid) {
         return {
           success: false,
@@ -1178,7 +1179,7 @@ class ContractService {
       console.log('Admin Wallet:', adminAddress);
       console.log('Clearing Price:', clearingPrice, 'USDC');
       console.log('Clearing Price (wei):', clearingPriceWei.toString());
-      
+
       console.log('Submitting endAuction transaction...');
       const tx = await marketplaceContract.endAuction(assetIdBytes32, clearingPriceWei);
       console.log('TX Hash:', tx.hash);
@@ -1186,7 +1187,7 @@ class ContractService {
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log('Confirmed in block', receipt.blockNumber);
-      
+
       return {
         success: true,
         transactionHash: tx.hash,
