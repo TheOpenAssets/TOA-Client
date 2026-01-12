@@ -572,6 +572,18 @@ export const MyAssetsTable = ({
                               </div>
                             </div>
                           )}
+                        
+                        {/* Tokens Leveraged */}
+                        {isLeverage &&
+
+                          asset.totalAmount && (
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">Tokens Leveraged</div>
+                              <div className="font-medium">
+                                {asset.totalAmount}
+                              </div>
+                            </div>
+                          )}
 
                         {/* Full Transaction Hashes */}
                         {asset.yieldInfo?.yieldClaimTxHash && (

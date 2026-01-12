@@ -16,7 +16,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronUp, Wallet, Filter, Calendar, AlertCircle, Info, Clock, DollarSign } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
@@ -226,9 +226,6 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
     return (
       <div className="bg-transparent rounded-[24px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)] h-full w-full flex items-center justify-center text-center">
         <div className=''>
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F3F4F6] flex items-center justify-center">
-          <Wallet className="w-8 h-8 text-[#6B7280]" />
-          </div>
           <p className="font-gellix text-sm text-gray-500 mb-4">No active loans yet</p>
           <button
             onClick={() => navigate('/borrow')}
