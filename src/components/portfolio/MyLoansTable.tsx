@@ -465,10 +465,10 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                         {!position.isDefaulted && ! position.oaidCreditIssued && hasDebt && (
                           <button
                             onClick={(e) => handleRepayClick(position, e)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                            className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${
                               isOverdue
-                                ? 'border-2 border-red-400 hover:border-red-600 hover:bg-red-100 text-black'
-                                : 'border-2 border-blue-400 hover:border-blue-600 hover:bg-blue-100 text-black'
+                                ? 'border-2 border-red-400 hover:border-red-600 bg-black text-white'
+                                : 'border-2 border-blue-400 hover:border-blue-600 bg-black text-white'
                             }`}
                           >
                             {isOverdue ? 'Overdue - Repay' : 'Repay'}
@@ -480,7 +480,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                           <button
                             onClick={(e) => handleWithdrawClick(position, e)}
                             disabled={withdrawingPositionId === position.positionId}
-                            className="text-black px-2 py-1.5 rounded-lg text-xs font-medium border-2 hover:bg-green-100 hover:border-green-600 border-green-400 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="text-white px-2 py-1.5 rounded-xl text-xs font-medium border-2 bg-black hover:border-green-600 hover:border disabled:bg-gray-400 disabled:cursor-not-allowed"
                           >
                             {withdrawingPositionId === position.positionId ? 'Withdrawing...' : 'Withdraw'}
                           </button>
