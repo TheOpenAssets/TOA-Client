@@ -158,8 +158,8 @@ class NotificationService extends BaseService {
     // Return cached data if available and not expired
     const now = Date.now();
     const isCacheValid = this.cachedNotifications !== null &&
-                         (now - this.cacheTimestamp) < this.CACHE_TTL &&
-                         !forceRefresh;
+      (now - this.cacheTimestamp) < this.CACHE_TTL &&
+      !forceRefresh;
 
     if (isCacheValid && offset === 0) {
       console.log('📦 Returning cached notifications (preventing duplicate fetch)');
@@ -433,7 +433,7 @@ class NotificationService extends BaseService {
     const token = localStorage.getItem('access_token');
     if (!token) {
       console.error('No access token found for SSE connection');
-      return () => {};
+      return () => { };
     }
 
     const connectSSE = async () => {
@@ -443,7 +443,7 @@ class NotificationService extends BaseService {
       try {
         const url = `${this.baseURL}/notifications/stream`;
         console.log(`🔄 Connecting to Notification Stream at: ${url}`);
-        
+
         // Match BaseService headers and required SSE headers
         // Removing ngrok-skip-browser-warning as it might cause CORS issues on localhost if not allowed
         const headers: HeadersInit = {
@@ -459,15 +459,15 @@ class NotificationService extends BaseService {
         });
 
         if (!response.ok) {
-            const errorText = await response.text().catch(() => 'No error details');
-            throw new Error(`SSE Connection Failed: ${response.status} ${response.statusText} - ${errorText}`);
+          const errorText = await response.text().catch(() => 'No error details');
+          throw new Error(`SSE Connection Failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
-        
+
         this.sseReader = response.body?.getReader() || null;
         if (!this.sseReader) throw new Error('ReadableStream not supported');
 
         console.log('✅ SSE Connected');
-        
+
         const decoder = new TextDecoder();
         let buffer = '';
 
@@ -482,7 +482,7 @@ class NotificationService extends BaseService {
 
           let currentEvent = 'message';
           let currentData = '';
-          
+
           for (const line of lines) {
             if (line.trim() === '') {
               // End of event dispatch
@@ -532,10 +532,10 @@ class NotificationService extends BaseService {
         if (error.name !== 'AbortError') {
           console.error('❌ SSE Error:', error);
           if (this.isSSEConnected) {
-             this.reconnectTimeout = setTimeout(() => {
-               console.log('♻️ Reconnecting SSE...');
-               connectSSE(); 
-             }, 5000);
+            this.reconnectTimeout = setTimeout(() => {
+              console.log('♻️ Reconnecting SSE...');
+              connectSSE();
+            }, 5000);
           }
         }
       } finally {
@@ -570,17 +570,22 @@ class NotificationService extends BaseService {
     const roleFilters: Record<string, NotificationType[]> = {
       ORIGINATOR: ['ASSET_STATUS', 'TOKEN_DEPLOYED'],
       INVESTOR: [
+        'ASSET_STATUS',
         'KYC_STATUS',
+        'YIELD_DISTRIBUTED',
+        'PAYOUT_SETTLED',
+        'TOKEN_PURCHASED',
+        'TOKEN_DEPLOYED',
+        'SYSTEM_ALERT',
+        'MARKETPLACE_LISTING',
         'BID_PLACED',
         'AUCTION_WON',
         'BID_REFUNDED',
-        'TOKEN_PURCHASED',
-        'YIELD_DISTRIBUTED',
-        'ORDER_CANCELLED',
-        'ORDER_CREATED',
         'ORDER_FILLED',
+        'ORDER_CANCELED',
         'ORDER_ACTIVE',
-        'ASSET_STATUS',
+        'ORDER_CREATED',
+        'ORDER_CANCELLED',
       ],
       ADMIN: ['ASSET_STATUS', 'YIELD_DISTRIBUTED'],
     };

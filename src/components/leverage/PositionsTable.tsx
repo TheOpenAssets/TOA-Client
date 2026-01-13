@@ -173,7 +173,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
     <>
       <div className="flex-1 overflow-y-auto">
         {/* Filter Bar */}
-        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-transparent">
+        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-transparent backdrop-blur-sm">
           <div className="flex items-center justify-end gap-3">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-xs font-medium text-gray-700">Filter by Status:</span>

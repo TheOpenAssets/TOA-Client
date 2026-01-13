@@ -16,7 +16,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign, X, Activity, Layers, Timer } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
@@ -79,6 +79,21 @@ const getHealthBadgeColor = (healthStatus: string) => {
       return 'bg-[#FEE2E2] text-[#991B1B]';
     default:
       return 'bg-[#F3F4F6] text-[#6B7280]';
+  }
+};
+
+const getStatusBadgeColor = (status: string) => {
+  switch (status) {
+    case 'ACTIVE':
+      return 'bg-blue-100 text-blue-700';
+    case 'REPAID':
+      return 'bg-green-100 text-green-700';
+    case 'SETTLED':
+      return 'bg-gray-100 text-gray-700';
+    case 'LIQUIDATED':
+      return 'bg-red-100 text-red-700';
+    case 'CLOSED':
+      return 'bg-gray-100 text-gray-700';
   }
 };
 
@@ -168,8 +183,12 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
     newExpanded.add(positionId);
     setExpandedRows(newExpanded);
 
-    // Load schedule if not already loaded
-    if (!scheduleData[positionId] && !loadingSchedule[positionId]) {
+    // Check if we already have the schedule in the position object
+    const position = positions.find(p => p.positionId === positionId);
+    const hasSchedule = (position as any)?.repaymentSchedule?.length > 0;
+
+    // Load schedule if not already loaded and not in position
+    if (!hasSchedule && !scheduleData[positionId] && !loadingSchedule[positionId]) {
       setLoadingSchedule({ ...loadingSchedule, [positionId]: true });
       try {
         const response = await solvencyService.getPositionSchedule(positionId);
@@ -228,7 +247,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
         // Mark position as withdrawn
         setWithdrawnPositions(prev => new Set([...prev, selectedPosition.positionId]));
 
-        
+
 
         const asset = portfolio.find(asset => asset.tokenAddress === selectedPosition.collateralTokenAddress);
         if (asset && asset.assetId) {
@@ -292,7 +311,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="flex-1 overflow-y-auto">
         {/* Filter Bar */}
-        <div className="bg-white/97 sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-200 px-6 py-3 overflow-hidden">
+        <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-200 px-6 py-3 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-xs font-medium text-gray-700">Filter:</span>
@@ -300,8 +319,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               <button
                 onClick={() => setActiveFilter('all')}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${activeFilter === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 ALL
@@ -309,8 +328,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               <button
                 onClick={() => setActiveFilter('healthy')}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${activeFilter === 'healthy'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 HEALTHY
@@ -318,8 +337,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               <button
                 onClick={() => setActiveFilter('warning')}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${activeFilter === 'warning'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 AT RISK
@@ -327,8 +346,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               <button
                 onClick={() => setActiveFilter('critical')}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${activeFilter === 'critical'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 CRITICAL
@@ -336,8 +355,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               <button
                 onClick={() => setActiveFilter('defaulted')}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${activeFilter === 'defaulted'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 DEFAULTED
@@ -378,6 +397,9 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                   Status
                 </th>
                 <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                  Health Status
+                </th>
+                <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
                   Next Payment
                 </th>
                 <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
@@ -388,14 +410,19 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
             <tbody>
               {filteredPositions?.map((position, index) => {
                 const isExpanded = expandedRows.has(position.positionId);
+                const pos = position as any;
                 const schedule = scheduleData[position.positionId];
                 const isLoadingSchedule = loadingSchedule[position.positionId];
                 const isOverdue = isPaymentOverdue(position.nextPaymentDueDate);
                 const outstandingDebt = parseFloat(getOutstandingDebt(position));
-                const hasDebt =outstandingDebt > 0;
+                const hasDebt = outstandingDebt > 0;
                 const hasCollateral = parseFloat(position.collateralAmount) > 0;
                 const wasWithdrawn = withdrawnPositions.has(position.positionId);
                 const canWithdraw = hasCollateral && !position.oaidCreditIssued && !position.isDefaulted && !wasWithdrawn;
+
+                // Use schedule from position if available, otherwise from fetched data
+                const displaySchedule = pos.repaymentSchedule || schedule?.installments;
+                const scheduleInfo = pos.repaymentSchedule ? pos : schedule;
 
                 return (
                   <>
@@ -443,8 +470,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       <td className="px-4 py-4 text-center">
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${position.collateralTokenType === 'RWA'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-purple-100 text-purple-700'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-purple-100 text-purple-700'
                             }`}
                         >
                           {position.collateralTokenType}
@@ -470,6 +497,17 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                             <span className="text-gray-400">No Debt</span>
                           )}
                         </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-4 text-center">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeColor(
+                            position.status
+                          )}`}
+                        >
+                          {position.status}
+                        </span>
                       </td>
 
 
@@ -545,76 +583,98 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                     {isExpanded && (
                       <tr>
                         <td colSpan={9} className="px-0 py-0">
-                          <div className="bg-gray-50 border-b border-gray-200">
-                            {isLoadingSchedule ? (
+                          <div className="bg-transparent border-b border-gray-200">
+                            {isLoadingSchedule && !displaySchedule ? (
                               <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                               </div>
-                            ) : schedule ? (
+                            ) : scheduleInfo ? (
                               <div className="p-6">
-                                {/* Loan Details Header */}
-                                <div className="grid grid-cols-4 gap-6 mb-6">
-                                  {/* LTV Ratio */}
-                                  <div className="bg-transparent rounded-lg p-4 border border-gray-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <DollarSign className="w-4 h-4 text-gray-500" />
-                                      <span className="text-xs font-medium text-gray-600">LTV Ratio</span>
-                                    </div>
-                                    <div className="text-lg font-bold text-foreground">
-                                      {position.initialLTV ? (position.initialLTV / 100).toFixed(0) : 'N/A'}%
+                                <div className="flex flex-col lg:flex-row gap-6 mb-6">
+                                  {/* Left Column - 40% - Current Metrics */}
+                                  <div className="lg:w-[40%] flex flex-col gap-4">
+                                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                      <Activity className="w-4 h-4" /> Loan Overview
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-4 h-full">
+                                      {/* LTV Ratio */}
+                                      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-lg flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <DollarSign className="w-4 h-4 text-gray-500" />
+                                          <span className="text-xs font-medium text-gray-600">LTV Ratio</span>
+                                        </div>
+                                        <div className="text-lg font-bold text-foreground">
+                                          {position.initialLTV ? (position.initialLTV / 100).toFixed(0) : 'N/A'}%
+                                        </div>
+                                      </div>
+
+                                      {/* Total Installments */}
+                                      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-lg flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Layers className="w-4 h-4 text-gray-500" />
+                                          <span className="text-xs font-medium text-gray-600">Installments</span>
+                                        </div>
+                                        <div className="text-lg font-bold text-foreground">
+                                          {scheduleInfo.installmentsPaid} / {scheduleInfo.numberOfInstallments}
+                                        </div>
+                                      </div>
+
+                                      {/* Missed Payments */}
+                                      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-lg flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <AlertCircle className="w-4 h-4 text-red-500" />
+                                          <span className="text-xs font-medium text-gray-600">Missed</span>
+                                        </div>
+                                        <div className="text-lg font-bold text-red-600">
+                                          {scheduleInfo.missedPayments}
+                                        </div>
+                                      </div>
+
+                                      {/* Payment Interval */}
+                                      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-lg flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Timer className="w-4 h-4 text-gray-500" />
+                                          <span className="text-xs font-medium text-gray-600">Interval</span>
+                                        </div>
+                                        <div className="text-lg font-bold text-foreground">
+                                          {Math.floor(scheduleInfo.installmentInterval / 86400)}d
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Total Installments */}
-                                  <div className="bg-transparent rounded-lg p-4 border border-gray-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Calendar className="w-4 h-4 text-gray-500" />
-                                      <span className="text-xs font-medium text-gray-600">Installments</span>
-                                    </div>
-                                    <div className="text-lg font-bold text-foreground">
-                                      {schedule.installmentsPaid} / {schedule.numberOfInstallments}
-                                    </div>
-                                  </div>
-
-                                  {/* Missed Payments */}
-                                  <div className="bg-transparent rounded-lg p-4 border border-gray-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <AlertCircle className="w-4 h-4 text-red-500" />
-                                      <span className="text-xs font-medium text-gray-600">Missed</span>
-                                    </div>
-                                    <div className="text-lg font-bold text-red-600">
-                                      {schedule.missedPayments}
-                                    </div>
-                                  </div>
-
-                                  {/* Payment Interval */}
-                                  <div className="bg-transparent rounded-lg p-4 border border-gray-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Clock className="w-4 h-4 text-gray-500" />
-                                      <span className="text-xs font-medium text-gray-600">Interval</span>
-                                    </div>
-                                    <div className="text-lg font-bold text-foreground">
-                                      {Math.floor(schedule.installmentInterval / 86400)}d
+                                  {/* Right Column - 60% - New Details */}
+                                  <div className="lg:w-[60%] flex flex-col gap-4">
+                                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                      <Info className="w-4 h-4" /> Position Details
+                                    </h4>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 h-full">
+                                      <DetailItem label="Current Health" value={pos.currentHealthFactor ? `${(pos.currentHealthFactor / 100).toFixed(2)}%` : 'N/A'} />
+                                      <DetailItem label="Total Repaid" value={formatUSD(pos.totalRepaid || '0')} />
+                                      <DetailItem label="Loan Duration" value={pos.loanDuration ? `${Math.floor(pos.loanDuration / 86400)} Days` : 'N/A'} />
+                                      <DetailItem label="Partner Debt" value={formatUSD(pos.totalPartnerDebt || '0')} />
+                                      <DetailItem label="Deposit Block" value={pos.depositBlockNumber || 'N/A'} />
+                                      <DetailItem label="Last Updated" value={pos.updatedAt ? format(new Date(pos.updatedAt), 'MMM d, HH:mm') : 'N/A'} />
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* Repayment Schedule */}
                                 <div>
-                                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2 pt-4 border-t border-gray-200">
                                     <Calendar className="w-4 h-4" />
                                     Repayment Schedule
                                   </h4>
 
                                   <div className="space-y-2">
-                                    {schedule.installments?.map((installment) => (
+                                    {displaySchedule?.map((installment: any) => (
                                       <div
                                         key={installment.installmentNumber}
                                         className={`flex items-center justify-between p-3 rounded-lg border ${installment.status === 'PAID'
-                                            ? 'bg-green-50 border-green-200'
-                                            : installment.status === 'MISSED'
-                                              ? 'bg-red-50 border-red-200'
-                                              : 'bg-transparent border-gray-200'
+                                          ? 'bg-green-50 border-green-200'
+                                          : installment.status === 'MISSED'
+                                            ? 'bg-red-50 border-red-200'
+                                            : 'bg-transparent border-gray-200'
                                           }`}
                                       >
                                         <div className="flex items-center gap-3">
@@ -622,7 +682,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                             #{installment.installmentNumber}
                                           </div>
                                           <div className="text-xs text-gray-600">
-                                            Due: {format(new Date(installment.dueDate * 1000), 'MMM d, yyyy')}
+                                            Due: {format(new Date(installment.dueDate), 'MMM d, yyyy')}
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-4">
@@ -631,10 +691,10 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                           </div>
                                           <span
                                             className={`px-2 py-1 rounded text-xs font-medium ${installment.status === 'PAID'
-                                                ? 'bg-green-600 text-white'
-                                                : installment.status === 'MISSED'
-                                                  ? 'bg-red-600 text-white'
-                                                  : 'bg-yellow-600 text-white'
+                                              ? 'bg-green-600 text-white'
+                                              : installment.status === 'MISSED'
+                                                ? 'bg-red-600 text-white'
+                                                : 'bg-yellow-600 text-white'
                                               }`}
                                           >
                                             {installment.status}
@@ -644,12 +704,12 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                     ))}
                                   </div>
 
-                                  {schedule.missedPayments > 0 && (
+                                  {scheduleInfo.missedPayments > 0 && (
                                     <div className="mt-4 p-3 bg-red-50 rounded-lg flex items-start gap-2 border border-red-200">
                                       <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                                       <div className="text-sm text-red-700">
-                                        <strong>Warning:</strong> You have {schedule.missedPayments} missed payment
-                                        {schedule.missedPayments > 1 ? 's' : ''}. Please repay immediately to avoid liquidation.
+                                        <strong>Warning:</strong> You have {scheduleInfo.missedPayments} missed payment
+                                        {scheduleInfo.missedPayments > 1 ? 's' : ''}. Please repay immediately to avoid liquidation.
                                       </div>
                                     </div>
                                   )}
@@ -808,3 +868,11 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
     </>
   );
 };
+
+// Helper component for detail items
+const DetailItem = ({ label, value }: { label: string; value: string | number }) => (
+  <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-lg flex flex-col justify-between h-full min-h-[80px]">
+    <span className="text-xs font-medium text-gray-500 mb-1">{label}</span>
+    <span className="text-sm font-bold text-gray-900 break-words">{value}</span>
+  </div>
+);
