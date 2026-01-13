@@ -65,6 +65,7 @@ const getTokenSymbol = (address: string) => {
 const getOutstandingDebt = (position: Position): string => {
   const borrowed = parseFloat(position.usdcBorrowed || '0');
   const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
+  // console.log('Calculating outstanding debt:', (borrowed + partnerDebt).toString() ,{ borrowed, partnerDebt });
   return (borrowed + partnerDebt).toString();
 };
 
@@ -391,7 +392,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                 const isLoadingSchedule = loadingSchedule[position.positionId];
                 const isOverdue = isPaymentOverdue(position.nextPaymentDueDate);
                 const outstandingDebt = parseFloat(getOutstandingDebt(position));
-                const hasDebt = outstandingDebt > 0;
+                const hasDebt =outstandingDebt > 0;
                 const hasCollateral = parseFloat(position.collateralAmount) > 0;
                 const wasWithdrawn = withdrawnPositions.has(position.positionId);
                 const canWithdraw = hasCollateral && !position.oaidCreditIssued && !position.isDefaulted && !wasWithdrawn;
@@ -707,6 +708,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           document.body
         )}
 
+        
         {/* Withdraw Confirmation Modal */}
         {selectedPosition && showWithdrawModal && createPortal(
           <div className="fixed inset-0 bg-slate-200/50 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
