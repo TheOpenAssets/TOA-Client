@@ -519,7 +519,6 @@ const PortfolioPage = () => {
                   </button>
                   <button
                     onClick={() => navigate('/borrow')}
-                    disabled={true}
                     className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
                     Borrow
                   </button>
@@ -591,7 +590,6 @@ const PortfolioPage = () => {
                       </button>
                       <button
                         onClick={() => setActiveTab('loans')}
-                        disabled={true}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'loans'
                           ? 'bg-gray-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

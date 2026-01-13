@@ -188,7 +188,8 @@ const MarketplacePage = () => {
 
         // Target amount is face value
         // @ts-ignore
-        const targetAmount = parseFloat(listing.metadata?.faceValue || listing.faceValue || '0');
+        const targetAmount = totalSupply * pricePerToken;
+        // const targetAmount = parseFloat(listing.metadata?.faceValue || listing.faceValue || '0');
 
         return {
           id: listing.assetId,

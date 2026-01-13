@@ -136,7 +136,6 @@ export const PortfolioStats = ({
         <div className="mt-auto pt-4">
           <Button
             onClick={onIncreaseLimit}
-            disabled={true}
             className=" mx-auto items-center flex text-center text-md py-4 px-6 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-2" />

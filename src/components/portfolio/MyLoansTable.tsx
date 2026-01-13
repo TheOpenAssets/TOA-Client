@@ -16,7 +16,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign, X, RefreshCw } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
@@ -492,7 +492,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       <td className="px-4 py-4 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           {/* Repay Button - Only show when loan was issued (oaidCreditIssued = true) */}
-                          {!position.isDefaulted && !position.oaidCreditIssued && hasDebt && (
+                          { (
                             <button
                               onClick={(e) => handleRepayClick(position, e)}
                               className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${isOverdue
@@ -696,17 +696,13 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
         {/* Withdraw Confirmation Modal */}
         {selectedPosition && showWithdrawModal && createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-transparent backdrop-blur-md">
-            <div className="bg-transparent rounded-[20px] p-8 max-w-lg w-full mx-4 shadow-2xl">
+          <div className="fixed inset-0 bg-slate-200/50 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
+            <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
               {/* Header */}
-              <div className="flex items-start justify-between mb-6">
+              <div className="px-10 pt-10 pb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-[#111111] mb-1">
-                    Withdraw Collateral
-                  </h2>
-                  <p className="text-sm text-[#6B7280]">
-                    Confirm withdrawal from Position #{selectedPosition.positionId}
-                  </p>
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-geist">Withdraw Collateral</h2>
+                  <p className="text-slate-500 text-sm font-geist mt-1">Confirm withdrawal from Position #{selectedPosition.positionId}</p>
                 </div>
                 {!withdrawingPositionId && (
                   <button
@@ -714,70 +710,79 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       setShowWithdrawModal(false);
                       setSelectedPosition(null);
                     }}
-                    className="text-[#6B7280] hover:text-[#111111] transition-colors"
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors group"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
                   </button>
                 )}
               </div>
 
-              {/* Withdrawal Details */}
-              <div className="space-y-4 mb-6">
-                <div className="p-4 bg-transparent backdrop-blur-lg rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-[#6B7280]">{getTokenSymbol(selectedPosition.collateralTokenAddress)}</span>
-                    <span className="text-lg font-semibold text-[#111111]">
-                      {formatCollateralAmount(selectedPosition.collateralAmount, 18)} tokens
-                    </span>
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-10 py-2 custom-scrollbar">
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  {/* Withdrawal Details */}
+                  <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Token</span>
+                      <span className="font-geist text-sm font-semibold text-slate-900">
+                        {getTokenSymbol(selectedPosition.collateralTokenAddress)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Amount</span>
+                      <span className="font-geist text-lg font-bold text-slate-900">
+                        {formatCollateralAmount(selectedPosition.collateralAmount, 18)} tokens
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Value</span>
+                      <span className="font-geist text-lg font-bold text-slate-900">
+                        {formatUSD(selectedPosition.tokenValueUSD)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#6B7280]">
-                      Collateral Value
-                    </span>
-                    <span className="text-sm font-medium text-[#111111]">
-                      {formatUSD(selectedPosition.tokenValueUSD)}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <p className="text-xs text-yellow-800">
-                      Your collateral will be returned to your wallet. Please confirm the transaction in your wallet.
-                    </p>
+                  {/* Warning */}
+                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs font-geist text-amber-900">
+                        Your collateral will be returned to your wallet. Please confirm the transaction in your wallet.
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Processing State */}
+                  {withdrawingPositionId === selectedPosition.positionId && (
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <RefreshCw className="w-5 h-5 text-slate-700 animate-spin" />
+                        <div className="font-geist text-sm text-slate-900 font-medium">
+                          <p>Processing withdrawal...</p>
+                          <p className="text-xs text-slate-500 mt-1">Please confirm in your wallet</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Processing State */}
-              {withdrawingPositionId === selectedPosition.positionId && (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111] mb-4"></div>
-                  <p className="text-sm text-[#6B7280] text-center">Processing withdrawal...</p>
-                  <p className="text-xs text-[#6B7280] text-center mt-2">Please confirm in your wallet</p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
+              {/* Footer */}
               {!withdrawingPositionId && (
-                <div className="flex gap-3">
+                <div className="px-10 py-8 bg-white border-t border-slate-100 flex items-center justify-between">
                   <button
                     onClick={() => {
                       setShowWithdrawModal(false);
                       setSelectedPosition(null);
                     }}
-                    className="flex-1 px-6 py-3 border border-gray-300 rounded-lg font-medium text-[#111111] hover:bg-gray-50 transition-colors"
+                    className="text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-slate-50"
                   >
                     Cancel
                   </button>
+
                   <button
                     onClick={handleWithdrawConfirm}
-                    className="flex-1 px-6 py-3 bg-[#10B981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
+                    className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-700 hover:shadow-xl active:scale-95 transition-all shadow-lg shadow-emerald-200"
                   >
                     Confirm Withdrawal
                   </button>

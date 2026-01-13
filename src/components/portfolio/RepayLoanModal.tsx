@@ -119,29 +119,38 @@ export const RepayLoanModal = ({
     }
   }, [isOpen]);
 
-  const handleInstallmentPay = async (installmentNumber: number) => {
-    if (!position.repaymentSchedule || position.repaymentSchedule.length === 0 || !actualDebt) return;
+  const handleInstallmentSelect = (installmentNumber: number) => {
+    if (!position.repaymentSchedule || position.repaymentSchedule.length === 0) return;
+
+    const installment = position.repaymentSchedule.find(i => i.installmentNumber === installmentNumber);
+    if (!installment || installment.status === 'PAID') return;
+
+    setSelectedInstallment(installmentNumber);
+    setError(null);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedInstallment || !actualDebt) return;
 
     setError(null);
-    setSelectedInstallment(installmentNumber);
     setCurrentStep('approving');
     setIsApproving(true);
 
     try {
       // Find the installment
-      const installment = position.repaymentSchedule.find(i => i.installmentNumber === installmentNumber);
+      const installment = position.repaymentSchedule?.find(i => i.installmentNumber === selectedInstallment);
       if (!installment) {
         throw new Error('Installment not found');
       }
 
       // Calculate amount: base installment + interest (if last installment)
-      const isLastInstallment = installmentNumber === position.numberOfInstallments;
+      const isLastInstallment = selectedInstallment === position.numberOfInstallments;
       const baseAmount = parseFloat(installment.amount) / 1e6;
       const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
-      
+
       let amountWei = ethers.parseUnits(finalAmount.toFixed(6), 6);
 
-      console.log(`💰 Paying Installment #${installmentNumber}:`, {
+      console.log(`💰 Paying Installment #${selectedInstallment}:`, {
         baseAmount: `$${baseAmount.toFixed(6)}`,
         interest: isLastInstallment ? `$${interestAmount.toFixed(6)}` : '$0',
         finalAmount: `$${finalAmount.toFixed(6)}`,
@@ -211,182 +220,212 @@ export const RepayLoanModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-transparent backdrop-blur-lg border p-4">
-      <div
-        className="rounded-2xl p-8 max-w-md w-full bg-transparent border-neutral-300 border max-h-[90vh] overflow-y-auto"
-        style={{
-          boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(150, 151, 151, 0.06),
-            12px 12px 36px rgba(92, 92, 93, 0.04),
-            16px 16px 48px rgba(45, 46, 47, 0.02)
-          `,
-        }}
-      >
+    <div className="fixed inset-0 bg-slate-200/50 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
+      <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-gellix text-xl font-semibold text-foreground">Repay Loan</h2>
+        <div className="px-10 pt-10 pb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-geist">Repay Loan</h2>
+            <p className="text-slate-500 text-sm font-geist mt-1">Select an installment and confirm payment</p>
+          </div>
           <button
             onClick={onClose}
             disabled={isApproving || isRepaying}
-            className="text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-slate-100 rounded-full transition-colors group disabled:opacity-50"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
           </button>
         </div>
 
-        {success ? (
-          // Success State
-          <div className="text-center py-8">
-            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h3 className="font-gellix text-xl font-semibold text-foreground mb-2">
-              Repayment Successful!
-            </h3>
-            <p className="font-inter text-sm text-gray-600">
-              Your loan has been updated. The page will refresh automatically.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Position Info */}
-            <div className="bg-gray-100 rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-inter text-sm text-gray-600">Position #{position.positionId}</span>
-                <span className="font-inter text-sm font-medium text-foreground">
-                  {getTokenSymbol(position.collateralTokenAddress)}
-                </span>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-10 py-2 custom-scrollbar">
+          {success ? (
+            // Success State
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-emerald-100 shadow-lg">
+                <CheckCircle className="w-10 h-10" />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-inter text-sm text-gray-600">Outstanding Debt</span>
-                {isFetchingDebt ? (
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />
-                    <span className="font-inter text-sm text-gray-500">Loading...</span>
-                  </div>
-                ) : (
-                    <span className="font-gellix text-lg font-semibold text-foreground">
-                    {actualDebt 
-                      ? `$${ethers.formatUnits(actualDebt, 6)}` 
-                      : formatUSD(outstandingDebt)}
+              <h3 className="text-2xl font-bold text-slate-900 mb-2 font-geist">Repayment Successful!</h3>
+              <p className="text-slate-500 font-geist">Your loan has been updated. Refreshing...</p>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              {/* Position Info */}
+              <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Position</span>
+                  <span className="font-geist text-sm font-semibold text-slate-900">
+                    #{position.positionId} • {getTokenSymbol(position.collateralTokenAddress)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Outstanding Debt</span>
+                  {isFetchingDebt ? (
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin text-slate-400" />
+                      <span className="font-geist text-sm text-slate-500">Loading...</span>
+                    </div>
+                  ) : (
+                    <span className="font-geist text-lg font-bold text-slate-900">
+                      {actualDebt
+                        ? `$${ethers.formatUnits(actualDebt, 6)}`
+                        : formatUSD(outstandingDebt)}
                     </span>
-                )}
-              </div>
-            </div>
-
-            {/* Next Installment Hint */}
-            {nextInstallmentAmount && interestAmount > 0 && (
-              <div className="bg-gray-100 rounded-xl p-4">
-                <div className="font-inter text-xs text-gray-700 space-y-1">
-                  <div><span className="font-medium">Principal:</span> {formatUSD(totalInstallmentAmount)}</div>
-                  <div><span className="font-medium">Interest:</span> {interestAmount.toFixed(6)}</div>
-                  <div className="mt-2 pt-2 border-t border-gray-300">
-                    <span className="font-medium">Total Debt:</span> {outstandingDebt.toFixed(6)}
-                  </div>
-                  {position.missedPayments > 0 && (
-                    <div className="text-red-600 font-medium mt-2">⚠️ {position.missedPayments} payment(s) overdue</div>
                   )}
                 </div>
               </div>
-            )}
 
-            {/* Installment Buttons */}
-            {position.repaymentSchedule && position.repaymentSchedule.length > 0 && (
-              <div>
-                <label className="font-inter block text-sm font-medium text-gray-700 mb-3">
-                  Select Installment to Pay
-                </label>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {position.repaymentSchedule.map((installment) => {
-                    const isLastInstallment = installment.installmentNumber === position.numberOfInstallments;
-                    const baseAmount = parseFloat(installment.amount) / 1e6;
-                    const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
-                    const isPaid = installment.status === 'PAID';
-                    const isOverdue = installment.status === 'MISSED';
-                    const isPending = installment.status === 'PENDING';
+              {/* Debt Breakdown */}
+              {nextInstallmentAmount && interestAmount > 0 && (
+                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Debt Breakdown</h4>
+                  </div>
+                  <div className="space-y-2 font-geist text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Principal</span>
+                      <span className="text-slate-900 font-semibold">{formatUSD(totalInstallmentAmount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Interest</span>
+                      <span className="text-slate-900 font-semibold">${interestAmount.toFixed(6)}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-slate-200">
+                      <span className="text-slate-900 font-bold">Total Debt</span>
+                      <span className="text-slate-900 font-bold">${outstandingDebt.toFixed(6)}</span>
+                    </div>
+                    {position.missedPayments > 0 && (
+                      <div className="mt-3 p-3 bg-rose-50 rounded-xl border border-rose-100">
+                        <span className="text-xs font-bold text-rose-600">⚠️ {position.missedPayments} payment(s) overdue</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
-                    return (
-                      <button
-                        key={installment.installmentNumber}
-                        onClick={() => !isPaid && handleInstallmentPay(installment.installmentNumber)}
-                        disabled={isPaid || isApproving || isRepaying || selectedInstallment !== null}
-                        className={`w-full p-4 rounded-xl border transition-all ${isPaid
-                            ? 'bg-gray-100 border-gray-300 opacity-60 cursor-not-allowed'
-                            : isOverdue
-                            ? 'bg-gray-100 border-gray-300 hover:border-gray-400 hover:bg-gray-200'
-                            : isPending
-                            ? 'bg-gray-100 border-gray-300 hover:border-gray-400 hover:bg-gray-200'
-                            : 'bg-gray-100 border-gray-300'
-                        } ${selectedInstallment === installment.installmentNumber ? 'ring-2 ring-gray-500' : ''}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-gellix font-semibold text-foreground">
-                                Installment #{installment.installmentNumber}
-                              </span>
-                              {isPaid && (
-                                <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded-full font-inter">PAID</span>
-                              )}
-                              {isOverdue && (
-                                <span className="px-2 py-0.5 bg-red-600 text-white text-xs rounded-full font-inter">OVERDUE</span>
-                              )}
-                              {isPending && (
-                                <span className="px-2 py-0.5 bg-gray-600 text-white text-xs rounded-full font-inter">PENDING</span>
+              {/* Installment Selection */}
+              {position.repaymentSchedule && position.repaymentSchedule.length > 0 && (
+                <div>
+                  <label className="text-black font-bold mb-3 block text-xs uppercase tracking-widest">
+                    Select Installment to Pay
+                  </label>
+                  <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                    {position.repaymentSchedule.map((installment) => {
+                      const isLastInstallment = installment.installmentNumber === position.numberOfInstallments;
+                      const baseAmount = parseFloat(installment.amount) / 1e6;
+                      const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
+                      const isPaid = installment.status === 'PAID';
+                      const isOverdue = installment.status === 'MISSED';
+                      const isPending = installment.status === 'PENDING';
+                      const isSelected = selectedInstallment === installment.installmentNumber;
+
+                      return (
+                        <button
+                          key={installment.installmentNumber}
+                          onClick={() => !isPaid && handleInstallmentSelect(installment.installmentNumber)}
+                          disabled={isPaid || isApproving || isRepaying}
+                          className={`w-full p-6 rounded-[24px] border-2 text-left transition-all relative overflow-hidden ${
+                            isPaid
+                              ? 'border-slate-100 bg-slate-50 opacity-50 cursor-not-allowed'
+                              : isSelected
+                              ? 'border-slate-900 bg-slate-900 text-white shadow-xl'
+                              : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`font-geist text-sm font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                                  Installment #{installment.installmentNumber}
+                                </span>
+                                {isPaid && (
+                                  <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">PAID</span>
+                                )}
+                                {isOverdue && !isSelected && (
+                                  <span className="px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">OVERDUE</span>
+                                )}
+                                {isPending && !isPaid && !isSelected && (
+                                  <span className="px-2 py-0.5 bg-amber-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">PENDING</span>
+                                )}
+                              </div>
+                              <div className={`font-geist text-[10px] uppercase tracking-wider ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
+                                Due: {new Date(installment.dueDate).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`font-geist text-2xl font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                                {formatUSD(finalAmount)}
+                              </div>
+                              {isLastInstallment && interestAmount > 0 && (
+                                <div className={`font-geist text-[10px] uppercase tracking-wider mt-1 ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
+                                  +${interestAmount.toFixed(6)} interest
+                                </div>
                               )}
                             </div>
-                            <div className="font-inter text-xs text-gray-600 mt-1">
-                              Due: {new Date(installment.dueDate).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-gellix text-lg font-semibold text-foreground">
-                              {formatUSD(finalAmount)}
-                            </div>
-                            {isLastInstallment && interestAmount > 0 && (
-                              <div className="font-inter text-xs text-gray-500">
-                                +${interestAmount.toFixed(6)} interest
+                            {isSelected && (
+                              <div className="absolute top-4 right-4">
+                                <CheckCircle className="w-5 h-5 text-white/30" />
                               </div>
                             )}
                           </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-gray-100 rounded-xl p-4">
-                <p className="font-inter text-xs text-gray-700 flex items-start gap-2">
-                  <span>⚠️</span>
-                  <span>{error}</span>
-                </p>
-              </div>
-            )}
-
-            {/* Progress Steps */}
-            {(isApproving || isRepaying) && selectedInstallment && (
-              <div className="bg-gray-100 rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <RefreshCw className="w-5 h-5 text-gray-700 animate-spin" />
-                  <div className="font-inter text-sm text-gray-700">
-                    {currentStep === 'approving' && `Approving USDC for Installment #${selectedInstallment}...`}
-                    {currentStep === 'repaying' && `Processing payment for Installment #${selectedInstallment}...`}
-                    {currentStep === 'syncing' && 'Syncing with backend...'}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Action Button - Removed since we have installment buttons */}
-            {/* Info */}
-            <div className="font-inter text-xs text-gray-500 text-center">
-              Click on any pending installment to make a payment. Interest will be added to the last installment.
+              {/* Error Display */}
+              {error && (
+                <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold font-geist text-center border border-rose-100">
+                  {error}
+                </div>
+              )}
+
+              {/* Progress Steps */}
+              {(isApproving || isRepaying) && selectedInstallment && (
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <RefreshCw className="w-5 h-5 text-slate-700 animate-spin" />
+                    <div className="font-geist text-sm text-slate-900 font-medium">
+                      {currentStep === 'approving' && `Approving USDC for Installment #${selectedInstallment}...`}
+                      {currentStep === 'repaying' && `Processing payment for Installment #${selectedInstallment}...`}
+                      {currentStep === 'syncing' && 'Syncing with backend...'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Info */}
+              {!selectedInstallment && (
+                <div className="text-center">
+                  <p className="font-geist text-xs text-slate-500 uppercase tracking-wider">
+                    Select an installment above to continue
+                  </p>
+                </div>
+              )}
             </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!success && (
+          <div className="px-10 py-8 bg-white border-t border-slate-100 flex items-center justify-between">
+            <button
+              onClick={onClose}
+              disabled={isApproving || isRepaying}
+              className="text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleConfirmPayment}
+              disabled={!selectedInstallment || isApproving || isRepaying || !actualDebt}
+              className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 hover:shadow-xl active:scale-95 transition-all shadow-lg shadow-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isApproving || isRepaying ? 'Processing...' : 'Confirm Payment'}
+            </button>
           </div>
         )}
       </div>
