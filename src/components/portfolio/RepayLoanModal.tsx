@@ -148,17 +148,26 @@ export const RepayLoanModal = ({
       const baseAmount = parseFloat(installment.amount) / 1e6;
       const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
 
-      let amountWei = ethers.parseUnits(finalAmount.toFixed(6), 6);
+      // Round to 6 decimals properly and convert to Wei (USDC has 6 decimals)
+      // Ensure we maintain precision by rounding at the micro-unit level
+      const finalAmountMicro = Math.round(finalAmount * 1e6);
+      let amountWei = BigInt(finalAmountMicro);
 
       console.log(`💰 Paying Installment #${selectedInstallment}:`, {
         baseAmount: `$${baseAmount.toFixed(6)}`,
         interest: isLastInstallment ? `$${interestAmount.toFixed(6)}` : '$0',
         finalAmount: `$${finalAmount.toFixed(6)}`,
+        finalAmountMicro: finalAmountMicro,
+        amountWei: amountWei.toString(),
+        amountWeiInUSDC: `$${(Number(amountWei) / 1e6).toFixed(6)}`,
       });
 
       // Cap to actual debt (safety check)
       if (amountWei > actualDebt) {
-        console.log(`⚠️ Capping payment to actual debt`);
+        console.log(`⚠️ Capping payment to actual debt`, {
+          calculatedAmount: `$${(Number(amountWei) / 1e6).toFixed(6)}`,
+          actualDebt: `$${ethers.formatUnits(actualDebt, 6)}`,
+        });
         amountWei = actualDebt;
       }
 
@@ -175,7 +184,14 @@ export const RepayLoanModal = ({
       setIsRepaying(true);
 
       // Step 2: Repay loan
-      console.log('💵 Repaying loan...');
+      console.log('💵 Repaying loan via Senior Pool:', {
+        positionId: position.positionId,
+        amountWei: amountWei.toString(),
+        amountInUSDC: `$${(Number(amountWei) / 1e6).toFixed(6)}`,
+        expectedFinalAmount: `$${finalAmount.toFixed(6)}`,
+        match: (Number(amountWei) / 1e6).toFixed(6) === finalAmount.toFixed(6) ? '✅ MATCH' : '❌ MISMATCH'
+      });
+
       const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
         position.positionId,
         amountWei
