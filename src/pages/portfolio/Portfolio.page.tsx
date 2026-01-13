@@ -749,7 +749,7 @@ const PortfolioPage = () => {
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
         {
-        true &&  (
+        showClaimModal && selectedAssetForClaim &&  (
           <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
             <div
               className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg"
