@@ -505,7 +505,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       <td className="px-4 py-4 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           {/* Repay Button - Only show when loan was issued (oaidCreditIssued = true) */}
-                          {!position.isDefaulted && !position.oaidCreditIssued && !hasDebt && (
+                          {!position.isDefaulted && position.oaidCreditIssued && !hasDebt && (
                             <button
                               onClick={(e) => handleRepayClick(position, e)}
                               className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${isOverdue
