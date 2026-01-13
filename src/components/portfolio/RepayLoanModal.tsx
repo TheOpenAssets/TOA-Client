@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, RefreshCw, CheckCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ethers } from 'ethers';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
@@ -238,94 +238,90 @@ export const RepayLoanModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-200/50 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
-      <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
+      <div className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-10 pt-10 pb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-geist">Repay Loan</h2>
-            <p className="text-slate-500 text-sm font-geist mt-1">Select an installment and confirm payment</p>
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+            <span className="text-2xl">💳</span>
           </div>
+          <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">Repay Loan</h2>
+          <p className="font-inter text-sm text-gray-600">Select an installment and confirm payment</p>
           <button
             onClick={onClose}
             disabled={isApproving || isRepaying}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors group disabled:opacity-50"
+            className="absolute top-6 right-6 p-2 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50"
           >
-            <X className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-10 py-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {success ? (
             // Success State
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-emerald-100 shadow-lg">
-                <CheckCircle className="w-10 h-10" />
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+                <span className="text-2xl">✅</span>
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2 font-geist">Repayment Successful!</h3>
-              <p className="text-slate-500 font-geist">Your loan has been updated. Refreshing...</p>
+              <h3 className="font-gellix text-xl font-semibold text-foreground mb-2">Repayment Successful!</h3>
+              <p className="font-inter text-sm text-gray-600">Your loan has been updated. Refreshing...</p>
             </div>
           ) : (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
               {/* Position Info */}
-              <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Position</span>
-                  <span className="font-geist text-sm font-semibold text-slate-900">
+              <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-5">
+                <div>
+                  <p className="font-inter text-xs text-gray-500 mb-1.5">Position</p>
+                  <p className="font-gellix text-lg font-semibold text-foreground">
                     #{position.positionId} • {getTokenSymbol(position.collateralTokenAddress)}
-                  </span>
+                  </p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Outstanding Debt</span>
+                <div className="pt-4 border-t border-gray-300">
+                  <p className="font-inter text-xs text-gray-500 mb-1.5">Outstanding Debt</p>
                   {isFetchingDebt ? (
                     <div className="flex items-center gap-2">
-                                         <><PageLoader/></>
-
-                      <span className="font-geist text-sm text-slate-500">Loading...</span>
+                      <PageLoader text='' />
                     </div>
                   ) : (
-                    <span className="font-geist text-lg font-bold text-slate-900">
+                    <p className="font-gellix text-2xl font-semibold text-foreground">
                       {actualDebt
                         ? `$${ethers.formatUnits(actualDebt, 6)}`
                         : formatUSD(outstandingDebt)}
-                    </span>
+                    </p>
                   )}
                 </div>
               </div>
 
               {/* Debt Breakdown */}
               {nextInstallmentAmount && interestAmount > 0 && (
-                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Debt Breakdown</h4>
+                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-4">
+                  <div>
+                    <p className="font-inter text-xs text-gray-500 mb-1.5">Principal</p>
+                    <p className="font-gellix text-lg font-semibold text-foreground">{formatUSD(totalInstallmentAmount)}</p>
                   </div>
-                  <div className="space-y-2 font-geist text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Principal</span>
-                      <span className="text-slate-900 font-semibold">{formatUSD(totalInstallmentAmount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Interest</span>
-                      <span className="text-slate-900 font-semibold">${interestAmount.toFixed(6)}</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t border-slate-200">
-                      <span className="text-slate-900 font-bold">Total Debt</span>
-                      <span className="text-slate-900 font-bold">${outstandingDebt.toFixed(6)}</span>
-                    </div>
-                    {position.missedPayments > 0 && (
-                      <div className="mt-3 p-3 bg-rose-50 rounded-xl border border-rose-100">
-                        <span className="text-xs font-bold text-rose-600">⚠️ {position.missedPayments} payment(s) overdue</span>
-                      </div>
-                    )}
+                  <div className="pt-3 border-t border-gray-300">
+                    <p className="font-inter text-xs text-gray-500 mb-1.5">Interest</p>
+                    <p className="font-gellix text-lg font-semibold text-foreground">${interestAmount.toFixed(6)}</p>
                   </div>
+                  <div className="pt-3 border-t border-gray-300">
+                    <p className="font-inter text-xs text-gray-500 mb-1.5">Total Debt</p>
+                    <p className="font-gellix text-2xl font-semibold text-foreground">${outstandingDebt.toFixed(6)}</p>
+                  </div>
+                  {position.missedPayments > 0 && (
+                    <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4 mt-3">
+                      <p className="font-inter text-xs text-rose-600 text-left">
+                        <span className="text-rose-500">⚠️</span> <strong>{position.missedPayments} payment(s) overdue</strong>
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Installment Selection */}
               {position.repaymentSchedule && position.repaymentSchedule.length > 0 && (
                 <div>
-                  <label className="text-black font-bold mb-3 block text-xs uppercase tracking-widest">
+                  <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
                     Select Installment to Pay
                   </label>
                   <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
@@ -383,7 +379,7 @@ export const RepayLoanModal = ({
                             </div>
                             {isSelected && (
                               <div className="absolute top-4 right-4">
-                                <CheckCircle className="w-5 h-5 text-white/30" />
+                                <span className="text-2xl text-white/30">✓</span>
                               </div>
                             )}
                           </div>
@@ -394,25 +390,23 @@ export const RepayLoanModal = ({
                 </div>
               )}
 
-              {/* Error Display */}
+{/* Error Display */}
               {error && (
-                <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold font-geist text-center border border-rose-100">
-                  {error}
+                <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4 text-rose-600 text-center">
+                  <p className="font-inter text-xs font-medium">{error}</p>
                 </div>
-              )}
+              )}              
 
               {/* Progress Steps */}
               {(isApproving || isRepaying) && selectedInstallment && (
-                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 text-slate-700 animate-spin" >
-                      <PageLoader />
-                      </div>
-                    <div className="font-geist text-sm text-slate-900 font-medium">
+                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <PageLoader text=' ' />
+                    <p className="font-inter text-sm font-semibold text-foreground text-center">
                       {currentStep === 'approving' && `Approving USDC for Installment #${selectedInstallment}...`}
                       {currentStep === 'repaying' && `Processing payment for Installment #${selectedInstallment}...`}
                       {currentStep === 'syncing' && 'Syncing with backend...'}
-                    </div>
+                    </p>
                   </div>
                 </div>
               )}
@@ -420,7 +414,7 @@ export const RepayLoanModal = ({
               {/* Info */}
               {!selectedInstallment && (
                 <div className="text-center">
-                  <p className="font-geist text-xs text-slate-500 uppercase tracking-wider">
+                  <p className="font-inter text-xs text-gray-500 uppercase tracking-wider">
                     Select an installment above to continue
                   </p>
                 </div>
@@ -431,11 +425,11 @@ export const RepayLoanModal = ({
 
         {/* Footer */}
         {!success && (
-          <div className="px-10 py-8 bg-white border-t border-slate-100 flex items-center justify-between">
+          <div className="mt-6 flex gap-3">
             <button
               onClick={onClose}
               disabled={isApproving || isRepaying}
-              className="text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-slate-50"
+              className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200/50 border border-gray-200 text-foreground rounded-xl shadow-lg font-inter font-medium transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               Cancel
             </button>
@@ -443,9 +437,9 @@ export const RepayLoanModal = ({
             <button
               onClick={handleConfirmPayment}
               disabled={!selectedInstallment || isApproving || isRepaying || !actualDebt}
-              className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 hover:shadow-xl active:scale-95 transition-all shadow-lg shadow-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {isApproving || isRepaying ? 'Processing...' : 'Confirm Payment'}
+              {isApproving || isRepaying ? 'Processing...' : 'Pay Now'}
             </button>
           </div>
         )}

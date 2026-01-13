@@ -16,7 +16,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign, X, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign, X } from 'lucide-react';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
@@ -292,7 +292,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <div className="flex-1 overflow-y-auto">
         {/* Filter Bar */}
-        <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-200 px-6 py-3">
+        <div className="bg-white/97 sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-200 px-6 py-3 overflow-hidden">
           <div className="flex items-center gap-3">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-xs font-medium text-gray-700">Filter:</span>
@@ -711,87 +711,90 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
         
         {/* Withdraw Confirmation Modal */}
         {selectedPosition && showWithdrawModal && createPortal(
-          <div className="fixed inset-0 bg-slate-200/50 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
-            <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
+            <div className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
               {/* Header */}
-              <div className="px-10 pt-10 pb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-geist">Withdraw Collateral</h2>
-                  <p className="text-slate-500 text-sm font-geist mt-1">Confirm withdrawal from Position #{selectedPosition.positionId}</p>
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+                  <span className="text-2xl">💸</span>
                 </div>
+                <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">Withdraw Collateral</h2>
+                <p className="font-inter text-sm text-gray-600">Confirm withdrawal from Position #{selectedPosition.positionId}</p>
                 {!withdrawingPositionId && (
                   <button
                     onClick={() => {
                       setShowWithdrawModal(false);
                       setSelectedPosition(null);
                     }}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors group"
+                    className="absolute top-6 right-6 p-2 hover:bg-gray-200 rounded-full transition-colors"
                   >
-                    <X className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
+                    <X className="w-5 h-5 text-gray-500" />
                   </button>
                 )}
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto px-10 py-2 custom-scrollbar">
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   {/* Withdrawal Details */}
-                  <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Token</span>
-                      <span className="font-geist text-sm font-semibold text-slate-900">
+                  <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-5">
+                    <div>
+                      <p className="font-inter text-xs text-gray-500 mb-1.5">Token</p>
+                      <p className="font-gellix text-lg font-semibold text-foreground">
                         {getTokenSymbol(selectedPosition.collateralTokenAddress)}
-                      </span>
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Amount</span>
-                      <span className="font-geist text-lg font-bold text-slate-900">
+                    <div className="pt-4 border-t border-gray-300">
+                      <p className="font-inter text-xs text-gray-500 mb-1.5">Amount to Withdraw</p>
+                      <p className="font-gellix text-2xl font-semibold text-foreground">
                         {formatCollateralAmount(selectedPosition.collateralAmount, 18)} tokens
-                      </span>
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Value</span>
-                      <span className="font-geist text-lg font-bold text-slate-900">
+                    <div className="pt-4 border-t border-gray-300">
+                      <p className="font-inter text-xs text-gray-500 mb-1.5">Value</p>
+                      <p className="font-gellix text-xl font-semibold text-foreground">
                         {formatUSD(selectedPosition.tokenValueUSD)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Warning */}
-                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs font-geist text-amber-900">
-                        Your collateral will be returned to your wallet. Please confirm the transaction in your wallet.
                       </p>
                     </div>
                   </div>
 
+                  {/* Warning */}
+                  <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4">
+                    <p className="font-inter text-xs text-gray-700 text-left">
+                      <span className="text-gray-500">⚠️</span> <strong>Important:</strong> Your collateral will be returned to your wallet. Please confirm the transaction in your wallet.
+                    </p>
+                  </div>
+
                   {/* Processing State */}
                   {withdrawingPositionId === selectedPosition.positionId && (
-                   <><PageLoader/></>
+                    <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <PageLoader text='' />
+                        <p className="font-inter text-sm font-semibold text-foreground text-center">Processing Withdrawal...</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Footer */}
               {!withdrawingPositionId && (
-                <div className="px-10 py-8 bg-white border-t border-slate-100 flex items-center justify-between">
+                <div className="mt-6 flex gap-3">
                   <button
                     onClick={() => {
                       setShowWithdrawModal(false);
                       setSelectedPosition(null);
                     }}
-                    className="text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-slate-50"
+                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200/50 border border-gray-200 text-foreground rounded-xl shadow-lg font-inter font-medium transition-all hover:scale-105"
                   >
                     Cancel
                   </button>
 
                   <button
                     onClick={handleWithdrawConfirm}
-                    className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-700 hover:shadow-xl active:scale-95 transition-all shadow-lg shadow-emerald-200"
+                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105"
                   >
-                    Confirm Withdrawal
+                    Withdraw Now
                   </button>
                 </div>
               )}

@@ -327,10 +327,11 @@ export const DepositCollateralModal = ({
               ? `Add more ${initialAsset?.metadata.assetName} to your position`
               : 'Deposit RWA tokens to create a credit line'}
           </p>
-          {!isProcessing && (
+          {!isProcessing && step === 'select' && (
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 p-2 hover:bg-gray-200 rounded-full transition-colors"
+              className="absolute top-4 right-4 p-2 hover:bg-gray-200 rounded-full transition-colors"
+              style={{ zIndex: 10 }}
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
@@ -359,8 +360,8 @@ export const DepositCollateralModal = ({
           {/* Select Asset Step */}
           {step === 'select' && !isLoading && (portfolio.length > 0 || initialAsset) && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {/* Asset Selection - Table View */}
-              {!initialAsset && (
+              {/* Asset Selection - Table View (only show when no asset selected) */}
+              {!initialAsset && !selectedAsset && (
                 <div>
                   <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
                     Select Asset to Deposit
@@ -384,9 +385,7 @@ export const DepositCollateralModal = ({
                               <tr
                                 key={asset.assetId}
                                 onClick={() => handleAssetSelect(asset)}
-                                className={`cursor-pointer transition-all hover:bg-gray-200/70 ${
-                                  selectedAsset?.assetId === asset.assetId ? 'bg-gray-300/50' : ''
-                                }`}
+                                className="cursor-pointer transition-all hover:bg-gray-200/70"
                               >
                                 <td className="px-4 py-4">
                                   <div className="flex items-center gap-2">
@@ -412,6 +411,37 @@ export const DepositCollateralModal = ({
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Asset Display (show after selection) */}
+              {!initialAsset && selectedAsset && (
+                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-neutral-200/50 rounded-full flex items-center justify-center">
+                        🏛️
+                      </div>
+                      <div>
+                        <p className="font-gellix text-sm font-semibold text-foreground">
+                          {selectedAsset.metadata.assetName}
+                        </p>
+                        <p className="font-inter text-xs text-gray-500">
+                          {parseFloat(ethers.formatUnits(selectedAsset.totalAmount, 18)).toFixed(2)} tokens available
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedAsset(null);
+                        setAssetDetails(null);
+                        setDepositAmount('');
+                      }}
+                      className="text-gray-500 hover:text-gray-700 text-xs font-inter font-medium underline"
+                    >
+                      Change
+                    </button>
                   </div>
                 </div>
               )}
