@@ -108,7 +108,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const { toasts, success, error: showError, warning, removeToast } = useToast();
+  const { toasts, error: showError, removeToast } = useToast();
   const [scheduleData, setScheduleData] = useState<Record<number, LoanSchedule>>({});;
   const [loadingSchedule, setLoadingSchedule] = useState<Record<number, boolean>>({});
   const [showRepayModal, setShowRepayModal] = useState(false);
@@ -222,6 +222,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
         // Mark position as withdrawn
         setWithdrawnPositions(prev => new Set([...prev, selectedPosition.positionId]));
 
+        
+
         const asset = portfolio.find(asset => asset.tokenAddress === selectedPosition.collateralTokenAddress);
         if (asset && asset.assetId) {
           await marketplaceService.notifyPurchase({
@@ -229,7 +231,13 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
             txHash: result.txHash!,
             amount: `${amountBigInt.toString()}`,
             blockNumber: result.blockNumber!.toString(),
+            type: 'WITHDRAWAL',
           });
+
+          await solvencyService.notifyCollateralWithdrawal({
+            positionId: selectedPosition.positionId.toString(),
+            amount: `${amountBigInt.toString()}`,
+          })
         } else {
           console.warn('Asset not found in portfolio, skipping marketplace notifyPurchase for position', selectedPosition.positionId);
         }
@@ -492,7 +500,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       <td className="px-4 py-4 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
                           {/* Repay Button - Only show when loan was issued (oaidCreditIssued = true) */}
-                          { (
+                          {!position.isDefaulted && position.oaidCreditIssued && hasDebt && (
                             <button
                               onClick={(e) => handleRepayClick(position, e)}
                               className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${isOverdue

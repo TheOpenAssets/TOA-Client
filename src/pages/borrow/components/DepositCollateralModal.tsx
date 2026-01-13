@@ -16,6 +16,7 @@ import { solvencyContractService } from '../../../lib/api/solvency-contract.serv
 import { solvencyService } from '../../../lib/api/solvency.service';
 import type { IssuerAsset } from '../../../types/issuer.types';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 interface DepositCollateralModalProps {
   isOpen: boolean;
@@ -349,14 +350,15 @@ export const DepositCollateralModal = ({
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-4"></div>
-            <p className="font-inter text-sm text-gray-600">Loading your portfolio...</p>
+            <div className="">
+              <PageLoader text='' />
+            </div>
           </div>
         )}
 
         {/* Error State */}
         {error && !isLoading && (
-          <div className="mb-6 p-4 bg-gray-100 rounded-xl">
+          <div className="mb-6 p-4 bg-gray-100 rounded-xl overflow-x-scroll">
             <p className="font-inter text-xs text-gray-700 flex items-start gap-2">
               <span className="text-gray-500">⚠️</span>
               <span>{error}</span>
@@ -515,7 +517,9 @@ export const DepositCollateralModal = ({
         {/* Approval Progress */}
         {step === 'approve' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
+            <div className="">
+              <PageLoader text='' />
+            </div>
             <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               Step 1 of 3: Approving Tokens
             </h3>
@@ -538,7 +542,9 @@ export const DepositCollateralModal = ({
         {/* Deposit Progress */}
         {step === 'deposit' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
+            <div className="">
+              <PageLoader text='' />
+            </div>
             <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               Step 2 of 3: Depositing Collateral
             </h3>
@@ -564,7 +570,9 @@ export const DepositCollateralModal = ({
         {/* Syncing Progress */}
         {step === 'syncing' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
+            <div className="">
+              <PageLoader text='' />
+            </div>
             <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
               Step 3 of 3: Syncing with Platform
             </h3>

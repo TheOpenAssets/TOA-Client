@@ -142,8 +142,6 @@ const PortfolioPage = () => {
     0
   );
 
-  
-
 
   useEffect(() => {
     fetchPortfolio();

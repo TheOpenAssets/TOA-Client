@@ -133,6 +133,7 @@ export interface NotifyPurchasePayload {
   assetId: string;
   amount: string;
   blockNumber: string;
+  type?: string;
 }
 
 

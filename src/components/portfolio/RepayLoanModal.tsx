@@ -148,6 +148,7 @@ export const RepayLoanModal = ({
       const baseAmount = parseFloat(installment.amount) / 1e6;
       const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
 
+
       // Round to 6 decimals properly and convert to Wei (USDC has 6 decimals)
       // Ensure we maintain precision by rounding at the micro-unit level
       const finalAmountMicro = Math.round(finalAmount * 1e6);
