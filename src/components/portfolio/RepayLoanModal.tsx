@@ -17,6 +17,7 @@ import { ethers } from 'ethers';
 import type { Position } from '../../types/solvency.types';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
+import { PageLoader } from '../ui/page-loader';
 
 interface RepayLoanModalProps {
   isOpen: boolean;
@@ -279,7 +280,8 @@ export const RepayLoanModal = ({
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Outstanding Debt</span>
                   {isFetchingDebt ? (
                     <div className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin text-slate-400" />
+                                         <><PageLoader/></>
+
                       <span className="font-geist text-sm text-slate-500">Loading...</span>
                     </div>
                   ) : (
@@ -403,7 +405,9 @@ export const RepayLoanModal = ({
               {(isApproving || isRepaying) && selectedInstallment && (
                 <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
                   <div className="flex items-center gap-3">
-                    <RefreshCw className="w-5 h-5 text-slate-700 animate-spin" />
+                    <div className="w-5 h-5 text-slate-700 animate-spin" >
+                      <PageLoader />
+                      </div>
                     <div className="font-geist text-sm text-slate-900 font-medium">
                       {currentStep === 'approving' && `Approving USDC for Installment #${selectedInstallment}...`}
                       {currentStep === 'repaying' && `Processing payment for Installment #${selectedInstallment}...`}

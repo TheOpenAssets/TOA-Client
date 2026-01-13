@@ -767,15 +767,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
                   {/* Processing State */}
                   {withdrawingPositionId === selectedPosition.positionId && (
-                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <RefreshCw className="w-5 h-5 text-slate-700 animate-spin" />
-                        <div className="font-geist text-sm text-slate-900 font-medium">
-                          <p>Processing withdrawal...</p>
-                          <p className="text-xs text-slate-500 mt-1">Please confirm in your wallet</p>
-                        </div>
-                      </div>
-                    </div>
+                   <><PageLoader/></>
                   )}
                 </div>
               </div>

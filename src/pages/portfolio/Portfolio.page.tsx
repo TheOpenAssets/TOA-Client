@@ -30,6 +30,7 @@ import { useCreditData } from '../borrow/hooks/useCreditData';
 import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
 import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
 import { Wavy } from '../../components/ui/wavy';
+import HeroBackground from '../landing/HeroBackground';
 
 
 const PortfolioPage = () => {
@@ -475,7 +476,7 @@ const PortfolioPage = () => {
        */}
       {/* <Wavy colors={["#F5F9FF", "#EEF3FF", "#F3EEFF", "#EDE7FF", "#F2F2F2", "#E6E6E6"]} />
        */}
-      <Wavy />
+      <HeroBackground />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
