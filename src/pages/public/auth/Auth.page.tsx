@@ -221,7 +221,7 @@ export default function AuthPage() {
                       placeholder="Enter your email"
                       value={email}
                       onChange={handleEmailChange}
-                      className="border-none bg-transparent text-white font-sans rounded-2xl h-10"
+                      className="border-none bg-transparent text-black font-sans rounded-2xl h-10"
                     />
                   </div>
                 </div>
