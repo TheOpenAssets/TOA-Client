@@ -15,7 +15,7 @@ export const NoAssetsModal = ({ isOpen, onClose }: NoAssetsModalProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-lg border p-4">
       <div
-        className="rounded-2xl p-8 max-w-2xl w-full bg-transparent border-neutral-300 border"
+        className="rounded-2xl p-8 max-w-md w-full bg-transparent border-neutral-300 border"
         style={{
           boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
@@ -41,21 +41,8 @@ export const NoAssetsModal = ({ isOpen, onClose }: NoAssetsModalProps) => {
           <p className="font-inter text-sm text-gray-600 mb-8">
             To increase your credit limit, you need RWA tokens to use as collateral. Choose an option below to get started:
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left">
-            <div
-              className="bg-gray-100 rounded-xl p-6 hover:bg-gray-200 transition-colors cursor-pointer"
-              onClick={() => { navigate('/issuers'); onClose(); }}
-            >
-              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mb-4">
-                <Upload className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
-                Deposit Private Assets
-              </h3>
-              <p className="font-inter text-sm text-gray-600">
-                Tokenize your real-world assets to use as collateral.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8 text-left">
+          
             <div
               className="bg-gray-100 rounded-xl p-6 hover:bg-gray-200 transition-colors cursor-pointer"
               onClick={() => { navigate('/marketplace'); onClose(); }}

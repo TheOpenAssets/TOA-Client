@@ -510,8 +510,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                             <button
                               onClick={(e) => handleRepayClick(position, e)}
                               className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${isOverdue
-                                  ? 'border-2 border-red-400 hover:border-red-600 bg-black text-white'
-                                  : 'border-2 border-blue-400 hover:border-blue-600 bg-black text-white'
+                                  ? 'border-2  bg-black text-white'
+                                  : 'border-2  bg-black text-white'
                                 }`}
                             >
                               {isOverdue ? 'Overdue - Repay' : 'Repay'}
