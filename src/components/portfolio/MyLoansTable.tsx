@@ -708,11 +708,24 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           document.body
         )}
 
-        
+
         {/* Withdraw Confirmation Modal */}
         {selectedPosition && showWithdrawModal && createPortal(
           <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
-            <div className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="relative rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Close Button */}
+              {!withdrawingPositionId && (
+                <button
+                  onClick={() => {
+                    setShowWithdrawModal(false);
+                    setSelectedPosition(null);
+                  }}
+                  className="absolute top-4 right-4 p-2 hover:bg-gray-200 rounded-full transition-colors z-10"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              )}
+
               {/* Header */}
               <div className="text-center mb-6">
                 <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
@@ -720,17 +733,6 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                 </div>
                 <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">Withdraw Collateral</h2>
                 <p className="font-inter text-sm text-gray-600">Confirm withdrawal from Position #{selectedPosition.positionId}</p>
-                {!withdrawingPositionId && (
-                  <button
-                    onClick={() => {
-                      setShowWithdrawModal(false);
-                      setSelectedPosition(null);
-                    }}
-                    className="absolute top-6 right-6 p-2 hover:bg-gray-200 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                )}
               </div>
 
               {/* Content */}

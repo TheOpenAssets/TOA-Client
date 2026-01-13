@@ -239,7 +239,16 @@ export const RepayLoanModal = ({
 
   return (
     <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
-      <div className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          disabled={isApproving || isRepaying}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50 z-10"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
@@ -247,13 +256,6 @@ export const RepayLoanModal = ({
           </div>
           <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">Repay Loan</h2>
           <p className="font-inter text-sm text-gray-600">Select an installment and confirm payment</p>
-          <button
-            onClick={onClose}
-            disabled={isApproving || isRepaying}
-            className="absolute top-6 right-6 p-2 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
         </div>
 
         {/* Content */}
@@ -318,77 +320,72 @@ export const RepayLoanModal = ({
                 </div>
               )}
 
-              {/* Installment Selection */}
-              {position.repaymentSchedule && position.repaymentSchedule.length > 0 && (
-                <div>
-                  <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
-                    Select Installment to Pay
-                  </label>
-                  <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
-                    {position.repaymentSchedule.map((installment) => {
-                      const isLastInstallment = installment.installmentNumber === position.numberOfInstallments;
-                      const baseAmount = parseFloat(installment.amount) / 1e6;
-                      const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
-                      const isPaid = installment.status === 'PAID';
-                      const isOverdue = installment.status === 'MISSED';
-                      const isPending = installment.status === 'PENDING';
-                      const isSelected = selectedInstallment === installment.installmentNumber;
+              {/* Next Installment Payment */}
+              {position.repaymentSchedule && position.repaymentSchedule.length > 0 && (() => {
+                // Find the next unpaid installment (PENDING or MISSED)
+                const nextInstallment = position.repaymentSchedule.find(
+                  i => i.status === 'PENDING' || i.status === 'MISSED'
+                );
 
-                      return (
-                        <button
-                          key={installment.installmentNumber}
-                          onClick={() => !isPaid && handleInstallmentSelect(installment.installmentNumber)}
-                          disabled={isPaid || isApproving || isRepaying}
-                          className={`w-full p-6 rounded-[24px] border-2 text-left transition-all relative overflow-hidden ${
-                            isPaid
-                              ? 'border-slate-100 bg-slate-50 opacity-50 cursor-not-allowed'
-                              : isSelected
-                              ? 'border-slate-900 bg-slate-900 text-white shadow-xl'
-                              : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className={`font-geist text-sm font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                                  Installment #{installment.installmentNumber}
-                                </span>
-                                {isPaid && (
-                                  <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">PAID</span>
-                                )}
-                                {isOverdue && !isSelected && (
-                                  <span className="px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">OVERDUE</span>
-                                )}
-                                {isPending && !isPaid && !isSelected && (
-                                  <span className="px-2 py-0.5 bg-amber-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">PENDING</span>
-                                )}
-                              </div>
-                              <div className={`font-geist text-[10px] uppercase tracking-wider ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
-                                Due: {new Date(installment.dueDate).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`font-geist text-2xl font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                                {formatUSD(finalAmount)}
-                              </div>
-                              {isLastInstallment && interestAmount > 0 && (
-                                <div className={`font-geist text-[10px] uppercase tracking-wider mt-1 ${isSelected ? 'text-white/70' : 'text-slate-500'}`}>
-                                  +${interestAmount.toFixed(6)} interest
-                                </div>
-                              )}
-                            </div>
-                            {isSelected && (
-                              <div className="absolute top-4 right-4">
-                                <span className="text-2xl text-white/30">✓</span>
-                              </div>
+                if (!nextInstallment) return null;
+
+                const isLastInstallment = nextInstallment.installmentNumber === position.numberOfInstallments;
+                const baseAmount = parseFloat(nextInstallment.amount) / 1e6;
+                const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
+                const isOverdue = nextInstallment.status === 'MISSED';
+                const isSelected = selectedInstallment === nextInstallment.installmentNumber;
+
+                return (
+                  <div>
+                    <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
+                      Next Installment Due
+                    </label>
+                    <button
+                      onClick={() => handleInstallmentSelect(nextInstallment.installmentNumber)}
+                      disabled={isApproving || isRepaying}
+                      className={`w-full p-6 rounded-xl border-2 text-left transition-all relative overflow-hidden ${
+                        isSelected
+                          ? 'border-gray-900 bg-gray-900 text-white shadow-lg'
+                          : 'border-gray-200 bg-gray-100/50 hover:border-gray-300 hover:bg-gray-200/70 shadow-lg'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`font-gellix text-sm font-semibold ${isSelected ? 'text-white' : 'text-foreground'}`}>
+                              Installment #{nextInstallment.installmentNumber}
+                            </span>
+                            {isOverdue && !isSelected && (
+                              <span className="px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">OVERDUE</span>
+                            )}
+                            {!isOverdue && !isSelected && (
+                              <span className="px-2 py-0.5 bg-amber-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">PENDING</span>
                             )}
                           </div>
-                        </button>
-                      );
-                    })}
+                          <div className={`font-inter text-xs ${isSelected ? 'text-white/70' : 'text-gray-500'}`}>
+                            Due: {new Date(nextInstallment.dueDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-gellix text-2xl font-semibold ${isSelected ? 'text-white' : 'text-foreground'}`}>
+                            {formatUSD(finalAmount)}
+                          </div>
+                          {isLastInstallment && interestAmount > 0 && (
+                            <div className={`font-inter text-xs mt-1 ${isSelected ? 'text-white/70' : 'text-gray-500'}`}>
+                              +${interestAmount.toFixed(6)} interest
+                            </div>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-4 right-4">
+                            <span className="text-2xl text-white/30">✓</span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
 {/* Error Display */}
               {error && (
@@ -415,7 +412,7 @@ export const RepayLoanModal = ({
               {!selectedInstallment && (
                 <div className="text-center">
                   <p className="font-inter text-xs text-gray-500 uppercase tracking-wider">
-                    Select an installment above to continue
+                    Click the installment above to proceed
                   </p>
                 </div>
               )}
