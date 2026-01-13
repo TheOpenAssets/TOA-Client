@@ -748,21 +748,14 @@ const PortfolioPage = () => {
         />
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
-        {showClaimModal && selectedAssetForClaim && (
-          <div className="fixed inset-0 bg-transparent backdrop-blur-lg border flex items-center justify-center z-50 p-4">
+        {
+        true &&  (
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
             <div
-              className="rounded-2xl p-8 max-w-md w-full bg-transparent border-neutral-300 border"
-              style={{
-                boxShadow: `
-                  4px 4px 12px rgba(243, 244, 245, 0.08),
-                  8px 8px 24px rgba(150, 151, 151, 0.06),
-                  12px 12px 36px rgba(92, 92, 93, 0.04),
-                  16px 16px 48px rgba(45, 46, 47, 0.02)
-                `,
-              }}
+              className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg"
             >
               <div className="text-center">
-                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
                   <span className="text-2xl">🔥</span>
                 </div>
 
@@ -774,22 +767,24 @@ const PortfolioPage = () => {
                   This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
                 </p>
 
-                <div className="bg-gray-100 rounded-xl p-5 mb-6 space-y-5">
+                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 mb-6 space-y-5">
                   <div>
                     <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
                     <p className="font-gellix text-xl font-semibold text-foreground">
-                      {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                        {/* {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol} */}
+                        1000
                     </p>
                   </div>
                   <div className="pt-4 border-t border-gray-300">
                     <p className="font-inter text-xs text-gray-500 mb-1.5">Expected USDC</p>
                     <p className="font-gellix text-2xl font-semibold text-foreground">
-                      ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
+                        {/* ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)} */}
+                        10000
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-gray-100 rounded-xl p-4 mb-6">
+                <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4 mb-6">
                   <p className="font-inter text-xs text-gray-700 text-left">
                     <span className="text-gray-500">⚠️</span> <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
                   </p>
@@ -801,13 +796,13 @@ const PortfolioPage = () => {
                       setShowClaimModal(false);
                       setSelectedAssetForClaim(null);
                     }}
-                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-foreground rounded-xl font-inter font-medium transition-all"
+                      className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200/50 border border-gray-200 text-foreground rounded-xl shadow-lg font-inter font-medium transition-all hover:scale-105"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={executeClaimYield}
-                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105"
                   >
                     Claim Now
                   </button>

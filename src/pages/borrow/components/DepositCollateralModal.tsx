@@ -312,8 +312,8 @@ export const DepositCollateralModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-200/50 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
-      <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-md p-4">
+      <div className="bg-transparent w-full max-w-2xl rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-10 pt-10 pb-6 flex items-center justify-between">
           <div>
@@ -360,7 +360,7 @@ export const DepositCollateralModal = ({
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
               {/* Asset Selection */}
               {!initialAsset && (
-                <div>
+                <div className='bg-transparent'>
                   <label className="text-black font-bold mb-3 block text-xs uppercase tracking-widest">
                     Select Asset to Deposit
                   </label>
@@ -374,7 +374,7 @@ export const DepositCollateralModal = ({
                   >
                     <option value="">Choose an asset...</option>
                     {portfolio.map((asset) => (
-                      asset.status !== 'CLAIMED' && (
+                      asset.status !== 'CLAIMED' && asset.purchaseType !== 'LEVERAGE' && (
                         <option key={asset.assetId} value={asset.assetId}>
                           {asset.metadata.assetName} - {parseFloat(ethers.formatUnits(asset.totalAmount, 18)).toFixed(2)} tokens
                         </option>
