@@ -848,6 +848,7 @@ class SolvencyService extends BaseService {
     }
   }
 
+
   async notifyCollateralWithdrawal(request: {
     positionId: string;
     amount: string;
@@ -860,7 +861,7 @@ class SolvencyService extends BaseService {
       console.log('📢 Notifying backend of withdrawal', request);
 
       const response = await this.fetchWithTimeout(
-        `${this.baseURL}/solvency/loan/withdwawal-notify`,
+        `${this.baseURL}/solvency/loan/withdrawal-notify`,
         {
           method: 'POST',
           headers: this.getAuthHeaders(),

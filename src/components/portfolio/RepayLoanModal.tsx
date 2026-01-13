@@ -146,7 +146,7 @@ export const RepayLoanModal = ({
       // Calculate amount: base installment + interest (if last installment)
       const isLastInstallment = selectedInstallment === position.numberOfInstallments;
       const baseAmount = parseFloat(installment.amount) / 1e6;
-      const finalAmount = isLastInstallment ? baseAmount + interestAmount : baseAmount;
+      const finalAmount = isLastInstallment ? baseAmount + interestAmount + 0.5 : baseAmount;
 
 
       // Round to 6 decimals properly and convert to Wei (USDC has 6 decimals)
