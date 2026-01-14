@@ -507,7 +507,7 @@ npm run preview
 
 <div align="center">
   <br />
-  <img src="https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Footer.png" width="30" alt="OpenAssets Logo" />
+  <img src="https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Footer.png" alt="OpenAssets Logo" />
   <br />
   <br />
   <p>
