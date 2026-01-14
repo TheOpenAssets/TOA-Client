@@ -94,7 +94,6 @@ export const MyAssetsTable = ({
   claimStatus,
 }: MyAssetsTableProps) => {
   const navigate = useNavigate();
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED' | 'CONFIRMED' | 'CLAIMED'>('ALL');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'STATIC' | 'LEVERAGE'>('ALL');
@@ -285,8 +284,6 @@ export const MyAssetsTable = ({
                   key={rowKey}
                   className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-transparent' : 'bg-gray-50/50'
                     }`}
-                  onMouseEnter={() => setHoveredRow(rowKey)}
-                  onMouseLeave={() => setHoveredRow(null)}
                   onClick={(e) => toggleRowExpansion(rowKey, e)}
                 >
                   {/* Expand Icon */}

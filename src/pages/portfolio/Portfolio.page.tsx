@@ -29,7 +29,7 @@ import { ShaderAnimation } from '../../components/ui/shimmer-lines';
 import { useCreditData } from '../borrow/hooks/useCreditData';
 import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
 import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
-import { Wavy } from '../../components/ui/wavy';
+// import { Wavy } from '../../components/ui/wavy';
 import HeroBackground from '../landing/HeroBackground';
 
 

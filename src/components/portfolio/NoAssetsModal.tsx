@@ -1,6 +1,6 @@
 // src/components/portfolio/NoAssetsModal.tsx
 import { useNavigate } from 'react-router-dom';
-import { Lock, Upload, ShoppingCart, Info, X } from 'lucide-react';
+import { Lock, ShoppingCart, Info, X } from 'lucide-react';
 
 interface NoAssetsModalProps {
   isOpen: boolean;

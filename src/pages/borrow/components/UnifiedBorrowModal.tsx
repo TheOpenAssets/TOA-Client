@@ -16,7 +16,7 @@ interface BorrowOnlyModalProps {
   creditData: OAIDCreditLine | null;
 }
 
-export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: BorrowOnlyModalProps) => {
+export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyModalProps) => {
   const [borrowAmount, setBorrowAmount] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<CollateralPosition | null>(null);
   const [showPositionSelector, setShowPositionSelector] = useState(false);

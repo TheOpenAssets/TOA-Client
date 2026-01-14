@@ -280,20 +280,6 @@ export function LoansView() {
     );
   };
 
-  // UI Helper: Health Status Badge
-  const getHealthStatusBadge = (healthStatus: string | undefined) => {
-    if (!healthStatus) return null;
-
-    if (healthStatus === 'HEALTHY') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Healthy</span>;
-    } else if (healthStatus === 'WARNING') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Warning</span>;
-    } else if (healthStatus === 'CRITICAL' || healthStatus === 'LIQUIDATABLE') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Critical</span>;
-    }
-
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">{healthStatus}</span>;
-  };
 
   // Calculate statistics
   const stats = {
