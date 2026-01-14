@@ -473,9 +473,6 @@ npm run preview
 ```
 
 ---
-
----
-
 <div align="center">
   <br />
   <sub><strong>GET IN TOUCH</strong></sub>
@@ -507,7 +504,7 @@ npm run preview
 
 <div align="center">
   <br />
-  <img src="https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Footer.png" alt="OpenAssets Logo" />
+  <img src="https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/OA-banner.png" alt="OpenAssets Logo" />
   <br />
   <br />
   <p>
