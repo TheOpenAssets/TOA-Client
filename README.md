@@ -22,10 +22,10 @@ T O K E N I Z E   •   I N V E S T   •   T R A D E   •   B O R R O W   • 
 <div align="center">
 
 [![Website](https://img.shields.io/badge/Website-OpenAssets-652df2?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.openassets.xyz)
-[![Docs](https://img.shields.io/badge/Documentation-Read-blue?style=for-the-badge&logo=gitbook&logoColor=white)](https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19)
-[![Twitter](https://img.shields.io/badge/Twitter-Follow-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)]()
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)]()
-[![Telegram](https://img.shields.io/badge/Telegram-Chat-26A6E2?style=for-the-badge&logo=telegram&logoColor=white)]()
+[![Docs](https://img.shields.io/badge/Documentation-Read-blue?style=for-the-badge&logo=notion&logoColor=white)](https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19)
+[![Twitter](https://img.shields.io/badge/X_Twitter-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/TheOpenAssets)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/hKp6RTSp59)
+[![Telegram](https://img.shields.io/badge/Telegram-Chat-26A6E2?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/the_open_assets)
 
 </div>
 
@@ -48,13 +48,13 @@ T O K E N I Z E   •   I N V E S T   •   T R A D E   •   B O R R O W   • 
 
 The first generation of tokenized Real-World Assets (RWAs) successfully moved ownership to the blockchain but failed to solve the **utility** and **fairness** challenges of high-frequency finance.
 
-### 1️ **Opaque & Fragmented Discovery**
+### 1 **Opaque & Fragmented Discovery**
 Traditional RWA sales happen behind closed doors or via static listings. This leads to **fragmented liquidity** and **unfair pricing**, where retail participants have zero visibility into the true market demand for an asset.
 
-### 2️ **The "Static Asset" Paradox**
+### 2 **The "Static Asset" Paradox**
 Currently, when a user buys a tokenized invoice, their capital is effectively "frozen" until maturity. The asset remains a dead weight in the wallet, unable to be used as collateral or leveraged without moving it to a specific, siloed lending protocol.
 
-### 3️ **Yield Sniping & Inequity**
+### 3 **Yield Sniping & Inequity**
 Most on-chain yield models favor the **last holder**. If an investor holds an asset for 90% of its duration but sells just before settlement, they often lose 100% of the accrued yield to the buyer. This discourages secondary market liquidity and penalizes long-term holders.
 
 ---
@@ -63,30 +63,30 @@ Most on-chain yield models favor the **last holder**. If an investor holds an as
 
 OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every step—from issuance to settlement—is optimized for capital efficiency.
 
-###  **Phase 1: Canonical Tokenization**
+###  **1 Canonical Tokenization**
 > **Standardization at the Core**
 > 
 > We transform off-chain cash flows into **ERC-3643 compliant** tokens. Every asset follows a strict, non-reversible state machine on Mantle, ensuring institutional-grade auditability from the moment of issuance.
 
-###  **Phase 2: Hybrid Market Discovery**
+###  **2 Hybrid Market Discovery**
 > **Flexible Capital Formation**
 > 
 > Originators can choose the best pricing strategy for their asset:
 > * **Fixed-Price Listings:** Instant liquidity for standard, high-velocity invoices.
 > * **Uniform-Price Auctions:** Fair price discovery for unique or large-cohort assets, ensuring all investors pay the same clearing price.
 
-###  **Phase 3: mETH-Powered Leverage**
+###  **3 mETH-Powered Leverage**
 > **Self-Amortizing Acquisition**
 > 
 > Leveraging Mantle’s native **mETH**, users can acquire RWAs with high capital efficiency. The **native staking yield of mETH** is automatically harvested to service loan interest, allowing users to hold leveraged RWA positions with near zero out-of-pocket interest costs and at times earning even more.
 
 
-###  **Phase 4: OAID & Universal Credit**
+###  **4 OAID & Universal Credit**
 > **Deposit Once, Borrow Everywhere**
 > 
 > Your **Open Access ID (OAID)** acts as a universal credit identity. By decoupling collateral custody (Solvency Vault) from credit issuance, users can tap into multiple Mantle lending protocols and more using a single RWA collateral pool. No more moving assets, just portable, verifiable credit.
 
-### **Phase 5: Time-Weighted Yield (Token-Days)**
+### **5 Time-Weighted Yield (Token-Days)**
 > **Eliminating Yield Sniping**
 > 
 > Our **Token-Day Engine** calculates yield entitlement down to the second. By tracking the duration of ownership, we ensure yield is distributed fairly between all past and present holders. This mathematically guarantees returns for your exact period of risk.
