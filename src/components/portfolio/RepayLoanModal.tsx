@@ -22,7 +22,7 @@ import { PageLoader } from '../ui/page-loader';
 interface RepayLoanModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (isLastInstallment: boolean) => void;
   position: Position;
 }
 
@@ -92,7 +92,7 @@ export const RepayLoanModal = ({
       };
       fetchDebt();
     }
-  }, [isOpen, position.positionId]);
+  }, [isOpen, position.positionId,selectedInstallment]);
 
   // Calculate next installment amount
   const nextInstallmentAmount = useMemo(() => {
@@ -140,14 +140,20 @@ export const RepayLoanModal = ({
     try {
       // Find the installment
       const installment = position.repaymentSchedule?.find(i => i.installmentNumber === selectedInstallment);
+
       if (!installment) {
         throw new Error('Installment not found');
       }
 
       // Calculate amount: base installment + interest (if last installment)
-      const isLastInstallment = selectedInstallment === position.numberOfInstallments;
+      const isLastInstallment = BigInt(selectedInstallment) === BigInt(position.numberOfInstallments);
+
+      // const total = position.repaymentSchedule.reduce((sum, inst) => sum + parseFloat(inst.amount), 0) / 1e6;
+      const actualDebtUSD = parseFloat(ethers.formatUnits(actualDebt, 6));
+      
       const baseAmount = parseFloat(installment.amount) / 1e6;
-      const finalAmount = isLastInstallment ? baseAmount + interestAmount + 0.5 : baseAmount;
+      const interestAmount = actualDebtUSD - baseAmount;
+      const finalAmount = isLastInstallment ? baseAmount + (interestAmount*1.10) : baseAmount;
 
 
       // Round to 6 decimals properly and convert to Wei (USDC has 6 decimals)
@@ -221,7 +227,7 @@ export const RepayLoanModal = ({
       // Success
       setSuccess(true);
       setTimeout(() => {
-        onSuccess();
+        onSuccess(isLastInstallment);
       }, 1500);
 
     } catch (err: any) {
@@ -361,7 +367,7 @@ export const RepayLoanModal = ({
                           <AutoSelect />
                           <div
                             className={`w-full p-6 rounded-[24px] border-2 text-left transition-all relative overflow-hidden ${isSelected
-                              ? 'border-slate-900 bg-slate-900 text-white shadow-xl'
+                              ? 'border-slate-900 bg-gray-800 text-white shadow-xl'
                               : 'border-slate-100 bg-white'
                               }`}
                           >
@@ -390,12 +396,6 @@ export const RepayLoanModal = ({
                                   </div>
                                 )}
                               </div>
-
-                              {isSelected && (
-                                <div className="absolute top-4 right-4">
-                                  <CheckCircle className="w-5 h-5 text-white/30" />
-                                </div>
-                              )}
                             </div>
                           </div>
                         </>
@@ -414,12 +414,10 @@ export const RepayLoanModal = ({
 
               {/* Progress Steps */}
               {(isApproving || isRepaying) && selectedInstallment && (
-                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 text-slate-700 animate-spin" >
-                      <PageLoader />
-                    </div>
-                    <div className="font-geist text-sm text-slate-900 font-medium">
+                <div className="bg-transparent-50 rounded-2xl border border-gray-100 shadow-lg">
+                  <div className="flex flex-row items-center justify-center">
+                        <PageLoader text='' size='sm' />
+                    <div className="font-gellix text-sm text-slate-900 font-medium items-center justify-center">
                       {currentStep === 'approving' && `Approving USDC for Installment #${selectedInstallment}...`}
                       {currentStep === 'repaying' && `Processing payment for Installment #${selectedInstallment}...`}
                       {currentStep === 'syncing' && 'Syncing with backend...'}

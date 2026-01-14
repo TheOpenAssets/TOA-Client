@@ -207,12 +207,15 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
     setShowRepayModal(true);
   };
 
-  const handleRepaySuccess = () => {
+  const handleRepaySuccess = (isLastInstallment?: boolean) => {
     setShowRepayModal(false);
     setSelectedPosition(null);
     console.log('Repay successful for position', selectedPosition);
     console.log("withdrawing after repay");
-    handleWithdrawConfirm();
+
+    if (isLastInstallment) {
+      handleWithdrawConfirm();
+    }
 
 
     if (onRefresh) onRefresh();
@@ -246,8 +249,6 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       if (result.success) {
         // Mark position as withdrawn
         setWithdrawnPositions(prev => new Set([...prev, selectedPosition.positionId]));
-
-
 
         const asset = portfolio.find(asset => asset.tokenAddress === selectedPosition.collateralTokenAddress);
         if (asset && asset.assetId) {
@@ -548,8 +549,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                             <button
                               onClick={(e) => handleRepayClick(position, e)}
                               className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${isOverdue
-                                  ? 'border-2  bg-black text-white'
-                                  : 'border-2  bg-black text-white'
+                                ? 'border-2  bg-black text-white'
+                                : 'border-2  bg-black text-white'
                                 }`}
                             >
                               {isOverdue ? 'Overdue - Repay' : 'Repay'}
@@ -762,7 +763,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               setShowRepayModal(false);
               setSelectedPosition(null);
             }}
-            onSuccess={handleRepaySuccess}
+            onSuccess={(isLastInstallment:boolean) => handleRepaySuccess(isLastInstallment)}
             position={selectedPosition}
           />,
           document.body
