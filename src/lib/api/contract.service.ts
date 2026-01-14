@@ -85,35 +85,34 @@ class ContractService {
    * Polls every 10 seconds for up to 20 minutes
    * Prevents UI freeze and aggressive RPC polling
    */
-  async waitForTransaction(txHash: string, provider: ethers.Provider): Promise<ethers.TransactionReceipt> {
-    const POLL_INTERVAL = 5000; // 5 seconds
-    const MAX_ATTEMPTS = 240; // 20 minutes (240 * 5s = 1200s)
+  async waitForTransaction(
+    txHash: string,
+    provider: ethers.Provider
+  ): Promise<ethers.TransactionReceipt | null> {
+    console.log(`⏳ Waiting for TX ${txHash} using ethers.provider.waitForTransaction...`);
+    try {
+      // Wait for 1 confirmation, with a 2-minute timeout.
+      // ethers.js will use an efficient combination of WebSockets and polling.
+      const receipt = await provider.waitForTransaction(txHash, 1, 120000);
 
-    console.log(`⏳ Polling for TX ${txHash} (Interval: 5s, Timeout: 20m)...`);
-
-    for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      try {
-        const receipt = await provider.getTransactionReceipt(txHash);
-        if (receipt) {
-          if (receipt.status === 1) {
-            console.log(`✅ TX Confirmed in block ${receipt.blockNumber} after ${(i + 1) * 5}s`);
-            return receipt;
-          } else {
-            throw new Error(`Transaction failed (status: 0)`);
-          }
+      if (receipt) {
+        if (receipt.status === 1) {
+          console.log(`✅ TX Confirmed in block ${receipt.blockNumber}`);
+          return receipt;
+        } else {
+          console.error(`❌ Transaction failed (status: 0)`);
+          throw new Error(`Transaction failed with status 0`);
         }
-      } catch (error: any) {
-        // Ignore "not found" errors during polling, rethrow others if critical
-        if (error.message && !error.message.includes('not found')) {
-          console.warn(`Polling error (attempt ${i + 1}):`, error);
-        }
+      } else {
+        // This case happens if the transaction is dropped from the mempool
+        console.warn(`⚠️ Transaction ${txHash} was not mined and may have been dropped.`);
+        return null;
       }
-
-      // Wait for next poll
-      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+    } catch (error: any) {
+      console.error(`Error waiting for transaction ${txHash}:`, error.message);
+      // Re-throw to be caught by the calling function
+      throw error;
     }
-
-    throw new Error(`Transaction confirmation timed out after 20 minutes. TX: ${txHash}`);
   }
 
   /**
@@ -243,6 +242,11 @@ class ContractService {
         console.log('Approve TX:', tx.hash);
 
         const receipt = await this.waitForTransaction(tx.hash, provider);
+
+        if (!receipt) {
+          throw new Error('Approval transaction failed to confirm and may have been dropped.');
+        }
+
         console.log('✅ USDC approved');
 
         return {
@@ -620,10 +624,15 @@ class ContractService {
 
       // Wait for confirmation
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('Purchase transaction failed to confirm and may have been dropped.');
+      }
+
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('\n✅ Purchase Complete!');
       console.log('━'.repeat(50));
-      console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${receipt.hash}`);
 
       return {
         success: true,
@@ -932,6 +941,11 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('YieldVault approval transaction failed to confirm and may have been dropped.');
+      }
+
       console.log('✅ Approved in block', receipt.blockNumber);
       console.log();
 
@@ -1011,6 +1025,10 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('YieldVault approval transaction failed to confirm and may have been dropped.');
+      }
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log();
 
@@ -1138,9 +1156,14 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('Marketplace approval transaction failed to confirm and may have been dropped.');
+      }
+
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('✅ Marketplace approved!');
-      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${receipt.hash}`);
       console.log();
       console.log('✅ Marketplace can now transfer tokens to buyers!');
 
@@ -1186,11 +1209,16 @@ class ContractService {
       console.log('Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('End auction transaction failed to confirm and may have been dropped.');
+      }
+
       console.log('Confirmed in block', receipt.blockNumber);
 
       return {
         success: true,
-        transactionHash: tx.hash,
+        transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
         clearingPriceWei: clearingPriceWei.toString(),
       };
