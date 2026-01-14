@@ -287,8 +287,6 @@ flowchart TB;
 
 ---
 
----
-
 <div align="center">
   <br />
   <sub><strong>TECHNICAL WALKTHROUGH</strong></sub>
@@ -355,11 +353,6 @@ The **OpenAssets Dashboard** provides a unified view of your entire RWA exposure
 ---
 <em>Navigate our jouney through a series of commits, pushes, pr's and a lot of branches</em>
 -> [Changelog](https://www.openassets.xyz/changelog)
-
----
-
-This is the final technical segment of your **Client Repository README**. It provides a smooth onboarding experience for judges and developers who want to run your code locally.
-
 
 ---
 
