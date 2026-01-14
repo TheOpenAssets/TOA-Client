@@ -423,6 +423,7 @@ The interface uses the following variables to interact with the **OpenAssets Pro
 | Variable | Description |
 | --- | --- |
 | `VITE_API_URL` | Base URL for the Backend API |
+| `VITE_WALLETCONNECT_PROJECT_ID` | Your wallet connect project ID for wallet authentication |
 | `VITE_FAUCET` | Address of the RWA Test Token Faucet |
 | `VITE_USDC_ADDRESS` | Canonical USDC contract on Mantle Sepolia |
 
