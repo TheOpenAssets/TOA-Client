@@ -488,15 +488,18 @@ npm run preview
 </br>
 
 <div align="center">
+  <br />
+  <sub><strong>THE ARCHITECTS</strong></sub>
+  <p><em>Engineering the future of RWA liquidity on Mantle.</em></p>
 
 
-[RYUK](https://x.com/18_r_y_u_k_07) 
-||
-[DEADBYTES](https://x.com/Dead_Bytx) 
-||
-[KC](https://x.com/Kaushaly4s5s7) 
+  <a href="https://x.com/18_r_y_u_k_07"><img src="https://img.shields.io/badge/RYUK-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" /></a>
+  <a href="https://x.com/Dead_Bytx"><img src="https://img.shields.io/badge/DEADBYTES-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" /></a>
+  <a href="https://x.com/Kaushaly4s5s7"><img src="https://img.shields.io/badge/KC-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" /></a>
 
-<em>BOB THE BUILDER's</em>
+<div>
+    <sub> <em>Bob The Builder's</em></sub>
+</div>
 
 </div>
 
