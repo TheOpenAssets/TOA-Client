@@ -94,7 +94,6 @@ export const MyAssetsTable = ({
   claimStatus,
 }: MyAssetsTableProps) => {
   const navigate = useNavigate();
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED' | 'CONFIRMED' | 'CLAIMED'>('ALL');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'STATIC' | 'LEVERAGE'>('ALL');
@@ -194,7 +193,7 @@ export const MyAssetsTable = ({
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Filter Bar */}
-      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent border-b border-gray-300 px-6 py-3 ">
+      <div className="sticky flex flex-row items-center justify-between top-0 z-20 bg-transparent backdrop-blur-sm border-b border-gray-300 px-6 py-3 ">
         {/* Type Filter */}
         <div className="flex items-center gap-3">
           <Filter className="w-4 h-4 text-gray-500" />
@@ -285,8 +284,6 @@ export const MyAssetsTable = ({
                   key={rowKey}
                   className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-transparent' : 'bg-gray-50/50'
                     }`}
-                  onMouseEnter={() => setHoveredRow(rowKey)}
-                  onMouseLeave={() => setHoveredRow(null)}
                   onClick={(e) => toggleRowExpansion(rowKey, e)}
                 >
                   {/* Expand Icon */}
@@ -447,7 +444,6 @@ export const MyAssetsTable = ({
                   <td className="px-4 py-4 text-center">
                     <div className="flex flex-col gap-2 items-center">
                       {!isLeverage &&
-                        hoveredRow === rowKey &&
                         parseFloat(asset.yieldInfo?.claimableYield || '0') > 0 &&
                         asset.status !== 'CLAIMED' && (
                           <button
@@ -580,7 +576,7 @@ export const MyAssetsTable = ({
                             <div>
                               <div className="text-xs text-gray-500 mb-1">Tokens Leveraged</div>
                               <div className="font-medium">
-                                {asset.totalAmount}
+                                {asset.totalAmount ? formatTokenAmount(asset.totalAmount) : '0'}
                               </div>
                             </div>
                           )}

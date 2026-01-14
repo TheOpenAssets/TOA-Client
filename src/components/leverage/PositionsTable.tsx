@@ -13,7 +13,7 @@ interface PortfolioLeveragePosition {
   assetId: string;
   tokenAddress: string;
   totalAmount: string;
-  status: 'ACTIVE' | 'SETTLED';
+  status: 'ACTIVE' | 'SETTLED' | 'LIQUIDATED';
   createdAt: string;
   firstPurchase: string;
   metadata: {
@@ -29,8 +29,9 @@ interface PortfolioLeveragePosition {
   totalInterestPaid?: string;
   lastHarvestTime?: string;
   settlementTxHash?: string;
+  liquidationTxHash?: string;
   leverageInfo: {
-    type: 'ACTIVE' | 'SETTLED';
+    type: 'ACTIVE' | 'SETTLED' | 'LIQUIDATED';
     mETHCollateralFormatted: string;
     usdcBorrowedFormatted: string;
     healthFactorFormatted?: string;
@@ -44,6 +45,8 @@ interface PortfolioLeveragePosition {
     mETHReturnedFormatted?: string;
     settlementTxHash?: string;
     settlementDate?: string;
+    liquidationTxHash?: string;
+    liquidationDate?: string;
   };
 }
 
@@ -58,14 +61,19 @@ interface PositionsTableProps {
 
 export const PositionsTable = ({ positions, isLoading, onSelectPosition }: PositionsTableProps) => {
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED' | 'LIQUIDATABLE'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED' | 'LIQUIDATED'>('ALL');
+
+  // Helper to get status
+  const getStatus = (pos: Position): string => {
+    return pos.status;
+  };
 
   // Filter positions based on selected status
   const filteredPositions = statusFilter === 'ALL'
     ? positions
     : positions.filter(pos => getStatus(pos) === statusFilter);
 
-  const statusOptions: Array<'ALL' | 'ACTIVE' | 'SETTLED' | 'LIQUIDATABLE'> = ['ALL', 'ACTIVE', 'SETTLED', 'LIQUIDATABLE'];
+  const statusOptions: Array<'ALL' | 'ACTIVE' | 'SETTLED' | 'LIQUIDATED'> = ['ALL', 'ACTIVE', 'SETTLED', 'LIQUIDATED'];
 
   // Type guard to check if position is from Portfolio API
   const isPortfolioPosition = (pos: Position): pos is PortfolioLeveragePosition => {
@@ -88,11 +96,6 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
     return 'N/A';
   };
 
-  // Helper to get status
-  const getStatus = (pos: Position): string => {
-    return pos.status;
-  };
-
   // Helper to get health factor
   const getHealthFactor = (pos: Position): number => {
     if (isPortfolioPosition(pos)) {
@@ -107,6 +110,13 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
       return pos.settlementTxHash || pos.leverageInfo?.settlementTxHash;
     }
     return pos.settlementTxHash;
+  };
+
+  const getLiquidationTxHash = (pos: Position): string | undefined => {
+    if (isPortfolioPosition(pos)) {
+      return pos.liquidationTxHash || pos.leverageInfo?.liquidationTxHash;
+    }
+    return pos.liquidationTxHash;
   };
 
   // Helper to get user yield
@@ -173,7 +183,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
     <>
       <div className="flex-1 overflow-y-auto">
         {/* Filter Bar */}
-        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-transparent">
+        <div className="sticky top-0 z-20 border-b border-gray-200 px-1 pb-2 bg-transparent backdrop-blur-sm">
           <div className="flex items-center justify-end gap-3">
             <Filter className="w-4 h-4 text-gray-500" />
             <span className="text-xs font-medium text-gray-700">Filter by Status:</span>
@@ -183,8 +193,8 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
                   key={status}
                   onClick={() => setStatusFilter(status)}
                   className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${statusFilter === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                   {status}
@@ -230,11 +240,12 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
               const health = getHealthFactor(pos);
               const collateral = formatMETH(pos.mETHCollateral);
               const invested = formatUSDC(pos.usdcBorrowed);
-              const totalAmount = isPortfolioPosition(pos) ? formatMETH(pos.totalAmount) : (parseFloat(formatMETH((pos as LeveragePosition).rwaTokenAmount || '0' ))).toFixed(2);
+              const totalAmount = isPortfolioPosition(pos) ? formatMETH(pos.totalAmount) : (parseFloat(formatMETH((pos as LeveragePosition).rwaTokenAmount || '0'))).toFixed(2);
               const status = getStatus(pos);
               const positionStatusStyle = getPositionStatusStyle(status);
               const isActivePosition = status === 'ACTIVE';
               const settlementTx = getSettlementTxHash(pos);
+              const liquidationTxHash = getLiquidationTxHash(pos);
               const userYield = getUserYield(pos);
 
               return (
@@ -279,7 +290,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
 
                   {/* Health Factor */}
                   <td className="px-6 py-4 text-right">
-                    <div className={`font-gellix text-sm font-normal ${getHealthColor(health*100)}`}>
+                    <div className={`font-gellix text-sm font-normal ${getHealthColor(health * 100)}`}>
                       {health > 0 ? (health / 100).toFixed(2) + '%' : 'N/A'}
                     </div>
                   </td>
@@ -311,8 +322,18 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
                           >
                             Settlement Tx
                           </a>
-                        ) : (
-                          <span className="font-gellix text-xs text-gray-400">No Tx</span>
+                          ) : (
+                              liquidationTxHash ? (
+                                <a
+                                  href={`https://explorer.sepolia.mantle.xyz/tx/${liquidationTxHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline font-gellix text-xs font-normal block"
+                                >
+                                  Liquidation Tx
+                                </a>
+                              ):
+                          (<span className="font-gellix text-xs text-gray-400">No Tx</span>)
                         )}
                         {status === 'SETTLED' && userYield && (
                           <div className="font-gellix text-xs text-gray-500">

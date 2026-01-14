@@ -81,7 +81,8 @@ export const formatCollateralAmount = (
 
   try {
     // Convert to string if it's a number
-    const valueStr = typeof value === 'number' ? value.toString() : value;
+    // Use BigInt to handle scientific notation (e.g. 5e+21) which toString() would output
+    const valueStr = typeof value === 'number' ? BigInt(value).toString() : value;
 
     // Use ethers to properly handle large numbers
     const formatted = ethers.formatUnits(valueStr, decimals);

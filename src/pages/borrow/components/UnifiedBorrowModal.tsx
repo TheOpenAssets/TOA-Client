@@ -16,7 +16,7 @@ interface BorrowOnlyModalProps {
   creditData: OAIDCreditLine | null;
 }
 
-export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: BorrowOnlyModalProps) => {
+export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyModalProps) => {
   const [borrowAmount, setBorrowAmount] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<CollateralPosition | null>(null);
   const [showPositionSelector, setShowPositionSelector] = useState(false);
@@ -174,6 +174,12 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: B
 
       if (requestedDuration > maxDuration) {
         const maxInstallments = Math.floor(maxDuration / (86400));
+        if (maxInstallments === 0) {
+          return {
+            loanDuration: 0,
+            installmentError: `This asset has a very short repayment time, so a loan cannot be taken with this position.`
+          };
+        }
         return {
           loanDuration: 0,
           installmentError: `This asset only allows up to ${maxInstallments} installments.`
@@ -259,13 +265,7 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: B
       {/* Main Borrow Interface - Clean Swap Style */}
       <div className="w-full max-w-[500px] mx-auto bg-white/30 rounded-3xl shadow-2xl p-6 relative z-50">
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          disabled={isBorrowing}
-          className="absolute top-4 right-4 p-2 hover:bg-white/50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-10"
-        >
-          <X className="w-5 h-5 text-gray-700" />
-        </button>
+       
 
         {/* Collateral Section (Top - Like "Sell") */}
         <div className="bg-white rounded-3xl p-6 shadow-lg mb-3">
@@ -368,10 +368,10 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData , onClose}: B
                 type="number"
                 value={installments}
                 onChange={(e) => {
-                  let value = parseInt(e.target.value, 10);
-                  if (isNaN(value)) value = 1;
+                  let value = parseInt(e.target.value);
+                  if (isNaN(value)) value = 0;
                   if (value > 24) value = 24;
-                  if (value < 1) value = 1;
+                  if (value < 1) value = 0;
                   setInstallments(value);
                 }}
                 min="1"

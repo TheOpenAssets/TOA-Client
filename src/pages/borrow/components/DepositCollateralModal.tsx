@@ -10,12 +10,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 import { useCallback } from 'react';
+import { X } from 'lucide-react';
 import { portfolioService, type PortfolioAsset } from '../../../lib/api/portfolio.service';
 import { assetService } from '../../../lib/api/asset.service';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import type { IssuerAsset } from '../../../types/issuer.types';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 interface DepositCollateralModalProps {
   isOpen: boolean;
@@ -310,290 +312,311 @@ export const DepositCollateralModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-lg border p-4">
-      <div
-        className="rounded-2xl p-8 max-w-lg w-full bg-transparent border-neutral-300 border max-h-[90vh] overflow-y-auto"
-        style={{
-          boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(150, 151, 151, 0.06),
-            12px 12px 36px rgba(92, 92, 93, 0.04),
-            16px 16px 48px rgba(45, 46, 47, 0.02)
-          `,
-        }}
-      >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-        <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
-          {initialAsset ? 'Add More Collateral' : 'Deposit Collateral'}
-        </h2>
-        <p className="font-inter text-sm text-gray-600">
-          {initialAsset 
-          ? `Add more ${initialAsset?.metadata.assetName} to your position.`
-          : 'Deposit RWA tokens to create a credit line'}
-        </p>
+    <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
+      <div className="relative rounded-2xl p-8 max-w-lg w-full bg-white border-gray-300 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Close Button */}
+        {!isProcessing && step === 'select' && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        )}
+
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 bg-white shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+            <span className="text-2xl">💰</span>
+          </div>
+          <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
+            {initialAsset ? 'Add More Collateral' : 'Deposit Collateral'}
+          </h2>
+          <p className="font-inter text-sm text-gray-600">
+            {initialAsset
+              ? `Add more ${initialAsset?.metadata.assetName} to your position`
+              : 'Deposit RWA tokens to create a credit line'}
+          </p>
         </div>
-          {!isProcessing && (
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
 
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-4"></div>
-            <p className="font-inter text-sm text-gray-600">Loading your portfolio...</p>
+            <div className="">
+              <PageLoader text='' />
+            </div>
           </div>
         )}
 
-        {/* Error State */}
-        {error && !isLoading && (
-          <div className="mb-6 p-4 bg-gray-100 rounded-xl">
-            <p className="font-inter text-xs text-gray-700 flex items-start gap-2">
-              <span className="text-gray-500">⚠️</span>
-              <span>{error}</span>
-            </p>
-          </div>
-        )}
+          {/* Error State */}
+          {error && !isLoading && (
+            <div className="mb-6 p-4 bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl text-rose-600 text-xs font-inter font-medium text-center">
+             Something went wrong ! Please try again.
+            </div>
+          )}
 
-        {/* Select Asset Step */}
-        {step === 'select' && !isLoading && (portfolio.length > 0 || initialAsset) && (
-          <div className="space-y-6">
-            {/* Asset Selection */}
-            {!initialAsset && (
-              <div>
-                <label className="block text-sm font-medium text-[#111111] mb-2">
-                  Select Asset to Deposit
-                </label>
-                <select
-                  value={selectedAsset?.assetId || ''}
-                  onChange={(e) => {
-                    const asset = portfolio.find(a => a.assetId === e.target.value);
-                    if (asset) handleAssetSelect(asset);
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#111111] focus:border-transparent"
-                >
-                  <option value="">Choose an asset...</option>
-                  {portfolio.map((asset) => (
-                    <option key={asset.assetId} value={asset.assetId}>
-                      {asset.metadata.assetName} - {parseFloat(ethers.formatUnits(asset.totalAmount, 18)).toFixed(2)} tokens
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Asset Details */}
-            {selectedAsset && assetDetails && (
-              <>
-                {/* Token Balance */}
-                <div className="p-4 bg-[#F7F8FA] rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-[#6B7280]">Your Balance</span>
-                    <span className="text-lg font-semibold text-[#111111]">
-                      {parseFloat(tokenBalance).toFixed(2)} tokens
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#6B7280]">Token Price</span>
-                    <span className="text-sm font-medium text-[#111111]">
-                      ${(parseFloat(assetDetails.listing.price) / 1e6).toFixed(6)} per token
-                    </span>
+          {/* Select Asset Step */}
+          {step === 'select' && !isLoading && (portfolio.length > 0 || initialAsset) && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              {/* Asset Selection - Table View (only show when no asset selected) */}
+              {!initialAsset && !selectedAsset && (
+                <div>
+                  <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
+                    Select Asset to Deposit
+                  </label>
+                  <div className="bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-100/50 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-inter text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Asset
+                            </th>
+                            <th className="px-4 py-3 text-right font-inter text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Balance
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {portfolio.map((asset) => (
+                            asset.status !== 'CLAIMED' && asset.purchaseType !== 'LEVERAGE' && !asset.yieldInfo?.settlementDistributed && (
+                              <tr
+                                key={asset.assetId}
+                                onClick={() => handleAssetSelect(asset)}
+                                className="cursor-pointer transition-all hover:bg-gray-200/70"
+                              >
+                                <td className="px-4 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-neutral-200/50 rounded-full flex items-center justify-center text-sm">
+                                      🏛️
+                                    </div>
+                                    <span className="font-gellix text-sm font-medium text-foreground">
+                                      {asset.metadata.assetName}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 text-right">
+                                  <span className="font-gellix text-sm font-semibold text-foreground">
+                                    {parseFloat(ethers.formatUnits(asset.totalAmount, 18)).toFixed(2)}
+                                  </span>
+                                  <span className="font-inter text-xs text-gray-500 ml-1">
+                                    tokens
+                                  </span>
+                                </td>
+                              </tr>
+                            )
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                {/* Deposit Amount */}
-                <div>
-                  <label className="block text-sm font-medium text-[#111111] mb-2">
-                    Deposit Amount
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={depositAmount}
-                      onChange={(e) => setDepositAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#111111] focus:border-transparent"
-                      min="0"
-                      max={tokenBalance}
-                      step="0.01"
-                    />
+              {/* Selected Asset Display (show after selection) */}
+              {!initialAsset && selectedAsset && (
+                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-neutral-200/50 rounded-full flex items-center justify-center">
+                        🏛️
+                      </div>
+                      <div>
+                        <p className="font-gellix text-sm font-semibold text-foreground">
+                          {selectedAsset.metadata.assetName}
+                        </p>
+                        <p className="font-inter text-xs text-gray-500">
+                          {parseFloat(ethers.formatUnits(selectedAsset.totalAmount, 18)).toFixed(2)} tokens available
+                        </p>
+                      </div>
+                    </div>
                     <button
-                      onClick={handleMaxClick}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 text-sm font-medium text-[#111111] bg-[#F7F8FA] rounded hover:bg-gray-200 transition-colors"
+                      onClick={() => {
+                        setSelectedAsset(null);
+                        setAssetDetails(null);
+                        setDepositAmount('');
+                      }}
+                      className="text-gray-500 hover:text-gray-700 text-xs font-inter font-medium underline"
                     >
-                      MAX
+                      Change
                     </button>
                   </div>
-                  {depositError && (
-                    <p className="mt-2 text-sm text-red-600">{depositError}</p>
-                  )}
                 </div>
+              )}
 
-                {/* Collateral Preview */}
-                {depositAmount && parseFloat(depositAmount) > 0 && !depositError && (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h3 className="text-sm font-semibold text-blue-900 mb-3">
-                      Credit Line Preview
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-blue-700">Collateral Value</span>
-                        <span className="text-sm font-semibold text-blue-900">
+              {/* Asset Details */}
+              {selectedAsset && assetDetails && (
+                <>
+                  {/* Token Balance */}
+                  <div className="bg-gray-100/50 border border-neutral-200 shadow-md rounded-xl p-5 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="font-inter text-xs text-gray-500">Your Balance</span>
+                      <span className="font-gellix text-lg font-semibold text-foreground">
+                        {parseFloat(tokenBalance).toFixed(2)} tokens
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-300">
+                      <span className="font-inter text-xs text-gray-500">Token Price</span>
+                      <span className="font-gellix text-sm font-semibold text-foreground">
+                        ${(parseFloat(assetDetails.listing.price) / 1e6).toFixed(6)} per token
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Deposit Amount */}
+                  <div>
+                    <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
+                      Deposit Amount
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-gray-100/50 border border-neutral-200 shadow-sm rounded-xl px-4 py-4 pr-20 font-gellix text-sm text-foreground transition-all placeholder:text-gray-400 hover:bg-gray-100"
+                        min="0"
+                        max={tokenBalance}
+                        step="0.01"
+                      />
+                      <button
+                        onClick={handleMaxClick}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 text-xs font-inter font-medium uppercase tracking-wider text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors shadow-sm"
+                      >
+                        MAX
+                      </button>
+                    </div>
+                    {depositError && (
+                      <p className="mt-2 text-xs font-inter font-medium text-rose-600">{depositError}</p>
+                    )}
+                  </div>
+
+                  {/* Collateral Preview */}
+                  {depositAmount && parseFloat(depositAmount) > 0 && !depositError && (
+                    <div className="bg-gray-100/50 border border-neutral-200 shadow-sm rounded-xl p-5 space-y-4">
+                      <div>
+                        <p className="font-inter text-xs text-gray-500 mb-1.5">Collateral Value</p>
+                        <p className="font-gellix text-lg font-semibold text-foreground">
                           ${parseFloat(collateralValueUSD).toFixed(2)}
-                        </span>
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-blue-700">LTV Ratio</span>
-                        <span className="text-sm font-medium text-blue-900">70%</span>
-                      </div>
-                      <div className="pt-2 mt-2 border-t border-blue-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-blue-900">Estimated Credit Line</span>
-                          <span className="text-lg font-bold text-blue-900">
-                            ${parseFloat(estimatedCreditLine).toFixed(2)}
-                          </span>
-                        </div>
+                      <div className="pt-3 border-t border-gray-300">
+                        <p className="font-inter text-xs text-gray-500 mb-1.5">Estimated Credit Line (70% LTV)</p>
+                        <p className="font-gellix text-2xl font-semibold text-foreground">
+                          ${parseFloat(estimatedCreditLine).toFixed(2)}
+                        </p>
                       </div>
                     </div>
-                    <p className="mt-3 text-xs text-blue-700">
-                      You'll be able to borrow up to ${parseFloat(estimatedCreditLine).toFixed(2)} USDC
+                  )}
+
+                  {/* Important Notice */}
+                  <div className="bg-gray-100/90 border border-neutral-200 shadow-sm rounded-xl p-4">
+                    <p className="font-inter text-xs text-gray-700 text-left">
+                      <span className="text-gray-500">⚠️</span> <strong>Important:</strong> Your tokens will be locked as collateral. Maintain health factor above 110% to avoid liquidation. You can withdraw after repaying your loan.
                     </p>
                   </div>
-                )}
 
-                {/* Important Notice */}
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <div>
-                      <p className="text-xs font-medium text-yellow-900 mb-1">
-                        Important Information
-                      </p>
-                      <ul className="text-xs text-yellow-700 space-y-1">
-                        <li>• Your tokens will be locked as collateral</li>
-                        <li>• Maintain health factor above 110% to avoid liquidation</li>
-                        <li>• You can withdraw after repaying your loan</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={onClose}
-                    className="flex-1 px-6 py-3 border border-gray-300 rounded-lg font-medium text-[#111111] hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeposit}
-                    disabled={!depositAmount || parseFloat(depositAmount) <= 0 || !!depositError}
-                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Deposit Collateral
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Approval Progress */}
-        {step === 'approve' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
-            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
-              Step 1 of 3: Approving Tokens
-            </h3>
-            <p className="font-inter text-sm text-gray-600 text-center mb-4">
-              Please confirm the approval transaction in your wallet
-            </p>
-            {txHash && (
-              <a
-                href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
-              >
-                View transaction →
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Deposit Progress */}
-        {step === 'deposit' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
-            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
-              Step 2 of 3: Depositing Collateral
-            </h3>
-            <p className="font-inter text-sm text-gray-600 text-center mb-4">
-              Please confirm the deposit transaction in your wallet
-            </p>
-            <p className="font-inter text-xs text-gray-600 text-center">
-              This may take up to 5 minutes...
-            </p>
-            {txHash && (
-              <a
-                href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
-              >
-                View transaction →
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Syncing Progress */}
-        {step === 'syncing' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-6"></div>
-            <h3 className="font-gellix text-lg font-semibold text-foreground mb-2">
-              Step 3 of 3: Syncing with Platform
-            </h3>
-            <p className="font-inter text-sm text-gray-600 text-center">
-              Updating your credit line...
-            </p>
-          </div>
-        )}
-
-        {/* Success State */}
-        {step === 'success' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-5">
-              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+                </>
+              )}
             </div>
-            <h3 className="font-gellix text-xl font-semibold text-foreground mb-2">
-              Deposit Successful!
-            </h3>
-            <p className="font-inter text-sm text-gray-600 text-center mb-4">
-              Your collateral has been deposited and credit line created
-            </p>
-            <div className="bg-gray-100 rounded-xl p-5 w-full">
-              <div className="text-center">
-                <p className="font-inter text-xs text-gray-500 mb-1.5">Credit Line Created</p>
-                <p className="font-gellix text-2xl font-semibold text-foreground">
-                  ${parseFloat(estimatedCreditLine).toFixed(2)}
-                </p>
+          )}
+
+          {/* Approval Progress */}
+          {step === 'approve' && (
+            <div className="flex flex-col items-center justify-center py-8 ">
+              <div className="bg-transparent p-5 mb-4 w-full">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <PageLoader text='' />
+                  <p className="font-inter text-sm font-semibold text-foreground text-center">Step 1 of 3: Approving Tokens</p>
+                </div>
+              </div>
+              {txHash && (
+                <a
+                  href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
+                >
+                  View transaction →
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Deposit Progress */}
+          {step === 'deposit' && (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="p-5 mb-4 w-full">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <PageLoader text='' />
+                  <p className="font-inter text-sm font-semibold text-foreground text-center">Step 2 of 3: Depositing Collateral</p>
+                </div>
+              </div>
+              {txHash && (
+                <a
+                  href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
+                >
+                  View transaction →
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Syncing Progress */}
+          {step === 'syncing' && (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="p-5 w-full">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <PageLoader text='' />
+                  <p className="font-inter text-sm font-semibold text-foreground text-center">Step 3 of 3: Syncing with Platform</p>
+                </div>
               </div>
             </div>
+          )}
+
+          {/* Success State */}
+          {step === 'success' && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-14 h-14 bg-neutral-100/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+                <span className="text-2xl">✅</span>
+              </div>
+              <h3 className="font-gellix text-xl font-semibold text-foreground mb-2">Deposit Successful!</h3>
+              <p className="font-inter text-sm text-gray-600 mb-6">Your collateral has been deposited and credit line created</p>
+              <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 w-full">
+                <div>
+                  <p className="font-inter text-xs text-gray-500 mb-1.5">Credit Line Created</p>
+                  <p className="font-gellix text-2xl font-semibold text-foreground">
+                    ${parseFloat(estimatedCreditLine).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {step === 'select' && selectedAsset && assetDetails && (
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200/50 border border-gray-200 text-foreground rounded-xl shadow-lg font-inter font-medium transition-all hover:scale-105"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleDeposit}
+              disabled={!depositAmount || parseFloat(depositAmount) <= 0 || !!depositError}
+              className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              Deposit Now
+            </button>
           </div>
         )}
       </div>

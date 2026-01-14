@@ -9,7 +9,7 @@
 import { ethers } from 'ethers';
 
 // Contract addresses from environment
-const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_SOLVENCY_VAULT || '0x9c276B10456aCF5FD74A0f110242bBEC5287fCFc';
+const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_SOLVENCY_VAULT || '0xf491b90154C46f856CF59e951c19eaD61c030e17';
 const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
 
 // Solvency Vault ABI - ✅ VERIFIED from deposit-to-vaultsolvency.js lines 115-121
@@ -673,9 +673,6 @@ class SolvencyContractService {
       };
     }
   }
-
-
-
 
 
   

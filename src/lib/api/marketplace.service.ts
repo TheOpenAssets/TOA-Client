@@ -93,6 +93,7 @@ class MarketplaceService extends BaseService {
 
   async notifyPurchase(payload: NotifyPurchasePayload): Promise<any> {
     try {
+      console.log('Notifying purchase with payload:', payload);
       const response = await fetch(`${this.baseURL}/marketplace/purchases/notify`, {
         method: 'POST',
         headers: this.getAuthHeaders(),

@@ -44,6 +44,7 @@ export interface LeveragePosition {
   settlementUSDCReceived?: string;
   userYieldDistributed?: string;
   mETHReturnedToUser?: string;
+  liquidationTxHash?: string;
 }
 
 export interface LeverageQuote {

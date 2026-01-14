@@ -166,7 +166,7 @@ const BorrowPage = () => {
                   <ol className="text-left text-sm text-gray-600 space-y-2 list-decimal list-inside">
                     <li>Go to your Portfolio page</li>
                     <li>Click "Increase Credit" or "Deposit Collateral"</li>
-                    <li>Deposit RWA or Private Asset tokens</li>
+                    <li>Deposit RWA tokens</li>
                     <li>Your credit limit will increase automatically</li>
                     <li>Return here to borrow against your credit</li>
                   </ol>

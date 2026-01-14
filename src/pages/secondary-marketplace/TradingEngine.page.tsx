@@ -16,6 +16,7 @@ import { SentimentChart } from '../../components/marketplace/SentimentChart';
 import { TradeChart } from '../../components/marketplace/TradeChart';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
+import HeroBackground from '../landing/HeroBackground';
 // import { Wavy } from '../../components/ui/wavy';
 
 // Contract addresses from environment
@@ -144,7 +145,7 @@ const TradingEngineProductionPage = () => {
 
     useEffect(() => {
         fetchChartData();
-        const poll = setInterval(fetchChartData, 60000);
+        const poll = setInterval(fetchChartData, 30000);
         echarts.connect('trading-engine');
         return () => clearInterval(poll);
     }, [fetchChartData]);
@@ -218,7 +219,7 @@ const TradingEngineProductionPage = () => {
         if (!assetId) return;
         fetchOrderbook(assetId);
         setPolling(true);
-        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 30000);
+        const poll = setInterval(() => { fetchOrderbook(assetId); setPolling(true); }, 4000);
         return () => { clearInterval(poll); setPolling(false); };
     }, [fetchOrderbook]);
 
@@ -485,8 +486,8 @@ const TradingEngineProductionPage = () => {
     }
 
     return (<>
-       
-        <div className="min-h-screen max-w-screen bg-neutral-100/90 absolute top-0 text-[#111111] font-gellix">
+       <HeroBackground />
+        <div className="min-h-screen max-w-screen bg-white absolute top-0 text-[#111111] font-gellix">
             <div className='w-screen mx-auto flex flex-col items-center justify-center'>
                 <ToastContainer toasts={toasts} onClose={removeToast} />
 

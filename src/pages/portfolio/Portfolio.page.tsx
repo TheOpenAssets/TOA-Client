@@ -29,7 +29,8 @@ import { ShaderAnimation } from '../../components/ui/shimmer-lines';
 import { useCreditData } from '../borrow/hooks/useCreditData';
 import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
 import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
-import { Wavy } from '../../components/ui/wavy';
+// import { Wavy } from '../../components/ui/wavy';
+import HeroBackground from '../landing/HeroBackground';
 
 
 const PortfolioPage = () => {
@@ -124,10 +125,17 @@ const PortfolioPage = () => {
   );
 
   const filteredOrders = myOrders.filter(order =>
-    order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (filteredAssets.find(asset => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
   );
+
+  const filteredLoans = myLoans.filter(loan =>
+    loan.positionId.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+    false
+  );
+
 
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
@@ -135,22 +143,6 @@ const PortfolioPage = () => {
     0
   );
 
-
-  // // Fetch solvency loans
-  // const fetchMyLoans = useCallback(async () => {
-  //   if (!address) return;
-  //   setIsLoadingMyLoans(true);
-  //   try {
-  //     const response = await solvencyService.getMyPositions('ACTIVE', 100, 0);
-  //     const loans = response.positions.filter(p => parseFloat(p.usdcBorrowed) > 0);
-  //     setMyLoans(loans);
-  //   } catch (err) {
-  //     console.error("Error fetching solvency loans:", err);
-  //     showError("Failed to fetch loans", "Could not retrieve your loan positions.");
-  //   } finally {
-  //     setIsLoadingMyLoans(false);
-  //   }
-  // }, [address, showError]);
 
   useEffect(() => {
     fetchPortfolio();
@@ -201,7 +193,8 @@ const PortfolioPage = () => {
   }, [isCancelSuccess]);
 
   const handleIncreaseCreditLimit = () => {
-    if (portfolio && portfolio.portfolio.length > 0) {
+    const validAssets = staticAssets.filter(asset => asset.yieldInfo?.settlementDistributed === false);
+    if (validAssets.length > 0) {
       setShowDepositModal(true);
     } else {
       setShowNoAssetsModal(true);
@@ -483,7 +476,7 @@ const PortfolioPage = () => {
        */}
       {/* <Wavy colors={["#F5F9FF", "#EEF3FF", "#F3EEFF", "#EDE7FF", "#F2F2F2", "#E6E6E6"]} />
        */}
-      <Wavy />
+      <HeroBackground />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
@@ -515,20 +508,20 @@ const PortfolioPage = () => {
 
               {/* Right: Wallet Display */}
               <div className="flex items-center gap-3">
-              {/* Center: Navigation */}
-              <nav className="flex items-center gap-4">
-                <button
-                  onClick={() => navigate('/marketplace')}
-                  className="font-geist border border-gray-300  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-                >
-                  Marketplace
-                </button>
-                <button
-                  onClick={() => navigate('/borrow')}
-                  className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
-                  Borrow
-                </button>
-              </nav>
+                {/* Center: Navigation */}
+                <nav className="flex items-center gap-4">
+                  <button
+                    onClick={() => navigate('/marketplace')}
+                    className="font-geist border border-gray-300  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
+                  >
+                    Marketplace
+                  </button>
+                  <button
+                    onClick={() => navigate('/borrow')}
+                    className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
+                    Borrow
+                  </button>
+                </nav>
                 {address && (
                   <>
                     <NotificationBell role="INVESTOR" />
@@ -635,10 +628,10 @@ const PortfolioPage = () => {
 
                       style={{
                         boxShadow: `
-            4px 4px 12px rgba(243, 244, 245, 0.08),
-            8px 8px 24px rgba(173, 173, 173, 0.06),
-            12px 12px 36px rgba(123, 123, 123, 0.04),
-            16px 16px 48px rgba(57, 57, 57, 0.02)
+                        4px 4px 12px rgba(243, 244, 245, 0.08),
+                        8px 8px 24px rgba(173, 173, 173, 0.06),
+                        12px 12px 36px rgba(123, 123, 123, 0.04),
+                        16px 16px 48px rgba(57, 57, 57, 0.02)
           `,
                       }}>
                       <div className="h-full flex flex-col"  >
@@ -682,7 +675,7 @@ const PortfolioPage = () => {
                     >
                       <div className="h-full flex flex-col overflow-y-auto">
                         <MyLoansTable
-                          positions={myLoans}
+                          positions={filteredLoans}
                           isLoading={isLoadingMyLoans}
                           onRefresh={fetchMyLoans}
                         />
@@ -755,21 +748,14 @@ const PortfolioPage = () => {
         />
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
-        {showClaimModal && selectedAssetForClaim && (
-          <div className="fixed inset-0 bg-transparent backdrop-blur-lg border flex items-center justify-center z-50 p-4">
+        {
+        showClaimModal && selectedAssetForClaim &&  (
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
             <div
-              className="rounded-2xl p-8 max-w-md w-full bg-transparent border-neutral-300 border"
-              style={{
-                boxShadow: `
-                  4px 4px 12px rgba(243, 244, 245, 0.08),
-                  8px 8px 24px rgba(150, 151, 151, 0.06),
-                  12px 12px 36px rgba(92, 92, 93, 0.04),
-                  16px 16px 48px rgba(45, 46, 47, 0.02)
-                `,
-              }}
+              className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg"
             >
               <div className="text-center">
-                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
                   <span className="text-2xl">🔥</span>
                 </div>
 
@@ -781,22 +767,23 @@ const PortfolioPage = () => {
                   This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
                 </p>
 
-                <div className="bg-gray-100 rounded-xl p-5 mb-6 space-y-5">
+                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 mb-6 space-y-5">
                   <div>
                     <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
                     <p className="font-gellix text-xl font-semibold text-foreground">
-                      {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                        {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                
                     </p>
                   </div>
                   <div className="pt-4 border-t border-gray-300">
                     <p className="font-inter text-xs text-gray-500 mb-1.5">Expected USDC</p>
                     <p className="font-gellix text-2xl font-semibold text-foreground">
-                      ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
+                        ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-gray-100 rounded-xl p-4 mb-6">
+                <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4 mb-6">
                   <p className="font-inter text-xs text-gray-700 text-left">
                     <span className="text-gray-500">⚠️</span> <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
                   </p>
@@ -808,13 +795,13 @@ const PortfolioPage = () => {
                       setShowClaimModal(false);
                       setSelectedAssetForClaim(null);
                     }}
-                    className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-foreground rounded-xl font-inter font-medium transition-all"
+                      className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200/50 border border-gray-200 text-foreground rounded-xl shadow-lg font-inter font-medium transition-all hover:scale-105"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={executeClaimYield}
-                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105"
                   >
                     Claim Now
                   </button>

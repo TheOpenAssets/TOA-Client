@@ -6,16 +6,18 @@ import { Loader } from './loader';
 
 export interface PageLoaderProps {
   text?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
 }
 
 const PageLoader: React.FC<PageLoaderProps> = ({
   text = 'Loading...',
+  size = 'md',
   showText = true
 }) => {
   return (
     <div className="bg-transparent flex flex-col items-center justify-center">
-      <Loader size="md" />
+      <Loader size={size} />
       {showText && (
         <p className="mt-4 text-gray-900 font-gellix text-xl">
           {text}

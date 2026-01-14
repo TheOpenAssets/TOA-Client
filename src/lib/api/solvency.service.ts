@@ -848,6 +848,41 @@ class SolvencyService extends BaseService {
     }
   }
 
+
+  async notifyCollateralWithdrawal(request: {
+    positionId: string;
+    amount: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    position: any;
+  }> {
+    try {
+      console.log('📢 Notifying backend of withdrawal', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/loan/withdrawal-notify`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        60000 // 60 second timeout
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify loan repayment');
+      }
+
+      const data = await response.json();
+      console.log('✅ Loan repayment notification successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error notifying loan repayment:', error);
+      throw error;
+    }
+  }
 }
 
 export const solvencyService = new SolvencyService();
