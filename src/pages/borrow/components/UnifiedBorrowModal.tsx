@@ -368,10 +368,10 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
                 type="number"
                 value={installments}
                 onChange={(e) => {
-                  let value = parseInt(e.target.value, 10);
-                  if (isNaN(value)) value = 1;
+                  let value = parseInt(e.target.value);
+                  if (isNaN(value)) value = 0;
                   if (value > 24) value = 24;
-                  if (value < 1) value = 1;
+                  if (value < 1) value = 0;
                   setInstallments(value);
                 }}
                 min="1"
