@@ -5,6 +5,3 @@ ________                                  _____                         __
 /    |    \  |_> >  ___/|   |  \       /    |    \\___ \ \___ \ \  ___/|  |  \___ \   
 \_______  /   __/ \___  >___|  /       \____|__  /____  >____  > \___  >__| /____  >  
         \/|__|        \/     \/                \/     \/     \/      \/          \/
-```
-
-![OpenAssets Dashboard Preview](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Hero.png)
