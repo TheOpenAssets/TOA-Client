@@ -13,7 +13,7 @@
  * - Filters: All, Healthy, At Risk, Critical, Defaulted
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Filter, Calendar, AlertCircle, Info, Clock, DollarSign, X, Activity, Layers, Timer } from 'lucide-react';
@@ -23,7 +23,7 @@ import { solvencyContractService } from '../../lib/api/solvency-contract.service
 import { format } from 'date-fns';
 import { RepayLoanModal } from './RepayLoanModal';
 import { PageLoader } from '../ui/page-loader';
-import { portfolioService, type PortfolioAsset } from '../../lib/api/portfolio.service';
+import { type PortfolioAsset } from '../../lib/api/portfolio.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { ToastContainer } from '../ui/toast';
 import { useToast } from '../../hooks/useToast';
@@ -33,6 +33,7 @@ interface MyLoansTableProps {
   positions: Position[];
   isLoading: boolean;
   onRefresh?: () => void;
+  portfolioAssets: PortfolioAsset[];
 }
 
 // Format USD from 6 decimal string
@@ -120,7 +121,7 @@ interface LoanSchedule {
   }>;
 }
 
-export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTableProps) => {
+export const MyLoansTable = ({ positions, isLoading, onRefresh, portfolioAssets }: MyLoansTableProps) => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -132,22 +133,6 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [withdrawingPositionId, setWithdrawingPositionId] = useState<number | null>(null);
   const [withdrawnPositions, setWithdrawnPositions] = useState<Set<number>>(new Set());
-  const [portfolio, setPortfolio] = useState<PortfolioAsset[]>([]);
-
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  const fetchPortfolio = async () => {
-    try {
-      const data = await portfolioService.getPortfolio();
-      setPortfolio(data.portfolio);
-
-    } catch (err: any) {
-      console.error('Error fetching portfolio:', err);
-    } finally {
-    }
-  };
 
   // Filter positions
   const filteredPositions = useMemo(() => {
@@ -252,7 +237,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
         // Mark position as withdrawn
         setWithdrawnPositions(prev => new Set([...prev, selectedPosition.positionId]));
 
-        const asset = portfolio.find(asset => asset.tokenAddress === selectedPosition.collateralTokenAddress);
+        const asset = portfolioAssets.find(asset => asset.tokenAddress === selectedPosition.collateralTokenAddress);
         if (asset && asset.assetId) {
           await marketplaceService.notifyPurchase({
             assetId: asset.assetId,

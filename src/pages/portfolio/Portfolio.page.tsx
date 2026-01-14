@@ -678,6 +678,7 @@ const PortfolioPage = () => {
                           positions={filteredLoans}
                           isLoading={isLoadingMyLoans}
                           onRefresh={fetchMyLoans}
+                          portfolioAssets={allPortfolioItems}
                         />
                       </div>
                     </div>
