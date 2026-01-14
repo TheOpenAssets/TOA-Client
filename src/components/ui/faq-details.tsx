@@ -132,7 +132,7 @@ const FaqDetails = ({
                 description:
                     "Buy and sell RWAs on the secondary marketplace while preserving time-weighted yield.",
                 buttonText: "Trade Tokens",
-                videoSrc: "",
+                videoSrc: "https://youtu.be/f4UW6pApmhI",
             },
         },
         {
@@ -145,11 +145,11 @@ const FaqDetails = ({
                 description:
                     "Utilise RWA's as collateral to draw credit lines without moving assets.",
                 buttonText: "Create Credit Line",
-                videoSrc: "",
+                videoSrc: "https://youtu.be/aFx4cktm_ss",
             },
         },
         {
-            value: "borrowing against rwAs",
+            value: "borrowing against rwas",
             icon: <Zap className="h-auto w-4 shrink-0" />,
             label: "Borrow",
             content: {
@@ -158,7 +158,7 @@ const FaqDetails = ({
                 description:
                     "Borrow against RWAs or private assets across native and partner protocols",
                 buttonText: "Borrow",
-                videoSrc: "",
+                videoSrc: "https://youtu.be/QY0fwxX2mTM",
             },
         },
         {
@@ -171,7 +171,7 @@ const FaqDetails = ({
                 description:
                     "Repay loans to restore credit and reclaim excess collateral",
                 buttonText: "Repay",
-                videoSrc: "",
+                videoSrc: "https://youtu.be/NIzF8LUORrY",
             },
         },
     ],
