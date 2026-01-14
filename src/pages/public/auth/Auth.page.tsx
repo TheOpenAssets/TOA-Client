@@ -14,6 +14,7 @@ import { useAuthStore } from '../../../stores/auth.store';
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Wavy } from '../../../components/ui/wavy';
+import { PageLoader } from '../../../components/ui/page-loader';
 
 
 type AuthStep = 'new_user' | 'documents' | 'documents_uploaded' | 'kyc_submit';
@@ -36,7 +37,7 @@ export default function AuthPage() {
 
 
   useEffect(() => {
-      setStep('new_user');
+    setStep('new_user');
   }, [address]);
 
   const toggleTestAadhar = async (checked: boolean) => {
@@ -143,7 +144,7 @@ export default function AuthPage() {
   return (
     <div className="w-full">
       <Wavy />
-      <img src="./ALogo-removebg-preview.svg" alt="Background"  onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
+      <img src="./ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
       <div className="absolute top-0 left-0 w-full h-full mx-auto">
         <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
           <div className="flex gap-4 flex-col">
@@ -199,9 +200,9 @@ export default function AuthPage() {
           <div className='border border-gray-500/10 bg-transparent rounded-3xl shadow-xl p-10'>
             {step === 'new_user' && address && (
               <div className="space-y-4 animate-element animate-delay-300">
-                  <Button className=' bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
+                <Button className=' bg-transparent shadow-xl rounded-full' onClick={() => { setStep('documents') }}>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
                 <div className="p-4 bg-transparent border border-gray-500/20 rounded-3xl shadow-3xl">
                   <div className="flex items-center justify-center gap-2 px-4 py-2 bg-transparent rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -237,28 +238,28 @@ export default function AuthPage() {
                   <label className="text-sm font-medium text-[#2b2b2b] font-sans">
                     KYC Document
                   </label>
-                    <FileUpload
+                  <FileUpload
                     onChange={(files) => {
                       if (files.length > 0) {
-                      setIsUsingTestAadhar(false);
-                      handleDocumentUpload({ aadhaar: files[0] });
+                        setIsUsingTestAadhar(false);
+                        handleDocumentUpload({ aadhaar: files[0] });
                       }
                     }}
                     value={kycDocuments.aadhaar ? [kycDocuments.aadhaar] : []}
                     text="Upload Aadhaar Card"
                     accept="image/*"
-                    >
+                  >
                     <div className="flex items-center gap-2">
-                        <input 
-                            type="checkbox" 
-                            id="test-aadhar"
-                            checked={isUsingTestAadhar}
-                            onChange={(e) => toggleTestAadhar(e.target.checked)}
-                            className="w-4 h-4 text-violet-300 bg-gray-100 border-gray-300  focus:ring-violet-500 rounded-full"
-                        />
-                        <label htmlFor="test-aadhar" className="text-sm text-neutral-600 font-sans cursor-pointer">
-                            Use TOA test Aadhar card for KYC
-                        </label>
+                      <input
+                        type="checkbox"
+                        id="test-aadhar"
+                        checked={isUsingTestAadhar}
+                        onChange={(e) => toggleTestAadhar(e.target.checked)}
+                        className="w-4 h-4 text-violet-300 bg-gray-100 border-gray-300  focus:ring-violet-500 rounded-full"
+                      />
+                      <label htmlFor="test-aadhar" className="text-sm text-neutral-600 font-sans cursor-pointer">
+                        Use TOA test Aadhar card for KYC
+                      </label>
                     </div>
                   </FileUpload>
                 </div>
@@ -315,19 +316,21 @@ export default function AuthPage() {
 
             {/* Submitting KYC */}
             {step === 'kyc_submit' && (
-              <div className="text-center space-y-4 animate-element animate-delay-300 p-8 border border-gray-500/60 bg-transparent rounded-3xl shadow-2xl">
+              <div className="text-center space-y-4 animate-element animate-delay-300 p-8 bg-transparent rounded-2xl">
                 <div className="flex items-center justify-center gap-3">
-                  <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
-                  <span className="text-sm text-[#ffffff] font-sans font-medium">
+                  <div>
+                    <PageLoader text="" size='sm' />
+                  </div>
+                  <span className="text-sm text-black font-sans font-medium">
                     Completing verification...
                   </span>
                 </div>
-                <p className="text-xs text-[#000000] font-sans">
+                <p className="text-xs text-black font-sans">
                   This may take a few moments
                 </p>
               </div>
             )}
-            {!isEmailValid && step === 'documents' &&(
+            {!isEmailValid && step === 'documents' && (
               <div className='flex flex-row items-center justify-center gap-4 p-1'>
                 <Button className=' w-6 h-6 bg-transparent shadow-xl border border-neutral-200 rounded-full' onClick={() => { setStep('new_user') }}>
                   <ArrowLeft className="w-4 h-4 text-black" />

@@ -1,0 +1,51 @@
+/* --- Parent Container & Mask --- */
+.framer-1fpxu4o {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 100vh;
+  opacity: 0.75;
+  background: radial-gradient(100% 100% at 0% 0%, #d1d1d1 0%, #f6fbff 100%);
+  mask-image: radial-gradient(125% 100% at 0 0, #000 0%, #00000039 88.2883%, #0000 100%);
+  -webkit-mask-image: radial-gradient(125% 100% at 0 0, #000 0%, #00000039 88.2883%, #0000 100%);
+  overflow: hidden; /* Added to be safe */
+}
+
+/* --- Base Beam Style (Shared) --- */
+.framer-1fpxu4o > div {
+  position: absolute;
+  transform: skewX(45deg);
+  background: linear-gradient(#ffffff80 0%, #fff 83.9344%, #fff0 100%);
+}
+
+/* --- Individual Beams (Position & Stripe Mask) --- */
+.framer-1yp8dcl {
+  width: 591px; height: 1269px; top: -209px; left: calc(33.5833% - 295.5px);
+  mask-image: linear-gradient(90deg, #0000 0%, #000 20.0362%, #0000 36.175%, #000 55.4054%, #00000021 67.1171%, #000 78.2306%, #0000 97.2973%);
+  -webkit-mask-image: linear-gradient(90deg, #0000 0%, #000 20.0362%, #0000 36.175%, #000 55.4054%, #00000021 67.1171%, #000 78.2306%, #0000 97.2973%);
+}
+
+.framer-1tkmzk9 {
+  width: 582px; height: 1269px; top: -209px; left: calc(-1.5% - 291px);
+  mask-image: linear-gradient(90deg, #0000 11.3985%, #000 25.5578%, #0000008c 41.6966%, #00000021 67.1171%, #000 78.2306%, #0000 97.2973%);
+  -webkit-mask-image: linear-gradient(90deg, #0000 11.3985%, #000 25.5578%, #0000008c 41.6966%, #00000021 67.1171%, #000 78.2306%, #0000 97.2973%);
+}
+
+.framer-if0sjr {
+  width: 441px; height: 1269px; top: -209px; left: calc(33.6667% - 220.5px);
+  mask-image: linear-gradient(90deg, #0000 9.81489%, #000 20.0362%, #0000008c 28.5878%, #0000006c 40.0901%, #000 48.6487%, #0004 54.5045%, #00000021 78.579%, #000 88.554%, #0000 97.2973%);
+  -webkit-mask-image: linear-gradient(90deg, #0000 9.81489%, #000 20.0362%, #0000008c 28.5878%, #0000006c 40.0901%, #000 48.6487%, #0004 54.5045%, #00000021 78.579%, #000 88.554%, #0000 97.2973%);
+}
+
+.framer-1xgonwz {
+  width: 683px; height: 1269px; top: -209px; left: calc(50.0833% - 341.5px);
+  opacity: 0.6;
+  mask-image: linear-gradient(90deg, #0000 0%, #000 17.6591%, #0000008c 26.6417%, #000 35.2302%, #0000 47.6985%, #00000021 69.1776%, #000 79.1456%, #0000 97.2973%);
+  -webkit-mask-image: linear-gradient(90deg, #0000 0%, #000 17.6591%, #0000008c 26.6417%, #000 35.2302%, #0000 47.6985%, #00000021 69.1776%, #000 79.1456%, #0000 97.2973%);
+}
+
+.framer-1lv1w0o {
+  width: 426px; height: 1269px; top: -209px; left: calc(49.0833% - 213px);
+  opacity: 0.75;
+  mask-image: linear-gradient(90deg, #0000 0%, #000 20.0362%, #0000008c 27.5778%, #000 42.3423%, #0000 48.6047%, #00000021 67.1171%, #000 74.9525% 82.4324%, #00000078 88.6719%, #0000 97.2973%);
+  -webkit-mask-image: linear-gradient(90deg, #0000 0%, #000 20.0362%, #0000008c 27.5778%, #000 42.3423%, #0000 48.6047%, #00000021 67.1171%, #000 74.9525% 82.4324%, #00000078 88.6719%, #0000 97.2973%);
+}
