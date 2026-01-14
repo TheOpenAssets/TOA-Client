@@ -313,12 +313,12 @@ export const DepositCollateralModal = ({
 
   return (
     <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
-      <div className="relative rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative rounded-2xl p-8 max-w-lg w-full bg-white border-gray-300 border shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Close Button */}
         {!isProcessing && step === 'select' && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-gray-200 rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -326,7 +326,7 @@ export const DepositCollateralModal = ({
 
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+          <div className="w-14 h-14 bg-white shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
             <span className="text-2xl">💰</span>
           </div>
           <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
@@ -354,7 +354,7 @@ export const DepositCollateralModal = ({
           {/* Error State */}
           {error && !isLoading && (
             <div className="mb-6 p-4 bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl text-rose-600 text-xs font-inter font-medium text-center">
-              {error}
+             Something went wrong ! Please try again.
             </div>
           )}
 
@@ -367,10 +367,10 @@ export const DepositCollateralModal = ({
                   <label className="font-inter text-xs text-gray-500 mb-3 block uppercase tracking-wider">
                     Select Asset to Deposit
                   </label>
-                  <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl overflow-hidden">
+                  <div className="bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden">
                     <div className="max-h-64 overflow-y-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-200/50 sticky top-0">
+                        <thead className="bg-gray-100/50 sticky top-0">
                           <tr>
                             <th className="px-4 py-3 text-left font-inter text-xs font-semibold text-gray-700 uppercase tracking-wider">
                               Asset
@@ -451,7 +451,7 @@ export const DepositCollateralModal = ({
               {selectedAsset && assetDetails && (
                 <>
                   {/* Token Balance */}
-                  <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-4">
+                  <div className="bg-gray-100/50 border border-neutral-200 shadow-md rounded-xl p-5 space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="font-inter text-xs text-gray-500">Your Balance</span>
                       <span className="font-gellix text-lg font-semibold text-foreground">
@@ -477,7 +477,7 @@ export const DepositCollateralModal = ({
                         value={depositAmount}
                         onChange={(e) => setDepositAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl px-4 py-4 pr-20 font-gellix text-sm text-foreground transition-all focus:ring-2 focus:ring-gray-300 outline-none placeholder:text-gray-400 hover:bg-gray-100"
+                        className="w-full bg-gray-100/50 border border-neutral-200 shadow-sm rounded-xl px-4 py-4 pr-20 font-gellix text-sm text-foreground transition-all placeholder:text-gray-400 hover:bg-gray-100"
                         min="0"
                         max={tokenBalance}
                         step="0.01"
@@ -496,7 +496,7 @@ export const DepositCollateralModal = ({
 
                   {/* Collateral Preview */}
                   {depositAmount && parseFloat(depositAmount) > 0 && !depositError && (
-                    <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-4">
+                    <div className="bg-gray-100/50 border border-neutral-200 shadow-sm rounded-xl p-5 space-y-4">
                       <div>
                         <p className="font-inter text-xs text-gray-500 mb-1.5">Collateral Value</p>
                         <p className="font-gellix text-lg font-semibold text-foreground">
@@ -513,7 +513,7 @@ export const DepositCollateralModal = ({
                   )}
 
                   {/* Important Notice */}
-                  <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4">
+                  <div className="bg-gray-100/90 border border-neutral-200 shadow-sm rounded-xl p-4">
                     <p className="font-inter text-xs text-gray-700 text-left">
                       <span className="text-gray-500">⚠️</span> <strong>Important:</strong> Your tokens will be locked as collateral. Maintain health factor above 110% to avoid liquidation. You can withdraw after repaying your loan.
                     </p>
@@ -526,8 +526,8 @@ export const DepositCollateralModal = ({
 
           {/* Approval Progress */}
           {step === 'approve' && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 mb-4 w-full">
+            <div className="flex flex-col items-center justify-center py-8 ">
+              <div className="bg-transparent p-5 mb-4 w-full">
                 <div className="flex flex-col items-center justify-center gap-3">
                   <PageLoader text='' />
                   <p className="font-inter text-sm font-semibold text-foreground text-center">Step 1 of 3: Approving Tokens</p>
@@ -549,7 +549,7 @@ export const DepositCollateralModal = ({
           {/* Deposit Progress */}
           {step === 'deposit' && (
             <div className="flex flex-col items-center justify-center py-8">
-              <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 mb-4 w-full">
+              <div className="p-5 mb-4 w-full">
                 <div className="flex flex-col items-center justify-center gap-3">
                   <PageLoader text='' />
                   <p className="font-inter text-sm font-semibold text-foreground text-center">Step 2 of 3: Depositing Collateral</p>
@@ -571,7 +571,7 @@ export const DepositCollateralModal = ({
           {/* Syncing Progress */}
           {step === 'syncing' && (
             <div className="flex flex-col items-center justify-center py-8">
-              <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 w-full">
+              <div className="p-5 w-full">
                 <div className="flex flex-col items-center justify-center gap-3">
                   <PageLoader text='' />
                   <p className="font-inter text-sm font-semibold text-foreground text-center">Step 3 of 3: Syncing with Platform</p>
@@ -583,7 +583,7 @@ export const DepositCollateralModal = ({
           {/* Success State */}
           {step === 'success' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+              <div className="w-14 h-14 bg-neutral-100/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
                 <span className="text-2xl">✅</span>
               </div>
               <h3 className="font-gellix text-xl font-semibold text-foreground mb-2">Deposit Successful!</h3>

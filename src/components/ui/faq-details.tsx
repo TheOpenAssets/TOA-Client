@@ -136,15 +136,41 @@ const FaqDetails = ({
             },
         },
         {
-            value: "borrow",
+            value: "credit line creation",
+            icon: <Zap className="h-auto w-4 shrink-0" />,
+            label: "Credit Line",
+            content: {
+                badge: "Credit",
+                title: "Create credit line on your OAID",
+                description:
+                    "Utilise RWA's as collateral to draw credit lines without moving assets.",
+                buttonText: "Create Credit Line",
+                videoSrc: "",
+            },
+        },
+        {
+            value: "borrowing against rwAs",
             icon: <Zap className="h-auto w-4 shrink-0" />,
             label: "Borrow",
             content: {
                 badge: "Credit",
-                title: "Access credit using OAID",
+                title: "Access credit using the credit line",
                 description:
-                    "Borrow against RWAs or private assets across native and partner protocols without moving collateral.",
+                    "Borrow against RWAs or private assets across native and partner protocols",
                 buttonText: "Borrow",
+                videoSrc: "",
+            },
+        },
+        {
+            value: "repayment",
+            icon: <Zap className="h-auto w-4 shrink-0" />,
+            label: "Repayment",
+            content: {
+                badge: "Credit",
+                title: "Easily repay loans and reclaim collateral",
+                description:
+                    "Repay loans to restore credit and reclaim excess collateral",
+                buttonText: "Repay",
                 videoSrc: "",
             },
         },

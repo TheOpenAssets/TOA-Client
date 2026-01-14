@@ -88,9 +88,9 @@ export default function AboutPage() {
   };
   return (
     <section
-      className="relative px-4 bg-gray-50 overflow-hidden"
+      className="relative w-screen h-screen px-4 bg-gray-50 overflow-hidden"
       ref={heroRef}
-      >
+    >
       <Navbar />
 
       <svg className="absolute -top-[999px] -left-[999px] w-0 h-0">
@@ -193,7 +193,7 @@ export default function AboutPage() {
               <PageLoader text='' />
             </div>
           </div>
-        ) : contributors.length > 0 ? (
+        ) : (
           // Render contributors dynamically
           contributors.map((contributor, index) => {
             const variantType = index % 2 === 0 ? revealVariants : revealVariants2;
@@ -218,74 +218,6 @@ export default function AboutPage() {
               </TimelineContent>
             );
           })
-        ) : (
-          // Fallback to default images if no contributors
-          <>
-            <TimelineContent
-              as="figure"
-              animationNum={2}
-              timelineRef={heroRef}
-              customVariants={revealVariants}
-              className="w-full h-full rounded-lg overflow-hidden"
-              style={{ clipPath: "url(#clip-squiggle)" }}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="Team member"
-                width={128}
-                height={160}
-                className="object-cover w-full h-full rotate-6"
-              />
-            </TimelineContent>
-            <TimelineContent
-              as="figure"
-              animationNum={3}
-              timelineRef={heroRef}
-              customVariants={revealVariants2}
-              className="w-full h-full rounded-lg overflow-hidden"
-              style={{ clipPath: "url(#differentone16)" }}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1609179242555-1d7b4b0a568c?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="Team member"
-                width={128}
-                height={160}
-                className="object-cover w-full h-full -rotate-6"
-              />
-            </TimelineContent>
-            <TimelineContent
-              as="figure"
-              animationNum={4}
-              timelineRef={heroRef}
-              customVariants={revealVariants2}
-              className="w-full h-full rounded-lg overflow-hidden"
-              style={{ clipPath: "url(#differentone8)" }}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1611695434398-4f4b330623e6?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="Team member"
-                width={128}
-                height={160}
-                className="object-cover w-full h-full -rotate-6"
-              />
-            </TimelineContent>
-            <TimelineContent
-              as="figure"
-              animationNum={5}
-              timelineRef={heroRef}
-              customVariants={revealVariants2}
-              className="w-full h-full rounded-lg overflow-hidden"
-              style={{ clipPath: "url(#clip-rect)" }}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1567934872913-aacea74458b7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="Team member"
-                width={128}
-                height={160}
-                className="object-cover w-full h-full rotate-6"
-              />
-            </TimelineContent>
-          </>
         )}
       </div>
     </section>

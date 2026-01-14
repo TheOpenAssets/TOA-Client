@@ -16,6 +16,7 @@ import { SentimentChart } from '../../components/marketplace/SentimentChart';
 import { TradeChart } from '../../components/marketplace/TradeChart';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
+import HeroBackground from '../landing/HeroBackground';
 // import { Wavy } from '../../components/ui/wavy';
 
 // Contract addresses from environment
@@ -485,8 +486,8 @@ const TradingEngineProductionPage = () => {
     }
 
     return (<>
-       
-        <div className="min-h-screen max-w-screen bg-neutral-100/90 absolute top-0 text-[#111111] font-gellix">
+       <HeroBackground />
+        <div className="min-h-screen max-w-screen bg-white absolute top-0 text-[#111111] font-gellix">
             <div className='w-screen mx-auto flex flex-col items-center justify-center'>
                 <ToastContainer toasts={toasts} onClose={removeToast} />
 

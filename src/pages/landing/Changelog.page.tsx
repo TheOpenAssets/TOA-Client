@@ -131,8 +131,7 @@ const ChangelogPage: React.FC = () => {
 
                 {/* Loading State */}
                 {isLoadingMetrics && (
-                    <div className="bg-white rounded-[20px] p-12 shadow-[0_2px_12px_rgba(0,0,0,0.04)] text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#111111]"></div>
+                    <div className="bg-white w-screen h-screen flex items-center justify-center">
                        <PageLoader text='Loading Metrics...' />
                     </div>
                 )}
