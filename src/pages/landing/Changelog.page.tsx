@@ -131,7 +131,7 @@ const ChangelogPage: React.FC = () => {
 
                 {/* Loading State */}
                 {isLoadingMetrics && (
-                    <div className="bg-white w-full h-full flex items-center justify-center">
+                    <div className="bg-white w-fulln h-screen flex items-center justify-center">
                        <PageLoader text='' />
                     </div>
                 )}
