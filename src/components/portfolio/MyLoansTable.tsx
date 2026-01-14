@@ -284,38 +284,38 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
     }
   };
 
-  const handleConfirmPayment = async () => {
-    if (!selectedPosition) {
-      throw new Error('No position selected');
-    }
+  // const handleConfirmPayment = async () => {
+  //   if (!selectedPosition) {
+  //     throw new Error('No position selected');
+  //   }
 
-    try {
-      // derive amount to repay (use outstanding debt string and convert to BigInt)
-      const debt = await solvencyContractService.getOutstandingDebt(selectedPosition.positionId);
-      console.log('Outstanding debt to repay:', debt);
-      const amountWei = BigInt(debt);
+  //   try {
+  //     // derive amount to repay (use outstanding debt string and convert to BigInt)
+  //     const debt = await solvencyContractService.getOutstandingDebt(selectedPosition.positionId);
+  //     console.log('Outstanding debt to repay:', debt);
+  //     const amountWei = BigInt(debt);
 
-      // Step 1: Approve USDC
-      console.log('📝 Approving USDC for Vault...');
-      const approvalResult = await solvencyContractService.approveUSDCForSeniorPool(amountWei);
+  //     // Step 1: Approve USDC
+  //     console.log('📝 Approving USDC for Vault...');
+  //     const approvalResult = await solvencyContractService.approveUSDCForSeniorPool(amountWei);
 
-      if (!approvalResult.success) {
-        throw new Error(approvalResult.error || 'USDC approval failed');
-      }
+  //     if (!approvalResult.success) {
+  //       throw new Error(approvalResult.error || 'USDC approval failed');
+  //     }
 
-      const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
-        selectedPosition.positionId,
-        amountWei
-      );
+  //     const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
+  //       selectedPosition.positionId,
+  //       amountWei
+  //     );
 
-      if (!repayResult.success) {
-        throw new Error(repayResult.error || 'Repayment failed');
-      }
-    } catch (err: any) {
-      console.error('❌ Repayment error:', err);
-      throw err;
-    }
-  };
+  //     if (!repayResult.success) {
+  //       throw new Error(repayResult.error || 'Repayment failed');
+  //     }
+  //   } catch (err: any) {
+  //     console.error('❌ Repayment error:', err);
+  //     throw err;
+  //   }
+  // };
 
   if (isLoading) {
     return (
