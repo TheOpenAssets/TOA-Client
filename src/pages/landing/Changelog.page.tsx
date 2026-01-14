@@ -58,16 +58,16 @@ const ChangelogPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-white">
             {/* Top Navigation Bar - Marketplace Style */}
-            <header className="w-full flex flex-row z-40 mt-2 mb-1 max-w-[85vw] mx-auto">
+            <header className="w-[1400px] flex flex-row z-40 mt-2 mb-1 max-w-[85vw] mx-auto">
                 {/* Logo */}
                 <div className='flex flex-row items-center justify-center'>
                     <img
                         src="./ALogo-removebg-preview.svg"
                         alt="Logo"
-                        className="h-16 w-auto object-contain cursor-pointer"
+                        className="h-20 w-auto object-contain cursor-pointer"
                         onClick={() => navigate('/')}
                     />
-                    <span className="text-xl font-bold font-gellix text-foreground">OpenAssets</span>
+                    <span className="text-3xl font-bold font-beau text-foreground">OpenAssets</span>
                 </div>
                 <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
                     {/* Center: Organization Info */}
