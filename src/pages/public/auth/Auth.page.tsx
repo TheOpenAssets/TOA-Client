@@ -237,16 +237,17 @@ export default function AuthPage() {
                   <label className="text-sm font-medium text-[#2b2b2b] font-sans">
                     KYC Document
                   </label>
-                  <FileUpload
+                    <FileUpload
                     onChange={(files) => {
                       if (files.length > 0) {
-                        setIsUsingTestAadhar(false);
-                        handleDocumentUpload({ aadhaar: files[0] });
+                      setIsUsingTestAadhar(false);
+                      handleDocumentUpload({ aadhaar: files[0] });
                       }
                     }}
                     value={kycDocuments.aadhaar ? [kycDocuments.aadhaar] : []}
                     text="Upload Aadhaar Card"
-                  >
+                    accept="image/*"
+                    >
                     <div className="flex items-center gap-2">
                         <input 
                             type="checkbox" 
