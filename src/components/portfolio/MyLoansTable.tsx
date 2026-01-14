@@ -240,6 +240,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
 
     try {
       // Call smart contract directly to withdraw collateral
+
+      // await handleConfirmPayment();
       const amountBigInt = BigInt(selectedPosition.collateralAmount);
       const result = await solvencyContractService.withdrawCollateral(
         selectedPosition.positionId,
@@ -279,6 +281,39 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
       showError(`Withdrawal failed: Please try again.`);
     } finally {
       setWithdrawingPositionId(null);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedPosition) {
+      throw new Error('No position selected');
+    }
+
+    try {
+      // derive amount to repay (use outstanding debt string and convert to BigInt)
+      const debt = await solvencyContractService.getOutstandingDebt(selectedPosition.positionId);
+      console.log('Outstanding debt to repay:', debt);
+      const amountWei = BigInt(debt);
+
+      // Step 1: Approve USDC
+      console.log('📝 Approving USDC for Vault...');
+      const approvalResult = await solvencyContractService.approveUSDCForSeniorPool(amountWei);
+
+      if (!approvalResult.success) {
+        throw new Error(approvalResult.error || 'USDC approval failed');
+      }
+
+      const repayResult = await solvencyContractService.repayLoanViaSeniorPool(
+        selectedPosition.positionId,
+        amountWei
+      );
+
+      if (!repayResult.success) {
+        throw new Error(repayResult.error || 'Repayment failed');
+      }
+    } catch (err: any) {
+      console.error('❌ Repayment error:', err);
+      throw err;
     }
   };
 
@@ -763,7 +798,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               setShowRepayModal(false);
               setSelectedPosition(null);
             }}
-            onSuccess={(isLastInstallment:boolean) => handleRepaySuccess(isLastInstallment)}
+            onSuccess={(isLastInstallment: boolean) => handleRepaySuccess(isLastInstallment)}
             position={selectedPosition}
           />,
           document.body

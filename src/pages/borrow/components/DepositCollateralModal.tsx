@@ -382,7 +382,7 @@ export const DepositCollateralModal = ({
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {portfolio.map((asset) => (
-                            asset.status !== 'CLAIMED' && asset.purchaseType !== 'LEVERAGE' && (
+                            asset.status !== 'CLAIMED' && asset.purchaseType !== 'LEVERAGE' && !asset.yieldInfo?.settlementDistributed && (
                               <tr
                                 key={asset.assetId}
                                 onClick={() => handleAssetSelect(asset)}
