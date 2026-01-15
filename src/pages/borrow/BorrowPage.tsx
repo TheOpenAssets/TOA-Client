@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
-// import Navbar from '../../components/common/Navbar';
+
 import { UnifiedBorrowModal } from './components/UnifiedBorrowModal';
 import { useCreditData } from './hooks/useCreditData';
-// import { formatUSD } from '../../utils/solvency/format-credit.util';
+
 import { Button } from '../../components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
@@ -166,7 +166,7 @@ const BorrowPage = () => {
                   <ol className="text-left text-sm text-gray-600 space-y-2 list-decimal list-inside">
                     <li>Go to your Portfolio page</li>
                     <li>Click "Increase Credit" or "Deposit Collateral"</li>
-                    <li>Deposit RWA or Private Asset tokens</li>
+                    <li>Deposit RWA tokens</li>
                     <li>Your credit limit will increase automatically</li>
                     <li>Return here to borrow against your credit</li>
                   </ol>

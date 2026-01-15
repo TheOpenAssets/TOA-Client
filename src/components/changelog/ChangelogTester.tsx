@@ -5,6 +5,7 @@ import { useChangelogStore } from '../../stores/changelog.store.ts';
 import type { ChangelogFilters } from '../../types/changelog.types.ts';
 import { GitCommit, GitPullRequest, Clock, BarChart3, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
+import { PageLoader } from '../ui/page-loader.tsx';
 
 interface ChangelogTesterProps {
     selectedRepo?: string;
@@ -306,7 +307,7 @@ const ChangelogTester: React.FC<ChangelogTesterProps> = ({ selectedRepo: externa
                             className="w-full px-4 py-3 bg-[#111111] text-white rounded-lg text-sm font-medium hover:bg-[#000000] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {getCurrentLoading() ? (
-                                <><RefreshCw className="w-4 h-4 animate-spin" />Loading...</>
+                                <><PageLoader/></>
                             ) : (
                                 `Fetch ${activeTab === 'sync' ? 'Sync' : activeTab === 'stats' ? 'Statistics' : activeTab === 'prs' ? 'PRs' : activeTab === 'timeline' ? 'Timeline' : 'Commits'}`
                             )}

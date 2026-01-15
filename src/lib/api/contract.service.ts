@@ -32,7 +32,7 @@ const MARKETPLACE_ABI = [
   'function buyTokens(bytes32 assetId, uint256 amount) external',
 
   // Universal listings function (from end-auction script, more up-to-date)
-  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 reservePrice, uint256 endTime, uint256 clearingPrice, uint8 auctionPhase, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
+  'function listings(bytes32) view returns (address tokenAddress, bytes32 assetId, uint8 listingType, uint256 staticPrice, uint256 minPrice,uint256 reservePrice, uint256 endTime, uint256 clearingPrice, uint8 auctionPhase, uint256 totalSupply, uint256 sold, bool active, uint256 minInvestment)',
 
   // Event
   'event TokensPurchased(bytes32 indexed assetId, address indexed buyer, uint256 amount, uint256 payment)',
@@ -85,35 +85,34 @@ class ContractService {
    * Polls every 10 seconds for up to 20 minutes
    * Prevents UI freeze and aggressive RPC polling
    */
-  async waitForTransaction(txHash: string, provider: ethers.Provider): Promise<ethers.TransactionReceipt> {
-    const POLL_INTERVAL = 5000; // 5 seconds
-    const MAX_ATTEMPTS = 240; // 20 minutes (240 * 5s = 1200s)
-    
-    console.log(`⏳ Polling for TX ${txHash} (Interval: 5s, Timeout: 20m)...`);
+  async waitForTransaction(
+    txHash: string,
+    provider: ethers.Provider
+  ): Promise<ethers.TransactionReceipt | null> {
+    console.log(`⏳ Waiting for TX ${txHash} using ethers.provider.waitForTransaction...`);
+    try {
+      // Wait for 1 confirmation, with a 2-minute timeout.
+      // ethers.js will use an efficient combination of WebSockets and polling.
+      const receipt = await provider.waitForTransaction(txHash, 1, 120000);
 
-    for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      try {
-        const receipt = await provider.getTransactionReceipt(txHash);
-        if (receipt) {
-            if (receipt.status === 1) {
-                console.log(`✅ TX Confirmed in block ${receipt.blockNumber} after ${(i + 1) * 5}s`);
-                return receipt;
-            } else {
-                 throw new Error(`Transaction failed (status: 0)`);
-            }
+      if (receipt) {
+        if (receipt.status === 1) {
+          console.log(`✅ TX Confirmed in block ${receipt.blockNumber}`);
+          return receipt;
+        } else {
+          console.error(`❌ Transaction failed (status: 0)`);
+          throw new Error(`Transaction failed with status 0`);
         }
-      } catch (error: any) {
-         // Ignore "not found" errors during polling, rethrow others if critical
-         if (error.message && !error.message.includes('not found')) {
-            console.warn(`Polling error (attempt ${i+1}):`, error);
-         }
+      } else {
+        // This case happens if the transaction is dropped from the mempool
+        console.warn(`⚠️ Transaction ${txHash} was not mined and may have been dropped.`);
+        return null;
       }
-
-      // Wait for next poll
-      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+    } catch (error: any) {
+      console.error(`Error waiting for transaction ${txHash}:`, error.message);
+      // Re-throw to be caught by the calling function
+      throw error;
     }
-
-    throw new Error(`Transaction confirmation timed out after 20 minutes. TX: ${txHash}`);
   }
 
   /**
@@ -199,8 +198,9 @@ class ContractService {
       // Get listing to determine type and price
       const listing = await marketplaceContract.listings(assetId);
       const staticPrice = listing[3];
-      const totalSupply = listing[8]; // totalSupply is at index 8
-      const minInvestmentRaw = listing[11]; // minInvestment is at index 11 (matches buyTokens)
+      const totalSupply = listing[9]; // totalSupply is at index 9
+      const minInvestmentRaw = listing[12]; // minInvestment is at index 12
+
 
       // FIX: Backend sends minInvestment in 1e18 format (token decimals)
       // but contract expects 1e6 format (USDC decimals)
@@ -242,6 +242,11 @@ class ContractService {
         console.log('Approve TX:', tx.hash);
 
         const receipt = await this.waitForTransaction(tx.hash, provider);
+
+        if (!receipt) {
+          throw new Error('Approval transaction failed to confirm and may have been dropped.');
+        }
+
         console.log('✅ USDC approved');
 
         return {
@@ -293,11 +298,11 @@ class ContractService {
         const listing1 = await marketplaceContract.listings(format1);
         console.log('✅ Format 1 FOUND:', {
           tokenAddress: listing1[0],
-          totalSupply: listing1[8].toString(),
-          sold: listing1[9].toString(),
-          availableSupply: (listing1[8] - listing1[9]).toString(),
-          minInvestment: listing1[11].toString(),
-          isActive: listing1[10],
+          totalSupply: listing1[9].toString(),
+          sold: listing1[10].toString(),
+          availableSupply: (listing1[9] - listing1[10]).toString(),
+          minInvestment: listing1[12].toString(),
+          isActive: listing1[11],
         });
       } catch (e) {
         console.log('❌ Format 1 not found');
@@ -310,11 +315,11 @@ class ContractService {
         const listing2 = await marketplaceContract.listings(format2);
         console.log('✅ Format 2 FOUND:', {
           tokenAddress: listing2[0],
-          totalSupply: listing2[8].toString(),
-          sold: listing2[9].toString(),
-          availableSupply: (listing2[8] - listing2[9]).toString(),
-          minInvestment: listing2[11].toString(),
-          isActive: listing2[10],
+          totalSupply: listing2[9].toString(),
+          sold: listing2[10].toString(),
+          availableSupply: (listing2[9] - listing2[10]).toString(),
+          minInvestment: listing2[12].toString(),
+          isActive: listing2[11],
         });
       } catch (e) {
         console.log('❌ Format 2 not found');
@@ -327,11 +332,11 @@ class ContractService {
         const listing3 = await marketplaceContract.listings(format3);
         console.log('✅ Format 3 FOUND:', {
           tokenAddress: listing3[0],
-          totalSupply: listing3[8].toString(),
-          sold: listing3[9].toString(),
-          availableSupply: (listing3[8] - listing3[9]).toString(),
-          minInvestment: listing3[11].toString(),
-          isActive: listing3[10],
+          totalSupply: listing3[9].toString(),
+          sold: listing3[10].toString(),
+          availableSupply: (listing3[9] - listing3[10]).toString(),
+          minInvestment: listing3[12].toString(),
+          isActive: listing3[11],
         });
       } catch (e) {
         console.log('❌ Format 3 not found');
@@ -344,11 +349,11 @@ class ContractService {
         const listing4 = await marketplaceContract.listings(format4);
         console.log('✅ Format 4 FOUND:', {
           tokenAddress: listing4[0],
-          totalSupply: listing4[8].toString(),
-          sold: listing4[9].toString(),
-          availableSupply: (listing4[8] - listing4[9]).toString(),
-          minInvestment: listing4[11].toString(),
-          isActive: listing4[10],
+          totalSupply: listing4[9].toString(),
+          sold: listing4[10].toString(),
+          availableSupply: (listing4[9] - listing4[10]).toString(),
+          minInvestment: listing4[12].toString(),
+          isActive: listing4[11],
         });
       } catch (e) {
         console.log('❌ Format 4 not found');
@@ -392,16 +397,31 @@ class ContractService {
       try {
         const listing = await marketplaceContract.listings(assetIdBytes32);
 
-        // Correct field mapping from actual contract:
-        // [0] tokenAddress, [1] assetId, [2] listingType, [3] staticPrice,
-        // [4] startPrice, [5] endPrice, [6] duration, [7] startTime,
-        // [8] totalSupply, [9] sold, [10] active, [11] minInvestment
+
+        // struct Listing {
+        // 0 address tokenAddress;
+        // 1 bytes32 assetId;
+        // 2 ListingType listingType;
+        // // Static params
+        // 3 uint256 staticPrice;
+        // // Auction params
+        // 4 uint256 minPrice;       // Minimum bid price (lower bound of range)
+        // 5 uint256 reservePrice;   // Reserve price (avg of min/max, used for clearing)
+        // 6 uint256 endTime;
+        // 7 uint256 clearingPrice;  // Set when auction ends
+        // 8 AuctionPhase auctionPhase;
+        // // Common params
+        // 9 uint256 totalSupply;
+        // 10 uint256 sold;           // For static: amount sold. For auction: tokens allocated.
+        // 11 bool active;
+        // 12 uint256 minInvestment;
+        // }
 
         const tokenAddress = listing[0];
-        const totalSupply = listing[8];
-        const sold = listing[9];
-        const active = listing[10];
-        const minInvestment = listing[11];
+        const totalSupply = listing[9];
+        const sold = listing[10];
+        const active = listing[11];
+        const minInvestment = listing[12];
 
         const listingType = listing[2]; // 0 = STATIC, 1 = DUTCH_AUCTION
         const staticPrice = listing[3];
@@ -422,14 +442,14 @@ class ContractService {
           // Try alternative format: keccak256 of UUID
           const altAssetId = ethers.keccak256(ethers.toUtf8Bytes(assetId));
           console.log('Trying alternative format:', altAssetId);
-          
+
           try {
             const altListing = await marketplaceContract.listings(altAssetId);
             const altTokenAddress = altListing[0];
             const altStaticPrice = altListing[3];
-            const altTotalSupply = altListing[8];
-            const altSold = altListing[9];
-            const altActive = altListing[10];
+            const altTotalSupply = altListing[9];
+            const altSold = altListing[10];
+            const altActive = altListing[11];
 
             if (altTokenAddress !== ethers.ZeroAddress) {
               console.log('✅ Found listing with keccak256 format!');
@@ -545,9 +565,9 @@ class ContractService {
       const listing = await marketplaceContract.listings(assetIdBytes32);
       const tokenAddress = listing[0];
       const staticPrice = listing[3];
-      const totalSupply = listing[8];
-      const sold = listing[9];
-      const minInvestmentRaw = listing[11];
+      const totalSupply = listing[9];
+      const sold = listing[10];
+      const minInvestmentRaw = listing[12];
 
       // FIX: Backend sends minInvestment in 1e18 format (token decimals)
       // but contract expects 1e6 format (USDC decimals)
@@ -578,7 +598,7 @@ class ContractService {
       console.log('Payment >= MinInvestment?', payment >= minInvestment ? '✅ YES' : '❌ NO');
 
       // Check if payment meets minimum investment requirement
-     
+
 
       // Check USDC balance
       const usdcBalance = await usdcContract.balanceOf(userAddress);
@@ -604,10 +624,15 @@ class ContractService {
 
       // Wait for confirmation
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('Purchase transaction failed to confirm and may have been dropped.');
+      }
+
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('\n✅ Purchase Complete!');
       console.log('━'.repeat(50));
-      console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${receipt.hash}`);
 
       return {
         success: true,
@@ -630,7 +655,11 @@ class ContractService {
    * Complete purchase flow: Verify + Approve USDC + Buy Tokens
    * Combines all steps into a single function
    */
-  async completePurchase(params: PurchaseParams, tokenAddress?: string): Promise<{
+  async completePurchase(
+    params: PurchaseParams,
+    tokenAddress?: string,
+    onStatusUpdate?: (status: string) => void
+  ): Promise<{
     success: boolean;
     approvalTxHash?: string;
     purchaseTxHash?: string;
@@ -640,8 +669,9 @@ class ContractService {
     try {
       // Step 0: Verify listing is available
       console.log('Step 0: Verifying listing...');
+      onStatusUpdate?.('Intiating Purchase...');
       const verification = await this.verifyListing(params.assetId, tokenAddress);
-      
+
       if (!verification.isValid) {
         return {
           success: false,
@@ -650,6 +680,7 @@ class ContractService {
       }
 
       console.log('Listing verified:', verification.details);
+      onStatusUpdate?.('Approving USDC...');
 
       // Step 1: Approve USDC with correct assetId
       console.log('Step 1: Approving USDC...');
@@ -661,6 +692,9 @@ class ContractService {
           error: `Approval failed: ${approvalResult.error}`,
         };
       }
+
+      console.log('USDC approved, proceeding to buy tokens...');
+      onStatusUpdate?.('USDC approved! Buying tokens...');
 
       // Step 2: Buy tokens with correct assetId
       console.log('Step 2: Buying tokens...');
@@ -916,6 +950,11 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('YieldVault approval transaction failed to confirm and may have been dropped.');
+      }
+
       console.log('✅ Approved in block', receipt.blockNumber);
       console.log();
 
@@ -995,6 +1034,10 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('YieldVault approval transaction failed to confirm and may have been dropped.');
+      }
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log();
 
@@ -1122,9 +1165,14 @@ class ContractService {
       console.log('⏳ Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('Marketplace approval transaction failed to confirm and may have been dropped.');
+      }
+
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('✅ Marketplace approved!');
-      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${receipt.hash}`);
       console.log();
       console.log('✅ Marketplace can now transfer tokens to buyers!');
 
@@ -1163,18 +1211,23 @@ class ContractService {
       console.log('Admin Wallet:', adminAddress);
       console.log('Clearing Price:', clearingPrice, 'USDC');
       console.log('Clearing Price (wei):', clearingPriceWei.toString());
-      
+
       console.log('Submitting endAuction transaction...');
       const tx = await marketplaceContract.endAuction(assetIdBytes32, clearingPriceWei);
       console.log('TX Hash:', tx.hash);
       console.log('Waiting for confirmation...');
 
       const receipt = await this.waitForTransaction(tx.hash, provider);
+
+      if (!receipt) {
+        throw new Error('End auction transaction failed to confirm and may have been dropped.');
+      }
+
       console.log('Confirmed in block', receipt.blockNumber);
-      
+
       return {
         success: true,
-        transactionHash: tx.hash,
+        transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
         clearingPriceWei: clearingPriceWei.toString(),
       };

@@ -24,6 +24,21 @@ export function LoansView() {
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDangerous?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDangerous: false,
+  });
+
   // Safe formatting helper for USDC values
   const formatUSDC = (value: string | null | undefined): string => {
     if (!value || value === '0') return '$0.00';
@@ -100,112 +115,150 @@ export function LoansView() {
 
   // Admin Operation: Mark Missed Payment
   const handleMarkMissedPayment = async (positionId: number) => {
-    if (!confirm(`Mark payment as missed for position #${positionId}?`)) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Mark Missed Payment',
+      message: `Are you sure you want to mark payment as missed for position #${positionId}?`,
+      isDangerous: false,
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        setProcessingId(positionId);
+        setError(null);
+        setSuccessMessage(null);
 
-    setProcessingId(positionId);
-    setError(null);
-    setSuccessMessage(null);
+        try {
+          // Step 1: Execute blockchain transaction
+          const result = await solvencyService.markMissedPayment(positionId);
 
-    try {
-      const result = await solvencyService.markMissedPayment(positionId);
-      setSuccessMessage(`✅ Missed payment marked! TX: ${result.txHash?.slice(0, 10)}...`);
-      await fetchPositions();
-    } catch (err: any) {
-      setError(err.message || 'Failed to mark missed payment');
-    } finally {
-      setProcessingId(null);
-    }
+          // Step 2: Sync backend with blockchain to update missed payments count
+          await solvencyService.adminSyncPosition(positionId);
+
+          // Step 3: Refresh UI with updated data
+          await fetchPositions();
+
+          setSuccessMessage(`✅ Missed payment marked! TX: ${result.txHash?.slice(0, 10)}...`);
+        } catch (err: any) {
+          setError(err.message || 'Failed to mark missed payment');
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
   // Admin Operation: Mark Defaulted
   const handleMarkDefaulted = async (positionId: number) => {
-    if (!confirm(`⚠️ Mark position #${positionId} as DEFAULTED? This action is irreversible.`)) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Mark Position as Defaulted',
+      message: `Are you sure you want to mark position #${positionId} as DEFAULTED? This action is irreversible.`,
+      isDangerous: true,
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        setProcessingId(positionId);
+        setError(null);
+        setSuccessMessage(null);
 
-    setProcessingId(positionId);
-    setError(null);
-    setSuccessMessage(null);
+        try {
+          // Step 1: Execute blockchain transaction
+          const result = await solvencyService.markDefaulted(positionId);
 
-    try {
-      const result = await solvencyService.markDefaulted(positionId);
-      setSuccessMessage(`✅ Position marked as defaulted! TX: ${result.txHash?.slice(0, 10)}...`);
-      await fetchPositions();
-    } catch (err: any) {
-      setError(err.message || 'Failed to mark as defaulted');
-    } finally {
-      setProcessingId(null);
-    }
+          // Step 2: Sync backend with blockchain to update position status
+          await solvencyService.adminSyncPosition(positionId);
+
+          // Step 3: Refresh UI with updated data
+          await fetchPositions();
+
+          setSuccessMessage(`✅ Position marked as defaulted! TX: ${result.txHash?.slice(0, 10)}...`);
+        } catch (err: any) {
+          setError(err.message || 'Failed to mark as defaulted');
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
   // Admin Operation: Liquidate Position
   const handleLiquidate = async (positionId: number) => {
-    if (!confirm(`⚠️ Liquidate position #${positionId}? Collateral will be transferred to YieldVault.`)) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Liquidate Position',
+      message: `Are you sure you want to liquidate position #${positionId}? Collateral will be transferred to YieldVault.`,
+      isDangerous: true,
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        setProcessingId(positionId);
+        setError(null);
+        setSuccessMessage(null);
 
-    setProcessingId(positionId);
-    setError(null);
-    setSuccessMessage(null);
+        try {
+          // Step 1: Execute blockchain transaction
+          const result = await solvencyService.liquidatePosition(positionId);
 
-    try {
-      const result = await solvencyService.liquidatePosition(positionId);
-      setSuccessMessage(
-        `✅ Position liquidated! TX: ${result.txHash?.slice(0, 10)}... | ` +
-        `Marketplace ID: ${result.marketplaceAssetId?.slice(0, 10)}...`
-      );
-      await fetchPositions();
-    } catch (err: any) {
-      setError(err.message || 'Failed to liquidate position');
-    } finally {
-      setProcessingId(null);
-    }
+          // Step 2: Sync backend with blockchain to update position status
+          await solvencyService.adminSyncPosition(positionId);
+
+          // Step 3: Refresh UI with updated data
+          await fetchPositions();
+
+          setSuccessMessage(
+            `✅ Position liquidated! TX: ${result.txHash?.slice(0, 10)}... | ` +
+            `Marketplace ID: ${result.marketplaceAssetId?.slice(0, 10)}...`
+          );
+        } catch (err: any) {
+          setError(err.message || 'Failed to liquidate position');
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
   // Admin Operation: Settle Liquidation
   const handleSettleLiquidation = async (positionId: number) => {
-    if (!confirm(`Settle liquidation for position #${positionId}? This will burn tokens and distribute yield.`)) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Settle Liquidation',
+      message: `Are you sure you want to settle liquidation for position #${positionId}? This will burn tokens and distribute yield.`,
+      isDangerous: false,
+      onConfirm: async () => {
+        setConfirmModal({ ...confirmModal, isOpen: false });
+        setProcessingId(positionId);
+        setError(null);
+        setSuccessMessage(null);
 
-    setProcessingId(positionId);
-    setError(null);
-    setSuccessMessage(null);
+        try {
+          // Step 1: Execute blockchain transaction
+          const result = await solvencyService.settleLiquidation(positionId);
 
-    try {
-      const result = await solvencyService.settleLiquidation(positionId);
+          // Step 2: Sync backend with blockchain to update position status
+          await solvencyService.adminSyncPosition(positionId);
 
-      const yieldReceived = result.yieldReceived
-        ? parseFloat(ethers.formatUnits(result.yieldReceived, 6))
-        : 0;
-      const debtRepaid = result.debtRepaid
-        ? parseFloat(ethers.formatUnits(result.debtRepaid, 6))
-        : 0;
-      const userRefund = result.userRefund
-        ? parseFloat(ethers.formatUnits(result.userRefund, 6))
-        : 0;
+          // Step 3: Refresh UI with updated data
+          await fetchPositions();
 
-      setSuccessMessage(
-        `✅ Liquidation settled! TX: ${result.txHash?.slice(0, 10)}... | ` +
-        `Yield: $${yieldReceived.toFixed(2)} | Debt: $${debtRepaid.toFixed(2)} | Refund: $${userRefund.toFixed(2)}`
-      );
-      await fetchPositions();
-    } catch (err: any) {
-      setError(err.message || 'Failed to settle liquidation');
-    } finally {
-      setProcessingId(null);
-    }
-  };
+          const yieldReceived = result.yieldReceived
+            ? parseFloat(ethers.formatUnits(result.yieldReceived, 6))
+            : 0;
+          const debtRepaid = result.debtRepaid
+            ? parseFloat(ethers.formatUnits(result.debtRepaid, 6))
+            : 0;
+          const userRefund = result.userRefund
+            ? parseFloat(ethers.formatUnits(result.userRefund, 6))
+            : 0;
 
-  // Admin Operation: Manual Sync Position
-  const handleSyncPosition = async (positionId: number) => {
-    setProcessingId(positionId);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      await solvencyService.adminSyncPosition(positionId);
-      setSuccessMessage(`✅ Position #${positionId} synced successfully!`);
-      await fetchPositions();
-    } catch (err: any) {
-      setError(err.message || 'Failed to sync position');
-    } finally {
-      setProcessingId(null);
-    }
+          setSuccessMessage(
+            `✅ Liquidation settled! TX: ${result.txHash?.slice(0, 10)}... | ` +
+            `Yield: $${yieldReceived.toFixed(2)} | Debt: $${debtRepaid.toFixed(2)} | Refund: $${userRefund.toFixed(2)}`
+          );
+        } catch (err: any) {
+          setError(err.message || 'Failed to settle liquidation');
+        } finally {
+          setProcessingId(null);
+        }
+      },
+    });
   };
 
   // UI Helper: Status Badge
@@ -227,20 +280,6 @@ export function LoansView() {
     );
   };
 
-  // UI Helper: Health Status Badge
-  const getHealthStatusBadge = (healthStatus: string | undefined) => {
-    if (!healthStatus) return null;
-
-    if (healthStatus === 'HEALTHY') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Healthy</span>;
-    } else if (healthStatus === 'WARNING') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Warning</span>;
-    } else if (healthStatus === 'CRITICAL' || healthStatus === 'LIQUIDATABLE') {
-      return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Critical</span>;
-    }
-
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">{healthStatus}</span>;
-  };
 
   // Calculate statistics
   const stats = {
@@ -382,7 +421,6 @@ export function LoansView() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collateral</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Borrowed</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Health Factor</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missed Payments</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -390,6 +428,7 @@ export function LoansView() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredPositions.map((position) => (
+                    position.borrowedAmountFormatted !== '$0.00' && position.outstandingDebtFormatted !== '$0.00' && (
                     <tr key={position.positionId} className="hover:bg-gray-50">
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                         #{position.positionId}
@@ -409,27 +448,12 @@ export function LoansView() {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
                         {position.outstandingDebtFormatted}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <div className="flex flex-col gap-1">
-                          <span className={`font-medium ${
-                            !position.currentHealthFactor || position.currentHealthFactor === 2147483647
-                              ? 'text-gray-600'
-                              : position.currentHealthFactor < 11000
-                                ? 'text-red-600'
-                                : position.currentHealthFactor < 12500
-                                  ? 'text-yellow-600'
-                                  : 'text-green-600'
-                          }`}>
-                            {position.healthFactorFormatted}
-                          </span>
-                          {getHealthStatusBadge(position.healthStatus)}
-                        </div>
-                      </td>
+                      
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                           position.missedPayments > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {position.missedPayments} / 3
+                          {Math.min(position.missedPayments, 3)} / 3
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
@@ -464,7 +488,7 @@ export function LoansView() {
                           )}
 
                           {/* Liquidate - Available for liquidatable positions */}
-                          {position.healthStatus === 'LIQUIDATABLE' && position.status === 'ACTIVE' && (
+                          {(
                             <Button
                               size="sm"
                               variant="outline"
@@ -490,18 +514,10 @@ export function LoansView() {
                           )}
 
                           {/* Sync - Always available */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleSyncPosition(position.positionId)}
-                            disabled={processingId === position.positionId}
-                            className="text-xs"
-                          >
-                            Sync
-                          </Button>
+                          
                         </div>
                       </td>
-                    </tr>
+                    </tr>)
                   ))}
                 </tbody>
               </table>
@@ -509,6 +525,49 @@ export function LoansView() {
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-100">
+              <h3 className="text-xl font-light text-gray-900" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                {confirmModal.title}
+              </h3>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6">
+              <p className="text-gray-600 font-light leading-relaxed">
+                {confirmModal.message}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                className="px-5 py-2.5 text-sm font-light text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                style={{ textShadow: '0 1px 1px rgba(0,0,0,0.05)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className={`px-5 py-2.5 text-sm font-light text-white rounded-lg transition-all duration-200 shadow-lg ${
+                  confirmModal.isDangerous
+                    ? 'bg-red-600 hover:bg-red-700 shadow-red-500/50'
+                    : 'bg-gray-900 hover:bg-black shadow-gray-900/50'
+                }`}
+                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -120,17 +120,6 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
                     endValue: data.length - 1,
                     zoomLock: false
                 },
-                {
-                    type: 'slider',
-                    show: true,
-                    xAxisIndex: [0],
-                    height: 20,
-                    bottom: 10,
-                    borderColor: 'transparent',
-                    backgroundColor: '#f8fafc',
-                    fillerColor: 'rgba(51, 65, 85, 0.1)',
-                    handleStyle: { color: '#cbd5e1' }
-                }
             ],
             series: [
                 {
@@ -166,27 +155,18 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
     };
 
     return (
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 border border-neutral-100 space-y-4 select-none relative h-full">
+        <div className="bg-transparent p-8 space-y-4 select-none relative h-full">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h2 className="text-2xl font-medium font-gellix text-slate-900 tracking-tight">Trade Executions</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black">5m Continuous Streaming</p>
-                    </div>
                 </div>
             </div>
-             {isLoading && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-[32px]">
-                    <div className="flex items-center justify-center h-[450px]">
-                        <PageLoader text='' />
-                    </div>
+            {isLoading && (
+                <div className="absolute inset-0 bg-transparent backdrop-blur-sm z-50 flex items-center justify-center">
+                    <PageLoader text='' />
                 </div>
             )}
-            <div ref={chartRef} style={{ height: '600px', width: '100%' }} className="bg-slate-50/20 rounded-3xl border border-slate-100 transition-all hover:border-slate-300" />
-            <div className="text-center text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-                Drag chart or use slider to explore historical trends
-            </div>
+            <div ref={chartRef} style={{ height: '600px', width: '100%' }} className="bg-transparet transition-all" />
         </div>
     );
 };

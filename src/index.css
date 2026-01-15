@@ -351,6 +351,10 @@
     font-family: 'Gellix', sans-serif;
   }
 
+  .font-gellix-original{
+    font-family :'Gellix', Gellix-Fallback, sans-serif;
+  }
+
   .font-beau {
     font-family: 'Beau Rivage', cursive;
   }

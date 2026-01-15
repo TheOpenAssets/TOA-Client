@@ -106,7 +106,7 @@ class SolvencyService extends BaseService {
   /**
    * Get user's borrow positions
    *
-   * ✅ CORRECT ENDPOINT: GET /solvency/positions/my?status=ACTIVE&limit=20&offset=0
+   * ✅ CORRECT ENDPOINT: GET /solvency/positions/my
    * Reference: SOLVENCY_INTEGRATION.md line 157
    *
    * BACKEND RESPONSE (line 160-188 in docs):
@@ -115,18 +115,12 @@ class SolvencyService extends BaseService {
    *   meta: { total, limit, offset }
    * }
    */
-  async getMyPositions(status: string = 'ACTIVE', limit: number = 20, offset: number = 0): Promise<GetPositionsResponse> {
+  async getMyPositions(): Promise<GetPositionsResponse> {
     try {
       console.log('📊 Fetching user positions...');
 
-      const params = new URLSearchParams({
-        status,
-        limit: limit.toString(),
-        offset: offset.toString(),
-      });
-
       const response = await this.fetchWithTimeout(
-        `${this.baseURL}/solvency/positions/my?${params}`,
+        `${this.baseURL}/solvency/positions/my`,
         {
           method: 'GET',
           headers: this.getAuthHeaders(),
@@ -139,7 +133,7 @@ class SolvencyService extends BaseService {
       }
 
       const data: GetPositionsResponse = await response.json();
-      console.log('✅ Positions received:', data);
+      console.log('✅ Loan Positions received:', data);
       return data;
     } catch (error: any) {
       console.error('❌ Error fetching positions:', error);
@@ -377,6 +371,53 @@ class SolvencyService extends BaseService {
       return data;
     } catch (error: any) {
       console.error('❌ Error repaying:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Withdraw collateral from position (Backend API - not smart contract)
+   *
+   * ✅ ENDPOINT: POST /solvency/withdraw
+   * 
+   * Backend handles:
+   * - Position verification
+   * - On-chain withdrawCollateral call
+   * - Database update
+   * - Private asset collateral tracking update
+   */
+  async withdrawCollateral(request: {
+    positionId: string;
+    amount: string; // Amount in wei (18 decimals)
+  }): Promise<{
+    success: boolean;
+    txHash?: string;
+    blockNumber?: number;
+    position: Position;
+  }> {
+    try {
+      console.log('💰 Initiating collateral withdrawal:', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/withdraw`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        120000 // 2 minute timeout for blockchain tx
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to withdraw collateral');
+      }
+
+      const data = await response.json();
+      console.log('✅ Withdrawal successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error withdrawing collateral:', error);
       throw error;
     }
   }
@@ -715,6 +756,133 @@ class SolvencyService extends BaseService {
     }
   }
 
+  /**
+   * Notify backend of loan borrow transaction
+   *
+   * ✅ ENDPOINT: POST /solvency/loan/borrow-notify
+   * Reference: LOAN_SYNC_IMPLEMENTATION.md
+   *
+   * Call after successful borrow transaction to sync backend database
+   */
+  async notifyLoanBorrow(request: {
+    txHash: string;
+    positionId: string;
+    borrowAmount: string;
+    loanDuration: string;
+    numberOfInstallments: string;
+    blockNumber?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    position: any;
+  }> {
+    try {
+      console.log('📢 Notifying backend of loan borrow:', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/loan/borrow-notify`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        60000 // 60 second timeout
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify loan borrow');
+      }
+
+      const data = await response.json();
+      console.log('✅ Loan borrow notification successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error notifying loan borrow:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Notify backend of loan repayment transaction
+   *
+   * ✅ ENDPOINT: POST /solvency/loan/repay-notify
+   * Reference: LOAN_SYNC_IMPLEMENTATION.md
+   *
+   * Call after successful repayment transaction to sync backend database
+   */
+  async notifyLoanRepayment(request: {
+    txHash: string;
+    positionId: string;
+    repaymentAmount: string;
+    blockNumber?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    position: any;
+  }> {
+    try {
+      console.log('📢 Notifying backend of loan repayment:', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/loan/repay-notify`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        60000 // 60 second timeout
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify loan repayment');
+      }
+
+      const data = await response.json();
+      console.log('✅ Loan repayment notification successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error notifying loan repayment:', error);
+      throw error;
+    }
+  }
+
+
+  async notifyCollateralWithdrawal(request: {
+    positionId: string;
+    amount: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    position: any;
+  }> {
+    try {
+      console.log('📢 Notifying backend of withdrawal', request);
+
+      const response = await this.fetchWithTimeout(
+        `${this.baseURL}/solvency/loan/withdrawal-notify`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(request),
+        },
+        60000 // 60 second timeout
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to notify loan repayment');
+      }
+
+      const data = await response.json();
+      console.log('✅ Loan repayment notification successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error notifying loan repayment:', error);
+      throw error;
+    }
+  }
 }
 
 export const solvencyService = new SolvencyService();

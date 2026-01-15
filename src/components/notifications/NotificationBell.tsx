@@ -98,9 +98,9 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
       
       // Trigger Toast
       toast(newNotification.header, {
-        icon: newNotification.severity === 'SUCCESS' ? '✅' : 
-              newNotification.severity === 'ERROR' ? '❌' : 
-              newNotification.severity === 'WARNING' ? '⚠️' : 'ℹ️',
+        icon: newNotification.severity === 'success' ? '✅' :
+              newNotification.severity === 'error' ? '❌' :
+              newNotification.severity === 'warning' ? '⚠️' : 'ℹ️',
         duration: 4000,
         position: 'top-right',
         className: 'font-geist text-sm font-medium'

@@ -133,7 +133,9 @@ export interface NotifyPurchasePayload {
   assetId: string;
   amount: string;
   blockNumber: string;
+  type?: string;
 }
+
 
 export interface NotifyBidPlacedPayload {
   txHash: string;
@@ -272,7 +274,7 @@ export type SortOption =
 // ============================================================================
 
 export type AuctionStatus = 'SCHEDULED' | 'BIDDING' | 'ENDED' | 'SETTLED' | 'CANCELLED';
-export type BidStatus = 'PENDING' | 'WON' | 'LOST' | 'SETTLED' | 'REFUNDED';
+export type BidStatus = 'PENDING' | 'PLACED' | 'FINALIZED' | 'WON' | 'LOST' | 'SETTLED' | 'REFUNDED';
 
 /**
  * Auction - Represents an RWA token auction
@@ -379,6 +381,7 @@ export interface SecondaryOrder {
   pricePerToken: string; // price in USDC (6 decimals)
   status: 'OPEN' | 'FILLED' | 'CANCELLED';
   txHash: string;
+  stlTxHash: string;
   blockNumber: number;
   blockTimestamp: string;
   createdAt: string;

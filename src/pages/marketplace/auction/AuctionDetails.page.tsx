@@ -59,7 +59,11 @@ const AuctionDetailsPage = () => {
       const checkForExistingBids = async () => {
         try {
           const myBids = await marketplaceService.getUserBids();
-          const hasBid = myBids.some(bid => bid.assetId === assetId && bid.status === 'PENDING');
+          // Check for any active bid (PENDING, PLACED, or FINALIZED) for this asset
+          const hasBid = myBids.some(bid =>
+            bid.assetId === assetId &&
+            (bid.status === 'PENDING' || bid.status === 'PLACED' || bid.status === 'FINALIZED')
+          );
 
           setHasAlreadyBidded(hasBid);
         } catch (error) {
@@ -137,9 +141,9 @@ const AuctionDetailsPage = () => {
 
   if (isLoadingAsset) {
     return (
-        <div className="flex items-center justify-center h-screen">
-          <PageLoader text='' />
-        </div>
+      <div className="flex items-center justify-center h-screen">
+        <PageLoader text='' />
+      </div>
     );
   }
 
@@ -210,14 +214,14 @@ const AuctionDetailsPage = () => {
             >
               Portfolio
             </button>
-             <div className='relative group'>
+            <div className='relative group'>
               <button
-              className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
+                className="font-gellix border border-gray-200 text-sm font-medium text-foreground hover:text-gray-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl cursor-not-allowed "
               >
-              Trade
+                Trade
               </button>
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
-              Coming Soon
+                Coming Soon
               </div>
             </div>
             <div className='relative group'>
@@ -392,7 +396,7 @@ const AuctionDetailsPage = () => {
                     value={bidAmount}
                     min={asset.tokenParams?.minInvestment ? (Number(asset.tokenParams.minInvestment) / 1e18).toString() : '0'}
                     max={asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toString() : '0'}
-                    step="0.01"
+                    step="0.1"
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === '') {
@@ -418,11 +422,9 @@ const AuctionDetailsPage = () => {
                         const effectiveMin = Math.min(minBid, available);
 
                         if (numValue < effectiveMin) {
-                          setBidAmount(effectiveMin.toFixed(2));
+                          setBidAmount(effectiveMin.toString());
                         } else if (numValue > available) {
-                          setBidAmount(available.toFixed(2));
-                        } else {
-                          setBidAmount(numValue.toFixed(2));
+                          setBidAmount(available.toString());
                         }
                       }
                     }}
@@ -438,8 +440,8 @@ const AuctionDetailsPage = () => {
                 {/* Price Per Token Input */}
                 <div className="bg-[#F3F4F6] rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <img 
-                      src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" 
+                    <img
+                      src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
                       alt="USDC"
                       className="w-4 h-4 rounded-full"
                     />
@@ -454,7 +456,6 @@ const AuctionDetailsPage = () => {
                     disabled={isAuctionAnnounced || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                     min={asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toString() : '0'}
                     max={asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toString() : '0'}
-                    step="0.01"
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === '') {
@@ -479,18 +480,16 @@ const AuctionDetailsPage = () => {
                         const maxPrice = asset.listing?.priceRange?.max ? Number(asset.listing.priceRange.max) / 1e6 : Infinity;
 
                         if (numValue < minPrice) {
-                          setPricePerToken(minPrice.toFixed(2));
+                          setPricePerToken(minPrice.toString());
                         } else if (numValue > maxPrice) {
-                          setPricePerToken(maxPrice.toFixed(2));
-                        } else {
-                          setPricePerToken(numValue.toFixed(2));
+                          setPricePerToken(maxPrice.toString());
                         }
                       }
                     }}
                     className="w-full border-none text-2xl font-medium text-[#111111] p-0 h-auto bg-transparent focus:outline-none focus:ring-0"
                   />
                   <p className="font-geist text-xs text-[#6B7280] mt-2">
-                    Range: ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
+                    Range: ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(4) : '0.0000'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(3) : '0.000'}
                   </p>
                 </div>
 

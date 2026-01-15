@@ -34,34 +34,22 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
       case 'success':
         return {
           icon: CheckCircle2,
-          iconColor: 'text-green-600',
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200',
-          gradient: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+          iconColor: 'text-[#10B981]',
         };
       case 'error':
         return {
           icon: XCircle,
-          iconColor: 'text-red-600',
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200',
-          gradient: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+          iconColor: 'text-[#EF4444]',
         };
       case 'warning':
         return {
           icon: AlertCircle,
-          iconColor: 'text-yellow-600',
-          bgColor: 'bg-yellow-50',
-          borderColor: 'border-yellow-200',
-          gradient: 'linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)',
+          iconColor: 'text-amber-500',
         };
       case 'info':
         return {
           icon: Info,
-          iconColor: 'text-blue-600',
-          bgColor: 'bg-blue-50',
-          borderColor: 'border-blue-200',
-          gradient: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          iconColor: 'text-[#0071C5]',
         };
     }
   };
@@ -71,19 +59,18 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
 
   return (
     <div
-      className={`rounded-2xl p-4 shadow-lg border ${style.borderColor} animate-slide-in-right mb-3 min-w-[320px] max-w-md`}
-      style={{ background: style.gradient }}
+      className="bg-white rounded-xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 animate-slide-in-right mb-3 min-w-[320px] max-w-md pointer-events-auto"
     >
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-xl ${style.bgColor} flex items-center justify-center flex-shrink-0`}>
-          <Icon className={`w-5 h-5 ${style.iconColor}`} />
+      <div className="flex items-start gap-3.5">
+        <div className={`mt-0.5 flex-shrink-0 ${style.iconColor}`}>
+          <Icon className="w-5 h-5" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-geist text-base font-normal text-foreground mb-1">
+          <h4 className="font-gellix text-sm font-semibold text-[#111111] mb-1 leading-tight">
             {toast.title}
           </h4>
           {toast.message && (
-            <div className="font-inter text-sm text-foreground/70 whitespace-pre-line break-words overflow-wrap-anywhere max-w-full">
+            <div className="font-gellix text-sm text-gray-500 whitespace-pre-line break-words overflow-wrap-anywhere max-w-full leading-relaxed">
               {toast.message.split('\n').map((line, index) => {
                 // Check if line contains a URL
                 const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
@@ -96,7 +83,7 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
                         href={urlMatch[0]}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline break-all"
+                        className="text-[#0071C5] hover:text-blue-700 underline break-all transition-colors"
                       >
                         {urlMatch[0]}
                       </a>
@@ -111,9 +98,9 @@ export const ToastItem = ({ toast, onClose }: ToastItemProps) => {
         </div>
         <button
           onClick={() => onClose(toast.id)}
-          className="flex-shrink-0 text-foreground/40 hover:text-foreground/70 transition-colors"
+          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-0.5 rounded-md hover:bg-gray-50 -mr-1 -mt-1"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -129,12 +116,10 @@ export const ToastContainer = ({ toasts, onClose }: ToastContainerProps) => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] pointer-events-none">
-      <div className="pointer-events-auto">
-        {toasts.map((toast) => (
-          <ToastItem key={toast.id} toast={toast} onClose={onClose} />
-        ))}
-      </div>
+    <div className="fixed top-6 right-6 z-[9999] pointer-events-none flex flex-col gap-2">
+      {toasts.map((toast) => (
+        <ToastItem key={toast.id} toast={toast} onClose={onClose} />
+      ))}
     </div>
   );
 };

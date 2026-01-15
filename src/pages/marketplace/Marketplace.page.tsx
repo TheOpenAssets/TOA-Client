@@ -140,6 +140,32 @@ const MarketplacePage = () => {
       .sort((a, b) => a.timestamp - b.timestamp);
   };
 
+  /**
+   * Calculate APY (Annual Percentage Yield) for an asset
+   * Returns 5% APY when no tokens are sold yet
+   * Otherwise calculates based on purchase price vs face value and time to maturity
+   */
+  const calculateAPY = (listing: any): number => {
+    const sold = parseFloat(listing.sold || '0')/1e18;
+
+    // When no tokens are sold yet, show fixed 5% APY
+    if (sold === 0) {
+      return 5.00;
+    }
+
+    const totalSupply = parseFloat(listing.totalSupply) / 1e18;
+    const faceValue = parseFloat(listing.faceValue)/1e6;
+  
+    if(sold> totalSupply){
+      return 0;
+    }
+   
+    // Annualize the return (simple annualization)
+    const apy = ((totalSupply - sold)/sold) * faceValue * 100;
+
+    return Math.max(0, Math.min(100, apy));
+  };
+
   // Convert backend listings to frontend format for display
   // Using REAL API data with sold percentage for progress bars
   const displayAssets: MarketplaceAsset[] = listings.length > 0
@@ -188,7 +214,8 @@ const MarketplacePage = () => {
 
         // Target amount is face value
         // @ts-ignore
-        const targetAmount = parseFloat(listing.metadata?.faceValue || listing.faceValue || '0');
+        const targetAmount = totalSupply * pricePerToken;
+        // const targetAmount = parseFloat(listing.metadata?.faceValue || listing.faceValue || '0');
 
         return {
           id: listing.assetId,
@@ -198,7 +225,7 @@ const MarketplacePage = () => {
           category: 'invoice' as const,
           icon: '📄',
           tokenPrice: pricePerToken,
-          yieldAPY: 8, // TODO: Backend needs to provide this - using default
+          yieldAPY: calculateAPY(listing), // Dynamically calculated APY
           maturityDays: maturityDays || "Matured", // Already validated with fallback to "Matured" above
           totalRaised: totalRaised,
           targetAmount: targetAmount,
@@ -306,7 +333,6 @@ const MarketplacePage = () => {
   const filters: { value: FilterCategory; label: string }[] = [
     { value: 'all', label: 'All Assets' },
     { value: 'invoices', label: 'Invoices' },
-
     { value: 'high-yield', label: 'High Yield (>10%)' },
     { value: 'short-term', label: 'Short Term (<6mo)' },
     { value: 'verified', label: 'Verified' },
@@ -318,7 +344,7 @@ const MarketplacePage = () => {
     const numDays = typeof days === 'string' ? parseFloat(days) : days;
     if (numDays < 30) return `${numDays} days`;
     if (numDays < 365) return `${Math.floor(numDays / 30)} months`;
-    return `Matured`;
+    return `Payout Requested`;
   };
 
   // Calculate time remaining for auction
@@ -411,7 +437,7 @@ const MarketplacePage = () => {
   }
 
   return (
-    <div className="min-h-screen max-w-[85vw] mx-auto">
+    <div className="min-h-screen max-w-[94vw] mx-auto">
       {/* Top Navigation Bar */}
       <header className="w-full flex flex-row z-40 mt-2 mb-1">
         {/* Logo */}
@@ -481,7 +507,7 @@ const MarketplacePage = () => {
     .carousel-track {
       display: flex;
       width: max-content; /* Ensure track is as wide as content */
-      animation: scroll-left 60s linear infinite; /* Slower, smoother speed */
+      animation: scroll-left 20s linear infinite; /* Slower, smoother speed */
     }
     .carousel-track:hover {
       animation-play-state: paused;
@@ -491,8 +517,10 @@ const MarketplacePage = () => {
         {/* We combine all items into one list and render it TWICE 
      to create a seamless infinite loop without gaps.
   */}
-        <div className="carousel-track items-center">
-          {[...Array(2)].map((_, i) => (
+        <div className="carousel-track items-center flex gap-12 relative">
+          {/* Fade overlay left */}
+<div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white via-white/90 to-transparent z-20 pointer-events-none" />          
+          {[...Array(1)].map((_, i) => (
             <div key={i} className="flex items-center gap-12 px-6">
 
               {/* SCHEDULED AUCTIONS */}
@@ -553,6 +581,9 @@ const MarketplacePage = () => {
               ))}
             </div>
           ))}
+
+          {/* Fade overlay right */}
+          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
         </div>
       </div>
 
@@ -629,10 +660,10 @@ const MarketplacePage = () => {
         <div className="grid grid-cols-3 gap-8 rounded-2xl "  >
           {/* Section 1: Active Auctions (Replaced Featured Issuances) */}
           <div className="bg-transparent flex flex-col gap-3">
-            <h2 className="font-gellix text-2xl text-foreground">
+            <h2 className="font-gellix text-[22px] text-foreground">
               Active Auctions
             </h2>
-            <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
+            <div className="w-full h-full border-t border-gray-300 justify-center flex flex-col">
               {isLoadingAuctions ? (
                 <div className="flex items-center justify-center h-[450px]">
                   <PageLoader text='' />
@@ -655,7 +686,7 @@ const MarketplacePage = () => {
                             <div className="font-gellix text-lg text-foreground">
                               {auction.metadata?.invoiceNumber || auction.assetId}
                             </div>
-                            <div className="font-gellix text-sm text-gray-400">
+                            <div className="font-gellix text-xs text-gray-400">
                               {auction.totalSupply.toLocaleString()} tokens
                             </div>
                           </div>
@@ -676,7 +707,7 @@ const MarketplacePage = () => {
                       </div>
                     </div>
                     {index < Math.min(auctions.length, 3) - 1 && (
-                      <div className="border-t border-gray-200"></div>
+                      <div className="border-t border-gray-300"></div>
                     )}
                   </div>
                 ))
@@ -686,11 +717,11 @@ const MarketplacePage = () => {
 
           {/* Section 2: Trending Assets (Highest Sold %) - Real Data from GET /marketplace/top-grossing */}
           <div className="bg-transparent flex flex-col gap-3">
-            <h2 className="font-gellix text-2xl  text-foreground">
+            <h2 className="font-gellix text-[22px]  text-foreground">
               Trending Assets
             </h2>
 
-            <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
+            <div className="w-full h-full border-t border-gray-300 justify-center flex flex-col">
               {isLoadingTrending ? (
                 <div className="flex items-center justify-center h-[450px]">
                   <PageLoader text='' />
@@ -713,7 +744,7 @@ const MarketplacePage = () => {
                             <div className="font-gellix text-lg text-foreground">
                               {asset.name || asset.assetId}
                             </div>
-                            <div className="font-gellix text-sm text-gray-400">
+                            <div className="font-gellix text-xs text-gray-400">
                               {asset.industry} · {asset.activityMetrics?.totalActivity || 0} activities
                             </div>
                           </div>
@@ -725,7 +756,7 @@ const MarketplacePage = () => {
                             {asset.percentageSold?.toFixed(1) || 0}% Sold
                           </div>
                           <div className="flex items-center justify-end gap-1 text-gray-600">
-                            <span className="font-gellix text-sm">
+                            <span className="font-gellix text-xs">
                               {asset.activityMetrics?.purchaseCount || 0} purchases
                             </span>
                           </div>
@@ -743,10 +774,10 @@ const MarketplacePage = () => {
 
           {/* Section 3: Recently Verified Assets - Real Data from GET /marketplace/listings (Top 3, sorted by newest) */}
           <div className="bg-transparent flex flex-col gap-3">
-            <h2 className="font-gellix text-2xl text-foreground">
+            <h2 className="font-gellix text-[22px] text-foreground">
               Recently Verified
             </h2>
-            <div className="w-full h-full border-t border-gray-100 justify-center flex flex-col">
+            <div className="w-full h-full border-t border-gray-300 justify-center flex flex-col">
               {isLoading ? (
                 <div className="flex items-center justify-center h-[450px]">
                   <PageLoader text='' />
@@ -766,14 +797,14 @@ const MarketplacePage = () => {
                         {/* Left: Asset Info */}
                         <div className="flex flex-row items-center justify-evenly p-1">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               <span className="font-gellix text-lg text-foreground">
                                 {/* @ts-ignore */}
                                 {listing.name || listing.assetId}
                               </span>
 
                             </div>
-                            <div className="font-gellix text-sm text-gray-400">
+                            <div className="font-gellix text-xs text-gray-400">
                               {/* @ts-ignore */}
                               {listing.industry} · {listing.listingType}
                             </div>
@@ -786,14 +817,14 @@ const MarketplacePage = () => {
                             {/* @ts-ignore */}
                             ${formatLargeNumber(parseFloat(listing.pricePerToken || '0') / 1e6)}
                           </div>
-                          <div className="font-gellix text-sm text-gray-600">
+                          <div className="font-gellix text-xs text-gray-600">
                             per token
                           </div>
                         </div>
                       </div>
                     </div>
                     {index < Math.min(listings.length, 3) - 1 && (
-                      <div className="border-t border-gray-200"></div>
+                      <div className="border-t border-gray-300"></div>
                     )}
                   </div>
                 ))
@@ -870,7 +901,7 @@ const MarketplacePage = () => {
             {/* Grid/List Content */}
             {viewMode === 'grid' ? (
               /* Grid View */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                 {isLoadingCharts && filteredAssets.length > 0 ? (
                   <div className="flex items-center justify-center h-[450px]">
                     <PageLoader text='' />
@@ -884,7 +915,7 @@ const MarketplacePage = () => {
                     return (
                       <div
                         key={asset.id}
-
+                         onClick={() => handleTableNavigate(asset)}
                         className="group relative bg-white rounded-3xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl"
                       >
                         {/* Header Section */}
@@ -935,7 +966,7 @@ const MarketplacePage = () => {
                                     <div className="flex justify-between items-center">
                                       <span className="font-gellix text-xs text-[#7b7d86]">Yield</span>
                                       <span className="font-gellix text-sm font-medium text-[#383c48]">
-                                        {asset.yieldAPY}% APY
+                                        {asset.yieldAPY.toFixed(2)}% APY
                                       </span>
                                     </div>
                                   </div>
@@ -1036,7 +1067,7 @@ const MarketplacePage = () => {
                         {/* Yield */}
                         <td className="px-6 py-4 text-right">
                           <div className="font-gellix text-sm text-foreground">
-                            {asset.yieldAPY}% APY
+                            {asset.yieldAPY.toFixed(2)}% APY
                           </div>
                         </td>
 
@@ -1080,7 +1111,7 @@ const MarketplacePage = () => {
                                 (typeof asset.maturityDays === 'number' && asset.maturityDays <= 0) ||
                                 asset.fundingProgress === 100;
 
-                              return isMatured ? (
+                              return isMatured && asset.status === 'PAYOUT_COMPLETE' ? (
                                 <button
                                   onClick={() => handleTableNavigate(asset)}
                                   className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 hover:scale-[1.07] transition-colors"

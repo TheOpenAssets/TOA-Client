@@ -36,6 +36,7 @@ import { NotFoundPage } from '../../components/ui/404-page-not-found';
 import AboutPage from '../../pages/landing/About.page';
 import ChangelogPage from '../../pages/landing/Changelog.page';
 import FAQSection from '../../pages/landing/FAQ.page';
+import BorrowPage from '../../pages/borrow/BorrowPage';
 
 // Challenge Verification Page
 
@@ -59,6 +60,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/marketplace',
     element: <MarketplacePage />,
+  },
+  {
+     path :'/borrow',
+     element: <BorrowPage />,
   },
   {
     path: '/marketplace/asset/:assetId',

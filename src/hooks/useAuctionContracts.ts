@@ -575,10 +575,10 @@ export function useSettleBid() {
 
           console.log('✅ Backend notified successfully!');
 
-          // Refresh page after 2 seconds to show updated portfolio
+          // Refresh page after 1 second to show updated portfolio
           setTimeout(() => {
             window.location.reload();
-          }, 2000);
+          }, 1000);
         } catch (error: any) {
           console.error('❌ Backend notification failed:', error);
           setError(`Settlement complete, but backend notification failed: ${error.message}`);

@@ -268,23 +268,46 @@ export interface TokenApprovalState {
  */
 export interface Position {
   positionId: number;
-  collateralToken: {
+  collateralTokenAddress: string;  // Token contract address
+  collateralTokenType: string;     // "RWA" or "PRIVATE_ASSET"
+  collateralAmount: string;        // e.g., "90000000000000000000" (18 decimals)
+  tokenValueUSD: string;           // e.g., "76500000000" (6 decimals)
+  usdcBorrowed: string;            // e.g., "50000000000" (6 decimals)
+  totalPartnerDebt: string;        // e.g., "0" (6 decimals)
+  totalRepaid: string;             // e.g., "0" (6 decimals)
+  initialLTV: number;              // e.g., 6000 (representing 60.00%)
+  currentHealthFactor: number;     // e.g., 15300 (representing 153.00%) or 2147483647 for no debt
+  healthStatus: string;            // "HEALTHY", "WARNING", "CRITICAL", "LIQUIDATABLE"
+  status: string;                  // "ACTIVE", "CLOSED", "LIQUIDATED", "SETTLED", "REPAID"
+  loanDuration: number;            // Duration in seconds
+  numberOfInstallments: number;    // Number of installments
+  installmentInterval: number;     // Interval in seconds
+  installmentsPaid: number;        // Number of installments paid
+  missedPayments: number;          // Number of missed payments (0-3)
+  isDefaulted: boolean;            // Whether position has been marked as defaulted
+  oaidCreditIssued: boolean;       // Whether OAID credit was issued
+  repaymentSchedule: Array<{
+    installmentNumber: number;
+    dueDate: string;
+    amount: string;
+    status: 'PAID' | 'PENDING' | 'MISSED';
+  }>;                               // Repayment schedule array
+  nextPaymentDueDate?: string;     // Optional next payment due date
+  depositTxHash: string;           // Deposit transaction hash
+  depositBlockNumber: number;      // Deposit block number
+  createdAt: string;
+  updatedAt: string;
+  
+  // Optional legacy fields for backward compatibility
+  collateralToken?: {
     address: string;
     symbol: string;
     name: string;
-    type: string; // "RWA" or "PRIVATE_ASSET"
+    type: string;
   };
-  collateralAmount: string;   // e.g., "90000000000000000000" (18 decimals)
-  tokenValueUSD: string;      // e.g., "76500000000" (6 decimals)
-  usdcBorrowed: string;       // e.g., "50000000000" (6 decimals)
-  outstandingDebt: string;    // e.g., "50041100000" (6 decimals)
-  healthFactor: number;       // e.g., 15300 (representing 153.00%)
-  healthStatus: string;       // "HEALTHY", "WARNING", "CRITICAL", "LIQUIDATABLE"
-  status: string;             // "ACTIVE", "CLOSED", "LIQUIDATED", "SETTLED", "REPAID"
-  maxBorrowCapacity: string;  // e.g., "53550000000" (6 decimals)
-  missedPayments?: number;    // Number of missed payments (0-3)
-  isDefaulted?: boolean;      // Whether position has been marked as defaulted
-  createdAt: string;
+  outstandingDebt?: string;        // Computed from usdcBorrowed + totalPartnerDebt
+  healthFactor?: number;           // Alias for currentHealthFactor
+  maxBorrowCapacity?: string;      // Optional max borrow capacity
 }
 
 /**

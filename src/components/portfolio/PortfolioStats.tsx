@@ -1,5 +1,5 @@
 // src/components/portfolio/PortfolioStats.tsx
-import { TrendingUp, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { MiniAreaChart } from './MiniAreaChart';
 import { generateAssetValueChart, generateYieldChart } from '../../lib/utils/portfolioChartGenerator';
 import type { PortfolioAsset } from '../../lib/api/portfolio.service';
@@ -46,7 +46,7 @@ export const PortfolioStats = ({
     <div className="flex flex-col gap-4 h-full">
       {/* Total Asset Value Card */}
       <div
-        className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col relative overflow-hidden"
+        className="bg-transparent rounded-2xl border border-gray-300 p-6 flex-1 flex flex-col relative overflow-hidden"
         style={{
           boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
@@ -78,7 +78,7 @@ export const PortfolioStats = ({
 
       {/* Total Yield Earned Card */}
       <div
-        className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col relative overflow-hidden"
+        className="bg-transparent rounded-2xl border border-gray-300 p-6 flex-1 flex flex-col relative overflow-hidden"
         style={{
           boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
@@ -114,8 +114,8 @@ export const PortfolioStats = ({
 
       {/* OAID Credit Limit Card */}
       <div
-        className="bg-white rounded-2xl border border-gray-200 p-6 flex-1 flex flex-col relative overflow-hidden"
-         style={{
+        className="bg-transparent rounded-2xl border border-gray-300 p-6 flex-1 flex flex-col relative overflow-hidden"
+        style={{
           boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
             8px 8px 24px rgba(150, 151, 151, 0.06),
@@ -134,8 +134,10 @@ export const PortfolioStats = ({
           Available: {formatUSD(creditData?.availableCredit ?? 0)}
         </p>
         <div className="mt-auto pt-4">
-          <Button onClick={onIncreaseLimit}               className=" mx-auto items-center flex text-center text-md py-4 px-6 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
->
+          <Button
+            onClick={onIncreaseLimit}
+            className=" mx-auto items-center flex text-center text-md py-4 px-6 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Increase Limit
           </Button>

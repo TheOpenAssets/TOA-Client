@@ -56,7 +56,7 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
 
         return {
             backgroundColor: 'transparent',
-            animation: false,
+            animation: true,
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'cross', label: { backgroundColor: '#111827' } },
@@ -127,6 +127,7 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
                     startValue: Math.min(0, data.length),
                     endValue: data.length - 1,
                     zoomLock: false // Set to true to maintain the "Industrial" constant candle width
+
                 }
             ],
             series: [
@@ -163,18 +164,16 @@ export const SentimentChart = ({ data, isLoading }: SentimentChartProps) => {
     };
 
     return (
-        <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 border border-neutral-100 space-y-4 select-none relative">
-            <div className="flex items-center justify-between mb-2">
+        <div className="bg-transparent p-8 space-y-4 select-none relative w-full">
+            <div className="flex items-center justify-between mb-2 bg-transparent">
                 <h2 className="text-2xl font-medium font-gellix text-slate-900 tracking-tight">Market Sentiment</h2>
             </div>
             {isLoading && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-[32px]">
-                    <div className="flex items-center justify-center h-[450px]">
-                        <PageLoader text='' />
-                    </div>
+                <div className="absolute inset-0 bg-transparent backdrop-blur-sm z-50 flex items-center justify-center rounded-[32px]">
+                    <PageLoader text='' />
                 </div>
             )}
-            <div ref={chartRef} style={{ height: '600px', width: '100%' }} className="bg-slate-50/20 rounded-3xl border border-slate-100 transition-all hover:bg-white" />
+            <div ref={chartRef} style={{ height: '600px', width: '100%' }} className="bg-transparent  transition-all" />
         </div>
     );
 };
