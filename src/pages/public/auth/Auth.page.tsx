@@ -32,6 +32,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState<string>('');
   const [isEmailValid, setIsEmailValid] = useState<boolean>(false);
   const [isVerifyingKyc, setIsVerifyingKyc] = useState<boolean>(false);
+  const [isFetchingTestAadhar, setIsFetchingTestAadhar] = useState<boolean>(false);
   const [isUsingTestAadhar, setIsUsingTestAadhar] = useState(false);
 
 
@@ -44,15 +45,20 @@ export default function AuthPage() {
     setIsUsingTestAadhar(checked);
     if (checked) {
       try {
+        
+        setIsFetchingTestAadhar(isUsingTestAadhar);
         const response = await fetch('/AadharGenerated.png');
         if (!response.ok) throw new Error('Failed to load test file');
         const blob = await response.blob();
         const file = new File([blob], 'AadharGenerated.png', { type: 'image/png' });
         handleDocumentUpload({ aadhaar: file });
+        setIsFetchingTestAadhar(false);
       } catch (e) {
         console.error("Error loading test file", e);
+      } finally {
       }
     } else {
+      setIsFetchingTestAadhar(false);
       handleDocumentUpload({ aadhaar: null });
     }
   };
@@ -238,30 +244,38 @@ export default function AuthPage() {
                   <label className="text-sm font-medium text-[#2b2b2b] font-sans">
                     KYC Document
                   </label>
-                  <FileUpload
-                    onChange={(files) => {
-                      if (files.length > 0) {
-                        setIsUsingTestAadhar(false);
-                        handleDocumentUpload({ aadhaar: files[0] });
-                      }
-                    }}
-                    value={kycDocuments.aadhaar ? [kycDocuments.aadhaar] : []}
-                    text="Upload Aadhaar Card"
-                    accept="image/*"
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="test-aadhar"
-                        checked={isUsingTestAadhar}
-                        onChange={(e) => toggleTestAadhar(e.target.checked)}
-                        className="w-4 h-4 text-violet-300 bg-gray-100 border-gray-300  focus:ring-violet-500 rounded-full"
-                      />
-                      <label htmlFor="test-aadhar" className="text-sm text-neutral-600 font-sans cursor-pointer">
-                        Use TOA test Aadhar card for KYC
-                      </label>
+                  {!isFetchingTestAadhar ? (
+                    <FileUpload
+                      onChange={(files) => {
+                        if (files.length > 0) {
+                          setIsUsingTestAadhar(false);
+                          handleDocumentUpload({ aadhaar: files[0] });
+                        }
+                      }}
+                      value={kycDocuments.aadhaar ? [kycDocuments.aadhaar] : []}
+                      text="Upload Aadhaar Card"
+                      accept="image/*"
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="test-aadhar"
+                          checked={isUsingTestAadhar}
+                          disabled={isUsingTestAadhar}
+                          onChange={(e) => { toggleTestAadhar(e.target.checked); setIsFetchingTestAadhar(true) }}
+                          className="w-4 h-4 text-violet-300 bg-gray-100 border-gray-300  focus:ring-violet-500 rounded-full"
+                        />
+                        <label htmlFor="test-aadhar" className="text-sm text-neutral-600 font-sans cursor-pointer">
+                          Use TOA test Aadhar card for KYC
+                        </label>
+                      </div>
+                    </FileUpload>
+                  ) :(
+                    <div className='w-[300px] h-[100px] flex items-center justify-center'>
+                    <PageLoader text="" size='sm' />
                     </div>
-                  </FileUpload>
+                  )}
+                 
                 </div>
 
                 <Button
