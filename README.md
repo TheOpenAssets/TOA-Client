@@ -103,7 +103,8 @@ OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every
 </div>
 
 ### Interactive Flow Map
- **Note:** For a high-resolution, interactive version of this diagram with details for specific modules, please visit our [Official User Flow Documentation Page](https://www.openassets.xyz/how-it-works). 
+ **Note:** For a high-resolution, interactive version of this diagram with details for specific modules, please visit our </br> 
+ [Official User Flow Documentation Page](https://www.openassets.xyz/how-it-works). 
  </br>
  (<em>Please open the system sitemap on the platform on the apex section.</em>)
 
