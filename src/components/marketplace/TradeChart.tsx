@@ -116,7 +116,7 @@ export const TradeChart = ({ data, isLoading }: TradeChartProps) => {
                 {
                     type: 'inside',
                     xAxisIndex: [0],
-                    startValue: Math.max(0, data.length - 35),
+                    startValue: Math.max(0, data.length),
                     endValue: data.length - 1,
                     zoomLock: false
                 },
