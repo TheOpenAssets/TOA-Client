@@ -17,6 +17,7 @@ import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { set } from 'date-fns';
 
 // USDC Contract Address
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
@@ -52,6 +53,8 @@ const AssetDetailsPage = () => {
   const [leverageTokenInput, setLeverageTokenInput] = useState('');
   const [isApproving, setIsApproving] = useState(false);
   const [leveragePurchaseStatus, setLeveragePurchaseStatus] = useState<string | null>(null);
+  const [leverageSuccess, setLeverageSuccess] = useState<boolean | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState<boolean | null>(null);
 
   // Calculate required mETH based on token input
   // Formula: Required mETH = (Tokens * TokenPrice * 1.5) / mETHPrice
@@ -114,6 +117,31 @@ const AssetDetailsPage = () => {
   // Format mETH balance (18 decimals)
   const methBalance = methBalanceRaw ? formatUnits(methBalanceRaw, 18) : '0';
 
+
+ const fetchPurchaseData = async () => {
+        setIsLoadingHistory(true);
+        setHistoryError(null);
+        if(!assetId) {
+          console.log('No assetId found for purchase history fetch');
+          return;
+        }
+        try {
+          const history = await marketplaceService.getPurchaseHistory(assetId);
+          setPurchaseHistory(history);
+
+          if (history.chartData && history.chartData.length > 0) {
+            // Aggregate purchases into 5-minute time blocks
+            const aggregatedData = aggregateIntoTimeBlocks(history.chartData, 0.05);
+            setFormattedChartData(aggregatedData);
+          }
+
+        } catch (err: any) {
+          setHistoryError(err.message || 'Failed to fetch purchase history');
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      };
+
   // Load wallet data (refetch balances and allowances)
   const loadWalletData = useCallback(async () => {
     if (!address) return;
@@ -140,6 +168,10 @@ const AssetDetailsPage = () => {
       loadWalletData();
     }
 
+    if (assetId) {
+      fetchPurchaseData();
+    }
+
     // Auto-refresh mETH price every 30 seconds ONLY if active tab is leverage
     let interval: NodeJS.Timeout;
     if (activeTab === 'leverage') {
@@ -151,7 +183,9 @@ const AssetDetailsPage = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab, purchaseStatus,]);
+  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData]);
+
+  useEffect(() => { if(assetId) fetchMethPrice(); }, [activeTab, assetId, fetchMethPrice]);
 
   useEffect(() => {
     if (address) {
@@ -161,28 +195,13 @@ const AssetDetailsPage = () => {
 
   useEffect(() => {
     if (assetId) {
-      const fetchPurchaseData = async () => {
-        setIsLoadingHistory(true);
-        setHistoryError(null);
-        try {
-          const history = await marketplaceService.getPurchaseHistory(assetId);
-          setPurchaseHistory(history);
-
-          if (history.chartData && history.chartData.length > 0) {
-            // Aggregate purchases into 5-minute time blocks
-            const aggregatedData = aggregateIntoTimeBlocks(history.chartData, 0.05);
-            setFormattedChartData(aggregatedData);
-          }
-
-        } catch (err: any) {
-          setHistoryError(err.message || 'Failed to fetch purchase history');
-        } finally {
-          setIsLoadingHistory(false);
-        }
-      };
+     
+            fetchAssetDetails(assetId);
+  if(purchaseSuccess || leverageSuccess) {
       fetchPurchaseData();
+      set
     }
-  }, [assetId]);
+  }}, [assetId, purchaseSuccess, leverageSuccess, fetchAssetDetails]);
 
   /**
    * Aggregate purchase data into time blocks
@@ -255,6 +274,8 @@ const AssetDetailsPage = () => {
    */
   const handleOpenLeveragePosition = async () => {
     if (!address || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
+
+    setLeverageSuccess(false);
 
     console.log('\n🚀 ===== STARTING LEVERAGED PURCHASE FLOW =====');
     console.log('Asset ID:', asset.assetId);
@@ -431,6 +452,8 @@ const AssetDetailsPage = () => {
       console.log(`  Transaction Hash: ${result.transactionHash}`);
       console.log(`  Explorer: https://explorer.sepolia.mantle.xyz/tx/${result.transactionHash}`);
 
+
+      setLeverageSuccess(true);
       // ============================================================
       // STEP 6: Monitor Position Health
       // ============================================================
@@ -522,6 +545,7 @@ const AssetDetailsPage = () => {
 
 
   const handleBuyTokens = async () => {
+    setPurchaseSuccess(false);
     if (!address) {
       setPurchaseStatus('Please connect your wallet first');
       return;
@@ -566,7 +590,8 @@ const AssetDetailsPage = () => {
           assetId: asset.assetId,
           tokenAmount: tokensToBuy,
         },
-        asset.token?.address || '' // Pass token address for debugging
+        asset.token?.address || '', // Pass token address for debugging
+        (status: string) => setPurchaseStatus(status) // Status update callback
       );
 
       if (result.success) {
@@ -601,6 +626,7 @@ const AssetDetailsPage = () => {
           console.log('Backend response:', backendResponse);
 
           setPurchaseStatus('Purchase and notification successful! 🎉');
+          setPurchaseSuccess(true);
         } catch (notifyError: any) {
           console.error('❌ Failed to notify backend:', notifyError);
           setPurchaseStatus('Purchase successful! (Backend notification failed)');

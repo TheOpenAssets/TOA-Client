@@ -655,7 +655,11 @@ class ContractService {
    * Complete purchase flow: Verify + Approve USDC + Buy Tokens
    * Combines all steps into a single function
    */
-  async completePurchase(params: PurchaseParams, tokenAddress?: string): Promise<{
+  async completePurchase(
+    params: PurchaseParams,
+    tokenAddress?: string,
+    onStatusUpdate?: (status: string) => void
+  ): Promise<{
     success: boolean;
     approvalTxHash?: string;
     purchaseTxHash?: string;
@@ -665,6 +669,7 @@ class ContractService {
     try {
       // Step 0: Verify listing is available
       console.log('Step 0: Verifying listing...');
+      onStatusUpdate?.('Intiating Purchase...');
       const verification = await this.verifyListing(params.assetId, tokenAddress);
 
       if (!verification.isValid) {
@@ -675,6 +680,7 @@ class ContractService {
       }
 
       console.log('Listing verified:', verification.details);
+      onStatusUpdate?.('Approving USDC...');
 
       // Step 1: Approve USDC with correct assetId
       console.log('Step 1: Approving USDC...');
@@ -686,6 +692,9 @@ class ContractService {
           error: `Approval failed: ${approvalResult.error}`,
         };
       }
+
+      console.log('USDC approved, proceeding to buy tokens...');
+      onStatusUpdate?.('USDC approved! Buying tokens...');
 
       // Step 2: Buy tokens with correct assetId
       console.log('Step 2: Buying tokens...');
