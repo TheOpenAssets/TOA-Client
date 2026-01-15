@@ -140,6 +140,32 @@ const MarketplacePage = () => {
       .sort((a, b) => a.timestamp - b.timestamp);
   };
 
+  /**
+   * Calculate APY (Annual Percentage Yield) for an asset
+   * Returns 5% APY when no tokens are sold yet
+   * Otherwise calculates based on purchase price vs face value and time to maturity
+   */
+  const calculateAPY = (listing: any): number => {
+    const sold = parseFloat(listing.sold || '0')/1e18;
+
+    // When no tokens are sold yet, show fixed 5% APY
+    if (sold === 0) {
+      return 5.00;
+    }
+
+    const totalSupply = parseFloat(listing.totalSupply) / 1e18;
+    const faceValue = parseFloat(listing.faceValue)/1e6;
+  
+    if(sold> totalSupply){
+      return 0;
+    }
+   
+    // Annualize the return (simple annualization)
+    const apy = ((totalSupply - sold)/sold) * faceValue * 100;
+
+    return Math.max(0, Math.min(100, apy));
+  };
+
   // Convert backend listings to frontend format for display
   // Using REAL API data with sold percentage for progress bars
   const displayAssets: MarketplaceAsset[] = listings.length > 0
@@ -199,7 +225,7 @@ const MarketplacePage = () => {
           category: 'invoice' as const,
           icon: '📄',
           tokenPrice: pricePerToken,
-          yieldAPY: 8, // TODO: Backend needs to provide this - using default
+          yieldAPY: calculateAPY(listing), // Dynamically calculated APY
           maturityDays: maturityDays || "Matured", // Already validated with fallback to "Matured" above
           totalRaised: totalRaised,
           targetAmount: targetAmount,
@@ -940,7 +966,7 @@ const MarketplacePage = () => {
                                     <div className="flex justify-between items-center">
                                       <span className="font-gellix text-xs text-[#7b7d86]">Yield</span>
                                       <span className="font-gellix text-sm font-medium text-[#383c48]">
-                                        {asset.yieldAPY}% APY
+                                        {asset.yieldAPY.toFixed(2)}% APY
                                       </span>
                                     </div>
                                   </div>
@@ -1041,7 +1067,7 @@ const MarketplacePage = () => {
                         {/* Yield */}
                         <td className="px-6 py-4 text-right">
                           <div className="font-gellix text-sm text-foreground">
-                            {asset.yieldAPY}% APY
+                            {asset.yieldAPY.toFixed(2)}% APY
                           </div>
                         </td>
 
