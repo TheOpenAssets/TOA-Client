@@ -133,7 +133,7 @@ const TradingEngineProductionPage = () => {
         if (sentimentData.length === 0) setIsChartLoading(true);
 
         try {
-            const res = await marketplaceService.getSecondaryMarketChartData(assetId, '5m');
+            const res = await marketplaceService.getSecondaryMarketChartData(assetId, '1m');
             setSentimentData(formatEChartsData(res.orderBookCandles));
             setTradeData(formatEChartsData(res.tradeCandles));
         } catch (error) {
@@ -145,7 +145,7 @@ const TradingEngineProductionPage = () => {
 
     useEffect(() => {
         fetchChartData();
-        const poll = setInterval(fetchChartData, 30000);
+        const poll = setInterval(fetchChartData, 300000);
         echarts.connect('trading-engine');
         return () => clearInterval(poll);
     }, [fetchChartData]);

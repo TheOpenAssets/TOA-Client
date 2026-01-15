@@ -51,7 +51,7 @@ The first generation of tokenized Real-World Assets (RWAs) successfully moved ow
 ### 1 **Opaque & Fragmented Discovery**
 Traditional RWA sales happen behind closed doors or via static listings. This leads to **fragmented liquidity** and **unfair pricing**, where retail participants have zero visibility into the true market demand for an asset.
 
-### 2 **The "Static Asset" Paradox**
+### 2 **The "<em>Static Asset</em>" Paradox**
 Currently, when a user buys a tokenized invoice, their capital is effectively "frozen" until maturity. The asset remains a dead weight in the wallet, unable to be used as collateral or leveraged without moving it to a specific, siloed lending protocol.
 
 ### 3 **Yield Sniping & Inequity**
@@ -75,6 +75,8 @@ OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every
 > * **Fixed-Price Listings:** Instant liquidity for standard, high-velocity invoices.
 > * **Uniform-Price Auctions:** Fair price discovery for unique or large-cohort assets, ensuring all investors pay the same clearing price.
 
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Realfi.png)
+
 ###  **3 mETH-Powered Leverage**
 > **Self-Amortizing Acquisition**
 > 
@@ -86,11 +88,18 @@ OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every
 > 
 > Your **Open Access ID (OAID)** acts as a universal credit identity. By decoupling collateral custody (Solvency Vault) from credit issuance, users can tap into multiple Mantle lending protocols and more using a single RWA collateral pool. No more moving assets, just portable, verifiable credit.
 
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Composable-Defi.png)
+
 ### **5 Time-Weighted Yield (Token-Days)**
 > **Eliminating Yield Sniping**
 > 
 > Our **Token-Day Engine** calculates yield entitlement down to the second. By tracking the duration of ownership, we ensure yield is distributed fairly between all past and present holders. This mathematically guarantees returns for your exact period of risk.
 
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Summary.png)
+
+---
+### **Data Management**
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Autonomous.png)
 ---
 
 <div align="center">
