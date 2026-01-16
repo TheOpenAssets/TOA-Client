@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
-import { Layout, Pointer, Zap } from "lucide-react";
+import { Layout, Pointer, Zap , DollarSign} from "lucide-react";
 import VideoPlayer from "./video-player";
 import { useRef, useEffect, useState } from "react";
 
@@ -172,6 +172,32 @@ const FaqDetails = ({
                     "Repay loans to restore credit and reclaim excess collateral",
                 buttonText: "Repay",
                 videoSrc: "https://youtu.be/NIzF8LUORrY",
+            },
+        },
+        {
+            value: "payout",
+            icon: <Zap className="h-auto w-4 shrink-0" />,
+            label: "Payout",
+            content: {
+                badge: "Credit",
+                title: "Easy movement of raised amounts",
+                description:
+                    "Move the raised amount from the token sales and acution bids to the originator",
+                buttonText: "Repay",
+                videoSrc: "https://youtu.be/-xeYy6LhB8E",
+            },
+        },
+        {
+            value: "yield",
+            icon: <DollarSign className="h-auto w-4 shrink-0" />,
+            label: "Claim Yield",
+            content: {
+                badge: "Credit",
+                title: "Easy withdrawal of earnings",
+                description:
+                    "Claim your yield earnings from your holdings directly to your wallet",
+                buttonText: "Repay",
+                videoSrc: "https://youtu.be/50K2gFLJ2vg",
             },
         },
     ],

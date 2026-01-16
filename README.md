@@ -479,6 +479,32 @@ npm run preview
 ```
 
 ---
+
+
+
+### OpenAssets Smart Contract Registry (Mantle)
+
+| Contract Name | Address | Description |
+| --- | --- | --- |
+| **Identity Registry** | `0x2E310C62A225033055E88B690F8d054ece8bcbC4` | Source of truth for ERC-3643 KYC/Identity facts |
+| **Token Factory** | `0x7C75795Cf41ee32fB4FEB89964d7591F0a44BcfE` | Core factory for minting compliant RWA tokens |
+| **Yield Vault** | `0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7` | Time-weighted yield distribution engine |
+| **Primary Marketplace** | `0x7D8ac3ff7E7fd1a577ff778922Cc568be669beE0` | Handles RWA auctions and fixed-price listings |
+| **Secondary Market** | `0x23f5c5893333199B3E166aCB8D48479D5E5B32CA` | Peer-to-peer trading engine for RWA tokens |
+| **OAID (Open Access ID)** | `0xcc24b78Fa213304085684833597Fdc6CB5c8DfB0` | Universal on-chain credit identity registry |
+| **Solvency Vault** | `0x039cB576d9F7D77d6bE0269E0904B6ceFA845C6B` | Secure RWA collateral custodian |
+| **Senior Pool** | `0x9E5F4DD0178C08f27cC5Bd3E0e75Ed339385B346` | Primary USDC liquidity lending pool |
+| **Leverage Vault** | `0x5EC05eBFA8AD682d09C8Ef99c1f15844Abe415BF` | mETH-collateralized acquisition manager |
+| **Fluxion Integration** | `0xBf74A4CE5B8D1Aad592A3776e10537Ad27dA28Eb` | Swap logic for mETH ↔ USDC interest servicing |
+| **Attestation Registry** | `0x03FE7d3736402D140659e7bD92B64808E31C3f51` | Storage for asset-level compliance data |
+| **Trusted Issuers** | `0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2` | Whitelist of approved asset originators |
+| **USDC** | `0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238` | Canonical settlement stablecoin |
+| **USDC Faucet** | `0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3` | Testnet faucet for RWA settlement asset |
+| **Mock mETH** | `0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6` | Mantle Staked ETH (mETH) Mock contract |
+| **mETH Faucet** | `0xB50d0AC5D59E456C1f3EdB66403fd27eEbd155dB` | Testnet faucet for leverage collateral |
+| **Mock Fluxion DEX** | `0x882eA0d81d445CF9e696869af4D007008281892D` | DEX router for automated price discovery |
+
+---
 <div align="center">
   <br />
   <sub><strong>GET IN TOUCH</strong></sub>
