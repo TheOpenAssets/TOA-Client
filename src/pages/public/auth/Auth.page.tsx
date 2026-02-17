@@ -2,7 +2,8 @@
 
 
 import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+// import { useAccount } from 'wagmi'; // Removed direct Wagmi dependency
+import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext'; // Added AuthStrategyContext
 import { Input } from '../../../components/ui/input';
 import { FileUpload } from '../../../components/ui/file-upload';
 import { Button } from '../../../components/ui/button';
@@ -15,14 +16,16 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Wavy } from '../../../components/ui/wavy';
 import { PageLoader } from '../../../components/ui/page-loader';
-
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 type AuthStep = 'new_user' | 'documents' | 'documents_uploaded' | 'kyc_submit';
 
 export default function AuthPage() {
 
   const navigate = useNavigate();
-  const { address } = useAccount();
+  // const { address } = useAccount(); // Removed direct Wagmi use
+  const { address } = useAuthStrategy(); // Use network-agnostic hook
+  const { networkPath } = useNetwork();
 
   const { setLoading, user } = useAuthStore();
 
@@ -45,7 +48,7 @@ export default function AuthPage() {
     setIsUsingTestAadhar(checked);
     if (checked) {
       try {
-        
+
         setIsFetchingTestAadhar(isUsingTestAadhar);
         const response = await fetch('/AadharGenerated.png');
         if (!response.ok) throw new Error('Failed to load test file');
@@ -97,9 +100,9 @@ export default function AuthPage() {
 
       // After success: First-time user → Redirect to marketplace
       if (user?.role === 'INVESTOR')
-        navigate('/marketplace');
+        navigate(networkPath('/marketplace'));
       else
-        navigate('/issuer/dashboard');
+        navigate(networkPath('/issuer/dashboard'));
     } catch (err: any) {
       console.error('Error submitting KYC:', err);
       setError(err.message || 'KYC submission failed');
@@ -270,12 +273,12 @@ export default function AuthPage() {
                         </label>
                       </div>
                     </FileUpload>
-                  ) :(
+                  ) : (
                     <div className='w-[300px] h-[100px] flex items-center justify-center'>
-                    <PageLoader text="" size='sm' />
+                      <PageLoader text="" size='sm' />
                     </div>
                   )}
-                 
+
                 </div>
 
                 <Button

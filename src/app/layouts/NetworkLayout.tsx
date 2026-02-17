@@ -4,6 +4,8 @@ import { useNetwork } from '../../lib/network/NetworkContext';
 import { WalletProvider } from '../providers/WalletProvider';
 import { WalletIntegrityProvider } from '../providers/WalletIntegrityProvider';
 import { StellarWalletProvider } from '../providers/StellarWalletProvider';
+import { EvmAuthProvider } from '../../components/auth/EvmAuthProvider';
+import { StellarAuthProvider } from '../../components/auth/StellarAuthProvider';
 
 export const NetworkLayout: React.FC = () => {
   const { networkType } = useNetwork();
@@ -13,7 +15,9 @@ export const NetworkLayout: React.FC = () => {
   if (networkType === 'stellar') {
     return (
       <StellarWalletProvider>
-        <Outlet />
+        <StellarAuthProvider>
+          <Outlet />
+        </StellarAuthProvider>
       </StellarWalletProvider>
     );
   }
@@ -21,7 +25,9 @@ export const NetworkLayout: React.FC = () => {
   return (
     <WalletProvider>
       <WalletIntegrityProvider>
-        <Outlet />
+        <EvmAuthProvider>
+          <Outlet />
+        </EvmAuthProvider>
       </WalletIntegrityProvider>
     </WalletProvider>
   );

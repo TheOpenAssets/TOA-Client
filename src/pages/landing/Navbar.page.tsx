@@ -5,6 +5,7 @@ import { useAuthActions } from "../../hooks/useAuthActions";
 import { Button } from "../../components/ui/button";
 import { Layout, Droplet } from "lucide-react";
 import { useNetwork } from "../../lib/network/NetworkContext";
+import { NetworkSwitcher } from "../../components/common/NetworkSwitcher";
 
 
 
@@ -19,12 +20,12 @@ const Navbar = () => {
   };
 
   return (
-    <header className="max-w-7xl mx-auto px-6 relative z-20 p-5">
+    <header className="max-w-7xl mx-auto px-6 sticky top-0 z-50 p-5 bg-transparent transition-all duration-300">
       <div className="flex flex-row justify-between">
         <div className="flex flex-row justify-between">
           {/* Logo */}
           <div className="navbar-logo">
-            <img src="/ALogo-removebg-preview.svg" alt="Openassets"  onClick={() => navigate(networkPath('/'))} className="h-20 w-20 rounded-full object-cover hover:shadow-xs cursor-pointer" />
+            <img src="/ALogo-removebg-preview.svg" alt="Openassets" onClick={() => navigate(networkPath('/'))} className="h-20 w-20 rounded-full object-cover hover:shadow-xs cursor-pointer" />
           </div>
 
           {/* Navigation Links */}
@@ -42,8 +43,8 @@ const Navbar = () => {
             <Link to={networkPath('/how-it-works')} className="nav-link underline-animation underline-animation-purple">
               <p className="font-extrabold text-2xl font-beau">How it works</p>
             </Link>
-            <a 
-              href="https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19" 
+            <a
+              href="https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19"
               className="nav-link underline-animation underline-animation-purple"
               target="_blank"
               rel="noopener noreferrer"
@@ -56,6 +57,7 @@ const Navbar = () => {
 
         {/* CTA Button */}
         <div className="flex items-center gap-4">
+          <NetworkSwitcher />
 
           <Button
             onClick={handleGetUsdcClick}

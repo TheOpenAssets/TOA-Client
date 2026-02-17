@@ -49,7 +49,7 @@ export function Wavy({
 
 
     return (
-        <section className={`relative -z-100 w-full min-h-screen overflow-hidden bg-background flex items-center justify-center ${className}`}>
+        <section className={`fixed inset-0 -z-50 w-full h-full overflow-hidden bg-background ${className}`}>
             <div className="fixed inset-0 w-screen h-screen">
                 {mounted && (
                     <>
