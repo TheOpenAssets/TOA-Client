@@ -9,12 +9,15 @@ import type { AdminAsset, AdminStats, AdminActivity } from '../../stores/admin.s
 import type { AuctionClearingPriceInfo } from '../../types/admin.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
 class AdminService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
+  }
+
+  private getNetwork(): string {
+    const segment = window.location.pathname.split('/')[1];
+    return ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
   }
 
   async getChallenge(walletAddress: string): Promise<ChallengeResponse> {
@@ -54,8 +57,9 @@ class AdminService extends BaseService {
       const data: LoginResponse = await response.json();
 
       if (data.tokens) {
-        localStorage.setItem('access_token', data.tokens.access);
-        localStorage.setItem('refresh_token', data.tokens.refresh);
+        const network = this.getNetwork();
+        localStorage.setItem(`${network}_access_token`, data.tokens.access);
+        localStorage.setItem(`${network}_refresh_token`, data.tokens.refresh);
       }
 
       return data;

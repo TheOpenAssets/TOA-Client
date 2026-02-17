@@ -1,9 +1,7 @@
 // src/lib/api/faucet.service.ts
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-interface FaucetResponse {
+export interface FaucetResponse {
   success: boolean;
   message: string;
   transactionHash: string;
@@ -14,7 +12,7 @@ interface FaucetResponse {
 
 class FaucetService extends BaseService {
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   async getUsdcFromFaucet(receiverAddress: string): Promise<FaucetResponse> {

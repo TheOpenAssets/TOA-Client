@@ -102,11 +102,11 @@ const PortfolioPage = () => {
   // Filtered data based on search term
   // Get all portfolio items (both STATIC and LEVERAGE)
   const allPortfolioItems = portfolio?.portfolio || [];
-  const staticAssets = allPortfolioItems.filter(item => item.purchaseType === 'STATIC');
-  const leveragePositions = allPortfolioItems.filter(item => item.purchaseType === 'LEVERAGE');
+  const staticAssets = allPortfolioItems.filter((item: any) => item.purchaseType === 'STATIC');
+  const leveragePositions = allPortfolioItems.filter((item: any) => item.purchaseType === 'LEVERAGE');
 
   // Filter ALL assets for My Assets table (both STATIC and LEVERAGE)
-  const filteredAssets = allPortfolioItems.filter(asset =>
+  const filteredAssets = allPortfolioItems.filter((asset: any) =>
     asset.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     asset.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
@@ -118,14 +118,14 @@ const PortfolioPage = () => {
     false
   ) || [];
 
-  const filteredPositions = leveragePositions.filter(position =>
+  const filteredPositions = leveragePositions.filter((position: any) =>
     position.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     position.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
   );
 
   const filteredOrders = myOrders.filter(order =>
-    (filteredAssets.find(asset => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (filteredAssets.find((asset: any) => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
@@ -139,7 +139,7 @@ const PortfolioPage = () => {
 
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
-    (sum, asset) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
+    (sum: number, asset: any) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
     0
   );
 
@@ -193,7 +193,7 @@ const PortfolioPage = () => {
   }, [isCancelSuccess]);
 
   const handleIncreaseCreditLimit = () => {
-    const validAssets = staticAssets.filter(asset => asset.yieldInfo?.settlementDistributed === false);
+    const validAssets = staticAssets.filter((asset: any) => asset.yieldInfo?.settlementDistributed === false);
     if (validAssets.length > 0) {
       setShowDepositModal(true);
     } else {
@@ -240,7 +240,7 @@ const PortfolioPage = () => {
     }
 
     // Find the asset in portfolio to get tokenAddress
-    const asset = portfolio?.portfolio?.find(a => a.assetId === assetId);
+    const asset = portfolio?.portfolio?.find((a: any) => a.assetId === assetId);
     if (!asset || !asset.tokenAddress) {
       showError('Asset Not Found', 'Could not find token address for this asset');
       return;

@@ -3,8 +3,6 @@ import type { KYCSubmitResponse } from '../../types/auth.types';
 import BaseService from './base.service';
 import { handleAPIError } from '../utils/error-handler';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
 // ============================================================================
 // MOCK MODE CONFIGURATION
 // ============================================================================
@@ -12,21 +10,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok
 // Set to false when backend is ready
 const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
 
-/**
- * KYC Service - Handles KYC-related API calls
- * Separate from auth service as per requirements
- *
- * MOCK MODE: Currently using simulated backend responses for development
- *
- * TO SWITCH TO REAL BACKEND:
- * 1. Set USE_MOCK_MODE = false (or set VITE_USE_MOCK_AUTH=false in .env)
- * 2. Ensure backend is running at API_BASE_URL
- * 3. No other code changes needed - all endpoints are already configured
- */
 class KYCService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
+  }
+
+  private getNetwork(): string {
+    const segment = window.location.pathname.split('/')[1];
+    return ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
   }
 
   /**
@@ -119,14 +111,15 @@ class KYCService extends BaseService {
    * - Implement rate limiting to prevent abuse
    */
   async submitKYC(payload: FormData): Promise<KYCSubmitResponse> {
+    const network = this.getNetwork();
+    const token = localStorage.getItem(`${network}_access_token`) || localStorage.getItem('access_token');
+
     // MOCK MODE: Simulate KYC submission
     if (USE_MOCK_MODE) {
       console.log('🔧 MOCK MODE: Simulating KYC submission');
       console.log('Payload:', payload);
 
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
+      if (!token) {
         handleAPIError(new Error('Not a verified user, please solve the challenge.'));
       }
 
@@ -147,7 +140,7 @@ class KYCService extends BaseService {
       const response = await fetch(`${this.baseURL}/kyc/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${token}`,
           // Do NOT set Content-Type - let the browser handle multipart/form-data boundary
         },
         body: payload,

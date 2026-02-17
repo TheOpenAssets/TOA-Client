@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, ChevronDown, ChevronUp, Filter, XCircle } from 'lucide-react';
 import type { SecondaryOrder } from '../../types/marketplace.types';
-import type { PortfolioAsset } from './../../lib/api/portfolio.service';
+import type { PortfolioAsset } from '../../types/portfolio.types';
 import {
   Dialog,
   DialogContent,

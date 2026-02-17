@@ -13,20 +13,9 @@ import type {
     SyncMetricsResponse,
 } from '../../types/changelog.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-/**
- * Changelog Service - Handles GitHub activities and changelog API calls
- *
- * Endpoints:
- * - POST /changelog/sync - Trigger manual sync
- * - GET /changelog/commits - Get commit history
- * - GET /changelog/pull-requests - Get pull requests
- * - GET /changelog/timeline - Get mixed timeline
- */
 class ChangelogService extends BaseService {
     constructor() {
-        super(API_BASE_URL);
+        super();
     }
 
     /**

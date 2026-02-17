@@ -1,125 +1,13 @@
 // src/lib/api/notification.service.ts
 
 import BaseService from './base.service';
+import type { 
+  BackendNotification, 
+  NotificationsResponse, 
+  UnreadCountResponse,
+  NotificationType
+} from '../../types/notification.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
-/**
- * Notification types from backend
- * export enum NotificationType {
-  ASSET_STATUS = 'ASSET_STATUS',
-  KYC_STATUS = 'KYC_STATUS',
-  YIELD_DISTRIBUTED = 'YIELD_DISTRIBUTED',
-  PAYOUT_SETTLED = 'PAYOUT_SETTLED',
-  TOKEN_PURCHASED = 'TOKEN_PURCHASED',
-  TOKEN_DEPLOYED = 'TOKEN_DEPLOYED',
-  SYSTEM_ALERT = 'SYSTEM_ALERT',
-  MARKETPLACE_LISTING = 'MARKETPLACE_LISTING',
-  BID_PLACED = 'BID_PLACED',
-  AUCTION_WON = 'AUCTION_WON',
-  BID_REFUNDED = 'BID_REFUNDED',
-  ORDER_FILLED = 'ORDER_FILLED',
-  ORDER_CANCELED = 'ORDER_CANCELED',
-  ORDER_ACTIVE = 'ORDER_ACTIVE',
-  ORDER_CREATED = 'ORDER_CREATED',
-  ORDER_CANCELLED = 'ORDER_CANCELLED',
-
-}
-
-export enum NotificationSeverity {
-  INFO = 'info',
-  SUCCESS = 'success',
-  WARNING = 'warning',
-  ERROR = 'error',
-}
-
-export enum NotificationAction {
-  VIEW_ASSET = 'VIEW_ASSET',
-  VIEW_PORTFOLIO = 'VIEW_PORTFOLIO',
-  CLAIM_YIELD = 'CLAIM_YIELD',
-  VIEW_MARKETPLACE = 'VIEW_MARKETPLACE',
-  VIEW_KYC = 'VIEW_KYC',
-  NONE = 'NONE',
-}
-
- * 
- * 
- */
-export type NotificationType =
-  | 'ASSET_STATUS'
-  | 'KYC_STATUS'
-  | 'YIELD_DISTRIBUTED'
-  | 'PAYOUT_SETTLED'
-  | 'TOKEN_PURCHASED'
-  | 'TOKEN_DEPLOYED'
-  | 'SYSTEM_ALERT'
-  | 'MARKETPLACE_LISTING'
-  | 'BID_PLACED'
-  | 'AUCTION_WON'
-  | 'BID_REFUNDED'
-  | 'ORDER_FILLED'
-  | 'ORDER_CANCELED'
-  | 'ORDER_ACTIVE'
-  | 'ORDER_CREATED'
-  | 'ORDER_CANCELLED';
-
-export type NotificationSeverity = 'info' | 'success' | 'warning' | 'error';
-
-export type NotificationAction =
-  | 'VIEW_ASSET'
-  | 'VIEW_PORTFOLIO'
-  | 'CLAIM_YIELD'
-  | 'VIEW_MARKETPLACE'
-  | 'VIEW_KYC'
-  | 'NONE';
-
-/**
- * Notification structure from backend
- */
-export interface BackendNotification {
-  _id: string;
-  header: string;
-  summary?: string; // Added from SSE payload
-  detail: string;
-  type: NotificationType;
-  severity: NotificationSeverity;
-  action: NotificationAction;
-  walletAddress?: string; // Added from SSE payload
-  actionMetadata?: {
-    assetId?: string;
-    amount?: string;
-    totalPayment?: string;
-    bidIndex?: string;
-    [key: string]: any;
-  };
-  icon?: string;
-  read: boolean;
-  readAt: string | null;
-  receivedAt: string;
-}
-
-/**
- * Response from GET /notifications
- */
-export interface NotificationsResponse {
-  notifications: BackendNotification[];
-  meta: {
-    unreadCount: number;
-    totalCount: number;
-  };
-}
-
-/**
- * Response from GET /notifications/unread-count
- */
-export interface UnreadCountResponse {
-  unreadCount: number;
-}
-
-/**
- * Notification Service - Connects to backend /notifications endpoints
- * Based on NOTIFICATIONS.md API spec
- */
 class NotificationService extends BaseService {
   private sseAbortController: AbortController | null = null;
   private sseReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
@@ -135,19 +23,16 @@ class NotificationService extends BaseService {
   private readonly CACHE_TTL = 30000; // 30 seconds cache
 
   constructor() {
-    super(API_BASE_URL);
+    super();
+  }
+
+  private getNetwork(): string {
+    const segment = window.location.pathname.split('/')[1];
+    return ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
   }
 
   /**
    * Fetch all notifications with optional filtering
-   * GET /notifications
-   *
-   * OPTIMIZED: Prevents multiple concurrent fetches and caches results
-   *
-   * @param filter - 'all', 'unread', or 'read'
-   * @param limit - Number of notifications per page (default: 20)
-   * @param offset - Pagination offset (default: 0)
-   * @param forceRefresh - Force bypass cache (default: false)
    */
   async getAllNotifications(
     filter: 'all' | 'unread' | 'read' = 'all',
@@ -155,14 +40,12 @@ class NotificationService extends BaseService {
     offset: number = 0,
     forceRefresh: boolean = false
   ): Promise<NotificationsResponse> {
-    // Return cached data if available and not expired
     const now = Date.now();
     const isCacheValid = this.cachedNotifications !== null &&
       (now - this.cacheTimestamp) < this.CACHE_TTL &&
       !forceRefresh;
 
     if (isCacheValid && offset === 0) {
-      console.log('📦 Returning cached notifications (preventing duplicate fetch)');
       return {
         notifications: this.cachedNotifications!,
         meta: {
@@ -172,13 +55,10 @@ class NotificationService extends BaseService {
       };
     }
 
-    // If already fetching, return the existing promise to prevent concurrent fetches
     if (this.isFetchingNotifications && this.notificationsFetchPromise) {
-      console.log('⏳ Fetch already in progress, waiting for existing request...');
       return this.notificationsFetchPromise;
     }
 
-    // Mark as fetching and create new fetch promise
     this.isFetchingNotifications = true;
 
     this.notificationsFetchPromise = (async () => {
@@ -188,12 +68,10 @@ class NotificationService extends BaseService {
         queryParams.append('limit', limit.toString());
         queryParams.append('offset', offset.toString());
 
-        // Create AbortController with 30s timeout
         const abortController = new AbortController();
         const timeoutId = setTimeout(() => abortController.abort(), 30000);
 
         try {
-          console.log('🔄 Fetching notifications from API...');
           const response = await fetch(
             `${this.baseURL}/notifications`,
             {
@@ -211,7 +89,6 @@ class NotificationService extends BaseService {
 
           const data: NotificationsResponse = await response.json();
 
-          // Cache the results (only for first page)
           if (offset === 0) {
             this.cachedNotifications = data.notifications;
             this.cachedUnreadCount = data.meta.unreadCount;
@@ -226,7 +103,6 @@ class NotificationService extends BaseService {
         console.error('Error fetching notifications:', error);
         throw error;
       } finally {
-        // Reset fetching state
         this.isFetchingNotifications = false;
         this.notificationsFetchPromise = null;
       }
@@ -235,10 +111,6 @@ class NotificationService extends BaseService {
     return this.notificationsFetchPromise;
   }
 
-  /**
-   * Get notification by ID
-   * GET /notifications/:id
-   */
   async getNotificationById(id: string): Promise<BackendNotification> {
     try {
       const abortController = new AbortController();
@@ -267,10 +139,6 @@ class NotificationService extends BaseService {
     }
   }
 
-  /**
-   * Get unread count
-   * GET /notifications/unread-count
-   */
   async getUnreadCount(): Promise<number> {
     try {
       const abortController = new AbortController();
@@ -300,10 +168,6 @@ class NotificationService extends BaseService {
     }
   }
 
-  /**
-   * Mark notification as read
-   * PATCH /notifications/:id/read
-   */
   async markAsRead(id: string): Promise<void> {
     try {
       const abortController = new AbortController();
@@ -327,7 +191,6 @@ class NotificationService extends BaseService {
           throw new Error('Failed to mark notification as read');
         }
 
-        // Update cache
         if (this.cachedNotifications) {
           const notification = this.cachedNotifications.find((n) => n._id === id);
           if (notification && !notification.read) {
@@ -345,10 +208,6 @@ class NotificationService extends BaseService {
     }
   }
 
-  /**
-   * Mark all notifications as read
-   * POST /notifications/mark-all-read
-   */
   async markAllAsRead(): Promise<void> {
     try {
       const abortController = new AbortController();
@@ -372,7 +231,6 @@ class NotificationService extends BaseService {
           throw new Error('Failed to mark all notifications as read');
         }
 
-        // Update cache - mark all as read
         if (this.cachedNotifications) {
           const now = new Date().toISOString();
           this.cachedNotifications.forEach((n) => {
@@ -392,9 +250,6 @@ class NotificationService extends BaseService {
     }
   }
 
-  /**
-   * Add a new notification to the cache (called when SSE receives new notification)
-   */
   addNotificationToCache(notification: BackendNotification): void {
     if (this.cachedNotifications) {
       this.cachedNotifications = [notification, ...this.cachedNotifications];
@@ -404,35 +259,21 @@ class NotificationService extends BaseService {
     }
   }
 
-  /**
-   * Invalidate the cache (force next fetch to refresh)
-   */
   invalidateCache(): void {
     this.cachedNotifications = null;
     this.cacheTimestamp = 0;
     this.cachedUnreadCount = 0;
   }
 
-  /**
-   * Subscribe to real-time notifications via SSE
-   * GET /notifications/stream
-   * 
-   * Custom implementation using fetch/ReadableStream to support headers (Auth)
-   * Mimics EventSource behavior including parsing event types.
-   *
-   * @param callback - Function called when new notification arrives
-   * @returns Unsubscribe function
-   */
   subscribeToNotifications(callback: (notification: BackendNotification) => void): () => void {
     if (this.isSSEConnected) {
-      console.warn('⚠️ SSE connection already active, skipping duplicate');
       return () => this.closeSSEConnection();
     }
 
     this.closeSSEConnection();
-    const token = localStorage.getItem('access_token');
+    const network = this.getNetwork();
+    const token = localStorage.getItem(`${network}_access_token`) || localStorage.getItem('access_token');
     if (!token) {
-      console.error('No access token found for SSE connection');
       return () => { };
     }
 
@@ -442,10 +283,6 @@ class NotificationService extends BaseService {
 
       try {
         const url = `${this.baseURL}/notifications/stream`;
-        console.log(`🔄 Connecting to Notification Stream at: ${url}`);
-
-        // Match BaseService headers and required SSE headers
-        // Removing ngrok-skip-browser-warning as it might cause CORS issues on localhost if not allowed
         const headers: HeadersInit = {
           'Authorization': `Bearer ${token}`,
           'Accept': 'text/event-stream',
@@ -459,14 +296,11 @@ class NotificationService extends BaseService {
         });
 
         if (!response.ok) {
-          const errorText = await response.text().catch(() => 'No error details');
-          throw new Error(`SSE Connection Failed: ${response.status} ${response.statusText} - ${errorText}`);
+          throw new Error(`SSE Connection Failed: ${response.status}`);
         }
 
         this.sseReader = response.body?.getReader() || null;
         if (!this.sseReader) throw new Error('ReadableStream not supported');
-
-        console.log('✅ SSE Connected');
 
         const decoder = new TextDecoder();
         let buffer = '';
@@ -477,7 +311,6 @@ class NotificationService extends BaseService {
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          // Keep the last partial line in buffer
           buffer = lines.pop() || '';
 
           let currentEvent = 'message';
@@ -485,12 +318,10 @@ class NotificationService extends BaseService {
 
           for (const line of lines) {
             if (line.trim() === '') {
-              // End of event dispatch
               if (currentData) {
                 try {
                   if (currentEvent === 'notification') {
                     const rawData = JSON.parse(currentData);
-                    // Map SSE payload to BackendNotification interface
                     const notification: BackendNotification = {
                       _id: rawData.id || rawData._id,
                       header: rawData.header || rawData.summary,
@@ -506,11 +337,8 @@ class NotificationService extends BaseService {
                       walletAddress: rawData.walletAddress,
                       icon: rawData.icon
                     };
-                    console.log('🔔 Notification Received:', notification.header);
                     this.addNotificationToCache(notification);
                     callback(notification);
-                  } else if (currentEvent === 'connected') {
-                    console.log('📡 Stream Handshake:', currentData);
                   }
                 } catch (e) {
                   console.error('Error parsing SSE data:', e);
@@ -530,10 +358,8 @@ class NotificationService extends BaseService {
         }
       } catch (error: any) {
         if (error.name !== 'AbortError') {
-          console.error('❌ SSE Error:', error);
           if (this.isSSEConnected) {
             this.reconnectTimeout = setTimeout(() => {
-              console.log('♻️ Reconnecting SSE...');
               connectSSE();
             }, 5000);
           }
@@ -547,22 +373,14 @@ class NotificationService extends BaseService {
     return () => this.closeSSEConnection();
   }
 
-  /**
-   * Close SSE connection
-   */
   private closeSSEConnection(): void {
     this.isSSEConnected = false;
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     if (this.sseAbortController) this.sseAbortController.abort();
     this.sseAbortController = null;
     this.sseReader = null;
-    console.log('🔌 SSE Connection Closed');
   }
 
-  /**
-   * Filter notifications by role
-   * This is client-side filtering to ensure only relevant notifications are shown
-   */
   filterNotificationsByRole(
     notifications: BackendNotification[],
     role: 'ORIGINATOR' | 'INVESTOR' | 'ADMIN'
@@ -595,5 +413,5 @@ class NotificationService extends BaseService {
   }
 }
 
-// Singleton instance
 export const notificationService = new NotificationService();
+export type { NotificationType, BackendNotification, NotificationsResponse, UnreadCountResponse };

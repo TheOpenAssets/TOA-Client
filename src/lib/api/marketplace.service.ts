@@ -13,19 +13,10 @@ import type {
 } from '@/types/marketplace.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
-/**
- * Marketplace Service - Handles marketplace-related API calls
- *
- * Endpoints:
- * - GET /marketplace/listings - Get all asset listings
- * - GET /marketplace/listings/:assetId - Get specific asset details
- */
 class MarketplaceService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**

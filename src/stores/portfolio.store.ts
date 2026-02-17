@@ -1,6 +1,7 @@
 // src/stores/portfolio.store.ts
 import { create } from 'zustand';
-import { portfolioService, type PortfolioResponse } from '../lib/api/portfolio.service';
+import { portfolioService } from '../lib/api/portfolio.service';
+import type { PortfolioResponse } from '../types/portfolio.types';
 
 interface PortfolioState {
   portfolio: PortfolioResponse | null;

@@ -5,9 +5,11 @@ import { authService } from '../lib/api/auth.service';
 import { useAuthStore } from '../stores/auth.store';
 import { useState, useEffect } from 'react';
 import { issuerService } from "../lib/api/issuer.service";
+import { useNetwork } from "../lib/network/NetworkContext";
 
 export const useAuthActions = () => {
   const navigate = useNavigate();
+  const { networkPath } = useNetwork();
   const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
@@ -50,17 +52,17 @@ export const useAuthActions = () => {
       setAuthenticatedWallet(address);
 
       if (loginResponse.user.role === 'ORIGINATOR') {
-        navigate('/issuer/dashboard');
+        navigate(networkPath('/issuer/dashboard'));
       } else if (loginResponse.user.role === 'INVESTOR') {
         if (loginResponse.user.kyc === true) {
-          navigate('/portfolio');
+          navigate(networkPath('/portfolio'));
         } else {
-          navigate('/auth', { state: { showKycForm: true } });
+          navigate(networkPath('/auth'), { state: { showKycForm: true } });
         }
       } else if (loginResponse.user.role === 'ADMIN') {
-        navigate('/admin');
+        navigate(networkPath('/admin'));
       } else {
-        navigate('/auth', { state: { showKycForm: true } });
+        navigate(networkPath('/auth'), { state: { showKycForm: true } });
       }
     } catch (err: any) {
       console.error('Error during authentication:', err);
@@ -95,16 +97,16 @@ export const useAuthActions = () => {
 
       if (loginResponse.user.role === 'ORIGINATOR') {
         if (loginResponse.user.kyc === true) {
-          navigate('/issuer/dashboard');
+          navigate(networkPath('/issuer/dashboard'));
         } else {
-          navigate('/auth', { state: { showKycForm: true } });
+          navigate(networkPath('/auth'), { state: { showKycForm: true } });
         }
       } else if (loginResponse.user.role === 'INVESTOR') {
-        navigate('/portfolio');
+        navigate(networkPath('/portfolio'));
       } else if (loginResponse.user.role === 'ADMIN') {
-        navigate('/admin');
+        navigate(networkPath('/admin'));
       } else {
-        navigate('/auth', { state: { showKycForm: true } });
+        navigate(networkPath('/auth'), { state: { showKycForm: true } });
       }
     } catch (err: any) {
       console.error('Error during authentication:', err);

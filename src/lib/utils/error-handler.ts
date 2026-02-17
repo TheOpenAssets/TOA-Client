@@ -25,7 +25,16 @@ export class APIError extends Error {
 export const handle401Unauthorized = (): void => {
   console.log('🔒 401 Unauthorized detected - Logging out user');
 
+  const segment = window.location.pathname.split('/')[1];
+  const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+
   // Clear all auth-related data from localStorage
+  ['mantle', 'stellar'].forEach(n => {
+    localStorage.removeItem(`${n}_access_token`);
+    localStorage.removeItem(`${n}_refresh_token`);
+    localStorage.removeItem(`${n}_authenticated_wallet_address`);
+  });
+
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('authenticated_wallet_address');
@@ -34,8 +43,8 @@ export const handle401Unauthorized = (): void => {
   localStorage.removeItem('redirect_after_verification');
 
   // Disconnect wallet by triggering a page reload to reset wagmi state
-  // This ensures the wallet connection is also cleared
-  window.location.href = '/';
+  // Redirect to current network home
+  window.location.href = `/${network}`;
 };
 
 export const handleAPIError = (error: any): never => {
@@ -61,8 +70,11 @@ export const handleAPIError = (error: any): never => {
     localStorage.removeItem('user');
     localStorage.removeItem('redirect_after_verification');
 
-    // Redirect to auth page
-    window.location.href = '/';
+    const segment = window.location.pathname.split('/')[1];
+    const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+
+    // Redirect to auth page on current network
+    window.location.href = `/${network}`;
     throw new APIError(error.message, 401, 'VERIFICATION_REQUIRED');
   }
 

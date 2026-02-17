@@ -13,9 +13,11 @@ import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
 import {
   notificationService,
-  type BackendNotification,
-  type NotificationType,
 } from '../../lib/api/notification.service';
+import type {
+  BackendNotification,
+  NotificationType,
+} from '../../types/notification.types';
 import { PageLoader } from '../ui/page-loader';
 
 const getNotificationIcon = (type: NotificationType | string) => {

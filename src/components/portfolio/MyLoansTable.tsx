@@ -23,7 +23,8 @@ import { solvencyContractService } from '../../lib/api/solvency-contract.service
 import { format } from 'date-fns';
 import { RepayLoanModal } from './RepayLoanModal';
 import { PageLoader } from '../ui/page-loader';
-import { portfolioService, type PortfolioAsset } from '../../lib/api/portfolio.service';
+import { portfolioService } from '../../lib/api/portfolio.service';
+import type { PortfolioAsset } from '../../types/portfolio.types';
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { ToastContainer } from '../ui/toast';
 import { useToast } from '../../hooks/useToast';

@@ -12,7 +12,7 @@ const HomePage = () => {
   return (
     <>
       <Wavy />
-    <main className="absolute top-0 left-0 snap-y snap-mandatory overflow-x-hidden h-screen w-screen">
+    <main className="snap-y snap-mandatory overflow-x-hidden h-screen w-screen">
       {/* SECTION 1: HERO */}
       <div className="snap-start min-h-screen z-20">
         {/* Background & Nav usually shouldn't fade in/out on scroll, they are structural */}

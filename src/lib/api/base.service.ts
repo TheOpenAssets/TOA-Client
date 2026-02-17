@@ -12,10 +12,21 @@ export interface TimeoutController {
 }
 
 class BaseService {
-  protected baseURL: string;
+  private _baseURL: string;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor(baseURL?: string) {
+    this._baseURL = baseURL ?? '';
+  }
+
+  protected get baseURL(): string {
+    if (this._baseURL) return this._baseURL;
+    
+    // Dynamic resolution from current route
+    const segment = window.location.pathname.split('/')[1];
+    if (segment === 'stellar') {
+      return import.meta.env.VITE_STELLAR_API_URL ?? 'http://localhost:3001';
+    }
+    return import.meta.env.VITE_MANTLE_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
   }
 
   protected getHeaders = () => {
@@ -28,10 +39,14 @@ class BaseService {
   }
 
   protected getAuthHeaders = () => {
-    const token = localStorage.getItem('access_token');
+    const segment = window.location.pathname.split('/')[1];
+    const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+    
+    const token = localStorage.getItem(`${network}_access_token`) 
+      ?? localStorage.getItem('access_token'); // legacy fallback
+      
     if (!token) {
-      // This will trigger the error handler which redirects to /verify-challenge
-      handleAPIError(new Error('Not a verified user, please solve the challenge'));
+      handleAPIError(new Error('Not a verified user'));
     }
     return {
       ...this.getHeaders(),

@@ -1,11 +1,9 @@
 import BaseService from './base.service';
 import type { LeveragePosition,LeveragePositionDetails, LeverageQuote, MethPrice } from '../../types/leverage.types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
 class LeverageService extends BaseService {
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**

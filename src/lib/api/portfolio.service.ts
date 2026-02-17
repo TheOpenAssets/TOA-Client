@@ -1,89 +1,17 @@
 // src/lib/api/portfolio.service.ts
 import BaseService from './base.service';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
-export interface PortfolioAsset {
-  purchaseType: 'STATIC' | 'LEVERAGE';
-  assetId: string;
-  tokenAddress: string;
-  totalAmount: string;
-  status: string;
-  // STATIC-specific fields
-  totalInvested?: string;
-  purchaseCount?: number;
-  firstPurchase: string;
-  lastPurchase?: string;
-  metadata: {
-    assetName?: string;
-    industry?: string;
-    riskTier?: string;
-    positionType?: string;
-  };
-  yieldInfo?: {
-    settlementDistributed: boolean;
-    claimableYield: string;
-    claimableYieldFormatted: string;
-    settlementDate?: string;
-    settlementId?: string;
-    yieldClaimTxHash?: string;
-  };
-  // LEVERAGE-specific fields
-  positionId?: number;
-  createdAt?: string;
-  mETHCollateral?: string;
-  usdcBorrowed?: string;
-  healthFactor?: number;
-  healthStatus?: string;
-  totalInterestPaid?: string;
-  lastHarvestTime?: string;
-  settlementTxHash?: string;
-  leverageInfo?: {
-    type: 'ACTIVE' | 'SETTLED';
-    mETHCollateralFormatted: string;
-    usdcBorrowedFormatted: string;
-    healthFactorFormatted?: string;
-    healthStatus?: string;
-    totalInterestPaidFormatted: string;
-    claimableYield: string;
-    claimableYieldFormatted: string;
-    userYield?: string;
-    userYieldFormatted?: string;
-    mETHReturned?: string;
-    mETHReturnedFormatted?: string;
-    settlementTxHash?: string;
-    settlementDate?: string;
-  };
-}
-
-export interface PortfolioResponse {
-  success: boolean;
-  investorWallet: string;
-  totalAssets: number;
-  totalPurchases: number;
-  totalLeveragePositions?: number;
-  portfolio: PortfolioAsset[];
-}
+import type { PortfolioResponse } from '../../types/portfolio.types';
 
 class PortfolioService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**
    * Get investor's complete portfolio
    * 
    * ENDPOINT: GET /marketplace/portfolio
-   * 
-   * BACKEND RESPONSE:
-   * {
-   *   success: boolean,
-   *   investorWallet: string,
-   *   totalAssets: number,
-   *   totalPurchases: number,
-   *   portfolio: PortfolioAsset[]
-   * }
    */
   async getPortfolio(): Promise<PortfolioResponse> {
     try {
@@ -97,7 +25,7 @@ class PortfolioService extends BaseService {
       if (!response.ok) {
         const error = await response.json();
 
-        // 401 will be handled by global fetch interceptor, but throw error anyway
+        // 401 will be handled by global fetch interceptor
         if (response.status === 401) {
           throw new Error('Unauthorized');
         }
@@ -116,24 +44,13 @@ class PortfolioService extends BaseService {
 
   /**
    * Notify backend after successful token purchase
-   * 
-   * ENDPOINT: POST /marketplace/purchases/notify
-   * 
-   * BACKEND RESPONSE:
-   * {
-   *   success: boolean,
-   *   purchaseId: string,
-   *   assetId: string,
-   *   amount: string,
-   *   totalPayment: string,
-   *   tokenAddress: string
-   * }
    */
   async notifyPurchase(data: {
     txHash: string;
     assetId: string;
     amount: string;
     blockNumber: string;
+    type?: string;
   }): Promise<{
     success: boolean;
     purchaseId: string;
