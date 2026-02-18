@@ -7,12 +7,15 @@ import {
   Tag,
 } from 'lucide-react';
 
+import { useNetwork } from '../../../lib/network/NetworkContext';
+
 interface AssetDetailsPageProps {
   asset: any;
 }
 
 const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
   const navigate = useNavigate();
+  const { networkPath } = useNetwork();
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
@@ -102,7 +105,7 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
       <header className="w-full flex flex-row z-40 mt-5 mb-10">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/issuer/dashboard')}
+            onClick={() => navigate(networkPath('/issuer/dashboard'))}
             className="p-2 hover:bg-white rounded-xl transition-all duration-200 border border-gray-200"
           >
             <ArrowLeft className="w-5 h-5 text-[#6B7280]" />

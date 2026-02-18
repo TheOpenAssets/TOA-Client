@@ -15,7 +15,12 @@ import { useToast } from '../../../hooks/useToast';
 import { ToastContainer } from '../../../components/ui/toast';
 import { PageLoader } from '../../../components/ui/page-loader';
 
+import { useNetwork } from '../../../lib/network/NetworkContext';
+
 const OperationsViewPage = () => {
+  const { networkType } = useNetwork();
+  const networkName = networkType === 'stellar' ? 'Stellar' : 'Mantle';
+  const tokenStandard = networkType === 'stellar' ? 'Stellar Asset' : 'ERC-3643';
   const {
     assetsForOperations,
     fetchAdminDashboardData,
@@ -156,7 +161,7 @@ const OperationsViewPage = () => {
           8000
         );
       } else {
-        success('Registration Successful!', 'Asset has been successfully registered on Mantle blockchain.');
+        success('Registration Successful!', `Asset has been successfully registered on ${networkName} blockchain.`);
       }
     } catch (error: any) {
       console.error('❌ Failed to register asset:', error);
@@ -206,7 +211,7 @@ const OperationsViewPage = () => {
           8000
         );
       } else {
-        success('Token Deployed!', 'ERC-3643 compliant token has been successfully deployed on Mantle.');
+        success('Token Deployed!', `${tokenStandard} compliant token has been successfully deployed on ${networkName}.`);
       }
     } catch (error: any) {
       console.error('❌ Failed to deploy token:', error);
@@ -271,7 +276,7 @@ const OperationsViewPage = () => {
         console.log('Transaction Hash:', approvalResult.transactionHash);
         success(
           'Listed & Approved!',
-          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0,6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\nView on explorer:\n${approvalResult.explorerUrl}`,
+          `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0, 6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\nView on explorer:\n${approvalResult.explorerUrl}`,
           10000
         );
       } catch (approvalError: any) {
@@ -387,7 +392,7 @@ const OperationsViewPage = () => {
             On-Chain Operations Center
           </h2>
           <p className="font-gellix text-sm text-foreground/70">
-            Register assets on Mantle and deploy ERC-3643 tokens
+            Register assets on {networkName} and deploy {tokenStandard} tokens
           </p>
         </div>
 
@@ -667,12 +672,12 @@ const OperationsViewPage = () => {
                   <Layers className="w-6 h-6 text-blue-600" />
                 </div>
                 <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                  Register Asset on Mantle
+                  Register Asset on {networkName}
                 </h3>
               </div>
 
               <p className="font-gellix text-sm text-foreground/70 mb-6">
-                This will register the asset on Mantle blockchain with BlobID and attestation hash.
+                This will register the asset on {networkName} blockchain with BlobID and attestation hash.
               </p>
 
               {/* Asset Details */}
@@ -734,7 +739,7 @@ const OperationsViewPage = () => {
                   disabled={processing}
                   className="flex-1 font-gellix font-medium rounded-xl bg-black hover:bg-black/90 text-white shadow-sm"
                 >
-                  {processing ? 'Registering on Mantle...' : 'Confirm Registration'}
+                  {processing ? `Registering on ${networkName}...` : 'Confirm Registration'}
                 </Button>
                 <Button
                   onClick={() => {
@@ -760,12 +765,12 @@ const OperationsViewPage = () => {
                   <Network className="w-6 h-6 text-orange-600" />
                 </div>
                 <h3 className="font-gellix text-2xl font-semibold text-foreground">
-                  Deploy ERC-3643 Token
+                  Deploy {tokenStandard} Token
                 </h3>
               </div>
 
               <p className="font-gellix text-sm text-foreground/70 mb-6">
-                This will deploy a compliant ERC-3643 security token for the asset.
+                This will deploy a compliant {tokenStandard} security token for the asset.
               </p>
 
               {/* Token Details */}
@@ -796,7 +801,7 @@ const OperationsViewPage = () => {
                   </div>
                   <div>
                     <span className="text-foreground/60">Token Standard:</span>
-                    <p className="text-foreground font-semibold mt-1">ERC-3643</p>
+                    <p className="text-foreground font-semibold mt-1">{tokenStandard}</p>
                   </div>
                 </div>
               </div>

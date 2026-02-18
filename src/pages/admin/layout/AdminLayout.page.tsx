@@ -16,20 +16,22 @@ import { NotificationBell } from '../../../components/notifications/Notification
 import { authService } from '../../../lib/api/auth.service';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../stores/auth.store';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 const AdminLayout = () => {
   const location = useLocation();
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { networkPath } = useNetwork();
 
   useEffect(() => {
-    
+
 
     const verifyAuth = async () => {
       try {
         // Check if access token exists
-       
+
         // Verify token with backend
         const currentUser = await authService.getCurrentUser();
 
@@ -37,7 +39,7 @@ const AdminLayout = () => {
         if (currentUser.role !== 'ADMIN') {
           setError('Unauthorized access. You do not have permission to access the admin dashboard.');
           setTimeout(() => {
-            navigate('/', { replace: true });
+            navigate(networkPath('/'), { replace: true });
           }, 2000);
           return;
         }
@@ -47,7 +49,7 @@ const AdminLayout = () => {
         console.error('Authentication verification failed:', err);
         setError(err.message || 'Authentication failed. Redirecting to login...');
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate(networkPath('/'), { replace: true });
         }, 2000);
       }
     };
@@ -79,56 +81,61 @@ const AdminLayout = () => {
     return () => {
       document.head.removeChild(style);
     };
-  }, [navigate, user]);
+  }, [navigate, user, networkPath]);
 
   const navigation = [
     {
       name: 'Overview',
-      path: '/admin',
+      path: networkPath('/admin'),
       icon: LayoutDashboard,
     },
     {
       name: 'Listings',
-      path: '/admin/listings',
+      path: networkPath('/admin/listings'),
       icon: List,
     },
     {
       name: 'Loans',
-      path: '/admin/loans',
+      path: networkPath('/admin/loans'),
       icon: TrendingDown,
     },
     {
       name: 'Compliance',
-      path: '/admin/compliance',
+      path: networkPath('/admin/compliance'),
       icon: ShieldCheck,
     },
     {
       name: 'Operations',
-      path: '/admin/operations',
+      path: networkPath('/admin/operations'),
       icon: Network,
     },
     {
       name: 'Payouts',
-      path: '/admin/payouts',
+      path: networkPath('/admin/payouts'),
       icon: DollarSign,
     },
     {
       name: 'Settlements',
-      path: '/admin/settlements',
+      path: networkPath('/admin/settlements'),
       icon: Coins,
     },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/admin') {
-      return location.pathname === '/admin';
+    // Exact match for root admin path to separate it from sub-paths if needed,
+    // but typically startsWith is fine if ordered correctly or if exact check is preferred for root.
+    // Since all paths start with /network/admin, we need to be careful.
+    // For 'Overview' which is likely /network/admin, we want exact match or it highlights for everything.
+    const overviewPath = networkPath('/admin');
+    if (path === overviewPath) {
+      return location.pathname === overviewPath;
     }
     return location.pathname.startsWith(path);
   };
 
   const handleLogout = () => {
     authService.logout();
-    navigate('/');
+    navigate(networkPath('/'));
   };
 
   return (
@@ -152,9 +159,9 @@ const AdminLayout = () => {
                   <div className="w-32 h-16 bg-foreground rounded-full top-0 left-0">
                     <span className="text-white font-bold text-lg top-0 left-0">
                       <img
-                        src="./ALogo-removebg-preview.svg"
+                        src="/ALogo-removebg-preview.svg"
                         alt="Logo"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate(networkPath('/'))}
                         className='cursor-pointer'
                       />
                     </span>
@@ -172,11 +179,10 @@ const AdminLayout = () => {
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`flex items-center gap-2 font-geist border border-gray-200 text-sm font-medium pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl ${
-                        active
+                      className={`flex items-center gap-2 font-geist border border-gray-200 text-sm font-medium pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl ${active
                           ? 'text-foreground bg-gray-100'
                           : 'text-foreground/70 hover:text-blue-600'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.name}</span>

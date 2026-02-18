@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { DollarSign, Check, Loader2, ExternalLink } from 'lucide-react';
 import { adminService } from '../../../lib/api/admin.service';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 interface PayoutAsset {
   assetId: string;
   invoiceNumber: string;
@@ -17,6 +18,7 @@ interface PayoutAsset {
 }
 
 const PayoutViewPage = () => {
+  const { network } = useNetwork();
   const [assets, setAssets] = useState<PayoutAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [payingOut, setPayingOut] = useState<string | null>(null);
@@ -67,7 +69,7 @@ const PayoutViewPage = () => {
       console.log('All assets:', allAssets);
 
       // Filter for LISTED, ENDED, or AUCTION_DECLARED assets
-      const filteredAssets = allAssets.filter((asset: any) => 
+      const filteredAssets = allAssets.filter((asset: any) =>
         ['LISTED', 'AUCTION_DECLARED'].includes(asset.status)
       );
 
@@ -200,7 +202,7 @@ const PayoutViewPage = () => {
                 <p className="font-gellix text-green-700 flex items-center gap-2">
                   Transaction:{' '}
                   <a
-                    href={`https://sepolia.mantlescan.xyz/tx/${successMessage.txHash}`}
+                    href={`${network.explorerUrl}/tx/${successMessage.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
@@ -276,9 +278,8 @@ const PayoutViewPage = () => {
               </thead>
               <tbody>
                 {assets.map((asset, index) => (
-                  <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                  }`}>
+                  <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                    }`}>
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-gellix text-sm font-semibold text-foreground">
