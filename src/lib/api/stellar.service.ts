@@ -144,7 +144,7 @@ export const stellarService = {
             const contract = new StellarSdk.Contract(marketContractId);
 
             // 5. Build Transaction
-            console.log(`DEBUG: Calling buy_tokens on ${marketContractId} with: Account=${account}, Asset=${assetCode} (String), Amount=${amountBigInt.toString()} (i128)`);
+            console.log(`DEBUG: Calling buy_tokens on ${marketContractId} with: Account=${account}, Asset=${assetCode}, Amount=${amountBigInt.toString()}`);
 
             const tx = new StellarSdk.TransactionBuilder(source, {
                 fee: StellarSdk.BASE_FEE,
@@ -161,14 +161,14 @@ export const stellarService = {
                 .setTimeout(30)
                 .build();
 
-            // 6. Simulate Transaction (Required for Soroban to get resources)
+            // 6. Simulate Transaction
             const rpcServer = new StellarSdk.rpc.Server(import.meta.env.VITE_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org');
-            console.log("Simulating transaction...");
             const simulation = await rpcServer.simulateTransaction(tx);
 
             if (!StellarSdk.rpc.Api.isSimulationSuccess(simulation)) {
                 console.error("Simulation failed:", simulation);
-                throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation)}`);
+                const errorMsg = simulation.error as string || "Unknown simulation error";
+                throw new Error(`Transaction simulation failed: ${errorMsg}. \nPossible causes: Contract has insufficient balance of asset ${assetCode}, or listing is inactive.`);
             }
 
             console.log("Simulation successful. Assembling transaction...");
