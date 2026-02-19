@@ -19,6 +19,9 @@ import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.c
 import { PageLoader } from '../../../components/ui/page-loader';
 import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext';
 import { useNetwork } from '../../../lib/network/NetworkContext';
+import { ComingSoon } from '../../../components/common/ComingSoon';
+import { stellarService } from '../../../lib/api/stellar.service';
+import { trustlineService } from '../../../lib/api/trustline.service';
 
 // USDC Contract Address
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
@@ -60,6 +63,13 @@ const AssetDetailsPage = () => {
   const [isApproving, setIsApproving] = useState(false);
   const [leveragePurchaseStatus, setLeveragePurchaseStatus] = useState<string | null>(null);
 
+  // Stellar Trustline State
+  const [needsTrustline, setNeedsTrustline] = useState(false);
+  const [trustlineStatus, setTrustlineStatus] = useState<'APPROVED' | 'PENDING' | 'NOT_REQUESTED' | 'checking'>('checking');
+  const [isCheckingTrust, setIsCheckingTrust] = useState(false);
+  const [isAddingTrust, setIsAddingTrust] = useState(false);
+  const [trustlineError, setTrustlineError] = useState<string | null>(null);
+
   // Calculate required mETH based on token input
   // Formula: Required mETH = (Tokens * TokenPrice * 1.5) / mETHPrice
   // 1.5 (150%) is the required collateralization ratio (backend validation)
@@ -84,7 +94,28 @@ const AssetDetailsPage = () => {
 
   const calculatedMethString = calculatedMethAmount > 0 ? calculatedMethAmount.toFixed(6) : '';
 
-  // Read USDC Balance directly using Wagmi
+  // Stellar USDC Balance State
+  const [stellarUsdcBalance, setStellarUsdcBalance] = useState('0');
+
+  // Fetch Stellar USDC Balance
+  const fetchStellarBalance = useCallback(async () => {
+    // Only fetch if on Stellar network and address is available
+    if (networkType === 'stellar' && address) {
+      try {
+        const stellarUsdcIssuer = import.meta.env.VITE_STELLAR_USDC_ISSUER || 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
+        const bal = await stellarService.getAccountBalance(address, 'USDC', stellarUsdcIssuer);
+        setStellarUsdcBalance(bal);
+      } catch (error) {
+        console.error('Failed to fetch Stellar USDC balance:', error);
+      }
+    }
+  }, [networkType, address]);
+
+  useEffect(() => {
+    fetchStellarBalance();
+  }, [fetchStellarBalance]);
+
+  // Read USDC Balance directly using Wagmi (EVM)
   const { data: usdcBalanceRaw, refetch: refetchUsdcBalance } = useReadContract({
     address: USDC_ADDRESS,
     abi: USDC_ABI,
@@ -95,8 +126,10 @@ const AssetDetailsPage = () => {
     }
   });
 
-  // Format USDC balance (6 decimals)
-  const usdcBalance = usdcBalanceRaw ? formatUnits(usdcBalanceRaw, 6) : '0';
+  // Calculate generic USDC balance based on network
+  const usdcBalance = networkType === 'stellar'
+    ? stellarUsdcBalance
+    : (usdcBalanceRaw ? formatUnits(usdcBalanceRaw, 6) : '0');
 
   // Wagmi Hooks for mETH Balance and Approval
   const { data: methBalanceRaw, refetch: refetchMethBalance } = useReadContract({
@@ -165,6 +198,76 @@ const AssetDetailsPage = () => {
       loadWalletData();
     }
   }, [evmAddress, loadWalletData]);
+
+  // Check Stellar Trustline
+  const checkStellarTrustline = useCallback(async () => {
+    if (isEvm || !address || !asset?.assetId) return;
+
+    try {
+      setIsCheckingTrust(true);
+      setTrustlineError(null);
+
+      console.log(`Checking trustline eligibility for asset ${asset.assetId}...`);
+      const response = await trustlineService.checkAbilityToBuy(asset.assetId);
+      console.log('Trustline capability response:', response);
+
+      setTrustlineStatus(response.trustlineStatus);
+      // If NOT_REQUESTED or PENDING, we need trustline (or approval)
+      // If APPROVED, we don't need trustline action
+      setNeedsTrustline(!response.canBuy);
+
+      if (!response.canBuy && response.reason) {
+        console.log('Cannot buy reason:', response.reason);
+      }
+
+    } catch (err) {
+      console.error('Error checking trustline:', err);
+      // Fallback: check on-chain directly if backend fails? 
+      // For now, let's stick to backend as source of truth for "permission"
+    } finally {
+      setIsCheckingTrust(false);
+    }
+  }, [isEvm, address, asset]);
+
+  useEffect(() => {
+    checkStellarTrustline();
+  }, [checkStellarTrustline]);
+
+  const handleAddTrustline = async () => {
+    if (!address || !asset?.token?.address || !asset?.assetId) return;
+
+    try {
+      setIsAddingTrust(true);
+      setTrustlineError(null);
+      const [code, issuer] = asset.token.address.split(':');
+
+      if (!code || !issuer) {
+        throw new Error('Invalid token address format');
+      }
+
+      console.log(`Adding trustline on-chain for ${code}...`);
+      // 1. Execute on-chain transaction
+      const txHash = await stellarService.addTrustline(address, code, issuer);
+      console.log('Trustline added on-chain. Hash:', txHash);
+
+      // 2. Notify backend
+      console.log('Notifying backend...');
+      await trustlineService.notifyTrustlineAdded({
+        txHash: txHash,
+        assetId: asset.assetId,
+        network: 'stellar',
+      });
+
+      // 3. Re-check status
+      await checkStellarTrustline();
+
+    } catch (err: any) {
+      console.error('Failed to add trustline:', err);
+      setTrustlineError(err.message || 'Failed to add trustline');
+    } finally {
+      setIsAddingTrust(false);
+    }
+  };
 
   useEffect(() => {
     if (assetId) {
@@ -534,10 +637,6 @@ const AssetDetailsPage = () => {
 
 
   const handleBuyTokens = async () => {
-    if (!isEvm) {
-      setPurchaseStatus('Purchasing not yet supported on Stellar');
-      return;
-    }
     if (!address) {
       setPurchaseStatus('Please connect your wallet first');
       return;
@@ -546,6 +645,14 @@ const AssetDetailsPage = () => {
     if (!tokensToBuy || parseFloat(tokensToBuy) <= 0) {
       setPurchaseStatus('Please enter a valid token amount');
       return;
+    }
+
+    // Validate Stellar specific requirements
+    if (!isEvm) {
+      if (!asset.token?.address) {
+        setPurchaseStatus('Asset token address not found');
+        return;
+      }
     }
 
     // New balance check
@@ -574,47 +681,53 @@ const AssetDetailsPage = () => {
     console.log('Token Address:', asset.token?.address || 'N/A');
     console.log('Token Amount:', tokensToBuy);
     console.log('Buyer Address:', address);
+    console.log('Network:', networkType);
     console.log('=====================================\n');
 
     try {
-      const result = await contractService.completePurchase(
-        {
-          assetId: asset.assetId,
-          tokenAmount: tokensToBuy,
-        },
-        asset.token?.address || '' // Pass token address for debugging
-      );
+      let result;
 
-      if (result.success) {
+      if (isEvm) {
+        // EVM Purchase
+        result = await contractService.completePurchase(
+          {
+            assetId: asset.assetId,
+            tokenAmount: tokensToBuy,
+          },
+          asset.token?.address || ''
+        );
+      } else {
+        // Stellar Purchase
+        const [code] = asset.token?.address.split(':') || [];
+        if (!code) throw new Error('Invalid asset code format');
+
+        const txHash = await stellarService.buyTokens(address, code, tokensToBuy);
+        // Mocking the result structure expected by the UI/backend handler
+        result = {
+          success: true,
+          purchaseTxHash: txHash,
+          blockNumber: 0, // Not relevant for Stellar immediate response
+        };
+      }
+
+      if (result.success || (!isEvm && result.purchaseTxHash)) { // Accommodate Stellar result
         console.log('\n✅ Purchase transaction successful!');
         console.log('Transaction Hash:', result.purchaseTxHash);
-        console.log('Block Number:', result.blockNumber);
 
         setPurchaseStatus('Purchase successful! 🎉');
 
-        // Notify backend about the purchase (matching script output format)
+        // Notify backend about the purchase
         try {
           const notifyPayload = {
             txHash: result.purchaseTxHash!,
             assetId: asset.assetId,
-            amount: ethers.parseUnits(tokensToBuy, 18).toString(),
-            blockNumber: result.blockNumber!.toString(),
+            amount: ethers.parseUnits(tokensToBuy, 18).toString(), // Using 18 decimals for standardization in backend event if Stellar uses 7
+            blockNumber: result.blockNumber ? result.blockNumber.toString() : '0',
+            network: isEvm ? 'mantle' : 'stellar'
           };
 
-          console.log('\n📝 Transaction details for backend notification:');
-          console.log(JSON.stringify({
-            txHash: result.purchaseTxHash,
-            assetId: asset.assetId,
-            buyer: address,
-            amount: tokensToBuy,
-            blockNumber: result.blockNumber
-          }, null, 2));
-
-          console.log('\n📤 Notifying backend at POST /marketplace/purchases/notify...');
-          const backendResponse = await marketplaceService.notifyPurchase(notifyPayload);
-
-          console.log('✅ Backend notification successful!');
-          console.log('Backend response:', backendResponse);
+          console.log('\n📤 Notifying backend...');
+          await marketplaceService.notifyPurchase(notifyPayload);
 
           setPurchaseStatus('Purchase and notification successful! 🎉');
         } catch (notifyError: any) {
@@ -624,13 +737,13 @@ const AssetDetailsPage = () => {
 
         setTokensToBuy('');
         // Reload wallet data
-        await loadWalletData();
+        if (isEvm) await loadWalletData();
+        // TODO: reload Stellar data
       } else {
         console.error('❌ Purchase failed:', result.error);
         setPurchaseStatus(`Purchase failed`);
         setTokensToBuy('');
-        // Reload wallet data
-        await loadWalletData();
+        if (isEvm) await loadWalletData();
         setTimeout(() => {
           setPurchaseStatus(null);
         }, 2500);
@@ -639,8 +752,7 @@ const AssetDetailsPage = () => {
       console.error('❌ Purchase error:', error);
       setPurchaseStatus(`Error: ${error.message}`);
       setTokensToBuy('');
-      // Reload wallet data
-      await loadWalletData();
+      if (isEvm) await loadWalletData();
       setTimeout(() => {
         setPurchaseStatus(null);
       }, 2500);
@@ -967,138 +1079,181 @@ const AssetDetailsPage = () => {
                           {purchaseStatus}
                         </div>
                       )}
-                      <Button
-                        onClick={handleBuyTokens}
-                        disabled={isPurchasing || !address || availableTokens <= 0 || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice) || (availableTokens >= minInvestment && parseFloat(tokensToBuy || '0') < minInvestment) || parseFloat(tokensToBuy || '0') > availableTokens}
-                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {(() => {
-                          const enteredAmount = parseFloat(tokensToBuy || '0');
-                          if (availableTokens <= 0) return 'Sold Out';
-                          if (isPurchasing) return 'Processing...';
-                          if (!address) return 'Connect Wallet';
-                          if (parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
-                          if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
-                          if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
-                          return 'Buy Tokens';
-                        })()}
-                      </Button>
+                      {!isEvm && needsTrustline ? (
+                        <div className="space-y-3">
+                          {trustlineError && (
+                            <div className="text-sm p-3 rounded-lg bg-red-50 text-red-800 border border-red-200">
+                              {trustlineError}
+                            </div>
+                          )}
+
+                          {trustlineStatus === 'PENDING' ? (
+                            <div className="w-full bg-yellow-50 text-yellow-800 rounded-xl p-4 border border-yellow-200 text-center">
+                              <p className="font-medium">Trustline Approval Pending</p>
+                              <p className="text-sm mt-1">Your request is being reviewed by an admin.</p>
+                            </div>
+                          ) : (
+                            <>
+                              <Button
+                                onClick={handleAddTrustline}
+                                disabled={isAddingTrust || isCheckingTrust}
+                                className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
+                              >
+                                {isAddingTrust ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <span className="h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+                                    <span>Adding Trustline...</span>
+                                  </span>
+                                ) : 'Request Trustline'}
+                              </Button>
+                              <p className="text-xs text-center text-gray-500">
+                                You must establish a trustline for this asset before purchasing.
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleBuyTokens}
+                          disabled={isPurchasing || !address || availableTokens <= 0 || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice) || (availableTokens >= minInvestment && parseFloat(tokensToBuy || '0') < minInvestment) || parseFloat(tokensToBuy || '0') > availableTokens}
+                          className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {(() => {
+                            const enteredAmount = parseFloat(tokensToBuy || '0');
+                            if (availableTokens <= 0) return 'Sold Out';
+                            if (isPurchasing) return 'Processing...';
+                            if (!address) return 'Connect Wallet';
+                            if (parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
+                            if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
+                            if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
+                            return 'Buy Tokens';
+                          })()}
+                        </Button>
+                      )}
                     </div>
                   </TabsContent>
 
                   <TabsContent value="leverage">
-                    <div className="space-y-6">
-                      <div className="bg-[#F3F4F6] rounded-2xl p-4">
-                        <label className="text-xs text-[#6B7280]">
-                          Tokens to buy
-                        </label>
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            value={leverageTokenInput}
-                            onChange={handleLeverageTokenChange}
-                            className=" border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                          />
-                        </div>
-
-                      </div>
-
-                      <div className="bg-[#F3F4F6] rounded-2xl p-4 space-y-3">
-                        <div>
-                          <p className="text-xs text-[#6B7280] mb-1">Required Collateral</p>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src="/meth-crystal.svg"
-                              alt="mETH"
-                              className="w-6 h-6 rounded-full"
+                    {!isEvm ? (
+                      <ComingSoon
+                        title="Leverage Coming Soon"
+                        description="Leveraged trading is currently under development for the Stellar network. Check back soon!"
+                        className="h-full min-h-[300px]"
+                      />
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="bg-[#F3F4F6] rounded-2xl p-4">
+                          <label className="text-xs text-[#6B7280]">
+                            Tokens to buy
+                          </label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={leverageTokenInput}
+                              onChange={handleLeverageTokenChange}
+                              className=" border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                             />
-                            <p className="text-2xl font-medium text-[#111111]">
-                              {calculatedMethString || '0.00'} mETH
-                            </p>
+                          </div>
+
+                        </div>
+
+                        <div className="bg-[#F3F4F6] rounded-2xl p-4 space-y-3">
+                          <div>
+                            <p className="text-xs text-[#6B7280] mb-1">Required Collateral</p>
+                            <div className="flex items-center gap-2">
+                              <img
+                                src="/meth-crystal.svg"
+                                alt="mETH"
+                                className="w-6 h-6 rounded-full"
+                              />
+                              <p className="text-2xl font-medium text-[#111111]">
+                                {calculatedMethString || '0.00'} mETH
+                              </p>
+                            </div>
+                          </div>
+                          <div className="pt-3 border-t border-gray-200">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-[#6B7280]">Buying Power</span>
+                              <span className="text-sm font-medium text-[#111111]">
+                                {(() => {
+                                  if (!calculatedMethAmount) return '$0.00 USDC';
+                                  const bp = (calculatedMethAmount * methPrice) / (1.5 * 1e6);
+                                  return `$${bp.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC`;
+                                })()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-xs text-[#6B7280]">mETH Price</span>
+                              <span className="text-sm font-medium text-[#111111]">
+                                ${(methPrice / 1e6).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-gray-200">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-[#6B7280]">Buying Power</span>
-                            <span className="text-sm font-medium text-[#111111]">
-                              {(() => {
-                                if (!calculatedMethAmount) return '$0.00 USDC';
-                                const bp = (calculatedMethAmount * methPrice) / (1.5 * 1e6);
-                                return `$${bp.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC`;
-                              })()}
-                            </span>
+
+                        <div className="text-xs text-[#6B7280] space-y-1">
+                          <div className="flex justify-between">
+                            <span>Health Factor</span>
+                            <span className="font-medium text-green-600">1.50 (Initial)</span>
                           </div>
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-xs text-[#6B7280]">mETH Price</span>
-                            <span className="text-sm font-medium text-[#111111]">
-                              ${(methPrice / 1e6).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                            </span>
+                          <div className="flex justify-between">
+                            <span>Liquidation Threshold</span>
+                            <span className="font-medium text-red-500">1.10</span>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="text-xs text-[#6B7280] space-y-1">
-                        <div className="flex justify-between">
-                          <span>Health Factor</span>
-                          <span className="font-medium text-green-600">1.50 (Initial)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Liquidation Threshold</span>
-                          <span className="font-medium text-red-500">1.10</span>
-                        </div>
-                      </div>
-
-                      {leveragePurchaseStatus && (() => {
-                        const statusLower = leveragePurchaseStatus.toLowerCase();
-                        const isSuccess = statusLower.includes('success');
-                        const isError = statusLower.includes('fail') || statusLower.includes('error');
-                        const tone = isSuccess
-                          ? 'bg-green-50 text-green-800 border border-green-200'
-                          : isError
-                            ? 'bg-red-50 text-red-800 border border-red-200'
-                            : 'bg-blue-50 text-blue-800 border border-blue-200';
-                        return (
-                          <div className={`text-sm p-3 rounded-lg ${tone}`}>
-                            {leveragePurchaseStatus}
-                          </div>
-                        );
-                      })()}
-
-                      <Button
-                        onClick={handleOpenLeveragePosition}
-                        disabled={isPurchasing || isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
-                        className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
-                      >
-                        {(() => {
-                          const enteredAmount = parseFloat(leverageTokenInput || '0');
-                          if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
-                          if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
-
-                          const statusLower = (leveragePurchaseStatus || '').toLowerCase();
-                          const isWaiting = statusLower.includes('submitted') || statusLower.includes('waiting');
-                          const isOpening = statusLower.includes('creating') || statusLower.includes('position');
-                          const showLoader = isApproving || isLeverageLoading || isWaiting || isOpening;
-
-                          const label = (() => {
-                            if (isApproving) return 'Approving mETH...';
-                            if (isWaiting) return 'Waiting for confirmation...';
-                            if (isOpening) return 'Opening position...';
-                            if (isLeverageLoading) return leveragePurchaseStatus || 'Processing...';
-                            return needsApproval ? 'Approve mETH' : 'Open Leveraged Position';
-                          })();
-
+                        {leveragePurchaseStatus && (() => {
+                          const statusLower = leveragePurchaseStatus.toLowerCase();
+                          const isSuccess = statusLower.includes('success');
+                          const isError = statusLower.includes('fail') || statusLower.includes('error');
+                          const tone = isSuccess
+                            ? 'bg-green-50 text-green-800 border border-green-200'
+                            : isError
+                              ? 'bg-red-50 text-red-800 border border-red-200'
+                              : 'bg-blue-50 text-blue-800 border border-blue-200';
                           return (
-                            <span className="flex items-center justify-center gap-2 w-full">
-                              {showLoader && (
-                                <span className="h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
-                              )}
-                              <span>{label}</span>
-                            </span>
+                            <div className={`text-sm p-3 rounded-lg ${tone}`}>
+                              {leveragePurchaseStatus}
+                            </div>
                           );
                         })()}
-                      </Button>
-                    </div>
+
+                        <Button
+                          onClick={handleOpenLeveragePosition}
+                          disabled={isPurchasing || isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
+                          className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
+                        >
+                          {(() => {
+                            const enteredAmount = parseFloat(leverageTokenInput || '0');
+                            if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
+                            if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
+
+                            const statusLower = (leveragePurchaseStatus || '').toLowerCase();
+                            const isWaiting = statusLower.includes('submitted') || statusLower.includes('waiting');
+                            const isOpening = statusLower.includes('creating') || statusLower.includes('position');
+                            const showLoader = isApproving || isLeverageLoading || isWaiting || isOpening;
+
+                            const label = (() => {
+                              if (isApproving) return 'Approving mETH...';
+                              if (isWaiting) return 'Waiting for confirmation...';
+                              if (isOpening) return 'Opening position...';
+                              if (isLeverageLoading) return leveragePurchaseStatus || 'Processing...';
+                              return needsApproval ? 'Approve mETH' : 'Open Leveraged Position';
+                            })();
+
+                            return (
+                              <span className="flex items-center justify-center gap-2 w-full">
+                                {showLoader && (
+                                  <span className="h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+                                )}
+                                <span>{label}</span>
+                              </span>
+                            );
+                          })()}
+                        </Button>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </div>

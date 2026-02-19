@@ -1,6 +1,6 @@
 import '@rainbow-me/rainbowkit/styles.css';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface EvmWalletProviderProps {
     children: ReactNode;

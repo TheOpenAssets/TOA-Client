@@ -11,12 +11,13 @@ import { NotificationBell } from '../../components/notifications/NotificationBel
 import { authService } from '../../lib/api/auth.service';
 import HeroBackground from '../landing/HeroBackground';
 import { useNetwork } from '../../lib/network/NetworkContext';
+import { ComingSoon } from '../../components/common/ComingSoon';
 
 const BorrowPage = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const navigate = useNavigate();
-  const { networkPath } = useNetwork();
+  const { networkPath, networkType } = useNetwork();
 
   const { creditData, isLoading: isCreditLoading, refetch: refetchCredit } = useCreditData(address);
 
@@ -118,7 +119,13 @@ const BorrowPage = () => {
               Borrow against your existing credit line.
             </p>
 
-            {isCreditLoading ? (
+            {networkType === 'stellar' ? (
+              <ComingSoon
+                title="Borrowing Coming Soon"
+                description="Borrowing against your assets is currently being built for the Stellar network."
+                className="bg-white/50 backdrop-blur-sm shadow-sm"
+              />
+            ) : isCreditLoading ? (
               <div className="flex justify-center items-center p-12">
                 <Loader2 className="h-12 w-12 animate-spin text-[#111111]" />
               </div>
@@ -167,7 +174,7 @@ const BorrowPage = () => {
             )}
           </div>
         </div>
-      </div>
+      </div >
     </>
   );
 };

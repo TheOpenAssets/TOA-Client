@@ -46,7 +46,7 @@ export const StellarAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
                             // Force base service to use the found token if needed, but it should auto-detect
                             // We call getCurrentUser to validate token and get user role/kyc
                             const user = await authService.getCurrentUser();
-                            setUser(user);
+                            setUser(user as any);
                         } catch (e) {
                             console.warn("Backend session invalid:", e);
                             handleLogout(); // Token invalid, force logout
@@ -125,7 +125,7 @@ export const StellarAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
                     } else {
                         // Fallback for unknown types, try standard toString or fail gracefully
                         console.warn("Unknown signature format, attempting toString:", signature);
-                        signature = signature.toString();
+                        signature = (signature as any).toString();
                     }
                 } catch (e) {
                     console.error("Signature conversion failed:", e);

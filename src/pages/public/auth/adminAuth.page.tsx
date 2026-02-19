@@ -216,7 +216,7 @@ const StellarAdminAuth = () => {
           }
           signature = window.btoa(binary);
         } else {
-          signature = signature.toString();
+          signature = (signature as any).toString();
         }
       }
 

@@ -10,6 +10,7 @@ import {
   List,
   LogOut,
   TrendingDown,
+  FileCheck,
 } from 'lucide-react';
 import HeroBackground from '../../landing/HeroBackground';
 import { NotificationBell } from '../../../components/notifications/NotificationBell';
@@ -119,6 +120,11 @@ const AdminLayout = () => {
       path: networkPath('/admin/settlements'),
       icon: Coins,
     },
+    {
+      name: 'Trustlines',
+      path: networkPath('/admin/trustlines'),
+      icon: FileCheck,
+    },
   ];
 
   const isActive = (path: string) => {
@@ -180,8 +186,8 @@ const AdminLayout = () => {
                       key={item.path}
                       to={item.path}
                       className={`flex items-center gap-2 font-geist border border-gray-200 text-sm font-medium pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl ${active
-                          ? 'text-foreground bg-gray-100'
-                          : 'text-foreground/70 hover:text-blue-600'
+                        ? 'text-foreground bg-gray-100'
+                        : 'text-foreground/70 hover:text-blue-600'
                         }`}
                     >
                       <Icon className="w-4 h-4" />

@@ -16,6 +16,7 @@ import PayoutViewPage from '../../pages/admin/payout/PayoutView.page';
 import SettlementViewPage from '../../pages/admin/settlements/SettlementView.page';
 import ListingsPage from '../../pages/admin/listings/Listings.page';
 import { LoansView } from '../../pages/admin/loans/LoansView.page';
+import TrustlineRequestsPage from '../../pages/admin/trustline/TrustlineRequests.page';
 
 // Marketplace
 import MarketplacePage from '../../pages/marketplace/Marketplace.page';
@@ -162,6 +163,10 @@ export const publicRoutes: RouteObject[] = [
           {
             path: 'settlements',
             element: <SettlementViewPage />,
+          },
+          {
+            path: 'trustlines',
+            element: <TrustlineRequestsPage />,
           },
         ],
       },
