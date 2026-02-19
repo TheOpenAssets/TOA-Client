@@ -1,8 +1,10 @@
 // src/pages/marketplace/auction/AuctionDetails.page.tsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+// import { useAccount } from 'wagmi'; // Removed
 import { Clock } from 'lucide-react';
+import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { useSubmitBid } from '../../../hooks/useAuctionContracts';
 import { contractService } from '../../../lib/api/contract.service';
@@ -14,7 +16,9 @@ import { PageLoader } from '../../../components/ui/page-loader';
 const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const navigate = useNavigate();
-  const { address } = useAccount();
+  const { address } = useAuthStrategy();
+  const { networkType, networkPath } = useNetwork();
+  const isEvm = networkType === 'mantle';
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
 
   const [bidAmount, setBidAmount] = useState('');
@@ -40,6 +44,7 @@ const AuctionDetailsPage = () => {
     }
     if (address) {
       const fetchBalance = async () => {
+        if (!isEvm) return; // Only fetch USDC balance on EVM
         try {
           const balance = await contractService.checkUSDCBalance(address);
           setUsdcBalance(balance);
@@ -162,7 +167,7 @@ const AuctionDetailsPage = () => {
           </p>
 
           <Button
-            onClick={() => navigate('/marketplace')}
+            onClick={() => navigate(networkPath('/marketplace'))}
             variant="outline"
             size="lg"
             className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
@@ -180,7 +185,7 @@ const AuctionDetailsPage = () => {
         <div className="text-center">
           <div className="text-lg text-foreground mb-4">Auction not found</div>
           <button
-            onClick={() => navigate('/marketplace')}
+            onClick={() => navigate(networkPath('/marketplace'))}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Back to Marketplace
@@ -203,13 +208,13 @@ const AuctionDetailsPage = () => {
           src="/ALogo-removebg-preview.svg"
           alt="Logo"
           className="h-16 w-auto object-contain cursor-pointer"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(networkPath('/'))}
         />
         <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
           {/* Center: Navigation */}
           <nav className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/portfolio')}
+              onClick={() => navigate(networkPath('/portfolio'))}
               className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
               Portfolio
@@ -244,7 +249,7 @@ const AuctionDetailsPage = () => {
               </div>
             ) : (
               <button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate(networkPath('/auth'))}
                 className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-geist text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
               >
                 Sign Up / Log In
@@ -571,6 +576,7 @@ const AuctionDetailsPage = () => {
                     onClick={handlePlaceBid}
                     disabled={
                       isLoading ||
+                      !isEvm || // Disable on Stellar
                       !address ||
                       hasAlreadyBidded ||
                       isAuctionAnnounced || // Disable if auction is announced
@@ -586,20 +592,22 @@ const AuctionDetailsPage = () => {
                   >
                     {isLoading
                       ? 'Processing...'
-                      : !address
-                        ? 'Connect Wallet'
-                        : isAuctionAnnounced // Display 'Auction Ended' if announced (check this FIRST)
-                          ? 'Auction Ended'
-                          : asset.listing?.scheduledEndTime &&
-                            new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
+                      : !isEvm
+                        ? 'Not Supported on Stellar'
+                        : !address
+                          ? 'Connect Wallet'
+                          : isAuctionAnnounced // Display 'Auction Ended' if announced (check this FIRST)
                             ? 'Auction Ended'
-                            : hasAlreadyBidded // Display 'Already Bidded' if true (check this AFTER auction ended)
-                              ? 'Already Bidded'
-                              : bidAmount &&
-                                pricePerToken &&
-                                parseFloat(bidAmount) * parseFloat(pricePerToken) > parseFloat(usdcBalance)
-                                ? 'Insufficient Balance'
-                                : 'Place Bid'}
+                            : asset.listing?.scheduledEndTime &&
+                              new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
+                              ? 'Auction Ended'
+                              : hasAlreadyBidded // Display 'Already Bidded' if true (check this AFTER auction ended)
+                                ? 'Already Bidded'
+                                : bidAmount &&
+                                  pricePerToken &&
+                                  parseFloat(bidAmount) * parseFloat(pricePerToken) > parseFloat(usdcBalance)
+                                  ? 'Insufficient Balance'
+                                  : 'Place Bid'}
                   </Button>
                 )}
               </div>

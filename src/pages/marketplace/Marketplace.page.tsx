@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount, useDisconnect } from 'wagmi';
+// import { useAccount, useDisconnect } from 'wagmi'; // Removed wagmi imports
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 
 import {
@@ -14,16 +14,20 @@ import {
 } from 'lucide-react';
 import { formatCurrency, getCategoryIcon } from '../../lib/data/marketplace-helper';
 import type { FilterCategory, SortOption, MarketplaceAsset } from '../../types/marketplace.types';
-import { authService } from '../../lib/api/auth.service';
+
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { PageLoader } from '../../components/ui/page-loader';
+import { useAuthStrategy } from '../../lib/auth/AuthStrategyContext';
+import { useNetwork } from '../../lib/network/NetworkContext';
 
 const MarketplacePage = () => {
   const navigate = useNavigate();
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  // Use unified AuthStrategy instead of wagmi directly
+  const { address, isAuthenticated, logout } = useAuthStrategy();
+  const { networkPath } = useNetwork();
+
   const [searchQuery, setSearchQuery] = useState('');
 
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
@@ -146,7 +150,7 @@ const MarketplacePage = () => {
    * Otherwise calculates based on purchase price vs face value and time to maturity
    */
   const calculateAPY = (listing: any): number => {
-    const sold = parseFloat(listing.sold || '0')/1e18;
+    const sold = parseFloat(listing.sold || '0') / 1e18;
 
     // When no tokens are sold yet, show fixed 5% APY
     if (sold === 0) {
@@ -154,14 +158,14 @@ const MarketplacePage = () => {
     }
 
     const totalSupply = parseFloat(listing.totalSupply) / 1e18;
-    const faceValue = parseFloat(listing.faceValue)/1e6;
-  
-    if(sold> totalSupply){
+    const faceValue = parseFloat(listing.faceValue) / 1e6;
+
+    if (sold > totalSupply) {
       return 0;
     }
-   
+
     // Annualize the return (simple annualization)
-    const apy = ((totalSupply - sold)/sold) * faceValue * 100;
+    const apy = ((totalSupply - sold) / sold) * faceValue * 100;
 
     return Math.max(0, Math.min(100, apy));
   };
@@ -194,10 +198,17 @@ const MarketplacePage = () => {
         }
 
         // Parse sold and totalSupply from wei (18 decimals)
-        // @ts-ignore
-        const soldWei = BigInt(listing.sold || '0');
-        // @ts-ignore
-        const totalSupplyWei = BigInt(listing.totalSupply || '0');
+        // Helper to safely parse BigInt from string that might have decimals (e.g. "0.0000")
+        const safeBigInt = (val: string | number | undefined) => {
+          if (!val) return BigInt(0);
+          const str = val.toString();
+          // Remove decimals if present (truncate)
+          const integerPart = str.split('.')[0];
+          return BigInt(integerPart || '0');
+        };
+
+        const soldWei = safeBigInt(listing.sold);
+        const totalSupplyWei = safeBigInt(listing.totalSupply);
         const sold = Number(soldWei) / 1e18;
         const totalSupply = Number(totalSupplyWei) / 1e18;
 
@@ -205,8 +216,7 @@ const MarketplacePage = () => {
         const fundingProgress = totalSupply > 0 ? (sold / totalSupply) * 100 : 0;
 
         // Parse price per token (USDC 6 decimals)
-        // @ts-ignore
-        const pricePerTokenWei = BigInt(listing.pricePerToken || '0');
+        const pricePerTokenWei = safeBigInt(listing.pricePerToken);
         const pricePerToken = Number(pricePerTokenWei) / 1e6;
 
         // Calculate total raised (sold * price per token)
@@ -246,22 +256,22 @@ const MarketplacePage = () => {
 
   const handlenavigate = (asset: any) => {
     if (asset.listingType == "STATIC")
-      navigate(`/marketplace/asset/${asset.assetId}`);
+      navigate(networkPath(`/marketplace/asset/${asset.assetId}`));
     else
-      navigate(`/marketplace/auction/${asset.assetId}`);
+      navigate(networkPath(`/marketplace/auction/${asset.assetId}`));
   }
   const handleTableNavigate = (asset: MarketplaceAsset) => {
     if (asset.listingType === 'STATIC') {
-      navigate(`/marketplace/asset/${asset.id}`);
+      navigate(networkPath(`/marketplace/asset/${asset.id}`));
     } else {
-      navigate(`/marketplace/auction/${asset.id}`);
+      navigate(networkPath(`/marketplace/auction/${asset.id}`));
     }
   };
 
   const handleTradeNavigate = (asset: MarketplaceAsset, e: React.MouseEvent<HTMLButtonElement>) => {
-      navigate(`/trade/asset/${asset.id}`);
-      e.preventDefault();
-      e.stopPropagation();
+    navigate(networkPath(`/trade/asset/${asset.id}`));
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   // Truncate wallet address for display
@@ -271,8 +281,8 @@ const MarketplacePage = () => {
 
   // Logout handler
   const handlelogout = () => {
-    authService.logout();
-    disconnect();
+    // authService.logout(); // handled by strategy.logout()
+    logout();
     navigate('/'); // Redirect to home or login page after logout
   };
 
@@ -445,20 +455,20 @@ const MarketplacePage = () => {
           src="./ALogo-removebg-preview.svg"
           alt="Logo"
           className="h-16 w-auto object-contain cursor-pointer"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(networkPath('/'))}
         />
         <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
 
           {/* Center: Navigation */}
           <nav className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/portfolio')}
+              onClick={() => navigate(networkPath('/portfolio'))}
               className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
               Portfolio
             </button>
             <button
-              onClick={() => navigate('/borrow')}
+              onClick={() => navigate(networkPath('/borrow'))}
               className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
               Borrow
@@ -468,10 +478,10 @@ const MarketplacePage = () => {
 
           {/* Right: Auth / Wallet Display */}
           <div className="flex items-center gap-3">
-            {isConnected && address && (
+            {isAuthenticated && address && (
               <NotificationBell role="INVESTOR" />
             )}
-            {isConnected && address ? (
+            {isAuthenticated && address ? (
               <>
                 <div className="px-6 py-2 bg-white rounded-lg font-mono text-sm font-medium text-foreground">
                   {truncateAddress(address)}
@@ -486,7 +496,7 @@ const MarketplacePage = () => {
 
             ) : (
               <button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate(networkPath('/auth'))}
                 className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
               >
                 Sign Up / Log In
@@ -519,7 +529,7 @@ const MarketplacePage = () => {
   */}
         <div className="carousel-track items-center flex gap-12 relative">
           {/* Fade overlay left */}
-<div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white via-white/90 to-transparent z-20 pointer-events-none" />          
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white via-white/90 to-transparent z-20 pointer-events-none" />
           {[...Array(1)].map((_, i) => (
             <div key={i} className="flex items-center gap-12 px-6">
 
@@ -528,7 +538,7 @@ const MarketplacePage = () => {
                 <div
                   key={`scheduled-${i}-${auction.auctionId}`}
                   className="flex items-center gap-3 cursor-pointer group whitespace-nowrap"
-                  onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  onClick={() => navigate(networkPath(`/marketplace/auction/${auction.auctionId}`))}
                 >
                   <span className="font-gellix text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
                     {auction.metadata?.invoiceNumber || auction.assetId}
@@ -547,7 +557,7 @@ const MarketplacePage = () => {
                 <div
                   key={`results-${i}-${auction.auctionId}`}
                   className="flex items-center gap-3 cursor-pointer group whitespace-nowrap"
-                  onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  onClick={() => navigate(networkPath(`/marketplace/auction/${auction.auctionId}`))}
                 >
                   <span className="font-gellix text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
                     {auction.metadata?.invoiceNumber || auction.assetId}
@@ -566,7 +576,7 @@ const MarketplacePage = () => {
                 <div
                   key={`ended-${i}-${auction.auctionId}`}
                   className="flex items-center gap-3 cursor-pointer group whitespace-nowrap"
-                  onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                  onClick={() => navigate(networkPath(`/marketplace/auction/${auction.auctionId}`))}
                 >
                   <span className="font-gellix text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
                     {auction.metadata?.invoiceNumber || auction.assetId}
@@ -677,7 +687,7 @@ const MarketplacePage = () => {
                   <div key={auction.auctionId}>
                     <div
                       className=" hover:bg-gray-100 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/marketplace/auction/${auction.auctionId}`)}
+                      onClick={() => navigate(networkPath(`/marketplace/auction/${auction.auctionId}`))}
                     >
                       <div className="flex items-center justify-between p-3">
                         {/* Left: Auction Info */}
@@ -915,7 +925,7 @@ const MarketplacePage = () => {
                     return (
                       <div
                         key={asset.id}
-                         onClick={() => handleTableNavigate(asset)}
+                        onClick={() => handleTableNavigate(asset)}
                         className="group relative bg-white rounded-3xl border border-gray-200 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl"
                       >
                         {/* Header Section */}
@@ -1131,7 +1141,7 @@ const MarketplacePage = () => {
                             <button
                               onClick={(e) => handleTradeNavigate(asset, e)}
                               className="px-4 py-2 text-green-600 rounded-lg font-inter text-sm font-medium hover:text-green-700 hover:scale-[1.07] transition-colors"
-                            
+
                             >
                               Trade
                             </button>

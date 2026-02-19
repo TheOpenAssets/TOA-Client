@@ -12,7 +12,11 @@ const Navbar = () => {
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
   const { handleGetStarted, isAuthenticating } = useAuthActions();
-  const { networkPath, isFeatureAvailable } = useNetwork();
+  const { networkPath, isFeatureAvailable, networkType } = useNetwork();
+
+  console.log('🧭 Navbar rendering. Network:', networkType);
+  console.log('   Marketplace Path:', networkPath('/marketplace'));
+
 
   const handleLogout = () => {
     disconnect();

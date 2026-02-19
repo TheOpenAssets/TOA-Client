@@ -35,7 +35,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/listings`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -66,7 +66,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/listings/${assetId}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -155,7 +155,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/announcements`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -196,7 +196,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/announcements/asset/${assetId}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -243,7 +243,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/assets/${assetId}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -497,7 +497,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/info`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -552,7 +552,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/top-grossing?limit=${limit}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -574,7 +574,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/assets/${assetId}/purchase-history`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -625,7 +625,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/orderbook`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -648,7 +648,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/trades`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -780,7 +780,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/chart?interval=${interval}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {

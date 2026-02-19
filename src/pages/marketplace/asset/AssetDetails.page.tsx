@@ -1,7 +1,7 @@
 // src/pages/marketplace/asset/AssetDetails.page.tsx
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useReadContract, useWriteContract } from 'wagmi';
 import { ethers } from 'ethers';
 import { formatUnits } from 'viem';
 import type { PurchaseHistoryResponse } from '../../../types/marketplace.types';
@@ -17,6 +17,8 @@ import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
 import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 // USDC Contract Address
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
@@ -34,7 +36,12 @@ const USDC_ABI = [
 
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
-  const { address } = useAccount();
+  const { address } = useAuthStrategy();
+  const { networkType, networkPath } = useNetwork();
+  const isEvm = networkType === 'mantle';
+  // Only pass address to wagmi hooks if on EVM network
+  const evmAddress = (isEvm && address) ? address as `0x${string}` : undefined;
+
   const navigate = useNavigate();
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
   const { methPrice, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
@@ -82,9 +89,9 @@ const AssetDetailsPage = () => {
     address: USDC_ADDRESS,
     abi: USDC_ABI,
     functionName: 'balanceOf',
-    args: address ? [address] : undefined,
+    args: evmAddress ? [evmAddress] : undefined,
     query: {
-      enabled: !!address, // Only run when address exists
+      enabled: !!evmAddress, // Only run when address exists and is EVM
     }
   });
 
@@ -96,7 +103,7 @@ const AssetDetailsPage = () => {
     address: LEVERAGE_CONTRACTS.MockMETH,
     abi: METH_ABI,
     functionName: 'balanceOf',
-    args: address ? [address] : undefined,
+    args: evmAddress ? [evmAddress] : undefined,
     query: {
       enabled: !!address,
     }
@@ -106,7 +113,7 @@ const AssetDetailsPage = () => {
     address: LEVERAGE_CONTRACTS.MockMETH,
     abi: METH_ABI,
     functionName: 'allowance',
-    args: address ? [address, LEVERAGE_CONTRACTS.LeverageVault] : undefined,
+    args: evmAddress ? [evmAddress, LEVERAGE_CONTRACTS.LeverageVault] : undefined,
   });
 
   const { writeContractAsync: approveMeth } = useWriteContract();
@@ -135,8 +142,8 @@ const AssetDetailsPage = () => {
       fetchMethPrice();
     }
 
-    // Load wallet data if already connected
-    if (address) {
+    // Load wallet data if already connected and on EVM
+    if (evmAddress) {
       loadWalletData();
     }
 
@@ -154,10 +161,10 @@ const AssetDetailsPage = () => {
   }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab, purchaseStatus,]);
 
   useEffect(() => {
-    if (address) {
+    if (evmAddress) {
       loadWalletData();
     }
-  }, [address, loadWalletData]);
+  }, [evmAddress, loadWalletData]);
 
   useEffect(() => {
     if (assetId) {
@@ -254,13 +261,13 @@ const AssetDetailsPage = () => {
    * 4. Monitor position health
    */
   const handleOpenLeveragePosition = async () => {
-    if (!address || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
+    if (!evmAddress || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
 
     console.log('\n🚀 ===== STARTING LEVERAGED PURCHASE FLOW =====');
     console.log('Asset ID:', asset.assetId);
     console.log('Token Amount:', leverageTokenInput);
     console.log('Token Address:', asset.token?.address || 'N/A');
-    console.log('Buyer Address:', address);
+    console.log('Buyer Address:', evmAddress);
     console.log('==============================================\n');
     setIsPurchasing(true);
     setLeveragePurchaseStatus(null);
@@ -305,7 +312,7 @@ const AssetDetailsPage = () => {
 
         // Redirect to faucet page after 2 seconds
         setTimeout(() => {
-          navigate('/faucet');
+          navigate(networkPath('/faucet'));
         }, 2000);
         return;
       }
@@ -489,6 +496,11 @@ const AssetDetailsPage = () => {
     }
   };
 
+  if (!isEvm && activeTab === 'leverage') {
+    // Switch to standard tab if on Stellar and leverage is selected (or hide leverage tab)
+    // For now, we will just conditionally render the content below
+  }
+
   const needsApproval = allowance && calculatedMethAmount > 0
     ? allowance < parseUnits(calculatedMethString, 18)
     : true;
@@ -522,6 +534,10 @@ const AssetDetailsPage = () => {
 
 
   const handleBuyTokens = async () => {
+    if (!isEvm) {
+      setPurchaseStatus('Purchasing not yet supported on Stellar');
+      return;
+    }
     if (!address) {
       setPurchaseStatus('Please connect your wallet first');
       return;
@@ -644,20 +660,20 @@ const AssetDetailsPage = () => {
             {/* Header */}
             <div className='flex flex-row  items-center justify-between'>
               <div className='flex flex-row gap-4'>
-                <a href="/marketplace" className="inline-flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
+                <button onClick={() => navigate(networkPath('/marketplace'))} className="inline-flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
                     <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
-                </a>
+                </button>
                 <h1 className="text-3xl font-medium text-[#111111]">
                   Invoice {asset.metadata.invoiceNumber}
                 </h1>
                 <div className='flex flex-row gap-3'>
-                  <Button className="font-geist border border-gray-300  text-lg font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-lg" onClick={() => navigate(`/trade/asset/${asset.assetId}`)}>
+                  <Button className="font-geist border border-gray-300  text-lg font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-lg" onClick={() => navigate(networkPath(`/trade/asset/${asset.assetId}`))}>
                     Trade
                   </Button>
-                  <Button className="font-geist border border-gray-300  text-lg font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-lg" onClick={() => navigate(`/portfolio`)}>
+                  <Button className="font-geist border border-gray-300  text-lg font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-lg" onClick={() => navigate(networkPath(`/portfolio`))}>
                     Portfolio
                   </Button>
                 </div>
@@ -1095,4 +1111,3 @@ const AssetDetailsPage = () => {
 };
 
 export default AssetDetailsPage;
- 
