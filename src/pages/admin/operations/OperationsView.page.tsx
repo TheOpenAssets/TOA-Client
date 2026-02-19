@@ -39,7 +39,7 @@ const OperationsViewPage = () => {
 
   // Listing form data
   const [listingType] = useState('STATIC');
-  const [price] = useState('1000000'); // 1 USDC in 6 decimals
+  const [price] = useState('1.0000'); // 1 USDC in canonical 4-decimals
   const [minInvestment, setMinInvestment] = useState(''); // Will be populated from asset data
   const [duration] = useState('0');
 
@@ -576,10 +576,24 @@ const OperationsViewPage = () => {
                     {/* Token Supply */}
                     <td className="px-6 py-4 text-right">
                       <div className="font-gellix text-sm text-foreground">
-                        {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
+                        {(
+                          () => {
+                            const rawSupply = parseFloat(asset.tokenParams.totalSupply);
+                            // Heuristic: If supply > 1 billion (likely wei), divide by 1e18. 
+                            // Otherwise assume canonical.
+                            // 100 tokens = 100 (canonical) or 100 * 1e18 (wei)
+                            return (rawSupply > 1e9 ? rawSupply / 1e18 : rawSupply).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                          }
+                        )()}
                       </div>
                       <div className="font-gellix text-xs text-gray-500">
-                        @ ${(parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2)}
+                        @ ${(
+                          () => {
+                            const raw = parseFloat(asset.tokenParams.pricePerToken);
+                            // Heuristic: if price > 1000, assume raw 6-decimal (1e6)
+                            return (raw > 1000 ? raw / 1e6 : raw).toFixed(4);
+                          }
+                        )()}
                       </div>
                     </td>
 
@@ -809,7 +823,14 @@ const OperationsViewPage = () => {
                   </div>
                   <div>
                     <span className="text-foreground/60">Total Supply:</span>
-                    <p className="text-foreground font-semibold mt-1">{(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()}</p>
+                    <p className="text-foreground font-semibold mt-1">
+                      {(
+                        () => {
+                          const raw = parseFloat(selectedAsset.tokenParams.totalSupply);
+                          return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                        }
+                      )()}
+                    </p>
                   </div>
                   <div>
                     <span className="text-foreground/60">Token Standard:</span>

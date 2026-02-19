@@ -8,12 +8,14 @@ import { Search } from 'lucide-react';
 import { useAuthStrategy } from '../../lib/auth/AuthStrategyContext';
 import { useNetwork } from '../../lib/network/NetworkContext';
 import { useSettleBid } from '../../hooks/useAuctionContracts';
-import { contractService } from '../../lib/api/contract.service';
+// import { contractService } from '../../lib/api/contract.service';
 import { useToast } from '../../hooks/useToast';
 import { ToastContainer } from '../../components/ui/toast';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 // import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';
+import { getYieldService } from '../../lib/api/yield.service.factory';
+import { parseTokenAmount } from '../../lib/utils/formatters';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
@@ -144,7 +146,7 @@ const PortfolioPage = () => {
 
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
-    (sum: number, asset: any) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
+    (sum: number, asset: any) => sum + parseTokenAmount(asset.totalInvested || '0', 6),
     0
   );
 
@@ -251,8 +253,8 @@ const PortfolioPage = () => {
       return;
     }
 
-    if (!isEvm) {
-      warning('Not Supported', 'Yield claiming is currently only supported on Mantle Network.');
+    if (!isEvm && networkType !== 'stellar') {
+      warning('Not Supported', 'Yield claiming is currently only supported on Mantle & Stellar Networks.');
       return;
     }
 
@@ -265,7 +267,8 @@ const PortfolioPage = () => {
       console.log('Asset ID:', assetId);
       console.log('Token Address:', asset.tokenAddress);
 
-      const settlementResult = await contractService.getSettlementInfo(asset.tokenAddress, address);
+      const yieldService = getYieldService(networkType);
+      const settlementResult = await yieldService.getSettlementInfo(asset.tokenAddress, address);
 
       console.log('Settlement Info:', settlementResult);
 
@@ -371,7 +374,9 @@ const PortfolioPage = () => {
         console.log('✅ Step 2: Approving YieldVault to burn tokens...');
         setClaimStatus('Approving...');
 
-        const approvalResult = await contractService.approveYieldVault(
+        const yieldService = getYieldService(networkType);
+
+        const approvalResult = await yieldService.approveYieldVault(
           tokenAddress,
           burnAmountWei,
           allowance
@@ -392,7 +397,8 @@ const PortfolioPage = () => {
       console.log('🔥 Step 3: Burning tokens and claiming USDC...');
       setClaimStatus('Burning & Claiming...');
 
-      const claimResult = await contractService.claimYield(tokenAddress, burnAmountWei);
+      const yieldService = getYieldService(networkType);
+      const claimResult = await yieldService.claimYield(tokenAddress, burnAmountWei);
 
       if (!claimResult.success) {
         throw new Error(claimResult.error || 'Failed to claim yield');

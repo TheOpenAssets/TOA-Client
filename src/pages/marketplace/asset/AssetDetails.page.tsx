@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useReadContract, useWriteContract } from 'wagmi';
-import { ethers } from 'ethers';
 import { formatUnits } from 'viem';
+import { parseTokenAmount } from '../../../lib/utils/formatters';
 import type { PurchaseHistoryResponse } from '../../../types/marketplace.types';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { contractService } from '../../../lib/api/contract.service';
@@ -76,8 +76,8 @@ const AssetDetailsPage = () => {
   const calculatedMethAmount = (() => {
     if (!leverageTokenInput || !asset?.tokenParams?.pricePerToken || !methPrice) return 0;
     const tokens = parseFloat(leverageTokenInput);
-    const tokenPrice = parseFloat(asset.tokenParams.pricePerToken); // USDC Wei (6 decimals)
-    const methPriceVal = methPrice; // USDC Wei (6 decimals)
+    const tokenPrice = parseTokenAmount(asset.tokenParams.pricePerToken, 6);
+    const methPriceVal = parseTokenAmount(methPrice, 6);
 
     // Total Value in USDC Wei = Tokens * TokenPrice
     // Required Collateral Value = Total Value * 1.5
@@ -623,17 +623,21 @@ const AssetDetailsPage = () => {
   }
 
   // Calculate token availability and limits
-  const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-  const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+  const totalSupply = parseTokenAmount(asset.tokenParams.totalSupply, 18);
+  const soldTokens = parseTokenAmount(asset.listing?.sold || '0', 18);
   const availableTokens = totalSupply - soldTokens;
-  const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
+  const minInvestment = parseTokenAmount(asset.tokenParams.minInvestment, 18);
 
 
   // Calculate estimated total price (actual price will be fetched from contract during purchase)
-  // Note: pricePerToken is in USDC (6 decimals), not wei (18 decimals)
+  // Calculate estimated total price
+  // The backend is migrating to canonical 4-decimal strings (e.g. "1.2345").
+  // If pricePerToken is > 1000, it's likely still raw USDC (6 decimals, e.g. 1000000).
+  // If it's small (e.g. < 1000), treat as canonical.
+  // This is a heuristic until migration is complete.
   const estimatedTotalPrice = tokensToBuy && asset.tokenParams.pricePerToken
-    ? ((parseFloat(tokensToBuy) * parseFloat(asset.tokenParams.pricePerToken)) / 1e6).toFixed(2)
-    : '0.00';
+    ? (parseFloat(tokensToBuy) * parseTokenAmount(asset.tokenParams.pricePerToken, 6)).toFixed(4)
+    : '0.0000';
 
 
   const handleBuyTokens = async () => {
@@ -659,7 +663,15 @@ const AssetDetailsPage = () => {
     const currentUsdcBalance = parseFloat(usdcBalance);
     const estimatedUsdcNeeded = parseFloat(estimatedTotalPrice);
 
+    console.log('DEBUG: Balance Check Values:');
+    console.log(`  - State usdcBalance: ${usdcBalance}`);
+    console.log(`  - Parsed currentUsdcBalance: ${currentUsdcBalance}`);
+    console.log(`  - State estimatedTotalPrice: ${estimatedTotalPrice}`);
+    console.log(`  - Parsed estimatedUsdcNeeded: ${estimatedUsdcNeeded}`);
+    console.log(`  - Asset Price Per Token (raw): ${asset.tokenParams.pricePerToken}`);
+
     if (currentUsdcBalance < estimatedUsdcNeeded) {
+      console.log('DEBUG: Insufficient balance detected.');
       setPurchaseStatus(`Insufficient USDC balance. You need ${estimatedUsdcNeeded.toFixed(2)} USDC but have ${currentUsdcBalance.toFixed(2)} USDC.`);
       return;
     }
@@ -701,12 +713,15 @@ const AssetDetailsPage = () => {
         const [code] = asset.token?.address.split(':') || [];
         if (!code) throw new Error('Invalid asset code format');
 
-        const txHash = await stellarService.buyTokens(address, code, tokensToBuy);
+        // Pass 7 decimals for standard Stellar assets
+        // TODO: potential dynamic decimal support if using verified Soroban tokens
+        const txHash = await stellarService.buyTokens(address, code, tokensToBuy, 7);
+
         // Mocking the result structure expected by the UI/backend handler
         result = {
           success: true,
           purchaseTxHash: txHash,
-          blockNumber: 0, // Not relevant for Stellar immediate response
+          blockNumber: 0,
         };
       }
 
@@ -721,7 +736,8 @@ const AssetDetailsPage = () => {
           const notifyPayload = {
             txHash: result.purchaseTxHash!,
             assetId: asset.assetId,
-            amount: ethers.parseUnits(tokensToBuy, 18).toString(), // Using 18 decimals for standardization in backend event if Stellar uses 7
+            // Send canonical 4-decimal string based on backend validation
+            amount: parseFloat(tokensToBuy).toFixed(4),
             blockNumber: result.blockNumber ? result.blockNumber.toString() : '0',
             network: isEvm ? 'mantle' : 'stellar'
           };
@@ -943,19 +959,34 @@ const AssetDetailsPage = () => {
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Total Supply</p>
                   <p className="font-medium text-[#111111]">
-                    {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                    {(
+                      () => {
+                        const raw = parseFloat(asset.tokenParams.totalSupply);
+                        return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                      }
+                    )()} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Minimum Investment</p>
                   <p className="font-medium text-[#111111]">
-                    {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
+                    {(
+                      () => {
+                        const raw = parseFloat(asset.tokenParams.minInvestment);
+                        return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                      }
+                    )()} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Sold Tokens</p>
                   <p className="font-medium text-[#111111]">
-                    {(parseFloat(asset.listing?.sold || '0') / 1e18).toLocaleString()} tokens
+                    {(
+                      () => {
+                        const raw = parseFloat(asset.listing?.sold || '0');
+                        return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                      }
+                    )()} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -1023,19 +1054,21 @@ const AssetDetailsPage = () => {
                             setTokensToBuy(inputValue);
                           }}
                           min={(() => {
-                            const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-                            const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
+                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const totalSupply = getCanonical(asset.tokenParams.totalSupply);
+                            const soldTokens = getCanonical(asset.listing?.sold || '0');
                             const availableTokens = totalSupply - soldTokens;
-                            const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
+                            const minInvestment = getCanonical(asset.tokenParams.minInvestment);
                             return availableTokens < minInvestment ? availableTokens : minInvestment;
                           })()}
                           className=" border-none text-2xl font-medium text-[#111111] p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         <p className="text-xs text-[#6B7280] mt-2">
                           Available: {(() => {
-                            const totalSupply = parseFloat(asset.tokenParams.totalSupply) / 1e18;
-                            const soldTokens = parseFloat(asset.listing?.sold || '0') / 1e18;
-                            return (totalSupply - soldTokens).toLocaleString();
+                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const totalSupply = getCanonical(asset.tokenParams.totalSupply);
+                            const soldTokens = getCanonical(asset.listing?.sold || '0');
+                            return (totalSupply - soldTokens).toLocaleString(undefined, { maximumFractionDigits: 4 });
                           })()} tokens
                         </p>
                       </div>
@@ -1065,7 +1098,12 @@ const AssetDetailsPage = () => {
                         <div className="flex justify-between">
                           <span>Min Investment</span>
                           <span className="font-medium text-[#111111]">
-                            {(parseFloat(asset.tokenParams.minInvestment) / 1e18).toLocaleString()} tokens
+                            {(
+                              () => {
+                                const raw = parseFloat(asset.tokenParams.minInvestment);
+                                return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                              }
+                            )()} tokens
                           </span>
                         </div>
                       </div>
@@ -1115,17 +1153,32 @@ const AssetDetailsPage = () => {
                       ) : (
                         <Button
                           onClick={handleBuyTokens}
-                          disabled={isPurchasing || !address || availableTokens <= 0 || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice) || (availableTokens >= minInvestment && parseFloat(tokensToBuy || '0') < minInvestment) || parseFloat(tokensToBuy || '0') > availableTokens}
+                          disabled={(() => {
+                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const totalSupply = getCanonical(asset.tokenParams.totalSupply);
+                            const soldTokens = getCanonical(asset.listing?.sold || '0');
+                            const availableTokens = totalSupply - soldTokens;
+                            const minInvestment = getCanonical(asset.tokenParams.minInvestment);
+                            const enteredAmount = parseFloat(tokensToBuy || '0');
+
+                            return isPurchasing || !address || availableTokens <= 0 || parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice) || (availableTokens >= minInvestment && enteredAmount < minInvestment && enteredAmount > 0) || enteredAmount > availableTokens;
+                          })()}
                           className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {(() => {
+                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const totalSupply = getCanonical(asset.tokenParams.totalSupply);
+                            const soldTokens = getCanonical(asset.listing?.sold || '0');
+                            const availableTokens = totalSupply - soldTokens;
+                            const minInvestment = getCanonical(asset.tokenParams.minInvestment);
                             const enteredAmount = parseFloat(tokensToBuy || '0');
+
                             if (availableTokens <= 0) return 'Sold Out';
                             if (isPurchasing) return 'Processing...';
                             if (!address) return 'Connect Wallet';
                             if (parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
-                            if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString()}`;
-                            if (availableTokens >= minInvestment && enteredAmount < minInvestment) return `Min Investment: ${minInvestment.toLocaleString()}`;
+                            if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
+                            if (availableTokens >= minInvestment && enteredAmount < minInvestment && enteredAmount > 0) return `Min Investment: ${minInvestment.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
                             return 'Buy Tokens';
                           })()}
                         </Button>

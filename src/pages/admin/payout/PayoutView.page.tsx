@@ -79,31 +79,27 @@ const PayoutViewPage = () => {
       const payoutAssets: PayoutAsset[] = filteredAssets
         .map((asset: any) => {
           // Parse sold tokens
-          const soldRaw = asset.listing?.sold || '0';
-          const sold = typeof soldRaw === 'string'
-            ? (soldRaw.length >= 18 ? parseFloat(soldRaw) / 1e18 : parseFloat(soldRaw))
-            : soldRaw;
+          const getCanonical = (val: string | number) => {
+            if (!val) return 0;
+            const r = typeof val === 'string' ? parseFloat(val) : val;
+            return r > 1e9 ? r / 1e18 : r;
+          };
+          const sold = getCanonical(asset.listing?.sold || '0');
 
           // Parse total supply
-          const totalSupplyRaw = asset.tokenParams?.totalSupply || '0';
-          const totalSupply = typeof totalSupplyRaw === 'string'
-            ? (totalSupplyRaw.length > 18 ? parseFloat(totalSupplyRaw) / 1e18 : parseFloat(totalSupplyRaw))
-            : totalSupplyRaw;
+          const totalSupply = getCanonical(asset.tokenParams?.totalSupply || '0');
 
-          // Parse price (USDC with 6 decimals)
-          // For STATIC assets: use listing.price
-          // For AUCTION assets: use listing.reservePrice
-          // Backend stores prices in 6 decimals (e.g., 30000 = $0.03, 150000 = $0.15)
+          // Parse price (USDC)
+          // Heuristic: if > 1000, assume raw 6-decimal (e.g. 850000 = $0.85). 
+          // If < 1000, assume canonical (e.g. 0.85 = $0.85).
           const priceRaw = asset.assetType === 'AUCTION'
             ? (asset.listing?.clearingPrice || '0')
             : (asset.listing?.price || asset.tokenParams?.pricePerToken || '0');
 
-          // Always divide by 1e6 since backend stores in 6 decimals
-          const priceInUsdc = typeof priceRaw === 'string'
-            ? parseFloat(priceRaw) / 1e6
-            : priceRaw / 1e6;
+          const pVal = parseFloat(priceRaw as string);
+          const priceInUsdc = pVal > 1000 ? pVal / 1e6 : pVal;
 
-          // Calculate total raised (sold tokens * price per token in USDC)
+          // Calculate total raised
           const totalRaised = sold * priceInUsdc;
 
           console.log(`Asset ${asset.assetId}:`, {

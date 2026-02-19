@@ -561,12 +561,12 @@ export function useSettleBid() {
           setStatus('Notifying backend...');
           console.log('✅ Settlement confirmed! Notifying backend...');
 
-            await marketplaceService.notifyBidSettled({
+          await marketplaceService.notifyBidSettled({
             assetId: lastSettleParamsRef.current.assetId,
             bidIndex: lastSettleParamsRef.current.bidIndex,
             txHash,
             blockNumber: receipt.blockNumber.toString(),
-            });
+          });
 
           notificationSentRef.current = txHash;
           setStatus('Bid settled successfully! 🎉');
@@ -656,6 +656,23 @@ export function useEndAuction() {
       setStatus('Ending auction on-chain...');
 
       try {
+        // Check if Stellar (address not 0x)
+        if (!address.startsWith('0x')) {
+          // Stellar Flow
+          // We need asset details to get code/issuer... Params only has assetId.
+          // This hook might need refactoring to support Stellar fully if used outside Admin Listings page.
+          // For now, let's assume this hook is primarily EVM-focused or we need to fetch asset.
+          // Given the Listings page implements it manually, maybe we leave this as EVM-only or add a TODO.
+          // But for completeness, let's add a basic check or error.
+          console.log("Stellar end auction should be handled via stellarService directly or updated hook.");
+
+          // If we want to support it here, we'd need to fetch asset details first.
+          // For now, let's throw if trying to use this hook on Stellar without proper implementation
+          // OR we can import stellarService and try to do it if we had the code/issuer.
+          throw new Error("Stellar End Auction via this hook is not yet fully implemented. Please use the Admin Listings page.");
+        }
+
+        // EVM Flow
         // Convert parameters
         const assetIdBytes32 = uuidToBytes32(params.assetId);
         const clearingPriceWei = parseUSDC(params.clearingPrice);

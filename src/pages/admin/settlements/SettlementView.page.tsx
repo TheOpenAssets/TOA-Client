@@ -373,7 +373,12 @@ const SettlementViewPage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <p className="font-gellix text-sm font-semibold text-foreground">
-                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
+                          {(
+                            () => {
+                              const raw = parseFloat(asset.tokenParams.totalSupply);
+                              return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                            }
+                          )()}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-center">

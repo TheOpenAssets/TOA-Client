@@ -380,7 +380,9 @@ const TradingEngineProductionPage = () => {
             const txData = await marketplaceService.getCreateOrderTxData({
                 tokenAddress,
                 amount: parseUnits(amount, 18).toString(),
-                pricePerToken: parseUnits(price, 6).toString(),
+                // SEND CANONICAL PRICE TO BACKEND (4 decimals)
+                // Backend adapter will convert to chain precision (6 decimals for USDC)
+                pricePerToken: parseFloat(price).toFixed(4),
                 isBuy: orderType === 'buy',
             });
 
@@ -619,7 +621,13 @@ const TradingEngineProductionPage = () => {
                                                                                 : 'cursor-pointer hover:bg-green-50/30'
                                                                                 }`}
                                                                         >
-                                                                            <span className="font-bold text-[#10B981] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                            <span className="font-bold text-[#10B981] font-gellix">${(
+                                                                                () => {
+                                                                                    const raw = parseFloat(level.priceFormatted);
+                                                                                    // Heuristic: if price > 1000, assume raw 6-decimal (1e6)
+                                                                                    return (raw > 1000 ? raw / 1e6 : raw).toFixed(4);
+                                                                                }
+                                                                            )()}</span>
                                                                             <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
                                                                             <span className="text-right text-[#6B7280] font-gellix">
                                                                                 ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
@@ -665,7 +673,13 @@ const TradingEngineProductionPage = () => {
                                                                                 : 'cursor-pointer hover:bg-red-50/30'
                                                                                 }`}
                                                                         >
-                                                                            <span className="font-bold text-[#EF4444] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                            <span className="font-bold text-[#EF4444] font-gellix">${(
+                                                                                () => {
+                                                                                    const raw = parseFloat(level.priceFormatted);
+                                                                                    // Heuristic: if price > 1000, assume raw 6-decimal (1e6)
+                                                                                    return (raw > 1000 ? raw / 1e6 : raw).toFixed(4);
+                                                                                }
+                                                                            )()}</span>
                                                                             <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
                                                                             <span className="text-right text-[#6B7280] font-gellix">
                                                                                 ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
