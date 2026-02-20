@@ -422,6 +422,10 @@ export const stellarService = {
             console.log("Clearing auction...");
             const marketContract = new StellarSdk.Contract(marketContractId);
 
+            // ALWAYS fetch a fresh copy of the account to avoid txBadSeq errors.
+            // Earlier simulations (like balanceTx) increment the in-memory sequence number of 'source'.
+            clearAuctionSource = await server.loadAccount(account);
+
             const clearTx = new StellarSdk.TransactionBuilder(clearAuctionSource, {
                 fee: StellarSdk.BASE_FEE,
                 networkPassphrase: NETWORK_PASSPHRASE,

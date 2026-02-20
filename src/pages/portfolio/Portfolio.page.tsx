@@ -356,8 +356,26 @@ const PortfolioPage = () => {
 
     try {
       // Burn ALL tokens (matching script default behavior)
-      const burnAmountWei = investorBalance;
-      const burnAmountFormatted = (parseFloat(investorBalance) / 1e18).toFixed(2);
+      // Burn ALL tokens (amount from backend is Canonical string e.g "100.0000")
+      let burnAmountWei = investorBalance;
+
+      // Stellar uses 7 decimals (10^7)
+      // Backend returns "100.0000", we need "1000000000" (i64)
+      if (networkType === 'stellar') {
+        const amount = parseFloat(investorBalance);
+        burnAmountWei = Math.round(amount * 10_000_000).toString();
+      } else {
+        // If EVM or others still use Wei strings, handle logic here or assume standardized
+        // For now, if string has dot, it's canonical
+        if (investorBalance.includes('.')) {
+          // It's canonical "100.0" -> "100000..." (18 decimals for EVM)
+          const amount = parseFloat(investorBalance);
+          // Use BigInt for precision if needed, but for now simple math
+          burnAmountWei = BigInt(Math.round(amount * 1e18)).toString();
+        }
+      }
+
+      const burnAmountFormatted = parseFloat(investorBalance).toFixed(2); // Balance is already canonical
 
       console.log('='.repeat(50));
       console.log('🔥 Burn-to-Claim Yield (v2)');
@@ -787,8 +805,7 @@ const PortfolioPage = () => {
                     <div>
                       <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
                       <p className="font-gellix text-xl font-semibold text-foreground">
-                        {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
-
+                        {parseFloat(selectedAssetForClaim.investorBalance).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
                       </p>
                     </div>
                     <div className="pt-4 border-t border-gray-300">

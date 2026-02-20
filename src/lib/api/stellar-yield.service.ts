@@ -9,7 +9,7 @@ import type { ClaimResult, SettlementInfoResult, TransactionResult, YieldService
 
 const HORIZON_URL = import.meta.env.VITE_STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org';
 const NETWORK_PASSPHRASE = import.meta.env.VITE_STELLAR_NETWORK_PASSPHRASE || 'Test SDF Network ; September 2015';
-const YIELD_VAULT_ID = import.meta.env.VITE_STELLAR_YIELD_VAULT_ID || '';
+const YIELD_VAULT_ID = import.meta.env.VITE_STELLAR_YIELD_VAULT_ID || import.meta.env.VITE_STELLAR_YIELD_VAULT || '';
 
 export class StellarYieldService implements YieldService {
 
@@ -59,8 +59,7 @@ export class StellarYieldService implements YieldService {
                 .addOperation(
                     contract.call(
                         'get_settlement_info',
-                        StellarSdk.nativeToScVal(code, { type: 'string' }),
-                        StellarSdk.nativeToScVal(issuer, { type: 'address' })
+                        StellarSdk.nativeToScVal(code, { type: 'string' })
                     )
                 )
                 .setTimeout(30)
@@ -92,12 +91,14 @@ export class StellarYieldService implements YieldService {
             const nativeRes = unwrap(res);
 
             const totalSettlement = (nativeRes.total_settlement || 0n).toString();
-            const totalTokenSupply = (nativeRes.total_supply || 0n).toString();
-            const totalClaimed = (nativeRes.total_claimed || 0n).toString();
+            // Contract uses supply_snapshot for total active supply at snapshot
+            const totalTokenSupply = (nativeRes.supply_snapshot || nativeRes.total_supply || 0n).toString();
+            const totalClaimed = (nativeRes.claimed_tokens || nativeRes.total_claimed || 0n).toString();
             const totalTokensBurned = (nativeRes.total_tokens_burned || nativeRes.total_burned || 0n).toString();
             const yieldPerToken = (nativeRes.yield_per_token || 0n).toString();
 
-            let userBalance = '0';
+            let userBalanceRaw = 0n;
+            let userBalanceStr = '0.0000';
             if (userAddress) {
                 try {
                     const accountData = await horizonServer.loadAccount(userAddress);
@@ -109,7 +110,8 @@ export class StellarYieldService implements YieldService {
                         const parts = balanceObj.balance.split('.');
                         const intPart = BigInt(parts[0]);
                         const fracPart = parts[1] ? parts[1].padEnd(7, '0').slice(0, 7) : '0000000';
-                        userBalance = (intPart * 10_000_000n + BigInt(fracPart)).toString();
+                        userBalanceRaw = intPart * 10_000_000n + BigInt(fracPart);
+                        userBalanceStr = parseFloat(balanceObj.balance).toFixed(4);
                     }
                 } catch (e) {
                     console.warn("Could not fetch user balance", e);
@@ -117,11 +119,10 @@ export class StellarYieldService implements YieldService {
             }
 
             let expectedUsdc = '0';
-            if (BigInt(totalTokenSupply) > 0n && BigInt(userBalance) > 0n) {
+            if (BigInt(totalTokenSupply) > 0n && userBalanceRaw > 0n) {
                 const settlementBn = BigInt(totalSettlement);
                 const supplyBn = BigInt(totalTokenSupply);
-                const balanceBn = BigInt(userBalance);
-                const expectedBn = (balanceBn * settlementBn) / supplyBn;
+                const expectedBn = (userBalanceRaw * settlementBn) / supplyBn;
                 expectedUsdc = (Number(expectedBn) / 10_000_000).toFixed(6);
             }
 
@@ -132,7 +133,7 @@ export class StellarYieldService implements YieldService {
                 totalClaimed,
                 totalTokensBurned,
                 yieldPerToken,
-                investorBalance: userBalance,
+                investorBalance: userBalanceStr,
                 tokenDecimals: 7,
                 tokenSymbol: code,
                 allowance: '999999999999999999',
@@ -178,7 +179,12 @@ export class StellarYieldService implements YieldService {
 
             const contract = new StellarSdk.Contract(YIELD_VAULT_ID);
 
-            const tx = new StellarSdk.TransactionBuilder(source, {
+            // Derive SAC Contract ID from Asset
+            const assetObj = new StellarSdk.Asset(code, issuer);
+            const sacContractId = assetObj.contractId(NETWORK_PASSPHRASE);
+            console.log(`Derived SAC Contract ID for ${code}: ${sacContractId}`);
+
+            const txBuilder = new StellarSdk.TransactionBuilder(source, {
                 fee: StellarSdk.BASE_FEE,
                 networkPassphrase: NETWORK_PASSPHRASE,
             })
@@ -186,12 +192,13 @@ export class StellarYieldService implements YieldService {
                     contract.call(
                         'claim_yield',
                         StellarSdk.nativeToScVal(code, { type: 'string' }),
-                        StellarSdk.nativeToScVal(issuer, { type: 'address' }),
-                        StellarSdk.nativeToScVal(BigInt(burnAmountWei), { type: 'i128' })
+                        new StellarSdk.Address(sacContractId).toScVal(),
+                        StellarSdk.nativeToScVal(BigInt(burnAmountWei), { type: 'i128' }),
+                        new StellarSdk.Address(address).toScVal()
                     )
-                )
-                .setTimeout(30)
-                .build();
+                );
+
+            const tx = txBuilder.setTimeout(30).build();
 
             const rpcServer = new StellarSdk.rpc.Server(import.meta.env.VITE_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org');
             const simulation = await rpcServer.simulateTransaction(tx);
