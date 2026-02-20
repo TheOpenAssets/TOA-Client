@@ -236,6 +236,86 @@ export const stellarService = {
     },
 
     /**
+     * Submit a bid on Stellar (Primary Market)
+     * Matches logic from scripts/investor-place-bid.sh
+     */
+    submitBid: async (
+        account: string,
+        assetCode: string,
+        tokenAmount: string,
+        limitPrice: string
+    ): Promise<{ txHash: string; tokenAmount7dec: string; limitPrice7dec: string }> => {
+        try {
+            if (!(await isConnected())) throw new Error("Freighter wallet not found");
+            await setAllowed();
+
+            const server = new StellarSdk.Horizon.Server(HORIZON_URL);
+            const source = await server.loadAccount(account);
+
+            const marketContractId = import.meta.env.VITE_STELLAR_PRIMARY_MARKET;
+            if (!marketContractId) throw new Error("Primary Market contract ID not configured");
+
+            // Convert to Stellar 7-decimal integers (i64)
+            const STELLAR_DECIMALS = 10_000_000;
+            const tokenAmount7dec = BigInt(Math.round(parseFloat(tokenAmount) * STELLAR_DECIMALS));
+            const limitPrice7dec = BigInt(Math.round(parseFloat(limitPrice) * STELLAR_DECIMALS));
+
+            const contract = new StellarSdk.Contract(marketContractId);
+
+            console.log(`Submitting bid: Code=${assetCode}, Tokens=${tokenAmount7dec}, Price=${limitPrice7dec}`);
+
+            const tx = new StellarSdk.TransactionBuilder(source, {
+                fee: StellarSdk.BASE_FEE,
+                networkPassphrase: NETWORK_PASSPHRASE,
+            })
+                .addOperation(
+                    contract.call(
+                        'submit_bid',
+                        new StellarSdk.Address(account).toScVal(),
+                        StellarSdk.nativeToScVal(assetCode, { type: 'string' }),
+                        StellarSdk.nativeToScVal(tokenAmount7dec, { type: 'i64' }),
+                        StellarSdk.nativeToScVal(limitPrice7dec, { type: 'i64' })
+                    )
+                )
+                .setTimeout(30)
+                .build();
+
+            const rpcServer = new StellarSdk.rpc.Server(import.meta.env.VITE_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org');
+            const simulation = await rpcServer.simulateTransaction(tx);
+
+            if (!StellarSdk.rpc.Api.isSimulationSuccess(simulation)) {
+                let errorMsg = typeof simulation.error === 'string' ? simulation.error : 'Unknown error';
+                if (simulation.events && simulation.events.length > 0) {
+                    // Extract informative errors from events if possible
+                    errorMsg += " | Events: " + simulation.events.map((e: any) => e.topics.join(',')).join('; ');
+                }
+                throw new Error(`Simulation failed: ${errorMsg}`);
+            }
+
+            const assembled = StellarSdk.rpc.assembleTransaction(tx, simulation).build();
+            const signed = await signTransaction(assembled.toXDR(), { networkPassphrase: NETWORK_PASSPHRASE });
+            if (!signed) throw new Error("User denied signature");
+
+            const signedTx = new StellarSdk.Transaction(signed.signedTxXdr, NETWORK_PASSPHRASE);
+            const response = await rpcServer.sendTransaction(signedTx);
+
+            if (response.status !== "PENDING" && (response as any).status !== "SUCCESS") {
+                throw new Error(`Transaction failed: ${JSON.stringify(response)}`);
+            }
+
+            return {
+                txHash: response.hash,
+                tokenAmount7dec: tokenAmount7dec.toString(),
+                limitPrice7dec: limitPrice7dec.toString()
+            };
+
+        } catch (error: any) {
+            console.error("Submit bid error:", error);
+            throw new Error(error.message || "Failed to submit bid");
+        }
+    },
+
+    /**
      * End an auction on Stellar (Admin only)
      * Matches logic from scripts/admin-end-auction.sh
      */

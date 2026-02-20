@@ -36,6 +36,11 @@ const AuctionDetailsPage = () => {
   const [trustlineError, setTrustlineError] = useState<string | null>(null);
   const [trustlineStatus, setTrustlineStatus] = useState<'APPROVED' | 'PENDING' | 'NOT_REQUESTED' | 'checking' | null>(null);
 
+  // Stellar Bidding State
+  const [isStellarSubmitting, setIsStellarSubmitting] = useState(false);
+  const [stellarStatus, setStellarStatus] = useState<string | null>(null);
+  const [stellarError, setStellarError] = useState<string | null>(null);
+
   const { submitBid, status, error: bidError, isLoading, reset } = useSubmitBid();
 
   // Auto-clear error after 8 seconds
@@ -221,12 +226,78 @@ const AuctionDetailsPage = () => {
     }
   };
 
+  const submitStellarBid = async (params: { assetId: string, tokenAmount: string, pricePerToken: string }) => {
+    if (!address || !asset?.token?.address) {
+      setStellarError("Wallet not connected or asset token unavailable");
+      return;
+    }
+
+    try {
+      setIsStellarSubmitting(true);
+      setStellarStatus('Submitting bid to Stellar network...');
+      setStellarError(null);
+
+      const [code] = asset.token.address.split(':');
+
+      // 1. Submit on-chain
+      const result = await stellarService.submitBid(
+        address,
+        code,
+        params.tokenAmount,
+        params.pricePerToken
+      );
+
+      setStellarStatus('Bid submitted! Waiting for confirmation (6s)...');
+      console.log('Stellar bid tx:', result.txHash);
+
+      const tokenAmountFormatted = parseFloat(params.tokenAmount).toFixed(4);
+      const priceFormatted = parseFloat(params.pricePerToken).toFixed(4);
+
+      // Wait 6 seconds for propagation
+      await new Promise(r => setTimeout(r, 6000));
+
+      setStellarStatus('Notifying backend...');
+
+      await marketplaceService.notifyBidPlaced({
+        txHash: result.txHash,
+        assetId: params.assetId,
+        tokenAmount: tokenAmountFormatted,
+        price: priceFormatted,
+        network: 'stellar'
+      });
+
+      setStellarStatus('Bid placed successfully! 🎉');
+
+      // Refresh after delay
+      setTimeout(() => {
+        navigate(networkPath('/portfolio'));
+      }, 2000);
+
+    } catch (err: any) {
+      console.error('Stellar bid error:', err);
+      setStellarError(err.message || 'Failed to place Stellar bid');
+      setStellarStatus(null);
+    } finally {
+      setIsStellarSubmitting(false);
+    }
+  };
+
   const handlePlaceBid = async () => {
     if (!assetId || !bidAmount || !pricePerToken) {
       alert('Please fill in all bid fields');
       return;
     }
 
+    if (!isEvm) {
+      await submitStellarBid({
+        assetId,
+        tokenAmount: bidAmount,
+        pricePerToken: pricePerToken
+      });
+      return;
+    }
+
+    // EVM Flow
     await submitBid({
       assetId: assetId,
       tokenAmount: bidAmount,
@@ -601,10 +672,10 @@ const AuctionDetailsPage = () => {
                 </div>
 
                 {/* Error Message */}
-                {(bidError || trustlineError) && (
+                {(bidError || trustlineError || stellarError) && (
                   <div className="p-3 bg-red-50 rounded-2xl relative">
                     <button
-                      onClick={() => { reset(); setTrustlineError(null); }}
+                      onClick={() => { reset(); setTrustlineError(null); setStellarError(null); }}
                       className="absolute top-2 right-2 text-red-400 hover:text-red-600 transition-colors"
                       title="Dismiss"
                     >
@@ -614,7 +685,7 @@ const AuctionDetailsPage = () => {
                       <span className="text-red-500 text-lg mt-0.5">⚠️</span>
                       <div>
                         <p className="font-geist text-sm font-medium text-red-800 mb-1">Transaction Failed</p>
-                        <p className="font-geist text-xs text-red-600">{bidError || trustlineError}</p>
+                        <p className="font-geist text-xs text-red-600">{bidError || trustlineError || stellarError}</p>
 
                       </div>
                     </div>
@@ -622,22 +693,26 @@ const AuctionDetailsPage = () => {
                 )}
 
                 {/* Status/Success Message */}
-                {status && !bidError && (
-                  <div className={`p-3 rounded-2xl ${status.includes('success') || status.includes('🎉')
+                {(status || stellarStatus) && !(bidError || stellarError) && (
+                  <div className={`p-3 rounded-2xl ${(status && (status.includes('success') || status.includes('🎉'))) ||
+                    (stellarStatus && (stellarStatus.includes('success') || stellarStatus.includes('🎉')))
                     ? 'bg-green-50'
                     : 'bg-blue-50'
                     }`}>
                     <div className="flex items-center gap-2">
-                      {status.includes('success') || status.includes('🎉') ? (
-                        <span className="text-green-600 text-sm">✓</span>
-                      ) : (
-                        <div className="animate-spin h-3 w-3 border-2 border-gray-600 border-t-transparent rounded-full"></div>
-                      )}
-                      <p className={`font-geist text-sm ${status.includes('success') || status.includes('🎉')
+                      {
+                        (status && (status.includes('success') || status.includes('🎉'))) ||
+                          (stellarStatus && (stellarStatus.includes('success') || stellarStatus.includes('🎉'))) ? (
+                          <span className="text-green-600 text-sm">✓</span>
+                        ) : (
+                          <div className="animate-spin h-3 w-3 border-2 border-gray-600 border-t-transparent rounded-full"></div>
+                        )}
+                      <p className={`font-geist text-sm ${(status && (status.includes('success') || status.includes('🎉'))) ||
+                        (stellarStatus && (stellarStatus.includes('success') || stellarStatus.includes('🎉')))
                         ? 'text-green-800 font-medium'
                         : 'text-gray-800'
                         }`}>
-                        {status}
+                        {status || stellarStatus}
                       </p>
                     </div>
                   </div>
@@ -664,10 +739,12 @@ const AuctionDetailsPage = () => {
                 )}
 
                 {/* Place Bid / Retry Button / Add Trustline */}
-                {bidError ? (
+                {bidError || stellarError ? (
                   <button
                     onClick={() => {
                       reset();
+                      setStellarError(null);
+                      setStellarStatus(null);
                       handlePlaceBid();
                     }}
                     className="w-full bg-black text-white rounded-xl h-14 text-base font-medium hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
@@ -718,7 +795,7 @@ const AuctionDetailsPage = () => {
                   <Button
                     onClick={handlePlaceBid}
                     disabled={
-                      isLoading ||
+                      isLoading || isStellarSubmitting ||
                       (!isEvm && !address) || // Allow Stellar if trustline OK
                       (isEvm && (!address || hasAlreadyBidded ||
                         parseFloat(bidAmount || '0') * parseFloat(pricePerToken || '0') > parseFloat(usdcBalance))) ||
@@ -730,7 +807,7 @@ const AuctionDetailsPage = () => {
                     }
                     className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading
+                    {isLoading || isStellarSubmitting
                       ? 'Processing...'
                       : !address
                         ? 'Connect Wallet'
