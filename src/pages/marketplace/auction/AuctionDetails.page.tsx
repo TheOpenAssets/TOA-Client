@@ -21,7 +21,7 @@ const AuctionDetailsPage = () => {
   const navigate = useNavigate();
   const { address } = useAuthStrategy();
   const { networkType, networkPath } = useNetwork();
-  const isEvm = networkType === 'mantle';
+  const isEvm = networkType === 'arbitrum';
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
 
   const [bidAmount, setBidAmount] = useState('');

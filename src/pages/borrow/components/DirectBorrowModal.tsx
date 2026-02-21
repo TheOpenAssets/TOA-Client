@@ -404,7 +404,7 @@ export const DirectBorrowModal = ({
                 </p>
                 {txHash && (
                   <a
-                    href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                    href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:text-blue-700 underline"
@@ -436,7 +436,7 @@ export const DirectBorrowModal = ({
                 </p>
                 {txHash && (
                   <a
-                    href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                    href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block mt-3 text-sm text-blue-600 hover:text-blue-700 underline"

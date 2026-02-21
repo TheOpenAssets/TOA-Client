@@ -1,4 +1,4 @@
-export type NetworkType = 'mantle' | 'stellar';
+export type NetworkType = 'arbitrum' | 'stellar';
 
 export interface NetworkFeatures {
   leverage: boolean;
@@ -20,11 +20,11 @@ export interface NetworkConfig {
 }
 
 export const NETWORK_CONFIGS: Record<NetworkType, NetworkConfig> = {
-  mantle: {
-    type: 'mantle',
-    displayName: 'Mantle',
-    apiUrl: import.meta.env.VITE_MANTLE_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
-    explorerUrl: 'https://sepolia.mantlescan.xyz',
+  arbitrum: {
+    type: 'arbitrum',
+    displayName: 'Arbitrum',
+    apiUrl: import.meta.env.VITE_ARBITRUM_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
+    explorerUrl: 'https://sepolia.arbiscan.io',
     features: { leverage: true, faucet: true, solvency: true, secondaryMarket: true, borrow: true },
     walletType: 'evm',
   },
@@ -38,5 +38,5 @@ export const NETWORK_CONFIGS: Record<NetworkType, NetworkConfig> = {
   },
 };
 
-export const SUPPORTED_NETWORKS: NetworkType[] = ['mantle', 'stellar'];
-export const DEFAULT_NETWORK: NetworkType = 'mantle';
+export const SUPPORTED_NETWORKS: NetworkType[] = ['arbitrum', 'stellar'];
+export const DEFAULT_NETWORK: NetworkType = 'arbitrum';

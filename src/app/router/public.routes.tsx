@@ -45,7 +45,7 @@ import { FeatureGuard } from '../../components/common/FeatureGuard';
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
-    element: <Navigate to="/mantle" replace />,
+    element: <Navigate to="/arbitrum" replace />,
   },
   {
     path: '/:network',
@@ -173,13 +173,13 @@ export const publicRoutes: RouteObject[] = [
     ],
   },
   // Legacy Redirects
-  { path: '/marketplace', element: <Navigate to="/mantle/marketplace" replace /> },
-  { path: '/auth', element: <Navigate to="/mantle/auth" replace /> },
-  { path: '/portfolio', element: <Navigate to="/mantle/portfolio" replace /> },
-  { path: '/admin', element: <Navigate to="/mantle/admin" replace /> },
-  { path: '/trade/*', element: <Navigate to="/mantle/trade" replace /> },
-  { path: '/faucet', element: <Navigate to="/mantle/faucet" replace /> },
-  { path: '/borrow', element: <Navigate to="/mantle/borrow" replace /> },
+  { path: '/marketplace', element: <Navigate to="/arbitrum/marketplace" replace /> },
+  { path: '/auth', element: <Navigate to="/arbitrum/auth" replace /> },
+  { path: '/portfolio', element: <Navigate to="/arbitrum/portfolio" replace /> },
+  { path: '/admin', element: <Navigate to="/arbitrum/admin" replace /> },
+  { path: '/trade/*', element: <Navigate to="/arbitrum/trade" replace /> },
+  { path: '/faucet', element: <Navigate to="/arbitrum/faucet" replace /> },
+  { path: '/borrow', element: <Navigate to="/arbitrum/borrow" replace /> },
 
   // 404 - Catch all unmatched routes
   {

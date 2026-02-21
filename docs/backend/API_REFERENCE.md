@@ -38,7 +38,7 @@ Response:
 
 ### 1. Initiate Leveraged Purchase
 
-Create a new leveraged position using mETH as collateral.
+Create a new leveraged position using stARB as collateral.
 
 ```bash
 POST /leverage/initiate
@@ -50,7 +50,7 @@ Content-Type: application/json
   "tokenAddress": "0xe7BAdAaF6d2FFF75394cC8608f68362c61F00bFb",
   "tokenAmount": "100000000000000000000",
   "pricePerToken": "800000",
-  "mETHCollateral": "50000000000000000000"
+  "stARBCollateral": "50000000000000000000"
 }
 
 Response:
@@ -71,9 +71,9 @@ Response:
 ```
 
 **Validation**:
-- Validates 150% LTV: `mETH value >= 1.5 × (tokenAmount × pricePerToken)`
+- Validates 150% LTV: `stARB value >= 1.5 × (tokenAmount × pricePerToken)`
 - Checks SeniorPool has sufficient liquidity
-- Verifies user has approved mETH spending
+- Verifies user has approved stARB spending
 
 ### 2. Get Position Details
 
@@ -90,7 +90,7 @@ Response:
     "positionId": 1,
     "userAddress": "0x...",
     "assetId": "...",
-    "mETHCollateral": "50000000000000000000",
+    "stARBCollateral": "50000000000000000000",
     "usdcBorrowed": "80000000000",
     "currentHealthFactor": 14500,
     "healthStatus": "HEALTHY",
@@ -98,7 +98,7 @@ Response:
     "harvestHistory": [
       {
         "timestamp": "2025-01-15T10:30:00Z",
-        "mETHSwapped": "1000000000000000000",
+        "stARBSwapped": "1000000000000000000",
         "usdcReceived": "3000000000",
         "interestPaid": "100000000"
       }
@@ -159,10 +159,10 @@ Response:
 
 ### 5. Get Swap Quote
 
-Get expected USDC output for mETH swap.
+Get expected USDC output for stARB swap.
 
 ```bash
-GET /leverage/quote/:mETHAmount
+GET /leverage/quote/:stARBAmount
 Authorization: Bearer <JWT_TOKEN>
 
 Example:
@@ -170,18 +170,18 @@ GET /leverage/quote/1000000000000000000
 
 Response:
 {
-  "mETHAmount": "1000000000000000000",
+  "stARBAmount": "1000000000000000000",
   "expectedUSDC": "3000000000",
   "expectedUSDCFormatted": "3000.0 USDC"
 }
 ```
 
-### 6. Get mETH Price
+### 6. Get stARB Price
 
-Get current mETH price in USD.
+Get current stARB price in USD.
 
 ```bash
-GET /leverage/meth-price
+GET /leverage/stARB-price
 Authorization: Bearer <JWT_TOKEN>
 
 Response:
@@ -445,8 +445,8 @@ Response:
 ### Complete Leveraged Purchase Flow
 
 ```bash
-# 1. Get mETH price
-curl http://localhost:3000/leverage/meth-price \
+# 1. Get stARB price
+curl http://localhost:3000/leverage/stARB-price \
   -H "Authorization: Bearer $JWT_TOKEN"
 
 # 2. Get swap quote
@@ -462,7 +462,7 @@ curl -X POST http://localhost:3000/leverage/initiate \
     "tokenAddress": "0xe7BAdAaF6d2FFF75394cC8608f68362c61F00bFb",
     "tokenAmount": "100000000000000000000",
     "pricePerToken": "800000",
-    "mETHCollateral": "50000000000000000000"
+    "stARBCollateral": "50000000000000000000"
   }'
 
 # 4. Monitor position
@@ -517,7 +517,7 @@ All endpoints return errors in the following format:
 ```json
 {
   "statusCode": 400,
-  "message": "Insufficient collateral. Required: 120000000000 USDC worth of mETH, Provided: 100000000000 USDC worth",
+  "message": "Insufficient collateral. Required: 120000000000 USDC worth of stARB, Provided: 100000000000 USDC worth",
   "error": "Bad Request"
 }
 ```
@@ -582,7 +582,7 @@ Import this collection for quick testing:
         {
           "name": "Initiate Purchase",
           "request": {
-            "method": "POST",
+            "stARBod": "POST",
             "header": [
               {
                 "key": "Authorization",
@@ -591,7 +591,7 @@ Import this collection for quick testing:
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"assetId\": \"...\",\n  \"tokenAddress\": \"...\",\n  \"tokenAmount\": \"100000000000000000000\",\n  \"pricePerToken\": \"800000\",\n  \"mETHCollateral\": \"50000000000000000000\"\n}"
+              "raw": "{\n  \"assetId\": \"...\",\n  \"tokenAddress\": \"...\",\n  \"tokenAmount\": \"100000000000000000000\",\n  \"pricePerToken\": \"800000\",\n  \"stARBCollateral\": \"50000000000000000000\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/leverage/initiate",

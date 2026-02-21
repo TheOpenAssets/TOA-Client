@@ -19,17 +19,17 @@ const TEST_ASSET = {
 export const LeverageForm = () => {
   const [amount, setAmount] = useState('');
   const { 
-    methPrice, 
+    stARBPrice, 
     activeQuote, 
     isLoading, 
-    fetchMethPrice, 
+    fetchstARBPrice, 
     getQuote, 
     createPosition 
   } = useLeverageStore();
 
   useEffect(() => {
-    fetchMethPrice();
-  }, [fetchMethPrice]);
+    fetchstARBPrice();
+  }, [fetchstARBPrice]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -44,7 +44,7 @@ export const LeverageForm = () => {
     if (!amount || !activeQuote) return;
 
     try {
-      const mETHCollateral = parseUnits(amount, 18).toString();
+      const stARBCollateral = parseUnits(amount, 18).toString();
       // Token has 18 decimals usually? Let's assume standard ERC20 for the RWA token
       const tokenAmount = parseUnits(estimatedTokens.toString(), 18).toString(); 
 
@@ -53,7 +53,7 @@ export const LeverageForm = () => {
         tokenAddress: TEST_ASSET.address,
         tokenAmount: tokenAmount,
         pricePerToken: TEST_ASSET.priceWei,
-        mETHCollateral: mETHCollateral
+        stARBCollateral: stARBCollateral
       });
       
       setAmount('');
@@ -71,7 +71,7 @@ export const LeverageForm = () => {
           Open Leveraged Position
         </CardTitle>
         <CardDescription>
-          Deposit mETH collateral to borrow USDC and purchase RWA tokens.
+          Deposit stARB collateral to borrow USDC and purchase RWA tokens.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -79,7 +79,7 @@ export const LeverageForm = () => {
         {/* Input Section */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Collateral Amount (mETH)
+            Collateral Amount (stARB)
           </label>
           <div className="relative">
             <Input 
@@ -90,20 +90,20 @@ export const LeverageForm = () => {
               className="pr-16"
             />
             <span className="absolute right-3 top-2.5 text-sm font-semibold text-muted-foreground">
-              mETH
+              stARB
             </span>
           </div>
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Balance: 5.42 mETH</span>
-            <span>≈ ${amount ? (parseFloat(amount) * methPrice).toLocaleString() : '0.00'} USD</span>
+            <span>Balance: 5.42 stARB</span>
+            <span>≈ ${amount ? (parseFloat(amount) * stARBPrice).toLocaleString() : '0.00'} USD</span>
           </div>
         </div>
 
         {/* Info Box */}
         <div className="rounded-lg bg-secondary/30 p-4 space-y-3">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">mETH Price</span>
-            <span className="font-mono font-medium">${methPrice.toLocaleString()}</span>
+            <span className="text-muted-foreground">stARB Price</span>
+            <span className="font-mono font-medium">${stARBPrice.toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Max Borrow (LTV 150%)</span>

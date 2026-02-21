@@ -106,7 +106,7 @@ Added smooth slide-in animation:
 1. ❌ `alert('This asset was already registered on-chain...')`
    → ✅ `info('Asset Already Registered', '...', 8000)`
 
-2. ❌ `alert('Asset registered successfully on Mantle!')`
+2. ❌ `alert('Asset registered successfully on arbitrum!')`
    → ✅ `success('Registration Successful!', '...')`
 
 3. ❌ `alert('Failed to register asset: ...')`

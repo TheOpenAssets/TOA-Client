@@ -1,7 +1,7 @@
 // src/pages/marketplace/asset/AssetDetails.page.tsx
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useReadContract, useWriteContract, usePublicClient } from 'wagmi';
 import { formatUnits } from 'viem';
 import { parseTokenAmount } from '../../../lib/utils/formatters';
 import type { PurchaseHistoryResponse } from '../../../types/marketplace.types';
@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui
 import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
-import { LEVERAGE_CONTRACTS, METH_ABI } from '../../../lib/blockchain/leverage.contract';
+import { LEVERAGE_CONTRACTS, stARB_ABI } from '../../../lib/blockchain/leverage.contract';
 import { PageLoader } from '../../../components/ui/page-loader';
 import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext';
 import { useNetwork } from '../../../lib/network/NetworkContext';
@@ -41,13 +41,13 @@ const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const { address } = useAuthStrategy();
   const { networkType, networkPath } = useNetwork();
-  const isEvm = networkType === 'mantle';
+  const isEvm = networkType === 'arbitrum';
   // Only pass address to wagmi hooks if on EVM network
   const evmAddress = (isEvm && address) ? address as `0x${string}` : undefined;
 
   const navigate = useNavigate();
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
-  const { methPrice, fetchMethPrice, isLoading: isLeverageLoading } = useLeverageStore();
+  const { stARBPrice, fetchstARBPrice, isLoading: isLeverageLoading } = useLeverageStore();
 
   const [tokensToBuy, setTokensToBuy] = useState('');
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -70,29 +70,32 @@ const AssetDetailsPage = () => {
   const [isAddingTrust, setIsAddingTrust] = useState(false);
   const [trustlineError, setTrustlineError] = useState<string | null>(null);
 
-  // Calculate required mETH based on token input
-  // Formula: Required mETH = (Tokens * TokenPrice * 1.5) / mETHPrice
+  // Calculate required stARB based on token input
+  // Formula: Required stARB = (Tokens * TokenPrice * 1.5) / stARBPrice
   // 1.5 (150%) is the required collateralization ratio (backend validation)
-  const calculatedMethAmount = (() => {
-    if (!leverageTokenInput || !asset?.tokenParams?.pricePerToken || !methPrice) return 0;
+  const calculatedstARBAmount = (() => {
+    if (!leverageTokenInput || !asset?.tokenParams?.pricePerToken) return 0;
     const tokens = parseFloat(leverageTokenInput);
-    const tokenPrice = parseTokenAmount(asset.tokenParams.pricePerToken, 6);
-    const methPriceVal = parseTokenAmount(methPrice, 6);
+    if (tokens <= 0) return 0;
 
-    // Total Value in USDC Wei = Tokens * TokenPrice
-    // Required Collateral Value = Total Value * 1.5
-    // Required mETH = Required Collateral Value / mETHPrice
+    // Backend sends canonical 4-decimal values (e.g. "0.8500")
+    const tokenPrice = parseFloat(asset.tokenParams.pricePerToken);
+    const stARBPriceVal = stARBPrice;
 
-    const meth = (tokens * tokenPrice * 1.5) / methPriceVal;
+    console.log('DEBUG stARB calc:', { tokens, tokenPrice, stARBPriceVal, leverageTokenInput });
+
+    if (!stARBPriceVal || stARBPriceVal <= 0) return 0;
+
+    // Required stARB = (Tokens * TokenPrice * 1.5) / stARBPrice
+    const stARB = (tokens * tokenPrice * 1.5) / stARBPriceVal;
 
     // Add 1 USDC buffer to prevent "insufficient collateral" due to micro-rounding errors
-    // 1 USDC = 1e6 units
-    const buffer = (1.0 * 1e6) / methPriceVal;
+    const buffer = 1.0 / stARBPriceVal;
 
-    return meth + buffer;
+    return stARB + buffer;
   })();
 
-  const calculatedMethString = calculatedMethAmount > 0 ? calculatedMethAmount.toFixed(6) : '';
+  const calculatedstARBString = calculatedstARBAmount > 0 ? calculatedstARBAmount.toFixed(6) : '';
 
   // Stellar USDC Balance State
   const [stellarUsdcBalance, setStellarUsdcBalance] = useState('0');
@@ -131,10 +134,10 @@ const AssetDetailsPage = () => {
     ? stellarUsdcBalance
     : (usdcBalanceRaw ? formatUnits(usdcBalanceRaw, 6) : '0');
 
-  // Wagmi Hooks for mETH Balance and Approval
-  const { data: methBalanceRaw, refetch: refetchMethBalance } = useReadContract({
-    address: LEVERAGE_CONTRACTS.MockMETH,
-    abi: METH_ABI,
+  // Wagmi Hooks for stARB Balance and Approval
+  const { data: stARBBalanceRaw, refetch: refetchstARBBalance } = useReadContract({
+    address: LEVERAGE_CONTRACTS.MockstARB,
+    abi: stARB_ABI,
     functionName: 'balanceOf',
     args: evmAddress ? [evmAddress] : undefined,
     query: {
@@ -143,28 +146,29 @@ const AssetDetailsPage = () => {
   });
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: LEVERAGE_CONTRACTS.MockMETH,
-    abi: METH_ABI,
+    address: LEVERAGE_CONTRACTS.MockstARB,
+    abi: stARB_ABI,
     functionName: 'allowance',
     args: evmAddress ? [evmAddress, LEVERAGE_CONTRACTS.LeverageVault] : undefined,
   });
 
-  const { writeContractAsync: approveMeth } = useWriteContract();
+  const { writeContractAsync: approvestARB } = useWriteContract();
+  const publicClient = usePublicClient();
 
-  // Format mETH balance (18 decimals)
-  const methBalance = methBalanceRaw ? formatUnits(methBalanceRaw, 18) : '0';
+  // Format stARB balance (18 decimals)
+  const stARBBalance = stARBBalanceRaw ? formatUnits(stARBBalanceRaw, 18) : '0';
 
   // Load wallet data (refetch balances and allowances)
   const loadWalletData = useCallback(async () => {
     if (!address) return;
     try {
       refetchUsdcBalance();
-      refetchMethBalance();
+      refetchstARBBalance();
       refetchAllowance();
     } catch (error) {
       console.error('Error loading wallet data:', error);
     }
-  }, [address, refetchUsdcBalance, refetchMethBalance, refetchAllowance]);
+  }, [address, refetchUsdcBalance, refetchstARBBalance, refetchAllowance]);
 
   useEffect(() => {
     if (assetId) {
@@ -172,7 +176,7 @@ const AssetDetailsPage = () => {
     }
 
     if (activeTab === 'leverage') {
-      fetchMethPrice();
+      fetchstARBPrice();
     }
 
     // Load wallet data if already connected and on EVM
@@ -180,18 +184,18 @@ const AssetDetailsPage = () => {
       loadWalletData();
     }
 
-    // Auto-refresh mETH price every 30 seconds ONLY if active tab is leverage
+    // Auto-refresh stARB price every 30 seconds ONLY if active tab is leverage
     let interval: NodeJS.Timeout;
     if (activeTab === 'leverage') {
       interval = setInterval(() => {
-        fetchMethPrice();
+        fetchstARBPrice();
       }, 30000);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [assetId, address, fetchAssetDetails, fetchMethPrice, loadWalletData, activeTab, purchaseStatus,]);
+  }, [assetId, address, fetchAssetDetails, fetchstARBPrice, loadWalletData, activeTab, purchaseStatus,]);
 
   useEffect(() => {
     if (evmAddress) {
@@ -317,7 +321,7 @@ const AssetDetailsPage = () => {
       const block = blocks.get(blockTime);
       if (block) {
         // Parse tokens purchased (18 decimals)
-        const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
+        const tokensPurchased = parseFloat(purchase.tokensPurchased);
         block.tokensPurchased += tokensPurchased;
         block.count += 1;
         // Keep the method of the most recent purchase in the block
@@ -326,7 +330,7 @@ const AssetDetailsPage = () => {
         }
       } else {
         // Create new block for this time interval
-        const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
+        const tokensPurchased = parseFloat(purchase.tokensPurchased);
         blocks.set(blockTime, {
           timestamp: blockTime,
           tokensPurchased: tokensPurchased,
@@ -358,13 +362,13 @@ const AssetDetailsPage = () => {
   /**
    * Handle Leverage Token Purchase
    * Follows the script flow exactly:
-   * 1. Check mETH balance (redirect to faucet if insufficient)
-   * 2. Approve mETH spending
+   * 1. Check stARB balance (redirect to faucet if insufficient)
+   * 2. Approve stARB spending
    * 3. Initiate leveraged purchase via backend API
    * 4. Monitor position health
    */
   const handleOpenLeveragePosition = async () => {
-    if (!evmAddress || !asset || !leverageTokenInput || calculatedMethAmount <= 0) return;
+    if (!evmAddress || !asset || !leverageTokenInput || calculatedstARBAmount <= 0) return;
 
     console.log('\n🚀 ===== STARTING LEVERAGED PURCHASE FLOW =====');
     console.log('Asset ID:', asset.assetId);
@@ -377,41 +381,39 @@ const AssetDetailsPage = () => {
 
     try {
       // ============================================================
-      // STEP 1: Fetch latest mETH price
+      // STEP 1: Fetch latest stARB price
       // ============================================================
-      console.log('📊 Step 1: Fetching latest mETH price...');
-      await fetchMethPrice();
-      const methPriceUSD = methPrice / 1e6;
-      console.log(`✅ Current mETH price: $${methPriceUSD.toFixed(2)}`);
+      console.log('📊 Step 1: Fetching latest stARB price...');
+      await fetchstARBPrice();
+      console.log(`✅ Current stARB price: $${stARBPrice.toFixed(2)}`);
 
       // ============================================================
-      // STEP 2: Calculate required mETH collateral (150% LTV)
+      // STEP 2: Calculate required stARB collateral (150% LTV)
       // ============================================================
-      console.log('\n💰 Step 2: Calculating required mETH collateral...');
-      const mETHCollateral = parseUnits(calculatedMethString, 18);
-      const tokenAmount = parseUnits(leverageTokenInput, 18);
+      console.log('\n💰 Step 2: Calculating required stARB collateral...');
+      const stARBCollateral = parseUnits(calculatedstARBString, 18);
       const pricePerToken = asset.tokenParams.pricePerToken || '0';
 
       console.log(`  Token Amount: ${leverageTokenInput} tokens`);
-      console.log(`  Price per Token: ${parseFloat(pricePerToken) / 1e6} USDC`);
-      console.log(`  Required mETH Collateral: ${calculatedMethString} mETH`);
-      console.log(`  Total Cost: ${(tokenAmount * BigInt(pricePerToken)) / parseUnits('1', 18) / BigInt(1e6)} USDC`);
+      console.log(`  Price per Token: ${pricePerToken} USDC`);
+      console.log(`  Required stARB Collateral: ${calculatedstARBString} stARB`);
+      console.log(`  Total Cost: ${(parseFloat(leverageTokenInput) * parseFloat(pricePerToken)).toFixed(4)} USDC`);
 
       // ============================================================
-      // STEP 3: Check mETH Balance
+      // STEP 3: Check stARB Balance
       // ============================================================
-      console.log('\n💼 Step 3: Checking mETH balance...');
-      await refetchMethBalance();
-      const currentMethBalance = parseFloat(methBalance);
-      const requiredMeth = parseFloat(calculatedMethString);
+      console.log('\n💼 Step 3: Checking stARB balance...');
+      await refetchstARBBalance();
+      const currentstARBBalance = parseFloat(stARBBalance);
+      const requiredstARB = parseFloat(calculatedstARBString);
 
-      console.log(`  Current mETH Balance: ${currentMethBalance.toFixed(6)} mETH`);
-      console.log(`  Required mETH: ${requiredMeth.toFixed(6)} mETH`);
+      console.log(`  Current stARB Balance: ${currentstARBBalance.toFixed(6)} stARB`);
+      console.log(`  Required stARB: ${requiredstARB.toFixed(6)} stARB`);
 
-      if (currentMethBalance < requiredMeth) {
-        const shortfall = requiredMeth - currentMethBalance;
-        console.error(`❌ Insufficient mETH balance. Need ${shortfall.toFixed(6)} more mETH`);
-        setLeveragePurchaseStatus(`Insufficient mETH balance. Need ${shortfall.toFixed(6)} more mETH. Redirecting to faucet...`);
+      if (currentstARBBalance < requiredstARB) {
+        const shortfall = requiredstARB - currentstARBBalance;
+        console.error(`❌ Insufficient stARB balance. Need ${shortfall.toFixed(6)} more stARB`);
+        setLeveragePurchaseStatus(`Insufficient stARB balance. Need ${shortfall.toFixed(6)} more stARB. Redirecting to faucet...`);
 
         // Redirect to faucet page after 2 seconds
         setTimeout(() => {
@@ -419,29 +421,45 @@ const AssetDetailsPage = () => {
         }, 2000);
         return;
       }
-      console.log('✅ Sufficient mETH balance');
+      console.log('✅ Sufficient stARB balance');
 
       // ============================================================
-      // STEP 4: Check Allowance and Approve mETH Spending
+      // STEP 4: Check Allowance and Approve stARB Spending
       // ============================================================
-      console.log('\n🔐 Step 4: Checking mETH allowance...');
+      console.log('\n🔐 Step 4: Checking stARB allowance...');
       await refetchAllowance();
       const currentAllowance = allowance || BigInt(0);
 
-      console.log(`  Current Allowance: ${formatUnits(currentAllowance, 18)} mETH`);
-      console.log(`  Required Allowance: ${calculatedMethString} mETH`);
+      console.log(`  Current Allowance: ${formatUnits(currentAllowance, 18)} stARB`);
+      console.log(`  Required Allowance: ${calculatedstARBString} stARB`);
 
-      if (currentAllowance < mETHCollateral) {
+      if (currentAllowance < stARBCollateral) {
         setIsApproving(true);
-        setLeveragePurchaseStatus('Approving mETH usage...');
-        console.log(`⏳ Approving ${calculatedMethString} mETH for LeverageVault...`);
+        setLeveragePurchaseStatus('Approving stARB usage...');
+        console.log(`⏳ Approving ${calculatedstARBString} stARB for LeverageVault...`);
 
         try {
-          const txHash = await approveMeth({
-            address: LEVERAGE_CONTRACTS.MockMETH,
-            abi: METH_ABI,
+          // Get gas overrides to prevent "max fee per gas less than block base fee" errors
+          let gasOverrides = {};
+          if (publicClient) {
+            try {
+              const block = await publicClient.getBlock();
+              const baseFee = block.baseFeePerGas ?? 0n;
+              gasOverrides = {
+                maxFeePerGas: baseFee * 2n,
+                maxPriorityFeePerGas: baseFee > 0n ? baseFee / 10n : 100000n,
+              };
+            } catch (e) {
+              console.warn('Failed to get gas overrides, proceeding without:', e);
+            }
+          }
+
+          const txHash = await approvestARB({
+            address: LEVERAGE_CONTRACTS.MockstARB,
+            abi: stARB_ABI,
             functionName: 'approve',
-            args: [LEVERAGE_CONTRACTS.LeverageVault, mETHCollateral],
+            args: [LEVERAGE_CONTRACTS.LeverageVault, stARBCollateral],
+            ...gasOverrides,
           });
           console.log(`✅ Approval transaction submitted: ${txHash}`);
           setLeveragePurchaseStatus('Approval submitted! Waiting for confirmation...');
@@ -451,8 +469,8 @@ const AssetDetailsPage = () => {
 
           // Refetch allowance to verify
           const { data: newAllowance } = await refetchAllowance();
-          console.log('✅ mETH approved successfully');
-          console.log(`  New Allowance: ${newAllowance ? formatUnits(newAllowance, 18) : '0'} mETH`);
+          console.log('✅ stARB approved successfully');
+          console.log(`  New Allowance: ${newAllowance ? formatUnits(newAllowance, 18) : '0'} stARB`);
 
           setLeveragePurchaseStatus('Approval confirmed! Proceeding to open position...');
           setIsApproving(false);
@@ -489,9 +507,9 @@ const AssetDetailsPage = () => {
       const purchaseData = {
         assetId: asset.assetId,
         tokenAddress: asset.token?.address || '',
-        tokenAmount: tokenAmount.toString(),
-        pricePerToken: pricePerToken,
-        mETHCollateral: mETHCollateral.toString(),
+        tokenAmount: parseFloat(leverageTokenInput).toFixed(4),
+        pricePerToken: parseFloat(pricePerToken).toFixed(4),
+        stARBCollateral: parseFloat(calculatedstARBString).toFixed(4),
       };
 
       console.log('📤 Purchase Data:');
@@ -539,7 +557,7 @@ const AssetDetailsPage = () => {
       console.log('✅ Position created successfully!');
       console.log(`  Position ID: ${result.positionId}`);
       console.log(`  Transaction Hash: ${result.transactionHash}`);
-      console.log(`  Explorer: https://explorer.sepolia.mantle.xyz/tx/${result.transactionHash}`);
+      console.log(`  Explorer: https://explorer.sepolia.arbitrum.xyz/tx/${result.transactionHash}`);
 
       // ============================================================
       // STEP 6: Monitor Position Health
@@ -557,8 +575,8 @@ const AssetDetailsPage = () => {
         console.log(`  Status: ${positionDetails.status}`);
         console.log(`  Health Factor: ${(positionDetails.currentHealthFactor / 100).toFixed(2)}%`);
         console.log(`  Health Status: ${positionDetails.healthStatus}`);
-        console.log(`  mETH Collateral: ${formatUnits(BigInt(positionDetails.mETHCollateral), 18)} mETH`);
-        console.log(`  USDC Borrowed: ${parseFloat(positionDetails.usdcBorrowed) / 1e6} USDC`);
+        console.log(`  stARB Collateral: ${positionDetails.stARBCollateral} stARB`);
+        console.log(`  USDC Borrowed: ${positionDetails.usdcBorrowed} USDC`);
 
         setLeveragePurchaseStatus(
           `Position created successfully! 🎉\n` +
@@ -604,8 +622,8 @@ const AssetDetailsPage = () => {
     // For now, we will just conditionally render the content below
   }
 
-  const needsApproval = allowance && calculatedMethAmount > 0
-    ? allowance < parseUnits(calculatedMethString, 18)
+  const needsApproval = allowance && calculatedstARBAmount > 0
+    ? allowance < parseUnits(calculatedstARBString, 18)
     : true;
 
   if (isLoadingAsset) {
@@ -629,14 +647,11 @@ const AssetDetailsPage = () => {
   const minInvestment = parseTokenAmount(asset.tokenParams.minInvestment, 18);
 
 
-  // Calculate estimated total price (actual price will be fetched from contract during purchase)
   // Calculate estimated total price
-  // The backend is migrating to canonical 4-decimal strings (e.g. "1.2345").
-  // If pricePerToken is > 1000, it's likely still raw USDC (6 decimals, e.g. 1000000).
-  // If it's small (e.g. < 1000), treat as canonical.
-  // This is a heuristic until migration is complete.
-  const estimatedTotalPrice = tokensToBuy && asset.tokenParams.pricePerToken
-    ? (parseFloat(tokensToBuy) * parseTokenAmount(asset.tokenParams.pricePerToken, 6)).toFixed(4)
+  // Backend sends pricePerToken in canonical 4-decimal format (e.g. "0.8500")
+  const pricePerToken = parseFloat(asset.tokenParams.pricePerToken || '0');
+  const estimatedTotalPrice = tokensToBuy && pricePerToken
+    ? (parseFloat(tokensToBuy) * pricePerToken).toFixed(4)
     : '0.0000';
 
 
@@ -676,7 +691,7 @@ const AssetDetailsPage = () => {
       return;
     }
 
-    const minInvestment = parseFloat(asset.tokenParams.minInvestment) / 1e18;
+    const minInvestment = parseFloat(asset.tokenParams.minInvestment);
     const requestedAmount = parseFloat(tokensToBuy);
 
     if (requestedAmount < minInvestment) {
@@ -739,7 +754,7 @@ const AssetDetailsPage = () => {
             // Send canonical 4-decimal string based on backend validation
             amount: parseFloat(tokensToBuy).toFixed(4),
             blockNumber: result.blockNumber ? result.blockNumber.toString() : '0',
-            network: isEvm ? 'mantle' : 'stellar'
+            network: isEvm ? 'arbitrum' : 'stellar'
           };
 
           console.log('\n📤 Notifying backend...');
@@ -818,7 +833,7 @@ const AssetDetailsPage = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-5xl font-semibold text-[#111111]">
-                    ${(purchaseHistory?.purchases && purchaseHistory.purchases.length > 0) ? (parseFloat(purchaseHistory.purchases[0].price) / 1e6).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (asset.tokenParams.pricePerToken ? (parseFloat(asset.tokenParams.pricePerToken) / 1e6).toFixed(2) : 'N/A')}
+                    ${(purchaseHistory?.purchases && purchaseHistory.purchases.length > 0) ? parseFloat(purchaseHistory.purchases[0].price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (asset.tokenParams.pricePerToken ? parseFloat(asset.tokenParams.pricePerToken).toFixed(2) : 'N/A')}
                   </p>
                   <p className="text-green-800 text-sm mt-1">Token Price (USDC)</p>
                 </div>
@@ -959,34 +974,19 @@ const AssetDetailsPage = () => {
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Total Supply</p>
                   <p className="font-medium text-[#111111]">
-                    {(
-                      () => {
-                        const raw = parseFloat(asset.tokenParams.totalSupply);
-                        return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
-                      }
-                    )()} tokens
+                    {parseFloat(asset.tokenParams.totalSupply).toLocaleString(undefined, { maximumFractionDigits: 4 })} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Minimum Investment</p>
                   <p className="font-medium text-[#111111]">
-                    {(
-                      () => {
-                        const raw = parseFloat(asset.tokenParams.minInvestment);
-                        return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
-                      }
-                    )()} tokens
+                    {parseFloat(asset.tokenParams.minInvestment).toLocaleString(undefined, { maximumFractionDigits: 4 })} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Sold Tokens</p>
                   <p className="font-medium text-[#111111]">
-                    {(
-                      () => {
-                        const raw = parseFloat(asset.listing?.sold || '0');
-                        return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
-                      }
-                    )()} tokens
+                    {parseFloat(asset.listing?.sold || '0').toLocaleString(undefined, { maximumFractionDigits: 4 })} tokens
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -1054,7 +1054,7 @@ const AssetDetailsPage = () => {
                             setTokensToBuy(inputValue);
                           }}
                           min={(() => {
-                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const getCanonical = (val: string) => parseFloat(val);
                             const totalSupply = getCanonical(asset.tokenParams.totalSupply);
                             const soldTokens = getCanonical(asset.listing?.sold || '0');
                             const availableTokens = totalSupply - soldTokens;
@@ -1065,7 +1065,7 @@ const AssetDetailsPage = () => {
                         />
                         <p className="text-xs text-[#6B7280] mt-2">
                           Available: {(() => {
-                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const getCanonical = (val: string) => parseFloat(val);
                             const totalSupply = getCanonical(asset.tokenParams.totalSupply);
                             const soldTokens = getCanonical(asset.listing?.sold || '0');
                             return (totalSupply - soldTokens).toLocaleString(undefined, { maximumFractionDigits: 4 });
@@ -1100,8 +1100,7 @@ const AssetDetailsPage = () => {
                           <span className="font-medium text-[#111111]">
                             {(
                               () => {
-                                const raw = parseFloat(asset.tokenParams.minInvestment);
-                                return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                                return parseFloat(asset.tokenParams.minInvestment).toLocaleString(undefined, { maximumFractionDigits: 4 });
                               }
                             )()} tokens
                           </span>
@@ -1154,7 +1153,7 @@ const AssetDetailsPage = () => {
                         <Button
                           onClick={handleBuyTokens}
                           disabled={(() => {
-                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const getCanonical = (val: string) => parseFloat(val);
                             const totalSupply = getCanonical(asset.tokenParams.totalSupply);
                             const soldTokens = getCanonical(asset.listing?.sold || '0');
                             const availableTokens = totalSupply - soldTokens;
@@ -1166,7 +1165,7 @@ const AssetDetailsPage = () => {
                           className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {(() => {
-                            const getCanonical = (val: string) => { const r = parseFloat(val); return r > 1e9 ? r / 1e18 : r; };
+                            const getCanonical = (val: string) => parseFloat(val);
                             const totalSupply = getCanonical(asset.tokenParams.totalSupply);
                             const soldTokens = getCanonical(asset.listing?.sold || '0');
                             const availableTokens = totalSupply - soldTokens;
@@ -1216,12 +1215,12 @@ const AssetDetailsPage = () => {
                             <p className="text-xs text-[#6B7280] mb-1">Required Collateral</p>
                             <div className="flex items-center gap-2">
                               <img
-                                src="/meth-crystal.svg"
-                                alt="mETH"
+                                src="/stARB-crystal.svg"
+                                alt="stARB"
                                 className="w-6 h-6 rounded-full"
                               />
                               <p className="text-2xl font-medium text-[#111111]">
-                                {calculatedMethString || '0.00'} mETH
+                                {calculatedstARBString || '0.00'} stARB
                               </p>
                             </div>
                           </div>
@@ -1230,16 +1229,16 @@ const AssetDetailsPage = () => {
                               <span className="text-xs text-[#6B7280]">Buying Power</span>
                               <span className="text-sm font-medium text-[#111111]">
                                 {(() => {
-                                  if (!calculatedMethAmount) return '$0.00 USDC';
-                                  const bp = (calculatedMethAmount * methPrice) / (1.5 * 1e6);
+                                  if (!calculatedstARBAmount) return '$0.00 USDC';
+                                  const bp = (calculatedstARBAmount * stARBPrice) / 1.5;
                                   return `$${bp.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC`;
                                 })()}
                               </span>
                             </div>
                             <div className="flex justify-between items-center mt-1">
-                              <span className="text-xs text-[#6B7280]">mETH Price</span>
+                              <span className="text-xs text-[#6B7280]">stARB Price</span>
                               <span className="text-sm font-medium text-[#111111]">
-                                ${(methPrice / 1e6).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                ${stARBPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                               </span>
                             </div>
                           </div>
@@ -1274,7 +1273,7 @@ const AssetDetailsPage = () => {
 
                         <Button
                           onClick={handleOpenLeveragePosition}
-                          disabled={isPurchasing || isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedMethAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
+                          disabled={isPurchasing || isLeverageLoading || !leverageTokenInput || !address || isApproving || calculatedstARBAmount <= 0 || (availableTokens >= minInvestment && parseFloat(leverageTokenInput || '0') < minInvestment) || parseFloat(leverageTokenInput || '0') > availableTokens}
                           className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
                         >
                           {(() => {
@@ -1288,11 +1287,11 @@ const AssetDetailsPage = () => {
                             const showLoader = isApproving || isLeverageLoading || isWaiting || isOpening;
 
                             const label = (() => {
-                              if (isApproving) return 'Approving mETH...';
+                              if (isApproving) return 'Approving stARB...';
                               if (isWaiting) return 'Waiting for confirmation...';
                               if (isOpening) return 'Opening position...';
                               if (isLeverageLoading) return leveragePurchaseStatus || 'Processing...';
-                              return needsApproval ? 'Approve mETH' : 'Open Leveraged Position';
+                              return needsApproval ? 'Approve stARB' : 'Open Leveraged Position';
                             })();
 
                             return (

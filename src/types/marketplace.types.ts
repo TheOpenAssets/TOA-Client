@@ -207,7 +207,7 @@ export interface Purchase {
   type: "BID" | "BUY" | "PURCHASE";
   purchaseMethod?: "DIRECT" | "LEVERAGE";
   positionId?: number;
-  mETHCollateral?: string;
+  stARBCollateral?: string;
   positionStatus?: string;
 }
 

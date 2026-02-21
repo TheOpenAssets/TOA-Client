@@ -52,7 +52,7 @@ You should see logs like this:
 **Solution:**
 1. Click the wallet connect button in the top right
 2. Connect your wallet
-3. Make sure you're on Mantle Sepolia network
+3. Make sure you're on arbitrum Sepolia network
 
 **Console will show:**
 ```
@@ -296,7 +296,7 @@ When you click "Place Bid", verify:
 5. Screenshot of your wallet connection status
 
 ### Common External Issues:
-- **Wallet not on Mantle Sepolia network** → Switch network in wallet
+- **Wallet not on arbitrum Sepolia network** → Switch network in wallet
 - **Not enough USDC** → Get test USDC from faucet: `0x643b8c16F894B39399506cC921efa68d61A14905`
 - **Wallet popup blocked** → Allow popups for the site
 - **Transaction rejected in wallet** → User declined in wallet popup

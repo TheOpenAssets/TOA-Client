@@ -283,7 +283,7 @@ useEffect(() => {
 ### Test Admin Asset Flow:
 
 - [ ] Asset in Step 1 (attested, not registered)
-- [ ] Click "Register on Mantle"
+- [ ] Click "Register on arbitrum"
 - [ ] If already registered, shows informative message
 - [ ] Run manual DB fix
 - [ ] Refresh page

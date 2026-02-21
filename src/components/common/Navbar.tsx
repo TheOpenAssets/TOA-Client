@@ -30,7 +30,7 @@ const Navbar = () => {
     <div className="flex items-center justify-between h-16">
       {/* Left: Logo */}
       <Link to={networkPath('/')} className="navbar-logo">
-        <img src="/logo-light.svg" alt="Mantle" className="h-8" />
+        <img src="/logo-light.svg" alt="arbitrum" className="h-8" />
       </Link>
 
       {/* Center: Navigation */}

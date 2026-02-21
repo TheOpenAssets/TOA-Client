@@ -27,7 +27,7 @@ export const StellarAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const restoreSession = async () => {
             try {
                 // 1. Check for existing token
-                const token = localStorage.getItem('stellar_access_token') || localStorage.getItem('mantle_access_token');
+                const token = localStorage.getItem('stellar_access_token') || localStorage.getItem('arbitrum_access_token');
 
                 if (!token) {
                     // No backend session, just clear state

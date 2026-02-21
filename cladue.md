@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**OpenAssets** is a production-grade RWA platform. It supports a dual-network architecture (**Mantle** and **Stellar**) to tokenize, trade, and borrow against real-world assets. The frontend follows a strict **Feature-Based Module** architecture.
+**OpenAssets** is a production-grade RWA platform. It supports a dual-network architecture (**arbitrum** and **Stellar**) to tokenize, trade, and borrow against real-world assets. The frontend follows a strict **Feature-Based Module** architecture.
 
 ## Tech Stack
 
@@ -66,7 +66,7 @@ src/pages/feature-name/
 
 ### Color Palette & Visuals
 
-* **EVM Context:** Primary branding aligned with Mantle/Web3.
+* **EVM Context:** Primary branding aligned with arbitrum/Web3.
 * **Transitions:** `transition-all duration-200 ease-in-out` on all interactive elements.
 * **Feedback:** Every blockchain TX must trigger a Toast via `useToast`.
 
@@ -91,7 +91,7 @@ Configuration is managed in `src/lib/network/network.config.ts`.
 
 1. **Connect:** RainbowKit (EVM) or Stellar Wallet.
 2. **Challenge:** Backend nonce signing.
-3. **JWT:** Scoped to network (`mantle_access_token` vs `stellar_access_token`).
+3. **JWT:** Scoped to network (`arbitrum_access_token` vs `stellar_access_token`).
 4. **Interceptors:** `BaseService` attaches tokens automatically.
 
 ---

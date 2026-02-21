@@ -124,7 +124,7 @@ export function LoansView() {
         <h2 className="text-xl font-medium text-gray-600 mb-6">Coming Soon on Stellar</h2>
         <p className="text-gray-500 max-w-md">
           Loan functionalities are currently being developed for the Stellar network.
-          Please switch to Mantle to manage loans.
+          Please switch to arbitrum to manage loans.
         </p>
       </div>
     );

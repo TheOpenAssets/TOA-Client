@@ -92,7 +92,7 @@ assets.filter(asset => asset.status === 'MERKLED')
 
 ---
 
-### Operations View - Step 1: Register on Mantle
+### Operations View - Step 1: Register on arbitrum
 **Show:** Assets with `status = 'ATTESTED'`
 **Action:** Register on-chain
 
@@ -204,7 +204,7 @@ assets.filter(asset =>
 }
 ```
 
-**Expected:** Asset appears in **Step 1: Register on Mantle** ✅
+**Expected:** Asset appears in **Step 1: Register on arbitrum** ✅
 **Actual:** Works! We're filtering by `status === 'ATTESTED'` ✅
 
 ---
@@ -301,7 +301,7 @@ assets.filter(asset =>
 
 **Current State:**
 - `status = "ATTESTED"` ✅
-- **Appears in:** Step 1 (Register on Mantle) ✅✅✅
+- **Appears in:** Step 1 (Register on arbitrum) ✅✅✅
 - **Correct!**
 
 ---

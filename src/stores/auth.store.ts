@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   authenticatedWalletAddress: (() => {
     const segment = window.location.pathname.split('/')[1];
-    const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
     return localStorage.getItem(`${network}_authenticated_wallet_address`) || localStorage.getItem('authenticated_wallet_address');
   })(),
 
@@ -50,15 +50,15 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setAuthenticatedWallet: (address: string) => {
     const segment = window.location.pathname.split('/')[1];
-    const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
-    
+    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+
     localStorage.setItem(`${network}_authenticated_wallet_address`, address.toLowerCase());
     localStorage.setItem('authenticated_wallet_address', address.toLowerCase()); // legacy fallback
     set({ authenticatedWalletAddress: address.toLowerCase() });
   },
 
   logout: () => {
-    ['mantle', 'stellar'].forEach(n => {
+    ['arbitrum', 'stellar'].forEach(n => {
       localStorage.removeItem(`${n}_access_token`);
       localStorage.removeItem(`${n}_refresh_token`);
       localStorage.removeItem(`${n}_authenticated_wallet_address`);

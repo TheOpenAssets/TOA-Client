@@ -243,7 +243,7 @@ await Asset.updateOne(
 
 ## 🎯 Expected Behavior After Fixes
 
-### Step 1: Register on Mantle
+### Step 1: Register on arbitrum
 **Should Show:**
 - Assets with `checkpoints.attested === true`
 - AND `checkpoints.registered !== true`

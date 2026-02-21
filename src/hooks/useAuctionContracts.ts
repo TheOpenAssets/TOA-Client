@@ -2,7 +2,7 @@
 // Wagmi Hooks for Auction Contract Interactions
 // 100% Script-Verified from investor-bidding.sh, investor-settle.sh, admin-endauction.sh
 
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount, usePublicClient } from 'wagmi';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNetwork } from '../lib/network/NetworkContext';
 import freighterApi, { isConnected, signTransaction, setAllowed } from '@stellar/freighter-api';
@@ -94,8 +94,27 @@ function parseErrorMessage(error: any): string {
   return 'Transaction failed. Please try again';
 }
 
+/**
+ * Get gas fee overrides with a buffer to prevent "max fee per gas less than block base fee" errors.
+ * Arbitrum Sepolia base fees fluctuate between blocks, so we add a 2x buffer.
+ */
+async function getGasOverrides(publicClient: ReturnType<typeof usePublicClient>) {
+  if (!publicClient) return {};
+  try {
+    const block = await publicClient.getBlock();
+    const baseFee = block.baseFeePerGas ?? 0n;
+    return {
+      maxFeePerGas: baseFee * 2n,
+      maxPriorityFeePerGas: baseFee > 0n ? baseFee / 10n : 100000n,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export function useSubmitBid() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,37 +212,66 @@ export function useSubmitBid() {
   // CRITICAL: Auto-submit bid after approval succeeds (investor-bidding.sh flow)
   useEffect(() => {
     if (isApproveSuccess && pendingBidParams) {
-      console.log('✅ USDC approval confirmed! Auto-submitting bid...');
-      console.log('📦 Pending bid params:', pendingBidParams);
+      const autoSubmitBid = async () => {
+        console.log('✅ USDC approval confirmed! Auto-submitting bid...');
+        console.log('📦 Pending bid params:', pendingBidParams);
 
-      // Convert parameters
-      const assetIdBytes32 = uuidToBytes32(pendingBidParams.assetId);
-      const tokenAmountWei = parseTokenAmount(pendingBidParams.tokenAmount);
-      const priceWei = parseUSDC(pendingBidParams.pricePerToken);
+        // Convert parameters
+        const assetIdBytes32 = uuidToBytes32(pendingBidParams.assetId);
+        const tokenAmountWei = parseTokenAmount(pendingBidParams.tokenAmount);
+        const priceWei = parseUSDC(pendingBidParams.pricePerToken);
 
-      setStatus('Submitting bid on-chain...');
-      console.log('🔨 Submitting bid to contract...');
-      console.log('🔨 Contract address:', CONTRACTS.PrimaryMarketplace);
-      console.log('🔨 Args:', [assetIdBytes32, tokenAmountWei.toString(), priceWei.toString()]);
+        // Pre-flight: simulate before sending to MetaMask
+        if (publicClient) {
+          try {
+            setStatus('Simulating bid...');
+            await publicClient.simulateContract({
+              address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
+              abi: MARKETPLACE_ABI,
+              functionName: 'submitBid',
+              args: [assetIdBytes32, tokenAmountWei, priceWei],
+              account: address,
+            });
+            console.log('✅ Bid simulation passed');
+          } catch (simError: any) {
+            console.error('❌ Bid simulation failed after approval:', simError);
+            const errorMsg = parseErrorMessage(simError);
+            setError(`Bid will fail: ${errorMsg}`);
+            setStatus(`Bid failed: ${errorMsg}`);
+            setIsLoading(false);
+            setPendingBidParams(null);
+            return;
+          }
+        }
 
-      try {
-        submitBidTx({
-          address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
-          abi: MARKETPLACE_ABI,
-          functionName: 'submitBid',
-          args: [assetIdBytes32, tokenAmountWei, priceWei],
-        });
-        console.log('✅ Bid submission transaction triggered');
-        // Clear pending params
-        setPendingBidParams(null);
-      } catch (error: any) {
-        console.error('❌ Error triggering bid submission:', error);
-        setStatus(`Error: ${error.message}`);
-        setIsLoading(false);
-        setPendingBidParams(null);
-      }
+        setStatus('Submitting bid on-chain...');
+        console.log('🔨 Submitting bid to contract...');
+        console.log('🔨 Contract address:', CONTRACTS.PrimaryMarketplace);
+        console.log('🔨 Args:', [assetIdBytes32, tokenAmountWei.toString(), priceWei.toString()]);
+
+        try {
+          const gasOverrides = await getGasOverrides(publicClient);
+          submitBidTx({
+            address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
+            abi: MARKETPLACE_ABI,
+            functionName: 'submitBid',
+            args: [assetIdBytes32, tokenAmountWei, priceWei],
+            ...gasOverrides,
+          });
+          console.log('✅ Bid submission transaction triggered');
+          // Clear pending params
+          setPendingBidParams(null);
+        } catch (error: any) {
+          console.error('❌ Error triggering bid submission:', error);
+          setStatus(`Error: ${error.message}`);
+          setIsLoading(false);
+          setPendingBidParams(null);
+        }
+      };
+
+      autoSubmitBid();
     }
-  }, [isApproveSuccess, pendingBidParams, submitBidTx]);
+  }, [isApproveSuccess, pendingBidParams, submitBidTx, publicClient, address]);
 
   // CRITICAL: Auto-notify backend after bid transaction succeeds (investor-bidding.sh line 362)
   const lastBidParamsRef = useRef<BidSubmissionParams | null>(null);
@@ -244,15 +292,16 @@ export function useSubmitBid() {
         try {
           setStatus('In progress..');
 
-          const tokenAmountWei = parseTokenAmount(lastBidParamsRef.current.tokenAmount);
-          const priceWei = parseUSDC(lastBidParamsRef.current.pricePerToken);
+          // Backend expects canonical 4-decimal format (e.g. "100.0000", "1.2345")
+          const tokenAmountCanonical = parseFloat(lastBidParamsRef.current.tokenAmount).toFixed(4);
+          const priceCanonical = parseFloat(lastBidParamsRef.current.pricePerToken).toFixed(4);
 
           // Call backend notification API
           await marketplaceService.notifyBidPlaced({
             txHash: bidHash,
             assetId: lastBidParamsRef.current.assetId,
-            tokenAmount: tokenAmountWei.toString(),
-            price: priceWei.toString(),
+            tokenAmount: tokenAmountCanonical,
+            price: priceCanonical,
           });
 
           console.log('✅ Backend notified successfully');
@@ -337,16 +386,35 @@ export function useSubmitBid() {
             Marketplace: CONTRACTS.PrimaryMarketplace,
           });
 
+          // Pre-flight: simulate approval to catch reverts before MetaMask
+          if (publicClient) {
+            try {
+              await publicClient.simulateContract({
+                address: CONTRACTS.USDC as `0x${string}`,
+                abi: USDC_ABI,
+                functionName: 'approve',
+                args: [CONTRACTS.PrimaryMarketplace as `0x${string}`, depositNeeded],
+                account: address,
+              });
+              console.log('✅ Approval simulation passed');
+            } catch (simError: any) {
+              console.error('❌ Approval simulation failed:', simError);
+              throw new Error(`USDC approval will fail: ${parseErrorMessage(simError)}`);
+            }
+          }
+
           // Store params for auto-submit after approval
           setPendingBidParams(params);
           console.log('📦 Stored pending bid params for auto-submit after approval');
 
           try {
+            const gasOverrides = await getGasOverrides(publicClient);
             approveUSDC({
               address: CONTRACTS.USDC as `0x${string}`,
               abi: USDC_ABI,
               functionName: 'approve',
               args: [CONTRACTS.PrimaryMarketplace as `0x${string}`, depositNeeded],
+              ...gasOverrides,
             });
             console.log('✅ USDC approval transaction triggered');
             console.log('⏳ Waiting for approval confirmation... (useEffect will auto-submit bid)');
@@ -361,17 +429,39 @@ export function useSubmitBid() {
         }
 
         // Step 2: Submit bid to contract (investor-bidding.sh line 297)
+        setStatus('Simulating bid...');
+        console.log('🔨 Simulating bid before submission...');
+
+        // Pre-flight: simulate submitBid to catch reverts before MetaMask
+        if (publicClient) {
+          try {
+            await publicClient.simulateContract({
+              address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
+              abi: MARKETPLACE_ABI,
+              functionName: 'submitBid',
+              args: [assetIdBytes32, tokenAmountWei, priceWei],
+              account: address,
+            });
+            console.log('✅ Bid simulation passed');
+          } catch (simError: any) {
+            console.error('❌ Bid simulation failed:', simError);
+            throw new Error(`Bid will fail: ${parseErrorMessage(simError)}`);
+          }
+        }
+
         setStatus('Submitting bid on-chain...');
         console.log('🔨 Submitting bid to contract...');
         console.log('🔨 Contract address:', CONTRACTS.PrimaryMarketplace);
         console.log('🔨 Args:', [assetIdBytes32, tokenAmountWei.toString(), priceWei.toString()]);
 
         try {
+          const gasOverrides = await getGasOverrides(publicClient);
           submitBidTx({
             address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
             abi: MARKETPLACE_ABI,
             functionName: 'submitBid',
             args: [assetIdBytes32, tokenAmountWei, priceWei],
+            ...gasOverrides,
           });
           console.log('✅ Bid submission transaction triggered');
         } catch (submitError: any) {
@@ -390,7 +480,7 @@ export function useSubmitBid() {
         throw error;
       }
     },
-    [address, currentAllowance, approveUSDC, submitBidTx]
+    [address, currentAllowance, approveUSDC, submitBidTx, publicClient]
   );
 
   // Reset error and status
@@ -425,6 +515,7 @@ export function useSubmitBid() {
  */
 export function useSettleBid() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const { networkType } = useNetwork();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -653,11 +744,13 @@ export function useSettleBid() {
         });
 
         // Call settleBid on contract (investor-settle.sh line 192)
+        const gasOverrides = await getGasOverrides(publicClient);
         settleBidTx({
           address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
           abi: MARKETPLACE_ABI,
           functionName: 'settleBid',
           args: [assetIdBytes32, BigInt(params.bidIndex)],
+          ...gasOverrides,
         });
       } catch (error: any) {
         const errorMsg = parseErrorMessage(error);
@@ -770,6 +863,7 @@ export function useSettleBid() {
  */
 export function useEndAuction() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -822,11 +916,13 @@ export function useEndAuction() {
         });
 
         // Call endAuction on contract (admin-endauction.sh line 205)
+        const gasOverrides = await getGasOverrides(publicClient);
         endAuctionTx({
           address: CONTRACTS.PrimaryMarketplace as `0x${string}`,
           abi: MARKETPLACE_ABI,
           functionName: 'endAuction',
           args: [assetIdBytes32, clearingPriceWei],
+          ...gasOverrides,
         });
       } catch (error: any) {
         console.error('Error ending auction:', error);

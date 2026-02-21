@@ -73,7 +73,7 @@ const TradingEngineProductionPage = () => {
     const { assetId } = useParams<{ assetId: string }>();
     const { address, isAuthenticated } = useAuthStrategy();
     const { networkType, networkPath } = useNetwork();
-    const isEvm = networkType === 'mantle';
+    const isEvm = networkType === 'arbitrum';
     // Only pass address to wagmi hooks if on EVM network
     const evmAddress = (isEvm && address) ? address as `0x${string}` : undefined;
 
@@ -336,7 +336,7 @@ const TradingEngineProductionPage = () => {
         }
 
         if (!isEvm) {
-            warning('Not Supported', 'Trading is currently only supported on Mantle Network.');
+            warning('Not Supported', 'Trading is currently only supported on arbitrum Network.');
             return;
         }
 
@@ -899,7 +899,7 @@ const TradingEngineProductionPage = () => {
                                             </button>
 
                                             <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] pt-2">
-                                                <ShieldCheck size={14} /> Secured by Mantle Network
+                                                <ShieldCheck size={14} /> Secured by arbitrum Network
                                             </div>
                                         </div>
                                     </div>
@@ -1025,7 +1025,7 @@ const TradingEngineProductionPage = () => {
 
                                         {(isTxPending || isTxConfirming) && txHash && (
                                             <a
-                                                href={`https://sepolia.mantlescan.xyz/tx/${txHash}`}
+                                                href={`https://sepolia.arbitrumscan.xyz/tx/${txHash}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="block mt-4 text-center text-xs text-[#0071C5] hover:underline font-medium"
@@ -1035,7 +1035,7 @@ const TradingEngineProductionPage = () => {
                                         )}
 
                                         <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] mt-6 pt-4 border-t border-gray-100">
-                                            <ShieldCheck size={14} /> Secured by Mantle Network
+                                            <ShieldCheck size={14} /> Secured by arbitrum Network
                                         </div>
                                     </div>
                                 )}

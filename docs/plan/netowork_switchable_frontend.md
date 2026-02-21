@@ -2,14 +2,14 @@
 
 ## Context
 
-The backend now supports two independent deployments — one for Mantle (EVM) and one for Stellar — each running at a separate API URL. The frontend needs to serve both simultaneously under network-prefixed routes (`/mantle/…`, `/stellar/…`), routing API calls to the correct backend, conditionally showing/hiding features unavailable on a given network, and mounting the right wallet provider (RainbowKit/Wagmi for EVM, Freighter stub for Stellar). Auth tokens must be scoped per network so a user can independently log in on both.
+The backend now supports two independent deployments — one for arbitrum (EVM) and one for Stellar — each running at a separate API URL. The frontend needs to serve both simultaneously under network-prefixed routes (`/arbitrum/…`, `/stellar/…`), routing API calls to the correct backend, conditionally showing/hiding features unavailable on a given network, and mounting the right wallet provider (RainbowKit/Wagmi for EVM, Freighter stub for Stellar). Auth tokens must be scoped per network so a user can independently log in on both.
 
 ---
 
 ## Architecture Overview
 
 ```
-/                           → Redirect to /mantle
+/                           → Redirect to /arbitrum
 /:network/*                 → NetworkProvider reads param, validates, sets context
   ├── NetworkLayout         → Mounts correct wallet provider based on network
   ├── Navbar                → Links use networkPath(), feature items conditionally shown
@@ -17,7 +17,7 @@ The backend now supports two independent deployments — one for Mantle (EVM) an
   └── All existing pages    → Unchanged internals; API calls auto-route via BaseService
 
 API calls: BaseService reads window.location.pathname[1] → resolves backend URL
-Auth tokens: keyed as `mantle_access_token`, `stellar_access_token` in localStorage
+Auth tokens: keyed as `arbitrum_access_token`, `stellar_access_token` in localStorage
 ```
 
 ---
@@ -46,7 +46,7 @@ Auth tokens: keyed as `mantle_access_token`, `stellar_access_token` in localStor
 | `src/stores/auth.store.ts` | `logout()` clears network-scoped token keys; `authenticatedWalletAddress` keyed per network |
 | `src/lib/utils/error-handler.ts` | `handle401Unauthorized` clears network-scoped tokens and redirects to `/${network}` |
 | `src/components/common/Navbar.tsx` | Links use `networkPath()`, hide Borrow/Faucet based on `isFeatureAvailable()` |
-| `.env.example` | Add `VITE_MANTLE_API_URL`, `VITE_STELLAR_API_URL` |
+| `.env.example` | Add `VITE_arbitrum_API_URL`, `VITE_STELLAR_API_URL` |
 
 ---
 
@@ -56,7 +56,7 @@ Auth tokens: keyed as `mantle_access_token`, `stellar_access_token` in localStor
 
 **1. Create `src/lib/network/network.config.ts`**
 ```typescript
-export type NetworkType = 'mantle' | 'stellar';
+export type NetworkType = 'arbitrum' | 'stellar';
 
 export interface NetworkFeatures {
   leverage: boolean;
@@ -75,10 +75,10 @@ export interface NetworkConfig {
 }
 
 export const NETWORK_CONFIGS: Record<NetworkType, NetworkConfig> = {
-  mantle: {
-    type: 'mantle',
-    displayName: 'Mantle',
-    apiUrl: import.meta.env.VITE_MANTLE_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
+  arbitrum: {
+    type: 'arbitrum',
+    displayName: 'arbitrum',
+    apiUrl: import.meta.env.VITE_arbitrum_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
     features: { leverage: true, faucet: true, solvency: true, secondaryMarket: true, borrow: true },
     walletType: 'evm',
   },
@@ -91,8 +91,8 @@ export const NETWORK_CONFIGS: Record<NetworkType, NetworkConfig> = {
   },
 };
 
-export const SUPPORTED_NETWORKS: NetworkType[] = ['mantle', 'stellar'];
-export const DEFAULT_NETWORK: NetworkType = 'mantle';
+export const SUPPORTED_NETWORKS: NetworkType[] = ['arbitrum', 'stellar'];
+export const DEFAULT_NETWORK: NetworkType = 'arbitrum';
 ```
 
 **2. Create `src/lib/network/NetworkContext.tsx`**
@@ -137,10 +137,10 @@ const FeatureGuard = ({ feature, children }) => {
 ```
 
 **6. Restructure `src/app/router/public.routes.tsx`**
-- Root `/` → `<Navigate to="/mantle" replace />`
+- Root `/` → `<Navigate to="/arbitrum" replace />`
 - Single `/:network` route with `element: <NetworkProvider><NetworkLayout /></NetworkProvider>` and all current routes as `children` (paths become relative, e.g. `marketplace`, `auth`, `admin`, etc.)
 - Feature-gated children wrapped in `<FeatureGuard feature="faucet">` etc.
-- Legacy redirects at root level: `/marketplace` → `/mantle/marketplace`, `/auth` → `/mantle/auth`, etc. for the 8 most common paths
+- Legacy redirects at root level: `/marketplace` → `/arbitrum/marketplace`, `/auth` → `/arbitrum/auth`, etc. for the 8 most common paths
 
 **7. Update `src/App.tsx`**
 Remove `WalletProvider` and `WalletIntegrityProvider` — they now live in `NetworkLayout`:
@@ -170,12 +170,12 @@ class BaseService {
     if (segment === 'stellar') {
       return import.meta.env.VITE_STELLAR_API_URL ?? 'http://localhost:3001';
     }
-    return import.meta.env.VITE_MANTLE_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+    return import.meta.env.VITE_arbitrum_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
   }
 
   protected getAuthHeaders = () => {
     const segment = window.location.pathname.split('/')[1];
-    const network = ['mantle','stellar'].includes(segment) ? segment : 'mantle';
+    const network = ['arbitrum','stellar'].includes(segment) ? segment : 'arbitrum';
     const token = localStorage.getItem(`${network}_access_token`)
       ?? localStorage.getItem('access_token'); // legacy fallback
     if (!token) handleAPIError(new Error('Not a verified user'));
@@ -190,7 +190,7 @@ class BaseService {
 Also update `auth.service.ts` `login()` to store network-scoped tokens:
 ```typescript
 const segment = window.location.pathname.split('/')[1];
-const network = ['mantle','stellar'].includes(segment) ? segment : 'mantle';
+const network = ['arbitrum','stellar'].includes(segment) ? segment : 'arbitrum';
 localStorage.setItem(`${network}_access_token`, data.tokens.access);
 localStorage.setItem(`${network}_refresh_token`, data.tokens.refresh);
 ```
@@ -200,7 +200,7 @@ localStorage.setItem(`${network}_refresh_token`, data.tokens.refresh);
 Update `logout()` to clear all network-scoped keys:
 ```typescript
 logout: () => {
-  ['mantle','stellar'].forEach(n => {
+  ['arbitrum','stellar'].forEach(n => {
     localStorage.removeItem(`${n}_access_token`);
     localStorage.removeItem(`${n}_refresh_token`);
     localStorage.removeItem(`${n}_authenticated_wallet_address`);
@@ -219,8 +219,8 @@ logout: () => {
 ```typescript
 export const handle401Unauthorized = (): void => {
   const segment = window.location.pathname.split('/')[1];
-  const network = ['mantle','stellar'].includes(segment) ? segment : 'mantle';
-  ['mantle','stellar'].forEach(n => {
+  const network = ['arbitrum','stellar'].includes(segment) ? segment : 'arbitrum';
+  ['arbitrum','stellar'].forEach(n => {
     localStorage.removeItem(`${n}_access_token`);
     localStorage.removeItem(`${n}_refresh_token`);
   });
@@ -239,18 +239,18 @@ export const handle401Unauthorized = (): void => {
 - Wrap "Borrow" button: only render if `isFeatureAvailable('borrow')`
 - Wrap "Faucet" link (if present in nav): only render if `isFeatureAvailable('faucet')`
 - Add a **NetworkSwitcher** component inline in the Navbar (no separate file needed):
-  - Renders a small pill/toggle showing the current network (e.g. "Mantle" | "Stellar")
-  - On click, switches to `/${otherNetwork}${currentSubPath}` where `currentSubPath` is everything after `/:network` (e.g. `/mantle/marketplace` → `/stellar/marketplace`). If the destination path is feature-gated and unavailable on the target network, fall back to `/${otherNetwork}` home.
+  - Renders a small pill/toggle showing the current network (e.g. "arbitrum" | "Stellar")
+  - On click, switches to `/${otherNetwork}${currentSubPath}` where `currentSubPath` is everything after `/:network` (e.g. `/arbitrum/marketplace` → `/stellar/marketplace`). If the destination path is feature-gated and unavailable on the target network, fall back to `/${otherNetwork}` home.
   - Uses `useNavigate` + `useLocation` to compute the target URL
   - Styled to match the existing nav pill design (gray-100 background, rounded-full)
 
 **13. Update `.env.example`**
 ```
-# --- Mantle Backend ---
-VITE_MANTLE_API_URL=http://localhost:3000
+# --- arbitrum Backend ---
+VITE_arbitrum_API_URL=http://localhost:3000
 # --- Stellar Backend ---
 VITE_STELLAR_API_URL=http://localhost:3001
-# --- Legacy (used as MANTLE fallback) ---
+# --- Legacy (used as arbitrum fallback) ---
 VITE_API_URL=http://localhost:3000
 ```
 
@@ -262,18 +262,18 @@ VITE_API_URL=http://localhost:3000
 ## What's Explicitly Out of Scope
 
 
-- **Frontend contract services** (`contract.service.ts`, `solvency-contract.service.ts`): EVM-only Wagmi hooks; only loaded under Mantle routes, no changes needed
+- **Frontend contract services** (`contract.service.ts`, `solvency-contract.service.ts`): EVM-only Wagmi hooks; only loaded under arbitrum routes, no changes needed
 
 ---
 
 ## Verification
 
-1. **Root redirect**: `http://localhost:5173/` → `http://localhost:5173/mantle`
-2. **Mantle routes work**: `/mantle/marketplace`, `/mantle/auth`, `/mantle/admin` all load correctly
+1. **Root redirect**: `http://localhost:5173/` → `http://localhost:5173/arbitrum`
+2. **arbitrum routes work**: `/arbitrum/marketplace`, `/arbitrum/auth`, `/arbitrum/admin` all load correctly
 3. **Stellar routes render**: `/stellar/marketplace` loads without crashing (no EVM hooks)
 4. **Feature guard**: `/stellar/faucet` redirects to `/stellar/` (faucet disabled)
-5. **API routing**: Under `/mantle/*`, all fetch calls go to `VITE_MANTLE_API_URL`. Under `/stellar/*`, to `VITE_STELLAR_API_URL`. Verify in DevTools Network tab
-6. **Independent auth**: Login on `/mantle/auth` → `mantle_access_token` in localStorage. Login on `/stellar/auth` → `stellar_access_token`. Each network shows correct auth state independently
-7. **Legacy redirects**: `/marketplace` → `/mantle/marketplace`, `/auith` → `/mantle/auth`
-8. **Logout clears correct tokens**: Logout on Mantle clears `mantle_*` tokens; Stellar tokens survive and vice versa
-9. **Navbar hides features on Stellar**: Borrow shows on Mantle, shows on Stellar (both `borrow: true`); Faucet nav item hidden on Stellar
+5. **API routing**: Under `/arbitrum/*`, all fetch calls go to `VITE_arbitrum_API_URL`. Under `/stellar/*`, to `VITE_STELLAR_API_URL`. Verify in DevTools Network tab
+6. **Independent auth**: Login on `/arbitrum/auth` → `arbitrum_access_token` in localStorage. Login on `/stellar/auth` → `stellar_access_token`. Each network shows correct auth state independently
+7. **Legacy redirects**: `/marketplace` → `/arbitrum/marketplace`, `/auith` → `/arbitrum/auth`
+8. **Logout clears correct tokens**: Logout on arbitrum clears `arbitrum_*` tokens; Stellar tokens survive and vice versa
+9. **Navbar hides features on Stellar**: Borrow shows on arbitrum, shows on Stellar (both `borrow: true`); Faucet nav item hidden on Stellar

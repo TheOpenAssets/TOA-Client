@@ -49,7 +49,7 @@ Created **loan notification endpoints** that frontend/scripts call after on-chai
 }
 ```
 
-### 2. Service Methods
+### 2. Service stARBods
 
 **[solvency-position.service.ts](packages/backend/src/modules/solvency/services/solvency-position.service.ts:552-625)**
 
@@ -146,7 +146,7 @@ INVESTOR_KEY=0x... node scripts/repay-solvency-loan.js 1 10
 ```typescript
 // After user borrows
 const response = await fetch('/solvency/loan/borrow-notify', {
-  method: 'POST',
+  stARBod: 'POST',
   headers: {
     'Authorization': `Bearer ${userToken}`,
     'Content-Type': 'application/json'
@@ -163,7 +163,7 @@ const response = await fetch('/solvency/loan/borrow-notify', {
 
 // After user repays
 const response = await fetch('/solvency/loan/repay-notify', {
-  method: 'POST',
+  stARBod: 'POST',
   headers: {
     'Authorization': `Bearer ${userToken}`,
     'Content-Type': 'application/json'
@@ -243,7 +243,7 @@ This implementation follows the same pattern as:
 ### Backend
 - ✅ `dto/notify-loan-borrow.dto.ts` - New DTO
 - ✅ `dto/notify-loan-repayment.dto.ts` - New DTO
-- ✅ `services/solvency-position.service.ts` - Added notify methods
+- ✅ `services/solvency-position.service.ts` - Added notify stARBods
 - ✅ `controllers/solvency.controller.ts` - Added endpoints
 
 ### Scripts
@@ -254,7 +254,7 @@ This implementation follows the same pattern as:
 
 ## Future Enhancements
 
-1. **On-Chain Verification**: Add transaction verification in notify methods
+1. **On-Chain Verification**: Add transaction verification in notify stARBods
 2. **Event Indexer**: Optional blockchain event listener as backup
 3. **Webhooks**: Notify external systems of loan events
 4. **Batch Sync**: Endpoint to sync multiple positions at once

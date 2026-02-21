@@ -9,8 +9,8 @@
 import { ethers } from 'ethers';
 
 // Contract addresses from environment
-const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_SOLVENCY_VAULT || '0xf491b90154C46f856CF59e951c19eaD61c030e17';
-const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
+const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_SOLVENCY_VAULT || '';
+const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '';
 
 // Solvency Vault ABI - ✅ VERIFIED from deposit-to-vaultsolvency.js lines 115-121
 // Updated borrowUSDC to include loanDuration and numberOfInstallments per COMPLETE_LOAN.md
@@ -107,10 +107,10 @@ class SolvencyContractService {
     const network = await provider.getNetwork();
     console.log(`   Connected to network: chainId ${network.chainId}`);
 
-    // Check if on Mantle Sepolia (chainId: 5003)
-    if (network.chainId !== 5003n) {
+    // Check if on Arbitrum Sepolia (chainId: 421614)
+    if (network.chainId !== 421614n) {
       throw new Error(
-        `Wrong network. Please switch to Mantle Sepolia (chainId: 5003). Currently on chainId: ${network.chainId}`
+        `Wrong network. Please switch to Arbitrum Sepolia (chainId: 421614). Currently on chainId: ${network.chainId}`
       );
     }
 
@@ -461,7 +461,7 @@ class SolvencyContractService {
         throw new Error('Could not parse position ID from transaction');
       }
 
-      console.log(`   Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`   Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
 
       return {
         success: true,
@@ -556,7 +556,7 @@ class SolvencyContractService {
         }
       }
 
-      console.log(`🔗 Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`🔗 Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
       console.log('✅ Step 8: Borrow completed successfully!');
 
       return {
@@ -816,7 +816,7 @@ class SolvencyContractService {
         }
       }
 
-      console.log(`   Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`   Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
 
       return {
         success: true,

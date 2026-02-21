@@ -758,7 +758,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                     <div>
                                       <span className="text-gray-600">Deposit TX:</span>
                                       <a
-                                        href={`https://sepolia.mantlescan.xyz/tx/${position.depositTxHash}`}
+                                        href={`https://sepolia.arbitrumscan.xyz/tx/${position.depositTxHash}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="ml-2 text-blue-600 hover:underline font-mono"

@@ -42,7 +42,7 @@ const PortfolioPage = () => {
   const [searchParams] = useSearchParams();
   const { address, logout } = useAuthStrategy();
   const { networkType, networkPath } = useNetwork();
-  const isEvm = networkType === 'mantle';
+  const isEvm = networkType === 'arbitrum';
 
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
@@ -254,7 +254,7 @@ const PortfolioPage = () => {
     }
 
     if (!isEvm && networkType !== 'stellar') {
-      warning('Not Supported', 'Yield claiming is currently only supported on Mantle & Stellar Networks.');
+      warning('Not Supported', 'Yield claiming is currently only supported on arbitrum & Stellar Networks.');
       return;
     }
 
@@ -452,7 +452,7 @@ const PortfolioPage = () => {
 
       success(
         'Yield Claimed Successfully! 🎉',
-        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${claimResult.transactionHash}`,
+        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://sepolia.arbiscan.io/tx/${claimResult.transactionHash}`,
         12000
       );
 
@@ -523,7 +523,7 @@ const PortfolioPage = () => {
               <div className="flex items-center gap-6">
                 <div className="  top-0 left-0">
                   <div className="w-32 h-16 bg-foreground rounded-full  top-0 left-0">
-                    <span className="text-white font-bold text-lg top-0 left-0 "><img src="./ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
+                    <span className="text-white font-bold text-lg top-0 left-0 "><img src="/ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
                   </div>
                 </div>
 

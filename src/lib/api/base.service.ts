@@ -26,7 +26,7 @@ class BaseService {
     if (segment === 'stellar') {
       return import.meta.env.VITE_STELLAR_API_URL ?? 'http://localhost:3001';
     }
-    return import.meta.env.VITE_MANTLE_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+    return import.meta.env.VITE_ARBITRUM_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
   }
 
   protected getHeaders = () => {
@@ -40,7 +40,7 @@ class BaseService {
 
   protected getAuthHeaders = (required: boolean = true) => {
     const segment = window.location.pathname.split('/')[1];
-    const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
 
     const token = localStorage.getItem(`${network}_access_token`)
       ?? localStorage.getItem('access_token'); // legacy fallback

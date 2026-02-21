@@ -19,15 +19,15 @@ const FeaturePage = () => {
       icon: <IconTerminal2 />,
     },
     {
-      title: "Leveraged RWA Buying (M-ETH)",
+      title: "Leveraged RWA Buying (stARB)",
       description:
-        "Users acquire RWA tokens using M-ETH deposited into a leveraged vault. USDC is sourced from the protocol’s lending pool, while M-ETH yield is programmatically applied toward loan repayment.",
+        "Users acquire RWA tokens using stARB deposited into a leveraged vault. USDC is sourced from the protocol’s lending pool, while stARB yield is programmatically applied toward loan repayment.",
       icon: <IconEaseInOut />,
     },
     {
       title: "Automated Leverage Repayment Engine",
       description:
-        "Interest earned on M-ETH is routed through Fluxion or protocol-native swaps to service senior pool obligations, reducing user debt without manual intervention.",
+        "Interest earned on stARB is routed through Fluxion or protocol-native swaps to service senior pool obligations, reducing user debt without manual intervention.",
       icon: <IconCurrencyDollar />,
     },
     {

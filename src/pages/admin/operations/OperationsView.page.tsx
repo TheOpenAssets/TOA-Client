@@ -19,7 +19,7 @@ import { useNetwork } from '../../../lib/network/NetworkContext';
 
 const OperationsViewPage = () => {
   const { networkType } = useNetwork();
-  const networkName = networkType === 'stellar' ? 'Stellar' : 'Mantle';
+  const networkName = networkType === 'stellar' ? 'Stellar' : 'arbitrum';
   const tokenStandard = networkType === 'stellar' ? 'Stellar Asset' : 'ERC-3643';
   const {
     assetsForOperations,
@@ -85,7 +85,7 @@ const OperationsViewPage = () => {
 
   const allAssets: AssetWithStage[] = assetsForOperations
     .filter((asset) => {
-      // Step 1: Register on Mantle - ATTESTED assets
+      // Step 1: Register on arbitrum - ATTESTED assets
       if (asset.status === 'ATTESTED') return true;
       // Step 2: Deploy Token - REGISTERED assets
       if (asset.status === 'REGISTERED') return true;

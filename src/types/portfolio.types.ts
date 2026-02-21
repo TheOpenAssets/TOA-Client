@@ -26,7 +26,7 @@ export type PortfolioAsset = {
   // LEVERAGE-specific fields
   positionId?: number;
   createdAt?: string;
-  mETHCollateral?: string;
+  stARBCollateral?: string;
   usdcBorrowed?: string;
   healthFactor?: number;
   healthStatus?: string;
@@ -35,7 +35,7 @@ export type PortfolioAsset = {
   settlementTxHash?: string;
   leverageInfo?: {
     type: 'ACTIVE' | 'SETTLED';
-    mETHCollateralFormatted: string;
+    stARBCollateralFormatted: string;
     usdcBorrowedFormatted: string;
     healthFactorFormatted?: string;
     healthStatus?: string;
@@ -44,8 +44,8 @@ export type PortfolioAsset = {
     claimableYieldFormatted: string;
     userYield?: string;
     userYieldFormatted?: string;
-    mETHReturned?: string;
-    mETHReturnedFormatted?: string;
+    stARBReturned?: string;
+    stARBReturnedFormatted?: string;
     settlementTxHash?: string;
     settlementDate?: string;
   };

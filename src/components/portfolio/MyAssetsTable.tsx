@@ -21,7 +21,7 @@ interface YieldInfo {
 
 interface LeverageInfo {
   type: 'ACTIVE' | 'SETTLED';
-  mETHCollateralFormatted: string;
+  stARBCollateralFormatted: string;
   usdcBorrowedFormatted: string;
   healthFactorFormatted?: string;
   healthStatus?: 'HEALTHY' | 'WARNING' | 'CRITICAL';
@@ -30,8 +30,8 @@ interface LeverageInfo {
   claimableYieldFormatted?: string;
   userYield?: string;
   userYieldFormatted?: string;
-  mETHReturned?: string;
-  mETHReturnedFormatted?: string;
+  stARBReturned?: string;
+  stARBReturnedFormatted?: string;
   settlementTxHash?: string;
   settlementDate?: string;
 }
@@ -70,7 +70,7 @@ interface PortfolioAsset {
   yieldInfo?: YieldInfo;
   transactionHistory?: TransactionHistory[];
   // Leverage-specific fields
-  mETHCollateral?: string;
+  stARBCollateral?: string;
   usdcBorrowed?: string;
   healthFactor?: number;
   healthStatus?: string;
@@ -203,7 +203,7 @@ export const MyAssetsTable = ({
 
   const openTxHash = (hash: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://sepolia.mantlescan.xyz/tx/${hash}`, '_blank');
+    window.open(`https://sepolia.arbitrumscan.xyz/tx/${hash}`, '_blank');
   };
 
 
@@ -380,8 +380,8 @@ export const MyAssetsTable = ({
                     <div className="font-gellix text-sm font-normal text-foreground">
                       {isLeverage && asset.leverageInfo ? (
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500">mETH</span>
-                          <span>{asset.leverageInfo.mETHCollateralFormatted}</span>
+                          <span className="text-xs text-gray-500">stARB</span>
+                          <span>{asset.leverageInfo.stARBCollateralFormatted}</span>
                         </div>
                       ) : (
                         <div className="flex flex-col">
@@ -591,14 +591,14 @@ export const MyAssetsTable = ({
                             </>
                           )}
 
-                        {/* Leverage Settled: mETH Returned */}
+                        {/* Leverage Settled: stARB Returned */}
                         {isLeverage &&
                           asset.leverageInfo?.type === 'SETTLED' &&
-                          asset.leverageInfo.mETHReturnedFormatted && (
+                          asset.leverageInfo.stARBReturnedFormatted && (
                             <div>
-                              <div className="text-xs text-gray-500 mb-1">mETH Returned</div>
+                              <div className="text-xs text-gray-500 mb-1">stARB Returned</div>
                               <div className="font-medium">
-                                {asset.leverageInfo.mETHReturnedFormatted}
+                                {asset.leverageInfo.stARBReturnedFormatted}
                               </div>
                             </div>
                           )}

@@ -49,7 +49,7 @@ const complianceAssets = allAssets.filter((asset: any) =>
 - ✅ `checkpoints.attested === true`
 - ✅ `checkpoints.registered !== true`
 - Shows: Invoice details, face value, token supply, buyer
-- Action: **Register on Mantle** → Changes to REGISTERED
+- Action: **Register on arbitrum** → Changes to REGISTERED
 
 **Phase 2: Ready for Tokenization** (Registered but NOT Tokenized)
 - ✅ `checkpoints.registered === true`
@@ -120,7 +120,7 @@ const complianceAssets = allAssets.filter((asset: any) =>
 │  ATTESTED   │ → Compliance approved
 └──────┬──────┘
        │ OPERATIONS (Phase 1)
-       │ Admin clicks "Register on Mantle"
+       │ Admin clicks "Register on arbitrum"
        ↓
 ┌─────────────┐
 │ REGISTERED  │ → On-chain registration
@@ -178,7 +178,7 @@ asset.checkpoints.attested  // true/false
 - ✅ Split into 3 phases (Ready to Register, Ready to Tokenize, Tokenized)
 - ✅ Shows registry transaction hash and block number
 - ✅ Displays token deployment details
-- ✅ Links to Mantle Sepolia explorer
+- ✅ Links to arbitrum Sepolia explorer
 - ✅ Correct stats counters per phase
 
 ### Settlement View
@@ -197,7 +197,7 @@ All actions now use correct `asset.assetId` instead of `asset.id`:
 await adminService.approveAsset(asset.assetId, adminWallet);
 // Status: MERKLED → ATTESTED
 
-// Register on Mantle
+// Register on arbitrum
 await adminService.registerAsset(asset.assetId);
 // Status: ATTESTED → REGISTERED
 

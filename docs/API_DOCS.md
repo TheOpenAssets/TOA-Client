@@ -1,4 +1,4 @@
-# Mantle RWA Platform - API Documentation
+# arbitrum RWA Platform - API Documentation
 
 **Base URL:** `http://localhost:3000`
 
@@ -38,7 +38,7 @@ Creates a challenge message for wallet signing.
 **Response:**
 ```json
 {
-  "message": "Sign this message to authenticate with Mantle RWA Platform.\nNonce: <uuid>\nTimestamp: <timestamp>",
+  "message": "Sign this message to authenticate with arbitrum RWA Platform.\nNonce: <uuid>\nTimestamp: <timestamp>",
   "nonce": "<uuid>"
 }
 ```
@@ -91,7 +91,7 @@ curl -X POST 'http://localhost:3000/auth/login' \
   --data '{
     "walletAddress": "0x23e67597f0898f747Fa3291C892016hadF9455D0",
     "signature": "<signature>",
-    "message": "Sign this message to authenticate with Mantle RWA Platform.\nNonce: <nonce>\nTimestamp: <timestamp>"
+    "message": "Sign this message to authenticate with arbitrum RWA Platform.\nNonce: <nonce>\nTimestamp: <timestamp>"
   }'
 ```
 

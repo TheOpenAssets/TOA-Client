@@ -152,7 +152,7 @@ All scripts require `INVESTOR_KEY` (for user actions) or `ADMIN_KEY` (for admin 
 | `check-oaid-credit.js` | View OAID credit stats | `node scripts/check-oaid-credit.js <wallet>` |
 | `admin-mark-missed-payment.js` | (Admin) Force missed payment | `node scripts/admin-mark-missed-payment.js <pos_id>` |
 
-## 5. Contract Addresses (Mantle Sepolia)
+## 5. Contract Addresses (arbitrum Sepolia)
 
 *   **SolvencyVault:** `0x9019F4B9bBE67b27f6972019264655ef7a08298e`
 *   **OAID:** `0x307cEEceB3A0ed74E4cE711C8b8033FCB2d635F0`

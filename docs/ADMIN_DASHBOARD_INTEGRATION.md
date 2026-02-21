@@ -275,7 +275,7 @@ POST /admin/assets/9482d1dc-b852-417f-ab7e-f8a1cdd44057/register
 Response: {
   "success": true,
   "transactionHash": "0x498e...",
-  "explorerUrl": "https://explorer.sepolia.mantle.xyz/tx/0x498e..."
+  "explorerUrl": "https://explorer.sepolia.arbitrum.xyz/tx/0x498e..."
 }
 ```
 
@@ -320,7 +320,7 @@ POST /admin/assets/list-on-marketplace
 Response: {
   "success": true,
   "transactionHash": "0x71123...",
-  "explorerUrl": "https://explorer.sepolia.mantle.xyz/tx/0x71123..."
+  "explorerUrl": "https://explorer.sepolia.arbitrum.xyz/tx/0x71123..."
 }
 ```
 

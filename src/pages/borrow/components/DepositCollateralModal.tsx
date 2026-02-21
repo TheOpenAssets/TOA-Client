@@ -536,7 +536,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
@@ -558,7 +558,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"

@@ -26,10 +26,10 @@ export const handle401Unauthorized = (): void => {
   console.log('🔒 401 Unauthorized detected - Logging out user');
 
   const segment = window.location.pathname.split('/')[1];
-  const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+  const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
 
   // Clear all auth-related data from localStorage
-  ['mantle', 'stellar'].forEach(n => {
+  ['arbitrum', 'stellar'].forEach(n => {
     localStorage.removeItem(`${n}_access_token`);
     localStorage.removeItem(`${n}_refresh_token`);
     localStorage.removeItem(`${n}_authenticated_wallet_address`);
@@ -71,7 +71,7 @@ export const handleAPIError = (error: any): never => {
     localStorage.removeItem('redirect_after_verification');
 
     const segment = window.location.pathname.split('/')[1];
-    const network = ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
 
     // Redirect to auth page on current network
     window.location.href = `/${network}`;

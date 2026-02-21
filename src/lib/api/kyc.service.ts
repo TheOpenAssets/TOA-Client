@@ -18,7 +18,7 @@ class KYCService extends BaseService {
 
   private getNetwork(): string {
     const segment = window.location.pathname.split('/')[1];
-    return ['mantle', 'stellar'].includes(segment) ? segment : 'mantle';
+    return ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
   }
 
   /**

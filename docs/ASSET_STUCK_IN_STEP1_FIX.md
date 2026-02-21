@@ -1,7 +1,7 @@
 # 🔧 Fix for "Asset Stuck in Step 1" Issue
 
 **Date:** 2025-12-26
-**Issue:** Assets registered on-chain still showing in "Step 1: Register on Mantle"
+**Issue:** Assets registered on-chain still showing in "Step 1: Register on arbitrum"
 
 ---
 
@@ -186,7 +186,7 @@ await Asset.updateOne(
 
 1. Upload a new asset
 2. Approve it for compliance
-3. **Step 1:** Click "Register on Mantle"
+3. **Step 1:** Click "Register on arbitrum"
    - Wait for success
    - **Asset should DISAPPEAR from Step 1**
    - **Asset should APPEAR in Step 2**

@@ -360,7 +360,7 @@ class MarketplaceService extends BaseService {
    * ENDPOINT: POST /marketplace/bids/notify (VERIFIED from investor-bidding.sh line 362)
    * REF: investor-bidding.sh Step 4
    *
-   * Payload: { txHash, assetId, tokenAmount (wei), price (wei) }
+   * Payload: { txHash, assetId, tokenAmount (canonical 4-decimal e.g. "100.0000"), price (canonical 4-decimal e.g. "1.2345") }
    *
    * Called AFTER successful on-chain bid submission
    */

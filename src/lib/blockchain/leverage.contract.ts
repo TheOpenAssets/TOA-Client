@@ -1,20 +1,20 @@
 
 
 /**
- * Leverage Contract Addresses (Mantle Sepolia Testnet)
+ * Leverage Contract Addresses (arbitrum Sepolia Testnet)
  * Deployed on: 2025-12-31
  */
 export const LEVERAGE_CONTRACTS = {
   LeverageVault: import.meta.env.VITE_LEVERAGE_VAULT,
-  MockMETH: import.meta.env.VITE_MOCK_METH,
+  MockstARB: import.meta.env.VITE_MOCK_stARB,
   MockFluxionDEX: import.meta.env.VITE_MOCK_FLUXION_DEX,
   SeniorPool: import.meta.env.VITE_SENIOR_POOL,
 } as const;
 
 /**
- * mETH (ERC20) ABI
+ * stARB (ERC20) ABI
  */
-export const METH_ABI = [
+export const stARB_ABI = [
   {
     name: 'approve',
     type: 'function',
@@ -54,12 +54,12 @@ export const LEVERAGE_VAULT_ABI = [
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'user', type: 'address' },
-      { name: 'mETHAmount', type: 'uint256' },
+      { name: 'stARBAmount', type: 'uint256' },
       { name: 'usdcToBorrow', type: 'uint256' },
       { name: 'rwaToken', type: 'address' },
       { name: 'rwaTokenAmount', type: 'uint256' },
       { name: 'assetId', type: 'string' },
-      { name: 'mETHPriceUSD', type: 'uint256' }
+      { name: 'stARBPriceUSD', type: 'uint256' }
     ],
     outputs: [{ name: 'positionId', type: 'uint256' }],
   },
@@ -72,7 +72,7 @@ export const LEVERAGE_VAULT_ABI = [
       {
         components: [
           { name: 'user', type: 'address' },
-          { name: 'mETHCollateral', type: 'uint256' },
+          { name: 'stARBCollateral', type: 'uint256' },
           { name: 'usdcBorrowed', type: 'uint256' },
           { name: 'rwaToken', type: 'address' },
           { name: 'rwaTokenAmount', type: 'uint256' },
@@ -92,7 +92,7 @@ export const LEVERAGE_VAULT_ABI = [
     stateMutability: 'view',
     inputs: [
       { name: 'positionId', type: 'uint256' },
-      { name: 'mETHPriceUSD', type: 'uint256' }
+      { name: 'stARBPriceUSD', type: 'uint256' }
     ],
     outputs: [{ type: 'uint256' }],
   }

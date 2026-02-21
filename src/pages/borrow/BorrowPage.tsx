@@ -51,7 +51,7 @@ const BorrowPage = () => {
             <header className="w-full flex flex-row z-40 mt-2 mb-1">
               {/* Logo */}
               <img
-                src="./ALogo-removebg-preview.svg"
+                src="/ALogo-removebg-preview.svg"
                 alt="Logo"
                 className="h-16 w-auto object-contain cursor-pointer"
                 onClick={() => navigate(networkPath('/'))}

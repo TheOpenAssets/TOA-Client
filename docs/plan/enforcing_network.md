@@ -9,7 +9,7 @@
 
 **What exists (Level 1):** Network routing (`/:network/*`), wallet provider branching (`NetworkLayout`), auth strategy abstraction, dynamic API URL resolution, boolean feature flags (`leverage: true/false`).
 
-**What's missing (Level 2):** Domain strategy layer. Pages call `useAccount()` from wagmi directly (crashes on Stellar), import `contractService` (ethers.js + `window.ethereum`, hardcoded chainId 5003n), and have 50+ hardcoded `navigate('/path')` calls missing `networkPath()`. The boolean flags say "is this feature on?" but not "HOW does this feature work on this network?" — e.g., marketplace supports direct buy + auction + leverage on Mantle but only direct buy on Stellar.
+**What's missing (Level 2):** Domain strategy layer. Pages call `useAccount()` from wagmi directly (crashes on Stellar), import `contractService` (ethers.js + `window.ethereum`, hardcoded chainId 5003n), and have 50+ hardcoded `navigate('/path')` calls missing `networkPath()`. The boolean flags say "is this feature on?" but not "HOW does this feature work on this network?" — e.g., marketplace supports direct buy + auction + leverage on arbitrum but only direct buy on Stellar.
 
 ---
 
@@ -65,7 +65,7 @@ export interface WalletCapabilities {
   integrityMonitoring: boolean;
   nativeTokenSymbol: string;
   explorerBaseUrl: string;
-  networkDisplayName: string;  // "Mantle Network" / "Stellar Network" — replaces hardcoded UI text
+  networkDisplayName: string;  // "arbitrum Network" / "Stellar Network" — replaces hardcoded UI text
 }
 
 export interface NetworkCapabilities {
@@ -79,7 +79,7 @@ export interface NetworkCapabilities {
 }
 ```
 
-Mantle: `{ marketplace: { directBuy: true, auction: true, leverageBuy: true }, ... }`
+arbitrum: `{ marketplace: { directBuy: true, auction: true, leverageBuy: true }, ... }`
 Stellar: `{ marketplace: { directBuy: true, auction: false, leverageBuy: false }, ... }`
 
 **Modify: `src/lib/network/network.config.ts`** — add `capabilities: NetworkCapabilities` to `NetworkConfig`.
@@ -217,7 +217,7 @@ Use a `composeProviders` utility (`src/lib/utils/composeProviders.tsx`) to avoid
 
 ```tsx
 // src/app/layouts/NetworkLayout.tsx
-const MantleProviders = composeProviders(
+const arbitrumProviders = composeProviders(
   WalletProvider, EvmWalletStrategyProvider, WalletIntegrityProvider,
   EvmAuthProvider, EvmMarketplaceProvider, EvmAuctionProvider,
   EvmSecondaryMarketProvider, EvmYieldProvider, EvmSolvencyProvider
@@ -231,7 +231,7 @@ const StellarProviders = composeProviders(
 
 export const NetworkLayout = () => {
   const { networkType } = useNetwork();
-  const Providers = networkType === 'stellar' ? StellarProviders : MantleProviders;
+  const Providers = networkType === 'stellar' ? StellarProviders : arbitrumProviders;
   return <Providers><Outlet /></Providers>;
 };
 ```
@@ -314,7 +314,7 @@ export const NetworkLayout = () => {
 ### Phase 5 — Cleanup
 - Remove deprecated `features` boolean field from `NetworkConfig`
 - Replace all `isFeatureAvailable()` calls with `isCapabilityAvailable()`
-- Replace hardcoded "Mantle Network" / "ERC-3643" UI text with `capabilities.wallet.networkDisplayName`
+- Replace hardcoded "arbitrum Network" / "ERC-3643" UI text with `capabilities.wallet.networkDisplayName`
 - Replace hardcoded explorer URLs with `capabilities.wallet.explorerBaseUrl`
 
 ---
@@ -379,10 +379,10 @@ export const NetworkLayout = () => {
 
 ## 7. Verification
 
-1. **Mantle routes unchanged**: All existing `/mantle/*` flows work identically — purchase, auction, yield claim, borrow, faucet
+1. **arbitrum routes unchanged**: All existing `/arbitrum/*` flows work identically — purchase, auction, yield claim, borrow, faucet
 2. **Stellar routes don't crash**: `/stellar/marketplace` renders without wagmi errors, shows only direct buy listings
 3. **Feature gating works**: `/stellar/marketplace/auction/:id` redirects to `/stellar/marketplace` (auction disabled)
-4. **Capability queries work**: `isCapabilityAvailable('marketplace.leverageBuy')` returns `true` on Mantle, `false` on Stellar
+4. **Capability queries work**: `isCapabilityAvailable('marketplace.leverageBuy')` returns `true` on arbitrum, `false` on Stellar
 5. **No wagmi imports outside providers**: `grep -r "from 'wagmi'" src/` only matches files in `src/lib/strategies/*/Evm*`, `src/app/providers/Wallet*`, `src/hooks/useWalletIntegrityMonitor.ts`, and `src/hooks/useAuctionContracts.ts`
 6. **Navigation is network-prefixed**: No remaining `navigate('/path')` without `networkPath()` in any page file
-7. **Network switch preserves context**: Clicking network switcher on `/mantle/marketplace` goes to `/stellar/marketplace` without errors
+7. **Network switch preserves context**: Clicking network switcher on `/arbitrum/marketplace` goes to `/stellar/marketplace` without errors

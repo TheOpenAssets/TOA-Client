@@ -222,12 +222,12 @@ export interface AdminAsset {
 
 ## 🎯 Expected Behavior After Fixes
 
-### Step 1: Register on Mantle
+### Step 1: Register on arbitrum
 **Shows:**
 - Assets with `checkpoints.attested === true`
 - AND `checkpoints.registered !== true`
 
-**Button:** "Register on Mantle" → Opens registration modal
+**Button:** "Register on arbitrum" → Opens registration modal
 
 ---
 
@@ -265,7 +265,7 @@ export interface AdminAsset {
 
 ### Example: AUCTION Asset
 ```
-Step 1: Asset attested → Click "Register on Mantle"
+Step 1: Asset attested → Click "Register on arbitrum"
   ↓
 Step 2: Asset registered → Click "Deploy Token"
   ↓
@@ -283,7 +283,7 @@ Auction goes LIVE on marketplace
 
 ### Example: STATIC Asset
 ```
-Step 1: Asset attested → Click "Register on Mantle"
+Step 1: Asset attested → Click "Register on arbitrum"
   ↓
 Step 2: Asset registered → Click "Deploy Token"
   ↓

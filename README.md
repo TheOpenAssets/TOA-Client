@@ -15,14 +15,14 @@ T O K E N I Z E   •   I N V E S T   •   T R A D E   •   B O R R O W   • 
 
 
 
-**The premier Mantle-native gateway for Real-World Assets. Tokenize and invest in RWA invoices, leverage mETH for capital-efficient purchases, access universal credit via OAID, compose RWA into usable credit, trade freely in real value.**
+**The premier arbitrum-native gateway for Real-World Assets. Tokenize and invest in RWA invoices, leverage stARB for capital-efficient purchases, access universal credit via OAID, compose RWA into usable credit, trade freely in real value.**
 
 ---
 
 <div align="center">
 
 [![Website](https://img.shields.io/badge/Website-OpenAssets-652df2?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.openassets.xyz)
-[![Docs](https://img.shields.io/badge/Documentation-Read-blue?style=for-the-badge&logo=notion&logoColor=white)](https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19)
+[![Docs](https://img.shields.io/badge/Documentation-Read-blue?style=for-the-badge&logo=notion&logoColor=white)](https://open-assets-core-proposal.notion.site/Open-Assets-arbitrum-Network-2d5316cd01a780818164c5889beb1a19)
 [![Twitter](https://img.shields.io/badge/X_Twitter-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/TheOpenAssets)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/hKp6RTSp59)
 [![Telegram](https://img.shields.io/badge/Telegram-Chat-26A6E2?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/the_open_assets)
@@ -31,7 +31,7 @@ T O K E N I Z E   •   I N V E S T   •   T R A D E   •   B O R R O W   • 
 
 ---
 
-![Hero](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Hero.png)
+![Hero](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Hero.png)
 
 ---
 
@@ -61,12 +61,12 @@ Most on-chain yield models favor the **last holder**. If an investor holds an as
 
 ## 💡 The Solution: The OpenAssets Unified Execution Layer
 
-OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every step—from issuance to settlement—is optimized for capital efficiency.
+OpenAssets provides a deterministic lifecycle for RWAs on arbitrum, ensuring every step—from issuance to settlement—is optimized for capital efficiency.
 
 ###  **1 Canonical Tokenization**
 > **Standardization at the Core**
 > 
-> We transform off-chain cash flows into **ERC-3643 compliant** tokens. Every asset follows a strict, non-reversible state machine on Mantle, ensuring institutional-grade auditability from the moment of issuance.
+> We transform off-chain cash flows into **ERC-3643 compliant** tokens. Every asset follows a strict, non-reversible state machine on arbitrum, ensuring institutional-grade auditability from the moment of issuance.
 
 ###  **2 Hybrid Market Discovery**
 > **Flexible Capital Formation**
@@ -75,31 +75,31 @@ OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every
 > * **Fixed-Price Listings:** Instant liquidity for standard, high-velocity invoices.
 > * **Uniform-Price Auctions:** Fair price discovery for unique or large-cohort assets, ensuring all investors pay the same clearing price.
 
-![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Realfi.png)
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Realfi.png)
 
-###  **3 mETH-Powered Leverage**
+###  **3 stARB-Powered Leverage**
 > **Self-Amortizing Acquisition**
 > 
-> Leveraging Mantle’s native **mETH**, users can acquire RWAs with high capital efficiency. The **native staking yield of mETH** is automatically harvested to service loan interest, allowing users to hold leveraged RWA positions with near zero out-of-pocket interest costs and at times earning even more.
+> Leveraging arbitrum’s native **stARB**, users can acquire RWAs with high capital efficiency. The **native staking yield of stARB** is automatically harvested to service loan interest, allowing users to hold leveraged RWA positions with near zero out-of-pocket interest costs and at times earning even more.
 
 
 ###  **4 OAID & Universal Credit**
 > **Deposit Once, Borrow Everywhere**
 > 
-> Your **Open Access ID (OAID)** acts as a universal credit identity. By decoupling collateral custody (Solvency Vault) from credit issuance, users can tap into multiple Mantle lending protocols and more using a single RWA collateral pool. No more moving assets, just portable, verifiable credit.
+> Your **Open Access ID (OAID)** acts as a universal credit identity. By decoupling collateral custody (Solvency Vault) from credit issuance, users can tap into multiple arbitrum lending protocols and more using a single RWA collateral pool. No more moving assets, just portable, verifiable credit.
 
-![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Composable-Defi.png)
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Composable-Defi.png)
 
 ### **5 Time-Weighted Yield (Token-Days)**
 > **Eliminating Yield Sniping**
 > 
 > Our **Token-Day Engine** calculates yield entitlement down to the second. By tracking the duration of ownership, we ensure yield is distributed fairly between all past and present holders. This mathematically guarantees returns for your exact period of risk.
 
-![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Summary.png)
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Summary.png)
 
 ---
 ### **Data Management**
-![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Autonomous.png)
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Autonomous.png)
 ---
 
 <div align="center">
@@ -108,7 +108,7 @@ OpenAssets provides a deterministic lifecycle for RWAs on Mantle, ensuring every
 
 ---
 <div align="center">
-  <samp>Built for the Mantle Network</samp>
+  <samp>Built for the arbitrum Network</samp>
 </div>
 
 ### Interactive Flow Map
@@ -191,7 +191,7 @@ flowchart TB;
     %% BUY & LEVERAGE
     BM[Buy Module]
     U[USDC Buy]
-    L[mETH Buy]
+    L[stARB Buy]
     LC[Collateral Locked]
     LP[Leverage Position]
 
@@ -303,17 +303,17 @@ flowchart TB;
   <br />
   <sub><strong>TECHNICAL WALKTHROUGH</strong></sub>
   <h1>Understand OpenAssets in Minutes</h1>
-  <p><em>Guided demonstrations of our Mantle-native execution layer and RWA lifecycle.</em></p>
+  <p><em>Guided demonstrations of our arbitrum-native execution layer and RWA lifecycle.</em></p>
 </div>
 
 ---
 
 ## The Infrastructure Layer
 
-The OpenAssets Client is a **High-Fidelity State Interpreter**. It coordinates seamlessly with our Mantle-native smart contracts and a dedicated backend indexing layer to provide institutional-grade performance.
+The OpenAssets Client is a **High-Fidelity State Interpreter**. It coordinates seamlessly with our arbitrum-native smart contracts and a dedicated backend indexing layer to provide institutional-grade performance.
 
 * **Real-Time Sync:** Uses Redis-backed WebSockets to push live bid updates and health factor changes.
-* **Trustless Data:** Critical financial metrics (LTV, Debt, Yield) are read directly from Mantle Sepolia.
+* **Trustless Data:** Critical financial metrics (LTV, Debt, Yield) are read directly from arbitrum Sepolia.
 * **Role-Based UX:** Optimized interfaces for both **Issuers** (Asset Tokenization) and **Investors** (Discovery & Credit).
 
 ---
@@ -338,10 +338,10 @@ You can find all the walkthroughs on our website at once interactive section her
 | **Auction Bidding** | Participating in Uniform-Price Auctions for fair discovery. | [▶ View](https://www.youtube.com/watch?v=IB1VmpVxiXQ) |
 | **Secondary Trade** | P2P trading while preserving time-weighted yield accrual. | [▶ View](https://youtu.be/f4UW6pApmhI) |
 
-### 3 Mantle-Native Innovation (Leverage & Credit)
+### 3 arbitrum-Native Innovation (Leverage & Credit)
 | Module | Description | Watch Demo |
 | :--- | :--- | :--- |
-| **mETH Leverage** | Using mETH yield to service RWA acquisition interest. | [▶ View](https://youtu.be/c7CdBkcVZPQ) |
+| **stARB Leverage** | Using stARB yield to service RWA acquisition interest. | [▶ View](https://youtu.be/c7CdBkcVZPQ) |
 | **Credit Line** | Activating OAID to create credit lines against RWA collateral. | [▶ View](https://youtu.be/aFx4cktm_ss) |
 | **Borrowing** | Drawing liquidity across native and partner protocols. | [▶ View](https://youtu.be/QY0fwxX2mTM) |
 | **Repayment** | Restoring credit limits and reclaiming collateral. | [▶ View](https://youtu.be/NIzF8LUORrY) |
@@ -350,18 +350,18 @@ You can find all the walkthroughs on our website at once interactive section her
 
 ## Portfolio & Health Monitoring
 
-The **OpenAssets Dashboard** provides a unified view of your entire RWA exposure. Users can track health metrics for leveraged positions in real-time, preventing liquidations through proactive mETH collateral management. Manage entire asset lifecycle, operations and keep a track of all your operations.
+The **OpenAssets Dashboard** provides a unified view of your entire RWA exposure. Users can track health metrics for leveraged positions in real-time, preventing liquidations through proactive stARB collateral management. Manage entire asset lifecycle, operations and keep a track of all your operations.
 
-* **Health Score:** Real-time LTV monitoring powered by mETH/USDC price feeds.
+* **Health Score:** Real-time LTV monitoring powered by stARB/USDC price feeds.
 * **Yield History:** Transparent view of accrued "Token-Day" yield ready for claiming.
 * **Portfolio Demo:** [▶ Watch the Overview](https://youtu.be/NtLOZqsX5U8)
 
 ---
 
 ### Our Journey
-![TImeline](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Timeline.png)
+![TImeline](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Timeline.png)
 ---
-![Kraken](https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/Changelog.png)
+![Kraken](https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/Changelog.png)
 ---
 <em>Navigate our jouney through a series of commits, pushes, pr's and a lot of branches</em>
 -> [Changelog](https://www.openassets.xyz/changelog)
@@ -383,14 +383,14 @@ The **OpenAssets Dashboard** provides a unified view of your entire RWA exposure
 Before you begin, ensure you have the following installed:
 * **Node.js**: v20.x or higher (Recommended: v22 LTS)
 * **Package Manager**: `npm` or `pnpm`
-* **Web3 Wallet**: MetaMask or any mantle supporting wallet configured for the **Mantle Sepolia Testnet**.
-* **Mantle Faucet**: Ensure you have test **MNT** for gas.
-* **Open Assets Backend Up**: Ensure you have the server and contracts up. (<em>Steps can be found here [Backend Setup](https://github.com/TheOpenAssets/TOA-Server-Mantle/blob/main/README.md)</em>)
+* **Web3 Wallet**: MetaMask or any arbitrum supporting wallet configured for the **arbitrum Sepolia Testnet**.
+* **arbitrum Faucet**: Ensure you have test **MNT** for gas.
+* **Open Assets Backend Up**: Ensure you have the server and contracts up. (<em>Steps can be found here [Backend Setup](https://github.com/TheOpenAssets/TOA-Server-arbitrum/blob/main/README.md)</em>)
 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/TheOpenAssets/TOA-Client-Mantle.git
+git clone https://github.com/TheOpenAssets/TOA-Client-arbitrum.git
 ```
 
 ### 2. Install Dependencies
@@ -421,7 +421,7 @@ npm run dev
 
 ## Environment Variables (.env)
 
-The interface uses the following variables to interact with the **OpenAssets Protocol Core**. Ensure all contract addresses are correctly mapped to your Mantle Sepolia deployments.
+The interface uses the following variables to interact with the **OpenAssets Protocol Core**. Ensure all contract addresses are correctly mapped to your arbitrum Sepolia deployments.
 
 ### **Core Infrastructure**
 
@@ -430,7 +430,7 @@ The interface uses the following variables to interact with the **OpenAssets Pro
 | `VITE_API_URL` | Base URL for the Backend API |
 | `VITE_WALLETCONNECT_PROJECT_ID` | Your wallet connect project ID for wallet authentication |
 | `VITE_FAUCET` | Address of the RWA Test Token Faucet |
-| `VITE_USDC_ADDRESS` | Canonical USDC contract on Mantle Sepolia |
+| `VITE_USDC_ADDRESS` | Canonical USDC contract on arbitrum Sepolia |
 
 ### **Marketplace & Yield**
 
@@ -449,14 +449,14 @@ The interface uses the following variables to interact with the **OpenAssets Pro
 | `VITE_TRUSTED_ISSUERS_REGISTRY` | List of approved asset originators |
 | `VITE_ATTESTATION_REGISTRY` | Storage for asset-level compliance data |
 
-### **Mantle Innovation (mETH Leverage)**
+### **arbitrum Innovation (stARB Leverage)**
 
 | Variable | Description |
 | --- | --- |
-| `VITE_MOCK_METH` | Mantle Staked ETH (mETH) address |
-| `VITE_METH_FAUCET` | Faucet for test mETH |
-| `VITE_LEVERAGE_VAULT` | mETH-collateralized buy management |
-| `VITE_FLUXION_INTEGRATION` | Swap logic for mETH ↔ USDC |
+| `VITE_MOCK_stARB` | arbitrum Staked ETH (stARB) address |
+| `VITE_stARB_FAUCET` | Faucet for test stARB |
+| `VITE_LEVERAGE_VAULT` | stARB-collateralized buy management |
+| `VITE_FLUXION_INTEGRATION` | Swap logic for stARB ↔ USDC |
 | `VITE_MOCK_FLUXION_DEX` | DEX router for interest servicing |
 
 ### **Universal Credit (OAID)**
@@ -482,7 +482,7 @@ npm run preview
 
 
 
-### OpenAssets Smart Contract Registry (Mantle)
+### OpenAssets Smart Contract Registry (arbitrum)
 
 | Contract Name | Address | Description |
 | --- | --- | --- |
@@ -494,14 +494,14 @@ npm run preview
 | **OAID (Open Access ID)** | `0xcc24b78Fa213304085684833597Fdc6CB5c8DfB0` | Universal on-chain credit identity registry |
 | **Solvency Vault** | `0x039cB576d9F7D77d6bE0269E0904B6ceFA845C6B` | Secure RWA collateral custodian |
 | **Senior Pool** | `0x9E5F4DD0178C08f27cC5Bd3E0e75Ed339385B346` | Primary USDC liquidity lending pool |
-| **Leverage Vault** | `0x5EC05eBFA8AD682d09C8Ef99c1f15844Abe415BF` | mETH-collateralized acquisition manager |
-| **Fluxion Integration** | `0xBf74A4CE5B8D1Aad592A3776e10537Ad27dA28Eb` | Swap logic for mETH ↔ USDC interest servicing |
+| **Leverage Vault** | `0x5EC05eBFA8AD682d09C8Ef99c1f15844Abe415BF` | stARB-collateralized acquisition manager |
+| **Fluxion Integration** | `0xBf74A4CE5B8D1Aad592A3776e10537Ad27dA28Eb` | Swap logic for stARB ↔ USDC interest servicing |
 | **Attestation Registry** | `0x03FE7d3736402D140659e7bD92B64808E31C3f51` | Storage for asset-level compliance data |
 | **Trusted Issuers** | `0xf63B563b6D438122cBC87f4356e60b8BB3Bc53E2` | Whitelist of approved asset originators |
 | **USDC** | `0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238` | Canonical settlement stablecoin |
 | **USDC Faucet** | `0x26Da2F1a2de3295302Fd95eBA1A183dc8Ffd77a3` | Testnet faucet for RWA settlement asset |
-| **Mock mETH** | `0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6` | Mantle Staked ETH (mETH) Mock contract |
-| **mETH Faucet** | `0xB50d0AC5D59E456C1f3EdB66403fd27eEbd155dB` | Testnet faucet for leverage collateral |
+| **Mock stARB** | `0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6` | arbitrum Staked ETH (stARB) Mock contract |
+| **stARB Faucet** | `0xB50d0AC5D59E456C1f3EdB66403fd27eEbd155dB` | Testnet faucet for leverage collateral |
 | **Mock Fluxion DEX** | `0x882eA0d81d445CF9e696869af4D007008281892D` | DEX router for automated price discovery |
 
 ---
@@ -522,7 +522,7 @@ npm run preview
 <div align="center">
   <br />
   <sub><strong>THE ARCHITECTS</strong></sub>
-  <p><em>Engineering the future of RWA liquidity on Mantle.</em></p>
+  <p><em>Engineering the future of RWA liquidity on arbitrum.</em></p>
 
 
   <a href="https://x.com/18_r_y_u_k_07"><img src="https://img.shields.io/badge/RYUK-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" /></a>
@@ -539,12 +539,12 @@ npm run preview
 
 <div align="center">
   <br />
-  <img src="https://github.com/TheOpenAssets/TOA-Client-Mantle/blob/main/public/OA-banner.png" alt="OpenAssets Logo" />
+  <img src="https://github.com/TheOpenAssets/TOA-Client-arbitrum/blob/main/public/OA-banner.png" alt="OpenAssets Logo" />
   <br />
   <br />
   <p>
     <strong>© 2026 OpenAssets. All rights reserved.</strong><br />
-    Built with precision for the <strong>Mantle Network</strong> ecosystem.
+    Built with precision for the <strong>arbitrum Network</strong> ecosystem.
   </p>
   <samp>
     Secure • Liquid • Transparent • Fair
@@ -552,7 +552,7 @@ npm run preview
   <br />
   <br />
   <p>
-    <sub>Licensed under the MIT License. Developed for the Mantle Hackathon 2026.</sub>
+    <sub>Licensed under the MIT License. Developed for the arbitrum Hackathon 2026.</sub>
   </p>
 </div>
 

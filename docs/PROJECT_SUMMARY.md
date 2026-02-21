@@ -1,14 +1,14 @@
 # OpenAssets — Project Summary
 
-> TOA-Client-Mantle | Mantle Hackathon 2026
+> TOA-Client-arbitrum | arbitrum Hackathon 2026
 
 ---
 
 ## What Is This?
 
-**OpenAssets** is a production-grade, Mantle-native web3 platform for **tokenized Real-World Assets (RWAs)**. It lets users discover, invest in, trade, borrow against, and earn yield on invoice-backed digital assets — all on-chain.
+**OpenAssets** is a production-grade, arbitrum-native web3 platform for **tokenized Real-World Assets (RWAs)**. It lets users discover, invest in, trade, borrow against, and earn yield on invoice-backed digital assets — all on-chain.
 
-The codebase is a React + TypeScript single-page application that integrates deeply with EVM smart contracts (primarily on Mantle Sepolia) and supports a secondary Stellar network path. It was built as a hackathon project but follows professional architecture patterns throughout.
+The codebase is a React + TypeScript single-page application that integrates deeply with EVM smart contracts (primarily on arbitrum Sepolia) and supports a secondary Stellar network path. It was built as a hackathon project but follows professional architecture patterns throughout.
 
 ---
 
@@ -38,7 +38,7 @@ The codebase is a React + TypeScript single-page application that integrates dee
 The app mounts under a `/:network` URL prefix. This drives which features are visible:
 
 ```
-/mantle/*    → full feature set (leverage, faucet, secondary market, borrow)
+/arbitrum/*    → full feature set (leverage, faucet, secondary market, borrow)
 /stellar/*   → limited feature set (secondary market + borrow only)
 ```
 
@@ -66,7 +66,7 @@ All backend communication goes through class-based services that extend `BaseSer
 | `asset.service.ts` | Issuer asset management |
 | `issuer.service.ts` | Originator onboarding & profile |
 | `solvency.service.ts` | Credit lines, borrow/repay |
-| `leverage.service.ts` | mETH leverage positions |
+| `leverage.service.ts` | stARB leverage positions |
 | `admin.service.ts` | Platform admin operations |
 | `contract.service.ts` | Generic contract interactions |
 | `solvency-contract.service.ts` | Solvency vault contract calls |
@@ -84,7 +84,7 @@ All backend communication goes through class-based services that extend `BaseSer
 | `auth.store.ts` | Logged-in user, tokens, role |
 | `marketplace.store.ts` | Listings, auctions, bids |
 | `portfolio.store.ts` | Owned assets, active bids |
-| `leverage.store.ts` | mETH positions, harvest history |
+| `leverage.store.ts` | stARB positions, harvest history |
 | `solvency.store.ts` | Credit lines, loans |
 | `admin.store.ts` | Admin dashboard data |
 | `changelog.store.ts` | Changelog entries |
@@ -111,7 +111,7 @@ Routes: `/marketplace`, `/marketplace/asset/:id`, `/marketplace/auction/:id`
 
 ### Secondary Market (P2P Trading)
 
-Route: `/trade/asset/:id` *(Mantle only)*
+Route: `/trade/asset/:id` *(arbitrum only)*
 
 - Orderbook UI — live buy and sell orders
 - Create limit orders for any RWA token
@@ -128,20 +128,20 @@ Route: `/portfolio`
 - Monitor active leverage positions
 - Monitor active loans
 
-### mETH Leverage *(Mantle-native)*
+### stARB Leverage *(arbitrum-native)*
 
 Available on asset detail pages when purchasing.
 
-The core Mantle-specific differentiator:
-- Deposit mETH as collateral → borrow USDC → buy RWA tokens
-- mETH staking yield is auto-harvested periodically to repay interest
+The core arbitrum-specific differentiator:
+- Deposit stARB as collateral → borrow USDC → buy RWA tokens
+- stARB staking yield is auto-harvested periodically to repay interest
 - Result: near-zero effective borrowing cost
 - Health factor monitoring (basis points; 15 000 = 150% = healthy)
 - Positions display: collateral, debt, health status, harvest history
 
 ### Universal Credit / OAID (Open Access ID)
 
-Route: `/borrow` *(Mantle + Stellar)*
+Route: `/borrow` *(arbitrum + Stellar)*
 
 - Deposit RWA tokens as collateral
 - Receive a credit line at 70% LTV
@@ -179,9 +179,9 @@ Routes: `/admin/*`
 
 ### Faucet
 
-Route: `/faucet` *(Mantle only)*
+Route: `/faucet` *(arbitrum only)*
 
-Claim test USDC, mETH, and RWA tokens for use on Mantle Sepolia testnet.
+Claim test USDC, stARB, and RWA tokens for use on arbitrum Sepolia testnet.
 
 ---
 
@@ -191,7 +191,7 @@ Claim test USDC, mETH, and RWA tokens for use on Mantle Sepolia testnet.
 2. Backend issues a challenge (nonce-based message)
 3. User signs the challenge with their private key
 4. Frontend sends signature → backend verifies → issues JWT pair
-5. Tokens stored in `localStorage` scoped to network (`mantle_access_token`, `stellar_access_token`)
+5. Tokens stored in `localStorage` scoped to network (`arbitrum_access_token`, `stellar_access_token`)
 6. All API calls attach `Authorization: Bearer <token>` via `BaseService`
 7. 401 responses trigger automatic logout and redirect to `/auth`
 
@@ -201,7 +201,7 @@ Claim test USDC, mETH, and RWA tokens for use on Mantle Sepolia testnet.
 
 ## Smart Contract Layer
 
-**Default network:** Mantle Sepolia (chain ID 5003)
+**Default network:** arbitrum Sepolia (chain ID 5003)
 
 | Contract | Purpose | Env Var |
 |---|---|---|
@@ -210,11 +210,11 @@ Claim test USDC, mETH, and RWA tokens for use on Mantle Sepolia testnet.
 | Yield Vault | Yield accrual + distribution | `VITE_YIELD_VAULT_ADDRESS` |
 | Token Factory | ERC-3643 token deployment | `VITE_TOKEN_FACTORY` |
 | Identity Registry | KYC-bound token permissions | `VITE_IDENTITY_REGISTRY` |
-| Leverage Vault | mETH collateral custody | `VITE_LEVERAGE_VAULT` |
+| Leverage Vault | stARB collateral custody | `VITE_LEVERAGE_VAULT` |
 | Solvency Vault | RWA collateral for credit | `VITE_SOLVENCY_VAULT` |
 | Senior Pool | USDC lending pool | `VITE_SENIOR_POOL` |
 | OAID Registry | Universal credit identity | `VITE_OAID` |
-| Mock mETH | Test mETH token | `VITE_MOCK_METH` |
+| Mock stARB | Test stARB token | `VITE_MOCK_stARB` |
 | USDC | Test USDC | `VITE_USDC_ADDRESS` |
 | Faucet | Token distribution | `VITE_FAUCET` |
 
@@ -230,13 +230,13 @@ Claim test USDC, mETH, and RWA tokens for use on Mantle Sepolia testnet.
 
 /:network/auth                      Wallet login
 /:network/adminAuth                 Admin login
-/:network/faucet                    Test tokens  [Mantle only]
+/:network/faucet                    Test tokens  [arbitrum only]
 
 /:network/marketplace               Asset discovery
 /:network/marketplace/asset/:id     Asset detail + buy
 /:network/marketplace/auction/:id   Auction detail + bid
 
-/:network/trade/asset/:id           Secondary market  [Mantle only]
+/:network/trade/asset/:id           Secondary market  [arbitrum only]
 /:network/portfolio                 User holdings
 /:network/borrow                    Credit / OAID  [feature-gated]
 
@@ -252,8 +252,8 @@ Claim test USDC, mETH, and RWA tokens for use on Mantle Sepolia testnet.
 /:network/admin/payouts             Payout queue
 /:network/admin/settlements         Maturity processing
 
-/marketplace → redirect → /mantle/marketplace  (legacy)
-/auth        → redirect → /mantle/auth         (legacy)
+/marketplace → redirect → /arbitrum/marketplace  (legacy)
+/auth        → redirect → /arbitrum/auth         (legacy)
 ```
 
 ---
@@ -322,7 +322,7 @@ npm run lint       # ESLint
 ### Required `.env` variables
 
 ```
-VITE_MANTLE_API_URL
+VITE_arbitrum_API_URL
 VITE_STELLAR_API_URL
 VITE_WALLETCONNECT_PROJECT_ID
 VITE_FAUCET
@@ -332,7 +332,7 @@ VITE_SECONDARY_MARKET
 VITE_YIELD_VAULT_ADDRESS
 VITE_TOKEN_FACTORY
 VITE_IDENTITY_REGISTRY
-VITE_MOCK_METH
+VITE_MOCK_stARB
 VITE_LEVERAGE_VAULT
 VITE_OAID
 VITE_SOLVENCY_VAULT
@@ -364,12 +364,12 @@ All major features are implemented and marked complete in the documentation:
 - [x] Asset discovery marketplace
 - [x] Uniform-price auction system
 - [x] Secondary P2P orderbook + chart
-- [x] mETH leverage (Mantle-native)
+- [x] stARB leverage (arbitrum-native)
 - [x] Universal Credit / OAID borrowing
 - [x] Issuer tokenization workflow
 - [x] Admin dashboard
 - [x] KYC / identity registry integration
-- [x] Multi-network routing (Mantle + Stellar)
+- [x] Multi-network routing (arbitrum + Stellar)
 - [x] Feature-gated UI per network
 - [x] Test faucet
 
@@ -377,7 +377,7 @@ All major features are implemented and marked complete in the documentation:
 
 ## Directory striuctre 
 
- TOA-Client-Mantle git:(main) ✗ tree ./src/
+ TOA-Client-arbitrum git:(main) ✗ tree ./src/
 ./src/
 ├── App.tsx
 ├── app

@@ -153,7 +153,7 @@ export default function AuthPage() {
   return (
     <div className="w-full">
       <Wavy />
-      <img src="./ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
+      <img src="/ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
       <div className="absolute top-0 left-0 w-full h-full mx-auto">
         <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
           <div className="flex gap-4 flex-col">
@@ -186,7 +186,7 @@ export default function AuthPage() {
             </h1>
 
             <p className="font-inter text-base md:text-lg text-black mb-3 max-w-2xl mx-auto">
-              Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
+              Tokenize and invest in real-world assets, leverage stARB for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
               <span className="font-beau text-xl md:text-2xl font-semibold">Tokenize. Invest. Borrow. Earn.</span> All in one unified execution layer.
             </p>
           </div>

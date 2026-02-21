@@ -30,12 +30,12 @@ const Navbar = () => {
 
           {/* Navigation Links */}
           <nav className="navbar-nav ml-1">
-            <Link
+            {/* <Link
               to={networkPath('/Changelog')}
               className="nav-link underline-animation underline-animation-purple"
             >
               <p className="font-extrabold text-2xl font-beau">Changelog</p>
-            </Link>
+            </Link> */}
 
             <Link to={networkPath('/about')} className="nav-link underline-animation underline-animation-purple">
               <p className="font-extrabold text-2xl font-beau">About</p>
@@ -44,7 +44,7 @@ const Navbar = () => {
               <p className="font-extrabold text-2xl font-beau">How it works</p>
             </Link>
             <a
-              href="https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19"
+              href="https://open-assets-core-proposal.notion.site/Open-Assets-arbitrum-Network-2d5316cd01a780818164c5889beb1a19"
               className="nav-link underline-animation underline-animation-purple"
               target="_blank"
               rel="noopener noreferrer"
