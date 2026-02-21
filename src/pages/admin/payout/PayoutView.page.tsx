@@ -68,9 +68,9 @@ const PayoutViewPage = () => {
 
       console.log('All assets:', allAssets);
 
-      // Filter for LISTED, ENDED, or AUCTION_DECLARED assets
+      // Filter for LISTED, ENDED, PAYOUT_COMPLETE, or AUCTION_DECLARED assets
       const filteredAssets = allAssets.filter((asset: any) =>
-        ['LISTED', 'AUCTION_DECLARED'].includes(asset.status)
+        ['LISTED', 'AUCTION_DECLARED', 'ENDED', 'PAYOUT_COMPLETE'].includes(asset.status)
       );
 
       console.log('Filtered assets for payout:', filteredAssets);
@@ -141,7 +141,7 @@ const PayoutViewPage = () => {
 
       console.log(`Executing payout for asset: ${assetId}`);
 
-      if (assets.find(asset => asset.assetId === assetId)?.status && ['PAYOUT_COMPLETE', 'ENDED'].includes(assets.find(asset => asset.assetId === assetId)?.status || '')) {
+      if (assets.find(asset => asset.assetId === assetId)?.status && ['PAYOUT_COMPLETE'].includes(assets.find(asset => asset.assetId === assetId)?.status || '')) {
         console.log('Payout already executed for this asset.');
         return;
       }
