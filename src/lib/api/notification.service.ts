@@ -1,9 +1,9 @@
 // src/lib/api/notification.service.ts
 
 import BaseService from './base.service';
-import type { 
-  BackendNotification, 
-  NotificationsResponse, 
+import type {
+  BackendNotification,
+  NotificationsResponse,
   UnreadCountResponse,
   NotificationType
 } from '../../types/notification.types';
@@ -404,6 +404,7 @@ class NotificationService extends BaseService {
         'ORDER_ACTIVE',
         'ORDER_CREATED',
         'ORDER_CANCELLED',
+        'TRUSTLINE_APPROVED',
       ],
       ADMIN: ['ASSET_STATUS', 'YIELD_DISTRIBUTED'],
     };

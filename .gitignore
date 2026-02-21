@@ -30,6 +30,8 @@ dist-ssr
 # dependencies
 /node_modules
 
+/scripts/*
+./scripts/
 
 # production
 /build

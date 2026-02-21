@@ -138,11 +138,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const handleNext = () => { if (validateStep()) setCurrentStep(v => v + 1); };
   const handlePrevious = () => setCurrentStep(v => v - 1);
 
-  const tokensToWei = (tokens: string): string => {
-    if (!tokens) return '0';
-    const weiAmount = BigInt(Math.floor(parseFloat(tokens))) * BigInt('1000000000000000000');
-    return weiAmount.toString();
-  };
+
 
   const handleSubmit = async () => {
     if (!validateStep()) return;
@@ -150,11 +146,30 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
     try {
       const data = new FormData();
       if (formData.file) data.append('file', formData.file);
-      ['invoiceNumber', 'faceValue', 'currency', 'issueDate', 'dueDate', 'buyerName', 'industry', 'riskTier', 'assetType', 'minRaisePercentage', 'maxRaisePercentage'].forEach(key => {
-        data.append(key, (formData as any)[key]);
-      });
-      data.append('totalSupply', tokensToWei(formData.totalSupply));
-      data.append('minInvestment', tokensToWei(formData.minInvestment));
+      // Format ALL numeric values to canonical 4-decimal strings
+      const toCanonical = (val: string) => {
+        if (!val || val.trim() === '') return '0.0000';
+        const num = parseFloat(val);
+        return isNaN(num) ? '0.0000' : num.toFixed(4);
+      };
+
+      // Explicitly append fields to control formatting
+      data.append('invoiceNumber', formData.invoiceNumber);
+      data.append('currency', formData.currency);
+      data.append('issueDate', formData.issueDate);
+      data.append('dueDate', formData.dueDate);
+      data.append('buyerName', formData.buyerName);
+      data.append('industry', formData.industry);
+      data.append('riskTier', formData.riskTier);
+      data.append('assetType', formData.assetType);
+
+      // Numeric fields requiring canonical format
+      data.append('faceValue', toCanonical(formData.faceValue));
+      data.append('minRaisePercentage', toCanonical(formData.minRaisePercentage));
+      data.append('maxRaisePercentage', toCanonical(formData.maxRaisePercentage));
+      data.append('totalSupply', toCanonical(formData.totalSupply));
+      data.append('minInvestment', toCanonical(formData.minInvestment));
+
       if (formData.assetType === 'AUCTION') data.append('auctionDuration', formData.auctionDuration);
 
       await assetService.uploadAsset(data);
@@ -247,8 +262,8 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                 <p className="text-[10px] text-slate-400 mt-2 font-geist text-center uppercase tracking-wider">PDF format supported • Max 10MB</p>
               </div>
               <div className="grid grid-cols-2 gap-6">
-                <MinimalInput label="Invoice Number" id="invoiceNumber" value={formData.invoiceNumber} onChange={(v:any) => updateField('invoiceNumber', v)} placeholder="e.g. INV-2024-001" />
-                <MinimalInput label="Face Value" id="faceValue" type="number" value={formData.faceValue} onChange={(v:any) => updateField('faceValue', v)} placeholder="e.g. 50000.00" />
+                <MinimalInput label="Invoice Number" id="invoiceNumber" value={formData.invoiceNumber} onChange={(v: any) => updateField('invoiceNumber', v)} placeholder="e.g. INV-2024-001" />
+                <MinimalInput label="Face Value" id="faceValue" type="number" value={formData.faceValue} onChange={(v: any) => updateField('faceValue', v)} placeholder="e.g. 50000.00" />
                 <div className="space-y-2">
                   <Label className="text-black font-bold text-xs uppercase tracking-widest">Currency</Label>
                   <div className="relative">
@@ -268,7 +283,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                 </div>
                 <MinimalInput label="Issue Date" id="issueDate" type="date" value={formData.issueDate} onChange={(v: any) => updateField('issueDate', v)} max={today} />
                 <div className="col-span-2">
-                  <MinimalInput label="Due Date" id="dueDate" type="date" value={formData.dueDate} onChange={(v:any) => updateField('dueDate', v)} min={today} />
+                  <MinimalInput label="Due Date" id="dueDate" type="date" value={formData.dueDate} onChange={(v: any) => updateField('dueDate', v)} min={today} />
                 </div>
               </div>
             </div>
@@ -276,7 +291,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
           {currentStep === 2 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <MinimalInput label="Buyer Name" id="buyerName" value={formData.buyerName} onChange={(v:any) => updateField('buyerName', v)} placeholder="e.g. Acme Corporation Global" />
+              <MinimalInput label="Buyer Name" id="buyerName" value={formData.buyerName} onChange={(v: any) => updateField('buyerName', v)} placeholder="e.g. Acme Corporation Global" />
               <div className="space-y-2">
                 <Label className="text-black font-bold text-xs uppercase tracking-widest">Industry</Label>
                 <div className="relative">
@@ -350,31 +365,31 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                   <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Fundraising Limits (%)</h4>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
-                  <MinimalInput 
-                  label="Floor %" 
-                  id="minRaise" 
-                  type="number" 
-                  value={formData.minRaisePercentage} 
-                  onChange={(v: any) => {
-                    const numValue = Math.min(95, Math.max(0, parseInt(v) || 0));
-                    updateField('minRaisePercentage', numValue.toString());
-                  }}
-                  placeholder="Min 0"
-                  max="95"
-                  min="0"
+                  <MinimalInput
+                    label="Floor %"
+                    id="minRaise"
+                    type="number"
+                    value={formData.minRaisePercentage}
+                    onChange={(v: any) => {
+                      const numValue = Math.min(95, Math.max(0, parseInt(v) || 0));
+                      updateField('minRaisePercentage', numValue.toString());
+                    }}
+                    placeholder="Min 0"
+                    max="95"
+                    min="0"
                   />
-                  <MinimalInput 
-                  label="Cap %" 
-                  id="maxRaise" 
-                  type="number" 
-                  value={formData.maxRaisePercentage} 
-                  onChange={(v: any) => {
-                    const numValue = Math.min(95, Math.max(0, parseInt(v) || 0));
-                    updateField('maxRaisePercentage', numValue.toString());
-                  }}
-                  max="95"
-                  min="0"
-                  placeholder="Max 95" 
+                  <MinimalInput
+                    label="Cap %"
+                    id="maxRaise"
+                    type="number"
+                    value={formData.maxRaisePercentage}
+                    onChange={(v: any) => {
+                      const numValue = Math.min(95, Math.max(0, parseInt(v) || 0));
+                      updateField('maxRaisePercentage', numValue.toString());
+                    }}
+                    max="95"
+                    min="0"
+                    placeholder="Max 95"
                   />
                 </div>
               </div>

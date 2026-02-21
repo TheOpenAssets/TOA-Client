@@ -1,12 +1,17 @@
 // src/pages/marketplace/auction/AuctionDetails.page.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { parseTokenAmount } from '../../../lib/utils/formatters';
+// import { useAccount } from 'wagmi'; // Removed
 import { Clock } from 'lucide-react';
+import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 import { useMarketplaceStore } from '../../../stores/marketplace.store';
 import { useSubmitBid } from '../../../hooks/useAuctionContracts';
 import { contractService } from '../../../lib/api/contract.service';
 import { marketplaceService } from '../../../lib/api/marketplace.service';
+import { trustlineService } from '../../../lib/api/trustline.service';
+import { stellarService } from '../../../lib/api/stellar.service';
 import { Button } from '../../../components/ui/button';
 import { ShaderAnimation } from '../../../components/ui/shimmer-lines';
 import { PageLoader } from '../../../components/ui/page-loader';
@@ -14,13 +19,27 @@ import { PageLoader } from '../../../components/ui/page-loader';
 const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const navigate = useNavigate();
-  const { address } = useAccount();
+  const { address } = useAuthStrategy();
+  const { networkType, networkPath } = useNetwork();
+  const isEvm = networkType === 'mantle';
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
 
   const [bidAmount, setBidAmount] = useState('');
   const [pricePerToken, setPricePerToken] = useState('');
   const [usdcBalance, setUsdcBalance] = useState('0');
   const [hasAlreadyBidded, setHasAlreadyBidded] = useState(false);
+
+  // Trustline State
+  const [isCheckingTrust, setIsCheckingTrust] = useState(false);
+  const [needsTrustline, setNeedsTrustline] = useState(false);
+  const [isAddingTrust, setIsAddingTrust] = useState(false);
+  const [trustlineError, setTrustlineError] = useState<string | null>(null);
+  const [trustlineStatus, setTrustlineStatus] = useState<'APPROVED' | 'PENDING' | 'NOT_REQUESTED' | 'checking' | null>(null);
+
+  // Stellar Bidding State
+  const [isStellarSubmitting, setIsStellarSubmitting] = useState(false);
+  const [stellarStatus, setStellarStatus] = useState<string | null>(null);
+  const [stellarError, setStellarError] = useState<string | null>(null);
 
   const { submitBid, status, error: bidError, isLoading, reset } = useSubmitBid();
 
@@ -40,6 +59,7 @@ const AuctionDetailsPage = () => {
     }
     if (address) {
       const fetchBalance = async () => {
+        if (!isEvm) return; // Only fetch USDC balance on EVM
         try {
           const balance = await contractService.checkUSDCBalance(address);
           setUsdcBalance(balance);
@@ -52,6 +72,76 @@ const AuctionDetailsPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId, address]);
+
+  // Check Stellar Trustline
+  const checkStellarTrustline = useCallback(async () => {
+    if (isEvm || !address || !asset?.assetId) return;
+
+    try {
+      setIsCheckingTrust(true);
+      setTrustlineError(null);
+
+      console.log(`Checking trustline eligibility for asset ${asset.assetId}...`);
+      const response = await trustlineService.checkAbilityToBuy(asset.assetId);
+      console.log('Trustline capability response:', response);
+
+      setTrustlineStatus(response.trustlineStatus);
+      // If NOT_REQUESTED or PENDING, we need trustline (or approval)
+      // If APPROVED, we don't need trustline action
+      setNeedsTrustline(!response.canBuy);
+
+      if (!response.canBuy && response.reason) {
+        console.log('Cannot buy reason:', response.reason);
+      }
+
+    } catch (err) {
+      console.error('Error checking trustline:', err);
+      // Fallback: check on-chain directly if backend fails? 
+      // For now, let's stick to backend as source of truth for "permission"
+    } finally {
+      setIsCheckingTrust(false);
+    }
+  }, [isEvm, address, asset]);
+
+  useEffect(() => {
+    checkStellarTrustline();
+  }, [checkStellarTrustline]);
+
+  const handleAddTrustline = async () => {
+    if (!address || !asset?.token?.address || !asset?.assetId) return;
+
+    try {
+      setIsAddingTrust(true);
+      setTrustlineError(null);
+      const [code, issuer] = asset.token.address.split(':');
+
+      if (!code || !issuer) {
+        throw new Error('Invalid token address format');
+      }
+
+      console.log(`Adding trustline on-chain for ${code}...`);
+      // 1. Execute on-chain transaction
+      const txHash = await stellarService.addTrustline(address, code, issuer);
+      console.log('Trustline added on-chain. Hash:', txHash);
+
+      // 2. Notify backend
+      console.log('Notifying backend...');
+      await trustlineService.notifyTrustlineAdded({
+        txHash: txHash,
+        assetId: asset.assetId,
+        network: 'stellar',
+      });
+
+      // 3. Re-check status
+      await checkStellarTrustline();
+
+    } catch (err: any) {
+      console.error('Failed to add trustline:', err);
+      setTrustlineError(err.message || 'Failed to add trustline');
+    } finally {
+      setIsAddingTrust(false);
+    }
+  };
 
   // Check for existing bids
   useEffect(() => {
@@ -126,12 +216,88 @@ const AuctionDetailsPage = () => {
     }
   };
 
+  const getStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Trustline Pending...';
+      case 'NOT_REQUESTED':
+      default:
+        return 'Add Trustline';
+    }
+  };
+
+  const submitStellarBid = async (params: { assetId: string, tokenAmount: string, pricePerToken: string }) => {
+    if (!address || !asset?.token?.address) {
+      setStellarError("Wallet not connected or asset token unavailable");
+      return;
+    }
+
+    try {
+      setIsStellarSubmitting(true);
+      setStellarStatus('Submitting bid to Stellar network...');
+      setStellarError(null);
+
+      const [code] = asset.token.address.split(':');
+
+      // 1. Submit on-chain
+      const result = await stellarService.submitBid(
+        address,
+        code,
+        params.tokenAmount,
+        params.pricePerToken
+      );
+
+      setStellarStatus('Bid submitted! Waiting for confirmation (6s)...');
+      console.log('Stellar bid tx:', result.txHash);
+
+      const tokenAmountFormatted = parseFloat(params.tokenAmount).toFixed(4);
+      const priceFormatted = parseFloat(params.pricePerToken).toFixed(4);
+
+      // Wait 6 seconds for propagation
+      await new Promise(r => setTimeout(r, 6000));
+
+      setStellarStatus('Notifying backend...');
+
+      await marketplaceService.notifyBidPlaced({
+        txHash: result.txHash,
+        assetId: params.assetId,
+        tokenAmount: tokenAmountFormatted,
+        price: priceFormatted,
+        network: 'stellar'
+      });
+
+      setStellarStatus('Bid placed successfully! 🎉');
+
+      // Refresh after delay
+      setTimeout(() => {
+        navigate(networkPath('/portfolio'));
+      }, 2000);
+
+    } catch (err: any) {
+      console.error('Stellar bid error:', err);
+      setStellarError(err.message || 'Failed to place Stellar bid');
+      setStellarStatus(null);
+    } finally {
+      setIsStellarSubmitting(false);
+    }
+  };
+
   const handlePlaceBid = async () => {
     if (!assetId || !bidAmount || !pricePerToken) {
       alert('Please fill in all bid fields');
       return;
     }
 
+    if (!isEvm) {
+      await submitStellarBid({
+        assetId,
+        tokenAmount: bidAmount,
+        pricePerToken: pricePerToken
+      });
+      return;
+    }
+
+    // EVM Flow
     await submitBid({
       assetId: assetId,
       tokenAmount: bidAmount,
@@ -162,7 +328,7 @@ const AuctionDetailsPage = () => {
           </p>
 
           <Button
-            onClick={() => navigate('/marketplace')}
+            onClick={() => navigate(networkPath('/marketplace'))}
             variant="outline"
             size="lg"
             className="bg-black/20 border-white/30 text-white hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md min-w-[200px]"
@@ -180,7 +346,7 @@ const AuctionDetailsPage = () => {
         <div className="text-center">
           <div className="text-lg text-foreground mb-4">Auction not found</div>
           <button
-            onClick={() => navigate('/marketplace')}
+            onClick={() => navigate(networkPath('/marketplace'))}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-geist text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Back to Marketplace
@@ -203,13 +369,13 @@ const AuctionDetailsPage = () => {
           src="/ALogo-removebg-preview.svg"
           alt="Logo"
           className="h-16 w-auto object-contain cursor-pointer"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(networkPath('/'))}
         />
         <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
           {/* Center: Navigation */}
           <nav className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/portfolio')}
+              onClick={() => navigate(networkPath('/portfolio'))}
               className="font-geist border border-gray-200 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
             >
               Portfolio
@@ -244,7 +410,7 @@ const AuctionDetailsPage = () => {
               </div>
             ) : (
               <button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate(networkPath('/auth'))}
                 className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-geist text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
               >
                 Sign Up / Log In
@@ -283,23 +449,23 @@ const AuctionDetailsPage = () => {
                 <div>
                   <p className="font-geist text-xs text-[#6B7280] mb-1">Total Supply</p>
                   <p className="font-geist text-lg font-medium text-[#111111]">
-                    {asset.tokenParams.totalSupply ? ((Number(asset.tokenParams.totalSupply) / 1e18).toLocaleString()) : '0'} tokens
+                    {asset.tokenParams.totalSupply ? parseTokenAmount(asset.tokenParams.totalSupply, 18).toLocaleString() : '0'} tokens
                   </p>
                 </div>
                 <div>
                   <p className="font-geist text-xs text-[#6B7280] mb-1">{isAuctionAnnounced ? 'Clearing Price' : 'Reserve Price'}</p>
                   <p className={`font-geist text-lg font-medium ${isAuctionAnnounced ? 'text-green-600' : 'text-[#111111]'}`}>
                     ${isAuctionAnnounced && asset.listing?.clearingPrice
-                      ? (Number(asset.listing.clearingPrice) / 1e6).toFixed(2)
+                      ? parseTokenAmount(asset.listing.clearingPrice, 6).toFixed(2)
                       : asset.listing?.reservePrice
-                        ? (Number(asset.listing.reservePrice) / 1e6).toFixed(2)
+                        ? parseTokenAmount(asset.listing.reservePrice, 6).toFixed(2)
                         : '0.00'}
                   </p>
                 </div>
                 <div>
                   <p className="font-geist text-xs text-[#6B7280] mb-1">Bid Range</p>
                   <p className="font-geist text-lg font-medium text-[#111111]">
-                    ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(2) : '0.00'}
+                    ${asset.listing?.priceRange?.min ? parseTokenAmount(asset.listing.priceRange.min, 6).toFixed(2) : '0.00'} - ${asset.listing?.priceRange?.max ? parseTokenAmount(asset.listing.priceRange.max, 6).toFixed(2) : '0.00'}
                   </p>
                 </div>
               </div>
@@ -319,7 +485,7 @@ const AuctionDetailsPage = () => {
                           minute: '2-digit'
                         }) : 'N/A'}.
                         {asset.listing?.clearingPrice && Number(asset.listing.clearingPrice) > 0
-                          ? ` Final clearing price: $${(Number(asset.listing.clearingPrice) / 1e6).toFixed(2)} per token.`
+                          ? ` Final clearing price: $${parseTokenAmount(asset.listing.clearingPrice, 6).toFixed(2)} per token.`
                           : ' No tokens were sold.'}
                       </p>
                     </div>
@@ -394,8 +560,8 @@ const AuctionDetailsPage = () => {
                     placeholder="0"
                     disabled={isAuctionAnnounced || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
                     value={bidAmount}
-                    min={asset.tokenParams?.minInvestment ? (Number(asset.tokenParams.minInvestment) / 1e18).toString() : '0'}
-                    max={asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toString() : '0'}
+                    min={asset.tokenParams?.minInvestment ? parseTokenAmount(asset.tokenParams.minInvestment, 18).toString() : '0'}
+                    max={asset.tokenParams?.totalSupply ? parseTokenAmount(asset.tokenParams.totalSupply, 18).toString() : '0'}
                     step="0.1"
                     onChange={(e) => {
                       const value = e.target.value;
@@ -417,8 +583,8 @@ const AuctionDetailsPage = () => {
                     onBlur={() => {
                       if (bidAmount && parseFloat(bidAmount) > 0) {
                         const numValue = parseFloat(bidAmount);
-                        const available = asset.tokenParams?.totalSupply ? Number(asset.tokenParams.totalSupply) / 1e18 : 0;
-                        const minBid = asset.tokenParams?.minInvestment ? Number(asset.tokenParams.minInvestment) / 1e18 : 0;
+                        const available = parseTokenAmount(asset.tokenParams?.totalSupply, 18);
+                        const minBid = parseTokenAmount(asset.tokenParams?.minInvestment, 18);
                         const effectiveMin = Math.min(minBid, available);
 
                         if (numValue < effectiveMin) {
@@ -432,8 +598,8 @@ const AuctionDetailsPage = () => {
                   />
                   <p className="font-geist text-xs text-[#6B7280] mt-2">
                     Min: {asset.tokenParams?.minInvestment && asset.tokenParams?.totalSupply
-                      ? Math.min(Number(asset.tokenParams.minInvestment) / 1e18, Number(asset.tokenParams.totalSupply) / 1e18).toFixed(2)
-                      : '0.00'} · Available: {asset.tokenParams?.totalSupply ? (Number(asset.tokenParams.totalSupply) / 1e18).toFixed(2) : '0.00'}
+                      ? Math.min(parseTokenAmount(asset.tokenParams.minInvestment, 18), parseTokenAmount(asset.tokenParams.totalSupply, 18)).toFixed(2)
+                      : '0.00'} · Available: {asset.tokenParams?.totalSupply ? parseTokenAmount(asset.tokenParams.totalSupply, 18).toFixed(2) : '0.00'}
                   </p>
                 </div>
 
@@ -451,11 +617,17 @@ const AuctionDetailsPage = () => {
                   </div>
                   <input
                     type="number"
-                    placeholder="0.00"
+                    placeholder="0.0000"
                     value={pricePerToken}
                     disabled={isAuctionAnnounced || !!(asset.listing?.scheduledEndTime && new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime())}
-                    min={asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toString() : '0'}
-                    max={asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toString() : '0'}
+                    min={(() => {
+                      const val = parseTokenAmount(asset.listing?.priceRange?.min || '0', 6);
+                      return val.toString();
+                    })()}
+                    max={(() => {
+                      const val = parseTokenAmount(asset.listing?.priceRange?.max || '0', 6);
+                      return val.toString();
+                    })()}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === '') {
@@ -476,8 +648,8 @@ const AuctionDetailsPage = () => {
                     onBlur={() => {
                       if (pricePerToken && parseFloat(pricePerToken) > 0) {
                         const numValue = parseFloat(pricePerToken);
-                        const minPrice = asset.listing?.priceRange?.min ? Number(asset.listing.priceRange.min) / 1e6 : 0;
-                        const maxPrice = asset.listing?.priceRange?.max ? Number(asset.listing.priceRange.max) / 1e6 : Infinity;
+                        const minPrice = parseTokenAmount(asset.listing?.priceRange?.min || '0', 6);
+                        const maxPrice = parseTokenAmount(asset.listing?.priceRange?.max || '0', 6) || Infinity;
 
                         if (numValue < minPrice) {
                           setPricePerToken(minPrice.toString());
@@ -489,15 +661,21 @@ const AuctionDetailsPage = () => {
                     className="w-full border-none text-2xl font-medium text-[#111111] p-0 h-auto bg-transparent focus:outline-none focus:ring-0"
                   />
                   <p className="font-geist text-xs text-[#6B7280] mt-2">
-                    Range: ${asset.listing?.priceRange?.min ? (Number(asset.listing.priceRange.min) / 1e6).toFixed(4) : '0.0000'} - ${asset.listing?.priceRange?.max ? (Number(asset.listing.priceRange.max) / 1e6).toFixed(3) : '0.000'}
+                    Range: ${(() => {
+                      const val = parseTokenAmount(asset.listing?.priceRange?.min || '0', 6);
+                      return val.toFixed(4);
+                    })()} - ${(() => {
+                      const val = parseTokenAmount(asset.listing?.priceRange?.max || '0', 6);
+                      return val.toFixed(4);
+                    })()}
                   </p>
                 </div>
 
                 {/* Error Message */}
-                {bidError && (
+                {(bidError || trustlineError || stellarError) && (
                   <div className="p-3 bg-red-50 rounded-2xl relative">
                     <button
-                      onClick={reset}
+                      onClick={() => { reset(); setTrustlineError(null); setStellarError(null); }}
                       className="absolute top-2 right-2 text-red-400 hover:text-red-600 transition-colors"
                       title="Dismiss"
                     >
@@ -507,7 +685,7 @@ const AuctionDetailsPage = () => {
                       <span className="text-red-500 text-lg mt-0.5">⚠️</span>
                       <div>
                         <p className="font-geist text-sm font-medium text-red-800 mb-1">Transaction Failed</p>
-                        <p className="font-geist text-xs text-red-600">{bidError}</p>
+                        <p className="font-geist text-xs text-red-600">{bidError || trustlineError || stellarError}</p>
 
                       </div>
                     </div>
@@ -515,22 +693,26 @@ const AuctionDetailsPage = () => {
                 )}
 
                 {/* Status/Success Message */}
-                {status && !bidError && (
-                  <div className={`p-3 rounded-2xl ${status.includes('success') || status.includes('🎉')
+                {(status || stellarStatus) && !(bidError || stellarError) && (
+                  <div className={`p-3 rounded-2xl ${(status && (status.includes('success') || status.includes('🎉'))) ||
+                    (stellarStatus && (stellarStatus.includes('success') || stellarStatus.includes('🎉')))
                     ? 'bg-green-50'
                     : 'bg-blue-50'
                     }`}>
                     <div className="flex items-center gap-2">
-                      {status.includes('success') || status.includes('🎉') ? (
-                        <span className="text-green-600 text-sm">✓</span>
-                      ) : (
-                        <div className="animate-spin h-3 w-3 border-2 border-gray-600 border-t-transparent rounded-full"></div>
-                      )}
-                      <p className={`font-geist text-sm ${status.includes('success') || status.includes('🎉')
+                      {
+                        (status && (status.includes('success') || status.includes('🎉'))) ||
+                          (stellarStatus && (stellarStatus.includes('success') || stellarStatus.includes('🎉'))) ? (
+                          <span className="text-green-600 text-sm">✓</span>
+                        ) : (
+                          <div className="animate-spin h-3 w-3 border-2 border-gray-600 border-t-transparent rounded-full"></div>
+                        )}
+                      <p className={`font-geist text-sm ${(status && (status.includes('success') || status.includes('🎉'))) ||
+                        (stellarStatus && (stellarStatus.includes('success') || stellarStatus.includes('🎉')))
                         ? 'text-green-800 font-medium'
                         : 'text-gray-800'
                         }`}>
-                        {status}
+                        {status || stellarStatus}
                       </p>
                     </div>
                   </div>
@@ -545,20 +727,24 @@ const AuctionDetailsPage = () => {
                         ${(parseFloat(bidAmount) * parseFloat(pricePerToken)).toFixed(2)} USDC
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-geist text-xs text-[#6B7280]">Your Balance</span>
-                      <span className="font-geist text-sm font-medium text-[#111111]">
-                        ${parseFloat(usdcBalance).toFixed(2)} USDC
-                      </span>
-                    </div>
+                    {!isEvm ? null : (
+                      <div className="flex items-center justify-between">
+                        <span className="font-geist text-xs text-[#6B7280]">Your Balance</span>
+                        <span className="font-geist text-sm font-medium text-[#111111]">
+                          ${parseFloat(usdcBalance).toFixed(2)} USDC
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Place Bid / Retry Button */}
-                {bidError ? (
+                {/* Place Bid / Retry Button / Add Trustline */}
+                {bidError || stellarError ? (
                   <button
                     onClick={() => {
                       reset();
+                      setStellarError(null);
+                      setStellarStatus(null);
                       handlePlaceBid();
                     }}
                     className="w-full bg-black text-white rounded-xl h-14 text-base font-medium hover:bg-gray-900 transition-colors flex items-center justify-center gap-2"
@@ -566,40 +752,79 @@ const AuctionDetailsPage = () => {
                     <span>🔄</span>
                     <span>Try Again</span>
                   </button>
+                ) : !isEvm && isCheckingTrust ? (
+                  <Button
+                    disabled
+                    className="w-full bg-gray-100 text-gray-400 rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                      <span>Checking Trustline...</span>
+                    </span>
+                  </Button>
+                ) : !isEvm && needsTrustline ? (
+                  <div className="space-y-3">
+                    {trustlineStatus === 'PENDING' ? (
+                      <div className="w-full bg-yellow-50 text-yellow-800 rounded-xl p-4 border border-yellow-200 text-center">
+                        <p className="font-medium">Trustline Approval Pending</p>
+                        <p className="text-sm mt-1">Your request is being reviewed by an admin.</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={handleAddTrustline}
+                          disabled={isAddingTrust || isCheckingTrust}
+                          className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-900 transition-colors"
+                        >
+                          {isAddingTrust ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <div className="animate-spin h-4 w-4 border-2 border-white/70 border-t-transparent rounded-full"></div>
+                              <span>Adding Trustline...</span>
+                            </span>
+                          ) : (
+                            getStatusLabel(trustlineStatus)
+                          )}
+                        </Button>
+                        <p className="text-xs text-center text-gray-500">
+                          You must establish a trustline for this asset before bidding.
+                        </p>
+                      </>
+                    )}
+                  </div>
                 ) : (
                   <Button
                     onClick={handlePlaceBid}
                     disabled={
-                      isLoading ||
-                      !address ||
-                      hasAlreadyBidded ||
+                      isLoading || isStellarSubmitting ||
+                      (!isEvm && !address) || // Allow Stellar if trustline OK
+                      (isEvm && (!address || hasAlreadyBidded ||
+                        parseFloat(bidAmount || '0') * parseFloat(pricePerToken || '0') > parseFloat(usdcBalance))) ||
                       isAuctionAnnounced || // Disable if auction is announced
                       !!(
                         asset.listing?.scheduledEndTime &&
                         new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
-                      ) ||
-                      (parseFloat(bidAmount || '0') * parseFloat(pricePerToken || '0') > parseFloat(usdcBalance) &&
-                        parseFloat(bidAmount || '0') > 0 &&
-                        parseFloat(pricePerToken || '0') > 0)
+                      )
                     }
                     className="w-full bg-black text-white rounded-xl h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading
+                    {isLoading || isStellarSubmitting
                       ? 'Processing...'
                       : !address
                         ? 'Connect Wallet'
-                        : isAuctionAnnounced // Display 'Auction Ended' if announced (check this FIRST)
+                        : isAuctionAnnounced
                           ? 'Auction Ended'
                           : asset.listing?.scheduledEndTime &&
                             new Date(asset.listing.scheduledEndTime).getTime() <= new Date().getTime()
                             ? 'Auction Ended'
-                            : hasAlreadyBidded // Display 'Already Bidded' if true (check this AFTER auction ended)
+                            : hasAlreadyBidded
                               ? 'Already Bidded'
-                              : bidAmount &&
+                              : isEvm && bidAmount &&
                                 pricePerToken &&
                                 parseFloat(bidAmount) * parseFloat(pricePerToken) > parseFloat(usdcBalance)
                                 ? 'Insufficient Balance'
-                                : 'Place Bid'}
+                                : !isEvm
+                                  ? 'Place Bid (Stellar)'
+                                  : 'Place Bid'}
                   </Button>
                 )}
               </div>

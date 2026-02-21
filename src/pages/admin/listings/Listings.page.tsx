@@ -83,7 +83,8 @@ const ListingsPage = () => {
     try {
       const info = await adminService.getAuctionClearingPriceInfo(asset.assetId);
       setClearingInfo(info);
-      setClearingPrice( (Number(info.suggestedPrice) / 1e6).toFixed(2) );
+      const sp = parseFloat(info.suggestedPrice);
+      setClearingPrice((sp > 1000 ? sp / 1e6 : sp).toString());
     } catch (error) {
       toastError('Failed to load auction data', 'Could not load bidding data for this auction.');
     } finally {
@@ -99,22 +100,64 @@ const ListingsPage = () => {
 
     setIsEndingAuction(true);
     try {
-      const clearingPriceWei = ethers.parseUnits(clearingPrice, 6).toString();
+      const isStellar = selectedAsset.token?.address && !selectedAsset.token.address.startsWith('0x');
 
-      info('Ending auction...', 'This may take a moment. The backend is processing the on-chain transaction.');
+      if (isStellar) {
+        // Stellar Path
+        const [code, issuer] = selectedAsset.token.address.split(':');
+        if (!code || !issuer) throw new Error('Invalid Stellar token address format');
 
-      const result = await adminService.endAuctionOnChain(selectedAsset.assetId, clearingPriceWei);
+        info('Ending Stellar Auction...', 'Please sign the transactions in your wallet.');
 
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to end auction.');
+        // 1. Execute on-chain (Client-side signing via Freighter)
+        // We assume the connected wallet is the admin/issuer
+        // Need to import stellarService dynamically or statically? It's already available in lib
+        const { stellarService } = await import('../../../lib/api/stellar.service');
+        const { isConnected, getAddress } = await import('@stellar/freighter-api');
+
+        if (!(await isConnected())) {
+          throw new Error('Freighter wallet not connected');
+        }
+        const adminAddress = await getAddress();
+        if (!adminAddress || !adminAddress.address) throw new Error('Could not get admin address');
+
+        const result = await stellarService.endAuction(
+          adminAddress.address,
+          code,
+          issuer,
+          selectedAsset.tokenParams.totalSupply || '0', // Full supply must be in contract
+          clearingPrice
+        );
+
+        // 2. Notify Backend
+        info('Syncing status...', 'Notifying backend of auction end.');
+        await adminService.notifyAuctionEnded(
+          selectedAsset.assetId,
+          parseFloat(clearingPrice).toFixed(4), // Pass canonical 4-decimal string
+          result.txHash
+        );
+
+        success('Auction Ended Successfully', `Auction cleared on Stellar! TX: ${result.txHash.slice(0, 10)}...`);
+
+      } else {
+        // EVM Path (Backend handles signing)
+        const canonicalClearingPrice = parseFloat(clearingPrice).toFixed(4);
+        info('Ending auction...', 'This may take a moment. The backend is processing the on-chain transaction.');
+
+        const result = await adminService.endAuctionOnChain(selectedAsset.assetId, canonicalClearingPrice);
+
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to end auction.');
+        }
+
+        success('Auction Ended Successfully', `${selectedAsset.metadata.invoiceNumber} has been successfully ended. TX: ${result.transactionHash.slice(0, 10)}...`);
       }
-
-      success('Auction Ended Successfully', `${selectedAsset.metadata.invoiceNumber} has been successfully ended. TX: ${result.transactionHash.slice(0,10)}...`);
 
       setIsModalOpen(false);
       fetchAssets();
 
     } catch (err: unknown) {
+      console.error('End auction error:', err);
       const error = err as Error;
       toastError('Failed to End Auction', error.message || 'An unknown error occurred.');
     } finally {
@@ -187,9 +230,8 @@ const ListingsPage = () => {
           <tbody>
             {assets.length > 0 ? (
               assets.map((asset, index) => (
-                <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                }`}>
+                <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                  }`}>
                   <td className="px-6 py-4">
                     <div className="font-gellix text-sm font-semibold text-foreground">{asset.metadata.invoiceNumber}</div>
                     <div className="font-gellix text-xs text-foreground/60">{asset.assetId}</div>
@@ -213,10 +255,10 @@ const ListingsPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {asset.assetType === 'AUCTION' && (asset.status === 'ENDED'  || asset.status === 'AUCTION_DECLARED') ? (
+                    {asset.assetType === 'AUCTION' && (asset.status === 'ENDED' || asset.status === 'AUCTION_DECLARED') ? (
                       asset.listing?.clearingPrice ? (
                         <Badge variant="secondary" className="bg-green-100 text-green-700">
-                          Announced: ${asset.listing.clearingPrice ? (parseFloat(asset.listing.clearingPrice) / 1e6).toFixed(2) : 'N/A'}
+                          Announced: ${asset.listing.clearingPrice ? (() => { const cp = parseFloat(asset.listing.clearingPrice); return (cp > 1000 ? cp / 1e6 : cp).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }); })() : 'N/A'}
                         </Badge>
                       ) : (
                         <Button size="sm" onClick={() => handleEndAuctionClick(asset)} className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -255,17 +297,18 @@ const ListingsPage = () => {
                 <Input
                   id="clearing-price"
                   type="number"
+                  step="any"
                   value={clearingPrice}
                   onChange={(e) => setClearingPrice(e.target.value)}
                   className="col-span-3"
                   placeholder="e.g., 0.85"
                 />
               </div>
-              {clearingInfo && <p className="font-gellix text-xs text-foreground/60 mt-1">Suggested: ${(Number(clearingInfo.suggestedPrice) / 1e6).toFixed(2)}</p>}
+              {clearingInfo && <p className="font-gellix text-xs text-foreground/60 mt-1">Suggested: ${(() => { const sp = parseFloat(clearingInfo.suggestedPrice); return (sp > 1000 ? sp / 1e6 : sp).toFixed(4); })()}</p>}
             </div>
             {isLoadingInfo ? (
               <div className="col-span-2 flex items-center justify-center h-48">
-                  <PageLoader text='' />
+                <PageLoader text='' />
               </div>
             ) : clearingInfo && (
               <div className="col-span-2 space-y-4">
@@ -275,13 +318,19 @@ const ListingsPage = () => {
 
                 <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
                   <h4 className="font-gellix font-semibold">All Bids</h4>
-                  {clearingInfo.allBids.map((bid, i) => (
-                    <div key={i} className="font-gellix text-xs flex justify-between">
-                      <span>{bid.bidder.slice(0, 10)}...</span>
-                      <span>{(Number(bid.tokenAmount) / 1e18).toLocaleString()} tokens</span>
-                      <span className="font-mono">${(Number(bid.price) / 1e6).toFixed(2)}</span>
-                    </div>
-                  ))}
+                  {clearingInfo.allBids.map((bid, i) => {
+                    const amount = parseFloat(bid.tokenAmount);
+                    const canonicalAmount = amount > 1e9 ? amount / 1e18 : amount;
+                    const price = parseFloat(bid.price);
+                    const canonicalPrice = price > 1000 ? price / 1e6 : price;
+                    return (
+                      <div key={i} className="font-gellix text-xs flex justify-between">
+                        <span>{bid.bidder.slice(0, 10)}...</span>
+                        <span>{canonicalAmount.toLocaleString()} tokens</span>
+                        <span className="font-mono">${canonicalPrice.toFixed(4)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

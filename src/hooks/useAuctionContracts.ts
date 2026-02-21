@@ -4,6 +4,10 @@
 
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi';
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useNetwork } from '../lib/network/NetworkContext';
+import freighterApi, { isConnected, signTransaction, setAllowed } from '@stellar/freighter-api';
+import * as StellarSdk from '@stellar/stellar-sdk';
+import { assetService } from '../lib/api/asset.service';
 import {
   CONTRACTS,
   USDC_ABI,
@@ -421,6 +425,7 @@ export function useSubmitBid() {
  */
 export function useSettleBid() {
   const { address } = useAccount();
+  const { networkType } = useNetwork();
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -482,10 +487,6 @@ export function useSettleBid() {
 
   const settleBid = useCallback(
     async (params: BidSettlementParams) => {
-      if (!address) {
-        throw new Error('Wallet not connected');
-      }
-
       // Clear previous errors
       setError(null);
       setIsLoading(true);
@@ -496,7 +497,7 @@ export function useSettleBid() {
 
       // Set a timeout to prevent infinite loading (30 seconds)
       timeoutRef.current = setTimeout(() => {
-        if (isLoading && !isSuccess) {
+        if (isLoading && !isSuccess && networkType !== 'stellar') {
           console.error('❌ Settlement transaction timeout');
           setError('Transaction timeout. Please check your wallet and try again.');
           setStatus('');
@@ -506,6 +507,142 @@ export function useSettleBid() {
       }, 30000);
 
       try {
+        if (networkType === 'stellar') {
+          if (!(await isConnected())) {
+            throw new Error("Freighter wallet not found");
+          }
+          await setAllowed();
+
+          const { address: stellarAddress } = await freighterApi.getAddress();
+          if (!stellarAddress) throw new Error("Could not get wallet address");
+
+          const primaryMarketId = import.meta.env.VITE_STELLAR_PRIMARY_MARKET || "CB2N3N2TDF47NTARJ6JRUMYX434GSP2HLI5N5RTVJKOX4NL7NZYMBZIK";
+          const HORIZON_URL = import.meta.env.VITE_STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org';
+          const RPC_URL = import.meta.env.VITE_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
+          const NETWORK_PASSPHRASE = import.meta.env.VITE_STELLAR_NETWORK_PASSPHRASE || 'Test SDF Network ; September 2015';
+
+          // Fetch Asset details to get assetCode
+          setStatus('Fetching asset details...');
+          const assetDetails: any = await assetService.getAssetById(params.assetId);
+          if (!assetDetails || !assetDetails.token || !assetDetails.token.address) {
+            throw new Error(`Asset not found or no token deployed for ${params.assetId}`);
+          }
+          const assetCode = assetDetails.token.address.split(':')[0];
+
+          setStatus('Simulating settlement...');
+          const horizonServer = new StellarSdk.Horizon.Server(HORIZON_URL);
+          const source = await horizonServer.loadAccount(stellarAddress);
+          const contract = new StellarSdk.Contract(primaryMarketId);
+
+          const txBuilder = new StellarSdk.TransactionBuilder(source, {
+            fee: StellarSdk.BASE_FEE,
+            networkPassphrase: NETWORK_PASSPHRASE,
+          }).addOperation(
+            contract.call(
+              'settle_bid',
+              new StellarSdk.Address(stellarAddress).toScVal(), // caller
+              StellarSdk.nativeToScVal(assetCode, { type: 'string' }), // asset_code
+              StellarSdk.nativeToScVal(BigInt(params.bidIndex), { type: 'u64' }) // bid_index
+            )
+          );
+
+          const tx = txBuilder.setTimeout(30).build();
+          const rpcServer = new StellarSdk.rpc.Server(RPC_URL);
+          const simulation = await rpcServer.simulateTransaction(tx);
+
+          if (!StellarSdk.rpc.Api.isSimulationSuccess(simulation)) {
+            throw new Error(`Simulation failed: ${(simulation as any).error || 'Unknown error'}`);
+          }
+
+          setStatus('Awaiting signature...');
+          const assembled = StellarSdk.rpc.assembleTransaction(tx, simulation).build();
+          const signed = await signTransaction(assembled.toXDR(), { networkPassphrase: NETWORK_PASSPHRASE });
+          if (!signed) throw new Error("User denied signature");
+
+          setStatus('Submitting to Stellar network...');
+          const signedTx = new StellarSdk.Transaction(signed.signedTxXdr, NETWORK_PASSPHRASE);
+          const response = await rpcServer.sendTransaction(signedTx);
+
+          if ((response as any).status !== "PENDING" && (response as any).status !== "SUCCESS") {
+            throw new Error(`Transaction failed: ${JSON.stringify(response)}`);
+          }
+
+          // Wait for network confirmation
+          let txResult;
+          let attempts = 0;
+          do {
+            await new Promise(r => setTimeout(r, 3000));
+            txResult = await rpcServer.getTransaction(response.hash);
+            attempts++;
+            if (attempts > 20) throw new Error('Confirmation timeout after 60 seconds');
+          } while ((txResult as any).status === 'NOT_FOUND' || (txResult as any).status === 'PENDING');
+
+          if ((txResult as any).status !== 'SUCCESS') {
+            throw new Error('Transaction failed: ' + (txResult as any).status);
+          }
+
+          console.log('✅ Stellar Settlement confirmed! Notifying backend...');
+          setStatus('Notifying backend...');
+          let tokensReceived = '0';
+          let cost = '0';
+          let refund = '0';
+
+          try {
+            if ((txResult as any).resultMetaXdr) {
+              const meta = (txResult as any).resultMetaXdr;
+              const v3 = meta.v3 ? meta.v3() : null;
+              if (v3 && v3.sorobanMeta && v3.sorobanMeta()) {
+                const sorobanMeta = v3.sorobanMeta();
+                const events = sorobanMeta.events ? sorobanMeta.events() : [];
+                for (const event of events) {
+                  const topics = event.body().v0 ? event.body().v0().topics() : [];
+                  const hasSettled = topics.some((t: any) => {
+                    try { return StellarSdk.scValToNative(t) === 'BidSettled'; } catch { return false; }
+                  });
+                  if (hasSettled) {
+                    const data = StellarSdk.scValToNative(event.body().v0().data());
+                    if (Array.isArray(data) && data.length >= 5) {
+                      tokensReceived = data[2].toString();
+                      cost = data[3].toString();
+                      refund = data[4].toString();
+                    }
+                  }
+                }
+              }
+            }
+          } catch (evtErr) {
+            console.warn('Event decode skipped:', evtErr);
+          }
+
+          await marketplaceService.notifyBidSettled({
+            assetId: params.assetId,
+            bidIndex: params.bidIndex,
+            txHash: response.hash,
+            blockNumber: (txResult as any).ledger ? (txResult as any).ledger.toString() : '0',
+            network: 'stellar',
+            ledger: (txResult as any).ledger ? (txResult as any).ledger.toString() : '0',
+            tokensReceived,
+            cost,
+            refund
+          });
+
+          notificationSentRef.current = response.hash;
+          setStatus('Bid settled successfully! 🎉');
+          setIsLoading(false);
+          lastSettleParamsRef.current = null;
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+
+          return;
+        }
+
+        if (!address) {
+          throw new Error('Wallet not connected');
+        }
+
         // Convert parameters
         const assetIdBytes32 = uuidToBytes32(params.assetId);
 
@@ -539,7 +676,7 @@ export function useSettleBid() {
         throw error;
       }
     },
-    [address, settleBidTx, isLoading, isSuccess]
+    [address, settleBidTx, isLoading, isSuccess, networkType]
   );
 
   // CRITICAL: Auto-notify backend after settlement succeeds (investor-settle.sh line 264)
@@ -561,12 +698,12 @@ export function useSettleBid() {
           setStatus('Notifying backend...');
           console.log('✅ Settlement confirmed! Notifying backend...');
 
-            await marketplaceService.notifyBidSettled({
+          await marketplaceService.notifyBidSettled({
             assetId: lastSettleParamsRef.current.assetId,
             bidIndex: lastSettleParamsRef.current.bidIndex,
             txHash,
             blockNumber: receipt.blockNumber.toString(),
-            });
+          });
 
           notificationSentRef.current = txHash;
           setStatus('Bid settled successfully! 🎉');
@@ -656,6 +793,23 @@ export function useEndAuction() {
       setStatus('Ending auction on-chain...');
 
       try {
+        // Check if Stellar (address not 0x)
+        if (!address.startsWith('0x')) {
+          // Stellar Flow
+          // We need asset details to get code/issuer... Params only has assetId.
+          // This hook might need refactoring to support Stellar fully if used outside Admin Listings page.
+          // For now, let's assume this hook is primarily EVM-focused or we need to fetch asset.
+          // Given the Listings page implements it manually, maybe we leave this as EVM-only or add a TODO.
+          // But for completeness, let's add a basic check or error.
+          console.log("Stellar end auction should be handled via stellarService directly or updated hook.");
+
+          // If we want to support it here, we'd need to fetch asset details first.
+          // For now, let's throw if trying to use this hook on Stellar without proper implementation
+          // OR we can import stellarService and try to do it if we had the code/issuer.
+          throw new Error("Stellar End Auction via this hook is not yet fully implemented. Please use the Admin Listings page.");
+        }
+
+        // EVM Flow
         // Convert parameters
         const assetIdBytes32 = uuidToBytes32(params.assetId);
         const clearingPriceWei = parseUSDC(params.clearingPrice);

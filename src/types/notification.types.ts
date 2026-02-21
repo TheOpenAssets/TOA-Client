@@ -14,7 +14,8 @@ export type NotificationType =
   | 'ORDER_CANCELED'
   | 'ORDER_ACTIVE'
   | 'ORDER_CREATED'
-  | 'ORDER_CANCELLED';
+  | 'ORDER_CANCELLED'
+  | 'TRUSTLINE_APPROVED';
 
 export type NotificationSeverity = 'info' | 'success' | 'warning' | 'error';
 

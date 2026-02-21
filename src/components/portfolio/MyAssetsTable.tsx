@@ -129,12 +129,46 @@ export const MyAssetsTable = ({
   };
 
   const formatTokenAmount = (weiAmount: string): string => {
-    const tokens = parseFloat(weiAmount) / 1e18;
+    // If it's already canonical (e.g. "100.0000" or small number), don't divide by 1e18
+    const val = parseFloat(weiAmount);
+    // Heuristic: if val < 1e12 and has decimals or is clearly not wei, use as is.
+    // 1e18 wei = 1 token. A normal balance of 1,000,000 tokens is 1e24 wei.
+    // So anything < 1e12 is definitely canonical.
+    if (weiAmount.includes('.') || val < 1e12) {
+      return val.toLocaleString('en-US', { maximumFractionDigits: 4 });
+    }
+    const tokens = val / 1e18;
     return tokens.toLocaleString('en-US', { maximumFractionDigits: 4 });
   };
 
   const formatUSDCAmount = (amount: string): number => {
-    return parseFloat(amount) / 1e6;
+    // If it's already canonical (e.g. "85.0000" or small number), don't divide by 1e6
+    const val = parseFloat(amount);
+    // Heuristic: 1e6 wei = 1 USDC. 
+    // If val < 1e5 (0.1 USDC in Wei) it's tiny, but if it's "100.00" it's 100 USDC.
+    // A balance of 1000 USDC is 1e9 wei.
+    // If the input is "100.00", parseFloat is 100.
+    // If input is 100000000 (100 USDC), parseFloat is 1e8.
+
+    // Better heuristic: if it has a dot '.', treat as canonical.
+    if (amount.includes('.')) {
+      return val;
+    }
+    // If it's an integer but small? "100" could be 100 USDC or 0.0001 USDC (wei).
+    // Given the context of the app, let's assume integers > 10000 are Raw, unless proven otherwise.
+    // But "100" USDC is plausible.
+    // Safest bet: Check if it looks like Wei.
+    // Let's stick to the convention: if it has a dot, it's canonical.
+    // If it's huge, it's Wei.
+
+    if (val > 1e10) { // > 10,000 USDC in wei
+      return val / 1e6;
+    }
+    // If it's "100500000" (100.5 USDC), it has no dot.
+
+    // NOTE: The backend seems to standardize on canonical strings now "100.0000".
+
+    return val;
   };
 
   const formatCurrency = (value: number): string => {
@@ -370,10 +404,10 @@ export const MyAssetsTable = ({
                         </div>
                       ) : (
                         <div className="flex flex-col">
-                            <span className="text-xs text-gray-500"> {(formatUSDCAmount(asset.totalInvested || '0') > 0) ?
-                              (<span className=''>Capital Invested</span>)
-                              : (<span>Capital Received</span>)
-                            }</span>
+                          <span className="text-xs text-gray-500"> {(formatUSDCAmount(asset.totalInvested || '0') > 0) ?
+                            (<span className=''>Capital Invested</span>)
+                            : (<span>Capital Received</span>)
+                          }</span>
                           <span className={`font-medium ${formatUSDCAmount(asset.totalInvested || '0') > 0
                             ? 'text-red-600'
                             : 'text-green-600'
@@ -568,7 +602,7 @@ export const MyAssetsTable = ({
                               </div>
                             </div>
                           )}
-                        
+
                         {/* Tokens Leveraged */}
                         {isLeverage &&
 

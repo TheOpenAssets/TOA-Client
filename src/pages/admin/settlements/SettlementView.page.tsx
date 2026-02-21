@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAdminStore, type AdminAsset } from '../../../stores/admin.store';
 import { adminService } from '../../../lib/api/admin.service';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { PageLoader } from '../../../components/ui/page-loader';
@@ -45,6 +46,7 @@ interface Settlement {
 
 const SettlementViewPage = () => {
   const { assetsForSettlement: payoutCompleteAssets, isLoading, error, fetchAdminDashboardData } = useAdminStore();
+  const { network, networkType } = useNetwork();
 
   // Modal state
   const [selectedAsset, setSelectedAsset] = useState<AdminAsset | null>(null);
@@ -371,7 +373,12 @@ const SettlementViewPage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <p className="font-gellix text-sm font-semibold text-foreground">
-                          {(parseFloat(asset.tokenParams.totalSupply) / 1e18).toLocaleString()}
+                          {(
+                            () => {
+                              const raw = parseFloat(asset.tokenParams.totalSupply);
+                              return (raw > 1e9 ? raw / 1e18 : raw).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                            }
+                          )()}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -416,13 +423,16 @@ const SettlementViewPage = () => {
                               <p className="font-gellix text-xs text-gray-500 mb-1">Blockchain Explorer</p>
                               {asset.token?.address ? (
                                 <a
-                                  href={`https://sepolia.mantlescan.xyz/address/${asset.token.address}`}
+                                  href={networkType === 'stellar'
+                                    ? `${network.explorerUrl}/contract/${asset.token.address}`
+                                    : `${network.explorerUrl}/address/${asset.token.address}`
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center gap-1 text-gray-700 hover:text-gray-900 text-xs transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  View on Mantlescan
+                                  View on {network.displayName} Explorer
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               ) : (

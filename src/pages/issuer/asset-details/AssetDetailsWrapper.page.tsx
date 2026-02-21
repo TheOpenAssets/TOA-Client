@@ -7,8 +7,10 @@ import AssetDetailsPage from './AssetDetails.page';
 // import { Loader2 } from 'lucide-react';
 import { type IssuerAsset } from '../../../types/issuer.types';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 const AssetDetailsWrapper = () => {
+  const { networkPath } = useNetwork();
   const { assetId } = useParams<{ assetId: string }>();
   const [asset, setAsset] = useState<IssuerAsset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const AssetDetailsWrapper = () => {
   }, [assetId]);
 
   if (!assetId) {
-    return <Navigate to="/issuer/dashboard" replace />;
+    return <Navigate to={networkPath('/issuer/dashboard')} replace />;
   }
 
   if (loading) {
@@ -63,7 +65,7 @@ const AssetDetailsWrapper = () => {
             The asset you're looking for doesn't exist or could not be loaded.
           </p>
           <a
-            href="/issuer/dashboard"
+            href={networkPath('/issuer/dashboard')}
             className="inline-block px-6 py-3 bg-black hover:bg-black/90 text-white font-geist rounded-xl transition-all duration-200"
           >
             Back to Dashboard

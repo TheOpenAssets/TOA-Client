@@ -10,11 +10,14 @@ import { Loader2 } from 'lucide-react';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { authService } from '../../lib/api/auth.service';
 import HeroBackground from '../landing/HeroBackground';
+import { useNetwork } from '../../lib/network/NetworkContext';
+import { ComingSoon } from '../../components/common/ComingSoon';
 
 const BorrowPage = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const navigate = useNavigate();
+  const { networkPath, networkType } = useNetwork();
 
   const { creditData, isLoading: isCreditLoading, refetch: refetchCredit } = useCreditData(address);
 
@@ -22,7 +25,7 @@ const BorrowPage = () => {
   const handlelogout = () => {
     authService.logout();
     disconnect();
-    navigate('/'); // Redirect to home or login page after logout
+    navigate(networkPath('/')); // Redirect to home or login page after logout
   };
 
   useEffect(() => {
@@ -51,14 +54,14 @@ const BorrowPage = () => {
                 src="./ALogo-removebg-preview.svg"
                 alt="Logo"
                 className="h-16 w-auto object-contain cursor-pointer"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(networkPath('/'))}
               />
               <div className="flex flex-row items-center justify-end w-full gap-10 mr-10">
 
                 {/* Center: Navigation */}
                 <nav className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate('/marketplace')}
+                    onClick={() => navigate(networkPath('/marketplace'))}
                     className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                   >
                     Marketplace
@@ -66,7 +69,7 @@ const BorrowPage = () => {
                 </nav>
                 <nav className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate('/portfolio')}
+                    onClick={() => navigate(networkPath('/portfolio'))}
                     className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                   >
                     Portfolio
@@ -93,7 +96,7 @@ const BorrowPage = () => {
 
                   ) : (
                     <button
-                      onClick={() => navigate('/auth')}
+                      onClick={() => navigate(networkPath('/auth'))}
                       className="px-6 py-2 bg-white border border-gray-300 rounded-lg font-gellix text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
                     >
                       Sign Up / Log In
@@ -116,7 +119,13 @@ const BorrowPage = () => {
               Borrow against your existing credit line.
             </p>
 
-            {isCreditLoading ? (
+            {networkType === 'stellar' ? (
+              <ComingSoon
+                title="Borrowing Coming Soon"
+                description="Borrowing against your assets is currently being built for the Stellar network."
+                className="bg-white/50 backdrop-blur-sm shadow-sm"
+              />
+            ) : isCreditLoading ? (
               <div className="flex justify-center items-center p-12">
                 <Loader2 className="h-12 w-12 animate-spin text-[#111111]" />
               </div>
@@ -132,7 +141,7 @@ const BorrowPage = () => {
                 onClose={() => { }}
                 onSuccess={() => {
                   refetchCredit();
-                  navigate('/portfolio?tab=loans');
+                  navigate(networkPath('/portfolio?tab=loans'));
                 }}
                 creditData={creditData}
               />
@@ -144,7 +153,7 @@ const BorrowPage = () => {
                     You don't have any available credit to borrow. Increase your credit limit from Portfolio.
                   </p>
                   <Button
-                    onClick={() => navigate('/portfolio')}
+                    onClick={() => navigate(networkPath('/portfolio'))}
                     size="lg"
                     className="text-md border border-gray-300 bg-white font-gellix hover:bg-gray-100/30 hover:scale-[1.05] mb-6 p-3 rounded-3xl shadow-xl"
                   >
@@ -165,7 +174,7 @@ const BorrowPage = () => {
             )}
           </div>
         </div>
-      </div>
+      </div >
     </>
   );
 };
