@@ -11,7 +11,11 @@
 
 <h3 align="center"><em>ALL IN ONE UNIFIED EXECUTION LAYER FOR REAL-WORLD ASSETS</em></h3>
 
-Demo: https://youtu.be/aWP3_nrwm84
+## 🎥 Demo Walkthrough
+
+[![YouTube](https://img.shields.io/badge/Watch_on-YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/aWP3_nrwm84)
+
+[![OpenAssets Demo](https://img.youtube.com/vi/aWP3_nrwm84/maxresdefault.jpg)](https://youtu.be/aWP3_nrwm84)
 
 **The unified gateway for Real-World Assets. Tokenize and invest in real-world financial instruments, leverage yield-bearing collateral for capital-efficient acquisition, access universal credit via decentralized identity, compose RWAs into usable credit, and trade freely in verifiable real value.**
 
