@@ -98,7 +98,7 @@ const HarvestDot = (props: any) => {
 /**
  * Custom Tooltip for stARB Chart
  */
-const stARBTooltip = (props: any) => {
+const StARBTooltip = (props: any) => {
   const { active, payload, harvestHistory } = props;
 
   if (!active || !payload || !payload.length) return null;
@@ -560,7 +560,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       tickLine={false}
                       axisLine={false}
                     />
-                    <Tooltip content={<stARBTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
+                    <Tooltip content={<StARBTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
                     <Area
                       type="monotone"

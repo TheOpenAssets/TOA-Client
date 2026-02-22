@@ -1,7 +1,6 @@
 // src/pages/admin/listings/Listings.page.tsx
 
 import { useEffect, useState } from 'react';
-import { ethers } from 'ethers';
 import { adminService } from '../../../lib/api/admin.service';
 import type { ApiAdminAsset, AuctionClearingPriceInfo } from '../../../types/admin.types';
 import { Badge } from '../../../components/ui/badge';

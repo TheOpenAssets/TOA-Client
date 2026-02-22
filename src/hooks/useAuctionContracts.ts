@@ -293,8 +293,8 @@ export function useSubmitBid() {
           setStatus('In progress..');
 
           // Backend expects canonical 4-decimal format (e.g. "100.0000", "1.2345")
-          const tokenAmountCanonical = parseFloat(lastBidParamsRef.current.tokenAmount).toFixed(4);
-          const priceCanonical = parseFloat(lastBidParamsRef.current.pricePerToken).toFixed(4);
+          const tokenAmountCanonical = parseFloat(String(lastBidParamsRef.current.tokenAmount)).toFixed(4);
+          const priceCanonical = parseFloat(String(lastBidParamsRef.current.pricePerToken)).toFixed(4);
 
           // Call backend notification API
           await marketplaceService.notifyBidPlaced({
