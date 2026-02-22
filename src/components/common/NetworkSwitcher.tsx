@@ -22,18 +22,11 @@ export const NetworkSwitcher = () => {
 
     return (
         <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full border border-gray-200">
-            {SUPPORTED_NETWORKS.map((n) => (
-                <button
-                    key={n}
-                    onClick={() => handleSwitch(n as NetworkType)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${networkType === n
-                            ? "bg-white text-black shadow-sm"
-                            : "text-gray-500 hover:text-black"
-                        }`}
-                >
-                    {n.charAt(0).toUpperCase() + n.slice(1)}
-                </button>
-            ))}
+            <button
+                className="px-3 py-1 rounded-full text-xs font-medium bg-white text-black shadow-sm"
+            >
+                Arbitrum
+            </button>
         </div>
     );
 };

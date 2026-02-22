@@ -40,24 +40,14 @@ const Navbar = () => {
             <Link to={networkPath('/about')} className="nav-link underline-animation underline-animation-purple">
               <p className="font-extrabold text-2xl font-beau">About</p>
             </Link>
-            <Link to={networkPath('/how-it-works')} className="nav-link underline-animation underline-animation-purple">
-              <p className="font-extrabold text-2xl font-beau">How it works</p>
-            </Link>
-            <a
-              href="https://open-assets-core-proposal.notion.site/Open-Assets-arbitrum-Network-2d5316cd01a780818164c5889beb1a19"
-              className="nav-link underline-animation underline-animation-purple"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <p className="font-extrabold text-2xl font-beau">Documents</p>
-            </a>
+            
+            
 
           </nav>
         </div>
 
         {/* CTA Button */}
         <div className="flex items-center gap-4">
-          <NetworkSwitcher />
 
           <Button
             onClick={handleGetUsdcClick}
