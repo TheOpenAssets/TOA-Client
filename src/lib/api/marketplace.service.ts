@@ -13,19 +13,10 @@ import type {
 } from '@/types/marketplace.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
-/**
- * Marketplace Service - Handles marketplace-related API calls
- *
- * Endpoints:
- * - GET /marketplace/listings - Get all asset listings
- * - GET /marketplace/listings/:assetId - Get specific asset details
- */
 class MarketplaceService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**
@@ -44,7 +35,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/listings`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -75,7 +66,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/listings/${assetId}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -164,7 +155,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/announcements`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -205,7 +196,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/announcements/asset/${assetId}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -252,7 +243,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/assets/${assetId}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -369,7 +360,7 @@ class MarketplaceService extends BaseService {
    * ENDPOINT: POST /marketplace/bids/notify (VERIFIED from investor-bidding.sh line 362)
    * REF: investor-bidding.sh Step 4
    *
-   * Payload: { txHash, assetId, tokenAmount (wei), price (wei) }
+   * Payload: { txHash, assetId, tokenAmount (canonical 4-decimal e.g. "100.0000"), price (canonical 4-decimal e.g. "1.2345") }
    *
    * Called AFTER successful on-chain bid submission
    */
@@ -378,6 +369,7 @@ class MarketplaceService extends BaseService {
     assetId: string;
     tokenAmount: string;
     price: string;
+    network?: string;
   }): Promise<any> {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/bids/notify`, {
@@ -413,6 +405,11 @@ class MarketplaceService extends BaseService {
     bidIndex: number;
     txHash: string;
     blockNumber: string;
+    network?: string;
+    ledger?: string;
+    tokensReceived?: string;
+    cost?: string;
+    refund?: string;
   }): Promise<any> {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/bids/settle-notify`, {
@@ -506,7 +503,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/info`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -561,7 +558,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/top-grossing?limit=${limit}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -583,7 +580,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/assets/${assetId}/purchase-history`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -634,7 +631,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/orderbook`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -657,7 +654,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/trades`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {
@@ -789,7 +786,7 @@ class MarketplaceService extends BaseService {
     try {
       const response = await fetch(`${this.baseURL}/marketplace/secondary/${assetId}/chart?interval=${interval}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(false),
       });
 
       if (!response.ok) {

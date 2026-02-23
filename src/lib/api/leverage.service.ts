@@ -1,21 +1,19 @@
 import BaseService from './base.service';
-import type { LeveragePosition,LeveragePositionDetails, LeverageQuote, MethPrice } from '../../types/leverage.types';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
+import type { LeveragePosition,LeveragePositionDetails, LeverageQuote, stARBPrice } from '../../types/leverage.types';
 
 class LeverageService extends BaseService {
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**
-   * Get current mETH price in USD
-   * ENDPOINT: GET /leverage/meth-price
+   * Get current stARB price in USD
+   * ENDPOINT: GET /leverage/stARB-price
    */
-  async getMethPrice(): Promise<MethPrice> {
+  async getstARBPrice(): Promise<stARBPrice> {
     try {
       const response = await this.fetchWithTimeout(
-        `${this.baseURL}/leverage/meth-price`,
+        `${this.baseURL}/leverage/stARB-price`,
         {
           method: 'GET',
           headers: this.getAuthHeaders(),
@@ -23,24 +21,24 @@ class LeverageService extends BaseService {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch mETH price');
+        throw new Error('Failed to fetch stARB price');
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching mETH price:', error);
+      console.error('Error fetching stARB price:', error);
       throw error;
     }
   }
 
   /**
    * Get Swap Quote
-   * ENDPOINT: GET /leverage/quote/:mETHAmount
+   * ENDPOINT: GET /leverage/quote/:stARBAmount
    */
-  async getQuote(mETHAmount: string): Promise<LeverageQuote> {
+  async getQuote(stARBAmount: string): Promise<LeverageQuote> {
     try {
       const response = await this.fetchWithTimeout(
-        `${this.baseURL}/leverage/quote/${mETHAmount}`,
+        `${this.baseURL}/leverage/quote/${stARBAmount}`,
         {
           method: 'GET',
           headers: this.getAuthHeaders(),
@@ -67,7 +65,7 @@ class LeverageService extends BaseService {
     tokenAddress: string;
     tokenAmount: string; // WEI
     pricePerToken: string; // USDC WEI
-    mETHCollateral: string; // WEI
+    stARBCollateral: string; // WEI
   }): Promise<{ success: boolean; positionId: number; transactionHash: string }> {
     try {
       const response = await this.fetchWithTimeout(

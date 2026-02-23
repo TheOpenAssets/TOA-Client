@@ -2,7 +2,8 @@
 
 
 import { useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+// import { useAccount } from 'wagmi'; // Removed direct Wagmi dependency
+import { useAuthStrategy } from '../../../lib/auth/AuthStrategyContext'; // Added AuthStrategyContext
 import { Input } from '../../../components/ui/input';
 import { FileUpload } from '../../../components/ui/file-upload';
 import { Button } from '../../../components/ui/button';
@@ -15,14 +16,16 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Wavy } from '../../../components/ui/wavy';
 import { PageLoader } from '../../../components/ui/page-loader';
-
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 type AuthStep = 'new_user' | 'documents' | 'documents_uploaded' | 'kyc_submit';
 
 export default function AuthPage() {
 
   const navigate = useNavigate();
-  const { address } = useAccount();
+  // const { address } = useAccount(); // Removed direct Wagmi use
+  const { address } = useAuthStrategy(); // Use network-agnostic hook
+  const { networkPath } = useNetwork();
 
   const { setLoading, user } = useAuthStore();
 
@@ -45,7 +48,7 @@ export default function AuthPage() {
     setIsUsingTestAadhar(checked);
     if (checked) {
       try {
-        
+
         setIsFetchingTestAadhar(isUsingTestAadhar);
         const response = await fetch('/AadharGenerated.png');
         if (!response.ok) throw new Error('Failed to load test file');
@@ -97,9 +100,9 @@ export default function AuthPage() {
 
       // After success: First-time user → Redirect to marketplace
       if (user?.role === 'INVESTOR')
-        navigate('/marketplace');
+        navigate(networkPath('/marketplace'));
       else
-        navigate('/issuer/dashboard');
+        navigate(networkPath('/issuer/dashboard'));
     } catch (err: any) {
       console.error('Error submitting KYC:', err);
       setError(err.message || 'KYC submission failed');
@@ -150,7 +153,7 @@ export default function AuthPage() {
   return (
     <div className="w-full">
       <Wavy />
-      <img src="./ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
+      <img src="/ALogo-removebg-preview.svg" alt="Background" onClick={() => { navigate('/') }} className="fixed inset-0 top-5 left-5 w-22 h-22 object-cover z-50" />
       <div className="absolute top-0 left-0 w-full h-full mx-auto">
         <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
           <div className="flex gap-4 flex-col">
@@ -183,7 +186,7 @@ export default function AuthPage() {
             </h1>
 
             <p className="font-inter text-base md:text-lg text-black mb-3 max-w-2xl mx-auto">
-              Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
+              Tokenize and invest in real-world assets, leverage stARB for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
               <span className="font-beau text-xl md:text-2xl font-semibold">Tokenize. Invest. Borrow. Earn.</span> All in one unified execution layer.
             </p>
           </div>
@@ -270,12 +273,12 @@ export default function AuthPage() {
                         </label>
                       </div>
                     </FileUpload>
-                  ) :(
+                  ) : (
                     <div className='w-[300px] h-[100px] flex items-center justify-center'>
-                    <PageLoader text="" size='sm' />
+                      <PageLoader text="" size='sm' />
                     </div>
                   )}
-                 
+
                 </div>
 
                 <Button

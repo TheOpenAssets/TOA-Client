@@ -86,7 +86,7 @@ async function fixListingApproval() {
   console.log('Token Address:', tokenAddress);
   console.log('Originator:', originator);
 
-  // Connect to Mantle Sepolia with ORIGINATOR wallet
+  // Connect to arbitrum Sepolia with ORIGINATOR wallet
   // IMPORTANT: Use the originator's private key
   const originatorPrivateKey = process.env.ORIGINATOR_PRIVATE_KEY;
   if (!originatorPrivateKey) {
@@ -94,7 +94,7 @@ async function fixListingApproval() {
     process.exit(1);
   }
 
-  const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.mantle.xyz');
+  const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.arbitrum.xyz');
   const wallet = new ethers.Wallet(originatorPrivateKey, provider);
 
   console.log('Wallet Address:', wallet.address);
@@ -139,7 +139,7 @@ async function fixListingApproval() {
   console.log('✅ Approved in block', receipt.blockNumber);
   console.log('\n✅ Fix Complete!');
   console.log('━'.repeat(50));
-  console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+  console.log(`Explorer: https://explorer.sepolia.arbitrum.xyz/tx/${tx.hash}`);
   console.log('\nYou can now purchase tokens from this asset on the frontend!');
 }
 
@@ -149,7 +149,7 @@ fixListingApproval().catch(console.error);
 ### Step 3: Run the Fix
 
 ```bash
-cd TOA-Server-Mantle
+cd TOA-Server-arbitrum
 
 # Set the originator's private key
 export ORIGINATOR_PRIVATE_KEY="0x..."  # The originator wallet's private key
@@ -180,7 +180,7 @@ Approval TX: 0x...
 
 ✅ Fix Complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Explorer: https://explorer.sepolia.mantle.xyz/tx/0x...
+Explorer: https://explorer.sepolia.arbitrum.xyz/tx/0x...
 
 You can now purchase tokens from this asset on the frontend!
 ```

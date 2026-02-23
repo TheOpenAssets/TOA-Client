@@ -9,8 +9,6 @@ import {
 } from '../../types/issuer.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
 // ============================================================================
 // MOCK MODE CONFIGURATION
 // ============================================================================
@@ -18,20 +16,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok
 // Set to false when backend is ready
 const USE_MOCK_MODE = import.meta.env.VITE_USE_MOCK_AUTH === 'false' || false;
 
-/**
- * Issuer Service - Handles issuer onboarding-related API calls
- *
- * MOCK MODE: Currently using simulated backend responses for development
- *
- * TO SWITCH TO REAL BACKEND:
- * 1. Set USE_MOCK_MODE = false (or set VITE_USE_MOCK_AUTH=false in .env)
- * 2. Ensure backend is running at API_BASE_URL
- * 3. No other code changes needed - all endpoints are already configured
- */
 class IssuerService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
+  }
+
+  private getNetwork(): string {
+    const segment = window.location.pathname.split('/')[1];
+    return ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
   }
 
   // Challenge
@@ -111,35 +104,69 @@ class IssuerService extends BaseService {
             },
           };
     
-          // Store tokens in localStorage (same as real flow)
-          localStorage.setItem('access_token', mockResponse.tokens.access);
-          localStorage.setItem('refresh_token', mockResponse.tokens.refresh);
+                // Store tokens in localStorage (network-scoped)
     
-          return mockResponse;
-        }
+                const network = this.getNetwork();
     
-        // REAL MODE: Call backend login
-        try {
-          const response = await fetch(`${this.baseURL}/auth/login`, {
-            method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify(payload),
-          });
+                localStorage.setItem(`${network}_access_token`, mockResponse.tokens.access);
     
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Login failed');
-          }
+                localStorage.setItem(`${network}_refresh_token`, mockResponse.tokens.refresh);
     
-          const data: LoginResponse = await response.json();
+          
     
-          // Store tokens in localStorage
-          if (data.tokens) {
-            localStorage.setItem('access_token', data.tokens.access);
-            localStorage.setItem('refresh_token', data.tokens.refresh);
-          }
+                return mockResponse;
     
-          return data;
+              }
+    
+          
+    
+              // REAL MODE: Call backend login
+    
+              try {
+    
+                const response = await fetch(`${this.baseURL}/auth/login`, {
+    
+                  method: 'POST',
+    
+                  headers: this.getHeaders(),
+    
+                  body: JSON.stringify(payload),
+    
+                });
+    
+          
+    
+                if (!response.ok) {
+    
+                  const error = await response.json();
+    
+                  throw new Error(error.message || 'Login failed');
+    
+                }
+    
+          
+    
+                const data: LoginResponse = await response.json();
+    
+          
+    
+                // Store tokens in localStorage (network-scoped)
+    
+                if (data.tokens) {
+    
+                  const network = this.getNetwork();
+    
+                  localStorage.setItem(`${network}_access_token`, data.tokens.access);
+    
+                  localStorage.setItem(`${network}_refresh_token`, data.tokens.refresh);
+    
+                }
+    
+          
+    
+                return data;
+    
+          
         } catch (error) {
           console.error('Error during login:', error);
           throw error;

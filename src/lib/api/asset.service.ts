@@ -2,8 +2,6 @@
 import type { IssuerAsset } from '@/types/issuer.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
 /**
  * Response type for paginated assets
  */
@@ -29,7 +27,7 @@ export interface GetAssetsParams {
 class AssetService extends BaseService {
 
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**
@@ -204,15 +202,16 @@ class AssetService extends BaseService {
     try {
       console.log('⬆️ Starting asset upload...');
 
+      // Get network-aware auth headers and remove Content-Type so browser sets boundary
+      const authHeaders = this.getAuthHeaders();
+      const { 'Content-Type': _, ...headers } = authHeaders as any;
+
       // Use fetchWithTimeout with 5-minute timeout for file uploads
       const response = await this.fetchWithTimeout(
         `${this.baseURL}/assets/upload`,
         {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            // Don't set Content-Type - browser will set it with boundary for FormData
-          },
+          headers,
           body: formData,
         },
         300000 // 5 minutes

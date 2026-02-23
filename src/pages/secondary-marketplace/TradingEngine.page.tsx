@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useDisconnect } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAuthStrategy } from '../../lib/auth/AuthStrategyContext';
+import { useNetwork } from '../../lib/network/NetworkContext';
 import { parseUnits, formatUnits } from 'viem';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Info, X, ShieldCheck, Zap, ShoppingCart, Users } from 'lucide-react';
@@ -15,7 +17,7 @@ import * as echarts from 'echarts';
 import { SentimentChart } from '../../components/marketplace/SentimentChart';
 import { TradeChart } from '../../components/marketplace/TradeChart';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
-import { authService } from '../../lib/api/auth.service';
+// import { authService } from '../../lib/api/auth.service';
 import HeroBackground from '../landing/HeroBackground';
 // import { Wavy } from '../../components/ui/wavy';
 
@@ -69,7 +71,12 @@ interface PriceLevel {
 
 const TradingEngineProductionPage = () => {
     const { assetId } = useParams<{ assetId: string }>();
-    const { address, isConnected } = useAccount();
+    const { address, isAuthenticated } = useAuthStrategy();
+    const { networkType, networkPath } = useNetwork();
+    const isEvm = networkType === 'arbitrum';
+    // Only pass address to wagmi hooks if on EVM network
+    const evmAddress = (isEvm && address) ? address as `0x${string}` : undefined;
+
     const { toasts, success, error: showError, warning, removeToast } = useToast();
     const navigate = useNavigate();
     const [polling, setPolling] = useState(false);
@@ -93,7 +100,7 @@ const TradingEngineProductionPage = () => {
     const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
     const { isLoading: isTxConfirming, isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
 
-    const { disconnect } = useDisconnect();
+    // const { disconnect } = useDisconnect();
     // Local State
     const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
     const [amount, setAmount] = useState('');
@@ -115,9 +122,10 @@ const TradingEngineProductionPage = () => {
 
     // Helper functions
     const handlelogout = () => {
-        authService.logout();
-        disconnect();
-        navigate('/'); // Redirect to home or login page after logout
+        // authService.logout();
+        // disconnect();
+        // handled by strategy
+        navigate(networkPath('/'));
     };
 
     const formatEChartsData = (candles: any[]) => {
@@ -158,32 +166,32 @@ const TradingEngineProductionPage = () => {
         address: tokenAddress,
         abi: ERC20_ABI,
         functionName: 'balanceOf',
-        args: address ? [address] : undefined,
-        query: { enabled: !!tokenAddress && !!address },
+        args: evmAddress ? [evmAddress] : undefined,
+        query: { enabled: !!tokenAddress && !!evmAddress },
     });
 
     const { data: tokenAllowance, refetch: refetchTokenAllowance } = useReadContract({
         address: tokenAddress,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: address ? [address, SECONDARY_MARKET] : undefined,
-        query: { enabled: !!tokenAddress && !!address },
+        args: evmAddress ? [evmAddress, SECONDARY_MARKET] : undefined,
+        query: { enabled: !!tokenAddress && !!evmAddress },
     });
 
     const { data: usdcBalance, refetch: refetchUsdcBalance } = useReadContract({
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'balanceOf',
-        args: address ? [address] : undefined,
-        query: { enabled: !!address },
+        args: evmAddress ? [evmAddress] : undefined,
+        query: { enabled: !!evmAddress },
     });
 
     const { data: usdcAllowance, refetch: refetchUsdcAllowance } = useReadContract({
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: address ? [address, SECONDARY_MARKET] : undefined,
-        query: { enabled: !!address },
+        args: evmAddress ? [evmAddress, SECONDARY_MARKET] : undefined,
+        query: { enabled: !!evmAddress },
     });
 
     // 1. Initial Fetch
@@ -326,6 +334,12 @@ const TradingEngineProductionPage = () => {
             warning('Missing Information', 'Please fill in all fields and connect your wallet.');
             return;
         }
+
+        if (!isEvm) {
+            warning('Not Supported', 'Trading is currently only supported on arbitrum Network.');
+            return;
+        }
+
         if (!tokenAddress) {
             warning('Token Not Found', 'Asset token address is not available.');
             return;
@@ -366,7 +380,9 @@ const TradingEngineProductionPage = () => {
             const txData = await marketplaceService.getCreateOrderTxData({
                 tokenAddress,
                 amount: parseUnits(amount, 18).toString(),
-                pricePerToken: parseUnits(price, 6).toString(),
+                // SEND CANONICAL PRICE TO BACKEND (4 decimals)
+                // Backend adapter will convert to chain precision (6 decimals for USDC)
+                pricePerToken: parseFloat(price).toFixed(4),
                 isBuy: orderType === 'buy',
             });
 
@@ -474,7 +490,7 @@ const TradingEngineProductionPage = () => {
         );
     }
 
-    if (!isConnected) {
+    if (!isAuthenticated) {
         return (
             <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
                 <div className="text-center">
@@ -486,7 +502,7 @@ const TradingEngineProductionPage = () => {
     }
 
     return (<>
-       <HeroBackground />
+        <HeroBackground />
         <div className="min-h-screen max-w-screen bg-white absolute top-0 text-[#111111] font-gellix">
             <div className='w-screen mx-auto flex flex-col items-center justify-center'>
                 <ToastContainer toasts={toasts} onClose={removeToast} />
@@ -506,13 +522,13 @@ const TradingEngineProductionPage = () => {
                             {/* Center: Navigation */}
                             <nav className="flex items-center gap-4">
                                 <button
-                                    onClick={() => navigate('/marketplace')}
+                                    onClick={() => navigate(networkPath('/marketplace'))}
                                     className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                                 >
                                     Marketplace
                                 </button>
                                 <button
-                                    onClick={() => navigate('/portfolio')}
+                                    onClick={() => navigate(networkPath('/portfolio'))}
                                     className="font-geist border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                                 >
                                     Portfolio
@@ -605,7 +621,13 @@ const TradingEngineProductionPage = () => {
                                                                                 : 'cursor-pointer hover:bg-green-50/30'
                                                                                 }`}
                                                                         >
-                                                                            <span className="font-bold text-[#10B981] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                            <span className="font-bold text-[#10B981] font-gellix">${(
+                                                                                () => {
+                                                                                    const raw = parseFloat(level.priceFormatted);
+                                                                                    // Heuristic: if price > 1000, assume raw 6-decimal (1e6)
+                                                                                    return (raw > 1000 ? raw / 1e6 : raw).toFixed(4);
+                                                                                }
+                                                                            )()}</span>
                                                                             <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
                                                                             <span className="text-right text-[#6B7280] font-gellix">
                                                                                 ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
@@ -651,7 +673,13 @@ const TradingEngineProductionPage = () => {
                                                                                 : 'cursor-pointer hover:bg-red-50/30'
                                                                                 }`}
                                                                         >
-                                                                            <span className="font-bold text-[#EF4444] font-gellix">${parseFloat(level.priceFormatted).toFixed(2)}</span>
+                                                                            <span className="font-bold text-[#EF4444] font-gellix">${(
+                                                                                () => {
+                                                                                    const raw = parseFloat(level.priceFormatted);
+                                                                                    // Heuristic: if price > 1000, assume raw 6-decimal (1e6)
+                                                                                    return (raw > 1000 ? raw / 1e6 : raw).toFixed(4);
+                                                                                }
+                                                                            )()}</span>
                                                                             <span className="text-right text-[#111111] font-gellix font-medium">{parseFloat(order.amountFormatted).toFixed(2)}</span>
                                                                             <span className="text-right text-[#6B7280] font-gellix">
                                                                                 ${(parseFloat(level.priceFormatted) * parseFloat(order.amountFormatted)).toFixed(2)}
@@ -871,7 +899,7 @@ const TradingEngineProductionPage = () => {
                                             </button>
 
                                             <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] pt-2">
-                                                <ShieldCheck size={14} /> Secured by Mantle Network
+                                                <ShieldCheck size={14} /> Secured by arbitrum Network
                                             </div>
                                         </div>
                                     </div>
@@ -997,7 +1025,7 @@ const TradingEngineProductionPage = () => {
 
                                         {(isTxPending || isTxConfirming) && txHash && (
                                             <a
-                                                href={`https://sepolia.mantlescan.xyz/tx/${txHash}`}
+                                                href={`https://sepolia.arbitrumscan.xyz/tx/${txHash}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="block mt-4 text-center text-xs text-[#0071C5] hover:underline font-medium"
@@ -1007,7 +1035,7 @@ const TradingEngineProductionPage = () => {
                                         )}
 
                                         <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] mt-6 pt-4 border-t border-gray-100">
-                                            <ShieldCheck size={14} /> Secured by Mantle Network
+                                            <ShieldCheck size={14} /> Secured by arbitrum Network
                                         </div>
                                     </div>
                                 )}

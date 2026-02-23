@@ -4,11 +4,11 @@ import { ParticleTextEffect } from '../../components/ui/particle-text-effect';
 const Footer: React.FC = () => {
   return (
     <footer className="bg-black text-gray-300 relative h-screen" >
-      {/* Layer 1: Powered by Mantle Badge - Top Left */}
+      {/* Layer 1: Powered by arbitrum Badge - Top Left */}
       <div className="absolute top-0 left-0 z-20 p-4">
         <p className="flex items-center gap-2 text-sm text-gray-500">
           Powered by
-         <img src="./logo-light.svg"  alt="Mantle Logo" className="h-6 w-auto object-contain  " />
+         <img src="/arbitrum-logo.svg"  alt="arbitrum Logo" className="h-16 w-auto object-contain  " />
         </p>
       </div>
 

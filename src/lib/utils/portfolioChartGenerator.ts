@@ -1,5 +1,5 @@
 // src/lib/utils/portfolioChartGenerator.ts
-import type { PortfolioAsset } from '../api/portfolio.service';
+import type { PortfolioAsset } from '../../types/portfolio.types';
 
 /**
  * Generate asset value chart data - smooth S-curve showing portfolio growth

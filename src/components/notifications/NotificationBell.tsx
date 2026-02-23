@@ -13,9 +13,11 @@ import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
 import {
   notificationService,
-  type BackendNotification,
-  type NotificationType,
 } from '../../lib/api/notification.service';
+import type {
+  BackendNotification,
+  NotificationType,
+} from '../../types/notification.types';
 import { PageLoader } from '../ui/page-loader';
 
 const getNotificationIcon = (type: NotificationType | string) => {
@@ -23,6 +25,7 @@ const getNotificationIcon = (type: NotificationType | string) => {
     ASSET_STATUS: FileCheck, TOKEN_DEPLOYED: Coins, KYC_STATUS: UserCheck,
     BID_PLACED: Award, AUCTION_WON: Award, BID_REFUNDED: XCircle,
     TOKEN_PURCHASED: TrendingUp, YIELD_DISTRIBUTED: DollarSign, SYSTEM_ALERT: Bell,
+    TRUSTLINE_APPROVED: FileCheck,
   };
   return iconMap[type] || AlertCircle;
 };
@@ -95,12 +98,12 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
     const unsubscribe = notificationService.subscribeToNotifications((newNotification) => {
       const allowed = notificationService.filterNotificationsByRole([newNotification], role);
       if (allowed.length === 0) return;
-      
+
       // Trigger Toast
       toast(newNotification.header, {
         icon: newNotification.severity === 'success' ? '✅' :
-              newNotification.severity === 'error' ? '❌' :
-              newNotification.severity === 'warning' ? '⚠️' : 'ℹ️',
+          newNotification.severity === 'error' ? '❌' :
+            newNotification.severity === 'warning' ? '⚠️' : 'ℹ️',
         duration: 4000,
         position: 'top-right',
         className: 'font-geist text-sm font-medium'
@@ -122,6 +125,12 @@ export function NotificationBell({ role }: { role: 'ORIGINATOR' | 'INVESTOR' | '
       const metadata = n.actionMetadata || {};
       if (n.action === 'VIEW_ASSET' && metadata.assetId) {
         navigate(role === 'ORIGINATOR' ? `/issuer/asset/${metadata.assetId}` : role === 'ADMIN' ? `/admin/operations` : `/marketplace/asset/${metadata.assetId}`);
+      } else if (n.action === 'VIEW_MARKETPLACE') {
+        if (metadata.assetId) {
+          navigate(`/marketplace/asset/${metadata.assetId}`);
+        } else {
+          navigate('/marketplace');
+        }
       }
       setIsOpen(false);
     }

@@ -38,18 +38,18 @@ const FaucetPage = () => {
               tokenSymbol="USDC"
               tokenDecimals={6}
               tokenImage="https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
-              tokenAddress="0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238"
+              tokenAddress="0xa6887882e7430862150F7C4FF5AE192966c6e1d2"
               faucetAmount={1000}
               description="Receive 1,000 testnet USDC to your connected wallet."
             />
             <TokenFaucetCard
-              tokenName="mETH"
-              tokenSymbol="mETH"
+              tokenName="stARB"
+              tokenSymbol="stARB"
               tokenDecimals={18}
-              tokenImage="/meth-crystal.svg"
-              tokenAddress="0x4Ade8aAa0143526393EcadA836224EF21aBC6ac6"
+              tokenImage="/stARB-crystal.svg"
+              tokenAddress="0x3172772883A4CfD4013280CA95370017f4a863f9"
               faucetAmount={10}
-              description="Receive 10 testnet mETH for leveraged buy."
+              description="Receive 10 testnet stARB for leveraged buy."
             />
           </div>
         )}

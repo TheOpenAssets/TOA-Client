@@ -5,7 +5,7 @@ import { parseUnits } from 'viem';
 
 interface LeverageState {
   // State
-  methPrice: number;
+  stARBPrice: number;
   positions: LeveragePosition[];
   positionDetails: LeveragePositionDetails[];
   activeQuote: LeverageQuote | null;
@@ -13,35 +13,38 @@ interface LeverageState {
   error: string | null;
 
   // Actions
-  fetchMethPrice: () => Promise<void>;
+  fetchstARBPrice: () => Promise<void>;
   fetchMyPositions: () => Promise<void>;
   fetchAssetPositions: (id: number) => Promise<void>;
-  getQuote: (mETHAmount: string) => Promise<void>;
+  getQuote: (stARBAmount: string) => Promise<void>;
   clearQuote: () => void;
   createPosition: (params: {
     assetId: string;
     tokenAddress: string;
     tokenAmount: string;
     pricePerToken: string;
-    mETHCollateral: string;
+    stARBCollateral: string;
   }) => Promise<void>;
 }
 
 export const useLeverageStore = create<LeverageState>((set, get) => ({
-  methPrice: 0,
+  stARBPrice: 0,
   positions: [],
   positionDetails: [],
   activeQuote: null,
   isLoading: false,
   error: null,
 
-  fetchMethPrice: async () => {
+  fetchstARBPrice: async () => {
     try {
-      const data = await leverageService.getMethPrice();
-      set({ methPrice: parseFloat(data.price) });
+      const data = await leverageService.getstARBPrice();
+      // Use priceUSD (human-readable) instead of price (raw 6-decimal USDC)
+      const priceVal = data.priceUSD ?? parseFloat(data.price) / 1e6;
+      if (!isNaN(priceVal) && priceVal > 0) {
+        set({ stARBPrice: priceVal });
+      }
     } catch (error: any) {
-      console.error('Failed to fetch mETH price:', error);
-      // set({ error: error.message }); // Optional: don't block UI on price fail
+      console.error('Failed to fetch stARB price:', error);
     }
   },
 
@@ -65,15 +68,15 @@ export const useLeverageStore = create<LeverageState>((set, get) => ({
     }
   },
 
-  getQuote: async (mETHAmount: string) => {
-    if (!mETHAmount || parseFloat(mETHAmount) <= 0) {
+  getQuote: async (stARBAmount: string) => {
+    if (!stARBAmount || parseFloat(stARBAmount) <= 0) {
       set({ activeQuote: null });
       return;
     }
 
     try {
       // Convert to WEI
-      const weiAmount = parseUnits(mETHAmount, 18).toString();
+      const weiAmount = parseUnits(stARBAmount, 18).toString();
       const quote = await leverageService.getQuote(weiAmount);
       set({ activeQuote: quote, error: null });
     } catch (error: any) {

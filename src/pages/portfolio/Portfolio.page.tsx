@@ -3,15 +3,19 @@ import { useEffect, useState, useCallback } from 'react';
 import { usePortfolioStore } from '../../stores/portfolio.store';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAccount, useDisconnect } from 'wagmi';
+// import { useAccount, useDisconnect } from 'wagmi'; // Removed
 import { Search } from 'lucide-react';
+import { useAuthStrategy } from '../../lib/auth/AuthStrategyContext';
+import { useNetwork } from '../../lib/network/NetworkContext';
 import { useSettleBid } from '../../hooks/useAuctionContracts';
-import { contractService } from '../../lib/api/contract.service';
+// import { contractService } from '../../lib/api/contract.service';
 import { useToast } from '../../hooks/useToast';
 import { ToastContainer } from '../../components/ui/toast';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
-import { authService } from '../../lib/api/auth.service';
+// import { authService } from '../../lib/api/auth.service';
 import { marketplaceService } from '../../lib/api/marketplace.service';
+import { getYieldService } from '../../lib/api/yield.service.factory';
+import { parseTokenAmount } from '../../lib/utils/formatters';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
@@ -36,12 +40,15 @@ import HeroBackground from '../landing/HeroBackground';
 const PortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { address } = useAccount();
+  const { address, logout } = useAuthStrategy();
+  const { networkType, networkPath } = useNetwork();
+  const isEvm = networkType === 'arbitrum';
+
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
-  const { disconnect } = useDisconnect();
-  const { creditData, refetch: refetchCredit } = useCreditData(address);
+  // const { disconnect } = useDisconnect(); // handled by logout
+  const { creditData, refetch: refetchCredit } = useCreditData(isEvm ? address : undefined);
 
 
   // Cancel order hook
@@ -102,11 +109,11 @@ const PortfolioPage = () => {
   // Filtered data based on search term
   // Get all portfolio items (both STATIC and LEVERAGE)
   const allPortfolioItems = portfolio?.portfolio || [];
-  const staticAssets = allPortfolioItems.filter(item => item.purchaseType === 'STATIC');
-  const leveragePositions = allPortfolioItems.filter(item => item.purchaseType === 'LEVERAGE');
+  const staticAssets = allPortfolioItems.filter((item: any) => item.purchaseType === 'STATIC');
+  const leveragePositions = allPortfolioItems.filter((item: any) => item.purchaseType === 'LEVERAGE');
 
   // Filter ALL assets for My Assets table (both STATIC and LEVERAGE)
-  const filteredAssets = allPortfolioItems.filter(asset =>
+  const filteredAssets = allPortfolioItems.filter((asset: any) =>
     asset.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     asset.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
@@ -118,14 +125,14 @@ const PortfolioPage = () => {
     false
   ) || [];
 
-  const filteredPositions = leveragePositions.filter(position =>
+  const filteredPositions = leveragePositions.filter((position: any) =>
     position.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     position.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
   );
 
   const filteredOrders = myOrders.filter(order =>
-    (filteredAssets.find(asset => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (filteredAssets.find((asset: any) => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     false
@@ -139,7 +146,7 @@ const PortfolioPage = () => {
 
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
-    (sum, asset) => sum + (parseFloat(asset.totalInvested || '0') / 1e6),
+    (sum: number, asset: any) => sum + parseTokenAmount(asset.totalInvested || '0', 6),
     0
   );
 
@@ -193,7 +200,7 @@ const PortfolioPage = () => {
   }, [isCancelSuccess]);
 
   const handleIncreaseCreditLimit = () => {
-    const validAssets = staticAssets.filter(asset => asset.yieldInfo?.settlementDistributed === false);
+    const validAssets = staticAssets.filter((asset: any) => asset.yieldInfo?.settlementDistributed === false);
     if (validAssets.length > 0) {
       setShowDepositModal(true);
     } else {
@@ -208,8 +215,8 @@ const PortfolioPage = () => {
 
   // Helper functions
   const handlelogout = () => {
-    authService.logout();
-    disconnect();
+    // authService.logout();
+    logout();
     navigate('/'); // Redirect to home or login page after logout
   };
 
@@ -240,9 +247,14 @@ const PortfolioPage = () => {
     }
 
     // Find the asset in portfolio to get tokenAddress
-    const asset = portfolio?.portfolio?.find(a => a.assetId === assetId);
+    const asset = portfolio?.portfolio?.find((a: any) => a.assetId === assetId);
     if (!asset || !asset.tokenAddress) {
       showError('Asset Not Found', 'Could not find token address for this asset');
+      return;
+    }
+
+    if (!isEvm && networkType !== 'stellar') {
+      warning('Not Supported', 'Yield claiming is currently only supported on arbitrum & Stellar Networks.');
       return;
     }
 
@@ -255,7 +267,8 @@ const PortfolioPage = () => {
       console.log('Asset ID:', assetId);
       console.log('Token Address:', asset.tokenAddress);
 
-      const settlementResult = await contractService.getSettlementInfo(asset.tokenAddress, address);
+      const yieldService = getYieldService(networkType);
+      const settlementResult = await yieldService.getSettlementInfo(asset.tokenAddress, address);
 
       console.log('Settlement Info:', settlementResult);
 
@@ -322,7 +335,7 @@ const PortfolioPage = () => {
 
 
   const handlenavigate = () => {
-    navigate('/')
+    navigate(networkPath('/'))
   }
 
   /**
@@ -343,8 +356,26 @@ const PortfolioPage = () => {
 
     try {
       // Burn ALL tokens (matching script default behavior)
-      const burnAmountWei = investorBalance;
-      const burnAmountFormatted = (parseFloat(investorBalance) / 1e18).toFixed(2);
+      // Burn ALL tokens (amount from backend is Canonical string e.g "100.0000")
+      let burnAmountWei = investorBalance;
+
+      // Stellar uses 7 decimals (10^7)
+      // Backend returns "100.0000", we need "1000000000" (i64)
+      if (networkType === 'stellar') {
+        const amount = parseFloat(investorBalance);
+        burnAmountWei = Math.round(amount * 10_000_000).toString();
+      } else {
+        // If EVM or others still use Wei strings, handle logic here or assume standardized
+        // For now, if string has dot, it's canonical
+        if (investorBalance.includes('.')) {
+          // It's canonical "100.0" -> "100000..." (18 decimals for EVM)
+          const amount = parseFloat(investorBalance);
+          // Use BigInt for precision if needed, but for now simple math
+          burnAmountWei = BigInt(Math.round(amount * 1e18)).toString();
+        }
+      }
+
+      const burnAmountFormatted = parseFloat(investorBalance).toFixed(2); // Balance is already canonical
 
       console.log('='.repeat(50));
       console.log('🔥 Burn-to-Claim Yield (v2)');
@@ -361,7 +392,9 @@ const PortfolioPage = () => {
         console.log('✅ Step 2: Approving YieldVault to burn tokens...');
         setClaimStatus('Approving...');
 
-        const approvalResult = await contractService.approveYieldVault(
+        const yieldService = getYieldService(networkType);
+
+        const approvalResult = await yieldService.approveYieldVault(
           tokenAddress,
           burnAmountWei,
           allowance
@@ -382,7 +415,8 @@ const PortfolioPage = () => {
       console.log('🔥 Step 3: Burning tokens and claiming USDC...');
       setClaimStatus('Burning & Claiming...');
 
-      const claimResult = await contractService.claimYield(tokenAddress, burnAmountWei);
+      const yieldService = getYieldService(networkType);
+      const claimResult = await yieldService.claimYield(tokenAddress, burnAmountWei);
 
       if (!claimResult.success) {
         throw new Error(claimResult.error || 'Failed to claim yield');
@@ -418,7 +452,7 @@ const PortfolioPage = () => {
 
       success(
         'Yield Claimed Successfully! 🎉',
-        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://explorer.sepolia.mantle.xyz/tx/${claimResult.transactionHash}`,
+        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://sepolia.arbiscan.io/tx/${claimResult.transactionHash}`,
         12000
       );
 
@@ -489,7 +523,7 @@ const PortfolioPage = () => {
               <div className="flex items-center gap-6">
                 <div className="  top-0 left-0">
                   <div className="w-32 h-16 bg-foreground rounded-full  top-0 left-0">
-                    <span className="text-white font-bold text-lg top-0 left-0 "><img src="./ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
+                    <span className="text-white font-bold text-lg top-0 left-0 "><img src="/ALogo-removebg-preview.svg" alt="Logo" onClick={handlenavigate} className='cursor-pointer' /></span>
                   </div>
                 </div>
 
@@ -511,13 +545,13 @@ const PortfolioPage = () => {
                 {/* Center: Navigation */}
                 <nav className="flex items-center gap-4">
                   <button
-                    onClick={() => navigate('/marketplace')}
+                    onClick={() => navigate(networkPath('/marketplace'))}
                     className="font-geist border border-gray-300  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
                   >
                     Marketplace
                   </button>
                   <button
-                    onClick={() => navigate('/borrow')}
+                    onClick={() => navigate(networkPath('/borrow'))}
                     className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
                     Borrow
                   </button>
@@ -749,67 +783,66 @@ const PortfolioPage = () => {
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
         {
-        showClaimModal && selectedAssetForClaim &&  (
-          <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
-            <div
-              className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg"
-            >
-              <div className="text-center">
-                <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
-                  <span className="text-2xl">🔥</span>
-                </div>
-
-                <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
-                  Burn Tokens to Claim Yield
-                </h2>
-
-                <p className="font-inter text-sm text-gray-600 mb-8">
-                  This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
-                </p>
-
-                <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 mb-6 space-y-5">
-                  <div>
-                    <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
-                    <p className="font-gellix text-xl font-semibold text-foreground">
-                        {(parseFloat(selectedAssetForClaim.investorBalance) / 1e18).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
-                
-                    </p>
+          showClaimModal && selectedAssetForClaim && (
+            <div className="fixed inset-0 bg-transparent backdrop-blur-sm border flex items-center justify-center z-50 p-4">
+              <div
+                className="rounded-2xl p-8 max-w-md w-full bg-gray-50 border-neutral-200 border shadow-lg"
+              >
+                <div className="text-center">
+                  <div className="w-14 h-14 bg-neutral-200/50 shadow-lg rounded-full flex items-center justify-center mx-auto mb-5">
+                    <span className="text-2xl">🔥</span>
                   </div>
-                  <div className="pt-4 border-t border-gray-300">
-                    <p className="font-inter text-xs text-gray-500 mb-1.5">Expected USDC</p>
-                    <p className="font-gellix text-2xl font-semibold text-foreground">
-                        ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4 mb-6">
-                  <p className="font-inter text-xs text-gray-700 text-left">
-                    <span className="text-gray-500">⚠️</span> <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
+                  <h2 className="font-gellix text-xl font-semibold text-foreground mb-2">
+                    Burn Tokens to Claim Yield
+                  </h2>
+
+                  <p className="font-inter text-sm text-gray-600 mb-8">
+                    This will permanently burn your RWA tokens to claim your pro-rata share of settlement USDC.
                   </p>
-                </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowClaimModal(false);
-                      setSelectedAssetForClaim(null);
-                    }}
+                  <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 mb-6 space-y-5">
+                    <div>
+                      <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
+                      <p className="font-gellix text-xl font-semibold text-foreground">
+                        {parseFloat(selectedAssetForClaim.investorBalance).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                      </p>
+                    </div>
+                    <div className="pt-4 border-t border-gray-300">
+                      <p className="font-inter text-xs text-gray-500 mb-1.5">Expected USDC</p>
+                      <p className="font-gellix text-2xl font-semibold text-foreground">
+                        ${parseFloat(selectedAssetForClaim.expectedUsdc).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4 mb-6">
+                    <p className="font-inter text-xs text-gray-700 text-left">
+                      <span className="text-gray-500">⚠️</span> <strong>Warning:</strong> This action is irreversible. Your tokens will be burned permanently.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowClaimModal(false);
+                        setSelectedAssetForClaim(null);
+                      }}
                       className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200/50 border border-gray-200 text-foreground rounded-xl shadow-lg font-inter font-medium transition-all hover:scale-105"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={executeClaimYield}
-                    className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105"
-                  >
-                    Claim Now
-                  </button>
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={executeClaimYield}
+                      className="flex-1 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-inter font-medium transition-all shadow-lg hover:scale-105"
+                    >
+                      Claim Now
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
       </div>
     </>

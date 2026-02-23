@@ -3,17 +3,25 @@ import { useAccount, useDisconnect } from 'wagmi';
 import { Button } from "../ui/button";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { useAuthActions } from "../../hooks/useAuthActions";
+import { useNetwork } from "../../lib/network/NetworkContext";
+import { NetworkSwitcher } from "./NetworkSwitcher";
+
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
   const { handleGetStarted, isAuthenticating } = useAuthActions();
+  const { networkPath, isFeatureAvailable, networkType } = useNetwork();
+
+  console.log('🧭 Navbar rendering. Network:', networkType);
+  console.log('   Marketplace Path:', networkPath('/marketplace'));
+
 
   const handleLogout = () => {
     disconnect();
     // Maybe clear auth store as well
-    navigate('/');
+    navigate(networkPath('/'));
   };
 
   const truncateAddress = (addr: string | undefined) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
@@ -21,19 +29,22 @@ const Navbar = () => {
   return (
     <div className="flex items-center justify-between h-16">
       {/* Left: Logo */}
-      <Link to="/" className="navbar-logo">
-        <img src="/logo-light.svg" alt="Mantle" className="h-8" />
+      <Link to={networkPath('/')} className="navbar-logo">
+        <img src="/logo-light.svg" alt="arbitrum" className="h-8" />
       </Link>
 
       {/* Center: Navigation */}
       <nav className="hidden md:flex items-center gap-1 bg-gray-100/50 p-1 rounded-full border border-gray-200/80">
-        <Button variant="ghost" className="rounded-full" onClick={() => navigate('/marketplace')}>Marketplace</Button>
-        <Button variant="ghost" className="rounded-full" onClick={() => navigate('/portfolio')}>Portfolio</Button>
-        <Button variant="ghost" className="rounded-full" onClick={() => navigate('/borrow')}>Borrow</Button>
+        <Button variant="ghost" className="rounded-full" onClick={() => navigate(networkPath('/marketplace'))}>Marketplace</Button>
+        <Button variant="ghost" className="rounded-full" onClick={() => navigate(networkPath('/portfolio'))}>Portfolio</Button>
+        {isFeatureAvailable('borrow') && (
+          <Button variant="ghost" className="rounded-full" onClick={() => navigate(networkPath('/borrow'))}>Borrow</Button>
+        )}
       </nav>
 
-      {/* Right: Wallet Display */}
+      {/* Right: Wallet & Network Switcher */}
       <div className="flex items-center gap-3">
+        <NetworkSwitcher />
         {address ? (
           <>
             <NotificationBell role="INVESTOR" />

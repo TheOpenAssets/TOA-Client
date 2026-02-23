@@ -94,8 +94,8 @@ const mermaidCode = `flowchart TB
     %% =========================
     BM[Buy Module | Configure purchase settings and payment type.]
     U[USDC Buy | Direct purchase using stablecoin collateral.]
-    L[METH Buy | Leveraged purchase using protocol liquidity.]
-    LC[Collateral Locked | METH is held in escrow to secure the position.]
+    L[stARB Buy | Leveraged purchase using protocol liquidity.]
+    LC[Collateral Locked | stARB is held in escrow to secure the position.]
     LP[Leverage Position | Active position with health factor tracking.]
 
     AD --> BM

@@ -23,7 +23,8 @@ import { solvencyContractService } from '../../lib/api/solvency-contract.service
 import { format } from 'date-fns';
 import { RepayLoanModal } from './RepayLoanModal';
 import { PageLoader } from '../ui/page-loader';
-import { portfolioService, type PortfolioAsset } from '../../lib/api/portfolio.service';
+import { portfolioService } from '../../lib/api/portfolio.service';
+import type { PortfolioAsset } from '../../types/portfolio.types';
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { ToastContainer } from '../ui/toast';
 import { useToast } from '../../hooks/useToast';
@@ -757,7 +758,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                     <div>
                                       <span className="text-gray-600">Deposit TX:</span>
                                       <a
-                                        href={`https://sepolia.mantlescan.xyz/tx/${position.depositTxHash}`}
+                                        href={`https://sepolia.arbitrumscan.xyz/tx/${position.depositTxHash}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="ml-2 text-blue-600 hover:underline font-mono"

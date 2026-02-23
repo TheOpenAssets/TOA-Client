@@ -1,10 +1,11 @@
-
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../../styles/Navbar.css";
 import { useAuthActions } from "../../hooks/useAuthActions";
 // import { ShimmerButton } from "../../components/ui/shimmer-button";
 import { Button } from "../../components/ui/button";
 import { Layout, Droplet } from "lucide-react";
+import { useNetwork } from "../../lib/network/NetworkContext";
+import { NetworkSwitcher } from "../../components/common/NetworkSwitcher";
 
 
 
@@ -12,47 +13,35 @@ const Navbar = () => {
 
   const navigate = useNavigate();
   const { isAuthenticating, handleGetStarted } = useAuthActions();
+  const { networkPath } = useNetwork();
 
   const handleGetUsdcClick = async () => {
-    if (true) {
-      navigate('/faucet');
-      return;
-    }
-
+    navigate(networkPath('/faucet'));
   };
 
   return (
-    <header className="max-w-7xl mx-auto px-6 relative z-20 p-5">
+    <header className="max-w-7xl mx-auto px-6 sticky top-0 z-50 p-5 bg-transparent transition-all duration-300">
       <div className="flex flex-row justify-between">
         <div className="flex flex-row justify-between">
           {/* Logo */}
           <div className="navbar-logo">
-            <img src="./ALogo-removebg-preview.svg" alt="Openassets"  onClick={() => navigate('/')} className="h-20 w-20 rounded-full object-cover hover:shadow-xs" />
+            <img src="/ALogo-removebg-preview.svg" alt="Openassets" onClick={() => navigate(networkPath('/'))} className="h-20 w-20 rounded-full object-cover hover:shadow-xs cursor-pointer" />
           </div>
 
           {/* Navigation Links */}
           <nav className="navbar-nav ml-1">
-            <a
-              href="/changelog"
+            {/* <Link
+              to={networkPath('/Changelog')}
               className="nav-link underline-animation underline-animation-purple"
             >
               <p className="font-extrabold text-2xl font-beau">Changelog</p>
-            </a>
+            </Link> */}
 
-            <a href="/about" className="nav-link underline-animation underline-animation-purple">
+            <Link to={networkPath('/about')} className="nav-link underline-animation underline-animation-purple">
               <p className="font-extrabold text-2xl font-beau">About</p>
-            </a>
-            <a href="/how-it-works" className="nav-link underline-animation underline-animation-purple">
-              <p className="font-extrabold text-2xl font-beau">How it works</p>
-            </a>
-            <a 
-              href="https://open-assets-core-proposal.notion.site/Open-Assets-Mantle-Network-2d5316cd01a780818164c5889beb1a19" 
-              className="nav-link underline-animation underline-animation-purple"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <p className="font-extrabold text-2xl font-beau">Documents</p>
-            </a>
+            </Link>
+            
+            
 
           </nav>
         </div>

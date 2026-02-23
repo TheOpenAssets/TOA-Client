@@ -9,8 +9,6 @@ import type { GetPositionsResponse, Position } from '../../types/solvency.types'
 import type { AdminPositionsResponse } from '../../types/admin.types';
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://f5e22b62e871.ngrok-free.app/';
-
 // ============================================
 // RESPONSE TYPES (Matching actual backend)
 // ============================================
@@ -59,7 +57,7 @@ export interface SyncPositionResponse {
 
 class SolvencyService extends BaseService {
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   /**

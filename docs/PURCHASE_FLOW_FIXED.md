@@ -180,7 +180,7 @@ Token Address: 0xF837236ea7e3c8fFd1250C62F7c00E1C04ec2E4D
    ✅ Confirmed in block 32558XXX
 
    ✅ Purchase Complete!
-   Explorer: https://explorer.sepolia.mantle.xyz/tx/0x...
+   Explorer: https://explorer.sepolia.arbitrum.xyz/tx/0x...
 
    📝 Transaction details for backend notification:
    {

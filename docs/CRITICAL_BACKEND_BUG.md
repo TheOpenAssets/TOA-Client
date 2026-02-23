@@ -12,7 +12,7 @@ When assets are successfully registered on-chain, deployed as tokens, or listed 
 
 ### Observed Behavior:
 
-1. **Admin clicks "Register on Mantle"** for asset `e5d970bf-bb75-4a3c-89e6-446b9bf62d40`
+1. **Admin clicks "Register on arbitrum"** for asset `e5d970bf-bb75-4a3c-89e6-446b9bf62d40`
 2. **Backend successfully registers the asset on-chain**
 3. **BUT backend does NOT update:**
    - `checkpoints.registered` (stays `false`, should be `true`)
@@ -109,7 +109,7 @@ Step 5.5: Register Asset On-Chain
 
 ## 🛠️ Required Backend Fix
 
-### File: `TOA-Server-Mantle/src/controllers/admin.controller.ts` (or similar)
+### File: `TOA-Server-arbitrum/src/controllers/admin.controller.ts` (or similar)
 
 ### Endpoint: `POST /admin/assets/:id/register`
 
@@ -236,7 +236,7 @@ The same bug likely exists in **ALL three operations**:
 ### Test Case 3: Verify Frontend Flow
 
 1. Asset in Step 1 (attested, not registered)
-2. Click "Register on Mantle"
+2. Click "Register on arbitrum"
 3. Wait for success
 4. **Asset should DISAPPEAR from Step 1**
 5. **Asset should APPEAR in Step 2** (registered, not tokenized)

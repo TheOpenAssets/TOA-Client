@@ -3,7 +3,7 @@
 This document contains sequence diagrams illustrating all major flows in the RWA platform.
 
 ## Table of Contents
-1. [Leveraged mETH Purchase Flow](#1-leveraged-meth-purchase-flow)
+1. [Leveraged stARB Purchase Flow](#1-leveraged-stARB-purchase-flow)
 2. [Automated Harvest Flow](#2-automated-harvest-flow)
 3. [Health Monitoring & Liquidation Flow](#3-health-monitoring--liquidation-flow)
 4. [Settlement Waterfall Flow](#4-settlement-waterfall-flow)
@@ -12,7 +12,7 @@ This document contains sequence diagrams illustrating all major flows in the RWA
 
 ---
 
-## 1. Leveraged mETH Purchase Flow
+## 1. Leveraged stARB Purchase Flow
 
 ```mermaid
 sequenceDiagram
@@ -29,19 +29,19 @@ sequenceDiagram
     participant MongoDB
 
     User->>Frontend: Initiate leveraged purchase
-    Note over User,Frontend: AssetID, TokenAmount,<br/>PricePerToken, mETH Collateral
+    Note over User,Frontend: AssetID, TokenAmount,<br/>PricePerToken, stARB Collateral
 
     Frontend->>LeverageController: POST /leverage/initiate
     activate LeverageController
 
-    LeverageController->>FluxionDEXService: calculateMETHValueUSD(mETH)
+    LeverageController->>FluxionDEXService: calculatestARBValueUSD(stARB)
     activate FluxionDEXService
-    FluxionDEXService->>MockFluxionDEX: getMETHPrice()
+    FluxionDEXService->>MockFluxionDEX: getstARBPrice()
     MockFluxionDEX-->>FluxionDEXService: price ($3000)
-    FluxionDEXService-->>LeverageController: mETH value in USD
+    FluxionDEXService-->>LeverageController: stARB value in USD
     deactivate FluxionDEXService
 
-    Note over LeverageController: Validate 150% LTV:<br/>mETH value >= 150% of USDC needed
+    Note over LeverageController: Validate 150% LTV:<br/>stARB value >= 150% of USDC needed
 
     alt Insufficient Collateral
         LeverageController-->>Frontend: Error: Insufficient collateral
@@ -50,10 +50,10 @@ sequenceDiagram
         LeverageController->>LeverageBlockchainService: createPosition(params)
         activate LeverageBlockchainService
 
-        LeverageBlockchainService->>LeverageVault: createPosition(user, mETH, USDC, token, amount)
+        LeverageBlockchainService->>LeverageVault: createPosition(user, stARB, USDC, token, amount)
         activate LeverageVault
 
-        LeverageVault->>LeverageVault: Transfer mETH from user
+        LeverageVault->>LeverageVault: Transfer stARB from user
         Note over LeverageVault: Store as collateral
 
         LeverageVault->>SeniorPool: borrow(positionId, usdcAmount)
@@ -94,7 +94,7 @@ sequenceDiagram
 
 **Key Points**:
 - 150% LTV validation happens before blockchain transaction
-- mETH transferred to LeverageVault as collateral
+- stARB transferred to LeverageVault as collateral
 - SeniorPool lends USDC with 5% APR
 - RWA tokens purchased and held by vault (not directly by user)
 - Position tracked in MongoDB with health metrics
@@ -112,7 +112,7 @@ sequenceDiagram
     participant LeverageBlockchainService
     participant FluxionDEXService
     participant LeverageVault
-    participant MockMETH
+    participant MockstARB
     participant FluxionIntegration
     participant MockFluxionDEX
     participant SeniorPool
@@ -143,14 +143,14 @@ sequenceDiagram
         deactivate LeverageBlockchainService
 
         alt Interest > 0
-            HarvestKeeperService->>FluxionDEXService: calculateMETHForUSDC(interestAmount + 5% buffer)
+            HarvestKeeperService->>FluxionDEXService: calculatestARBForUSDC(interestAmount + 5% buffer)
             activate FluxionDEXService
             FluxionDEXService->>MockFluxionDEX: getQuote(targetUSDC)
-            MockFluxionDEX-->>FluxionDEXService: mETH needed
-            FluxionDEXService-->>HarvestKeeperService: mETH amount (with buffer)
+            MockFluxionDEX-->>FluxionDEXService: stARB needed
+            FluxionDEXService-->>HarvestKeeperService: stARB amount (with buffer)
             deactivate FluxionDEXService
 
-            HarvestKeeperService->>FluxionDEXService: checkLiquidity(mETH × 10)
+            HarvestKeeperService->>FluxionDEXService: checkLiquidity(stARB × 10)
             activate FluxionDEXService
             FluxionDEXService->>MockFluxionDEX: Check reserves
             MockFluxionDEX-->>FluxionDEXService: hasLiquidity = true/false
@@ -164,16 +164,16 @@ sequenceDiagram
                 LeverageBlockchainService->>LeverageVault: harvestYield(positionId)
                 activate LeverageVault
 
-                LeverageVault->>LeverageVault: Get position mETH appreciation
-                LeverageVault->>MockMETH: getValueInUSD(mETH change)
-                MockMETH-->>LeverageVault: USD value of appreciation
+                LeverageVault->>LeverageVault: Get position stARB appreciation
+                LeverageVault->>MockstARB: getValueInUSD(stARB change)
+                MockstARB-->>LeverageVault: USD value of appreciation
 
-                LeverageVault->>FluxionIntegration: swapMETHToUSDC(mETHAmount)
+                LeverageVault->>FluxionIntegration: swapstARBToUSDC(stARBAmount)
                 activate FluxionIntegration
-                FluxionIntegration->>MockFluxionDEX: swapMETHForUSDC(amount, minOut)
+                FluxionIntegration->>MockFluxionDEX: swapstARBForUSDC(amount, minOut)
                 activate MockFluxionDEX
                 MockFluxionDEX->>MockFluxionDEX: Validate slippage (max 3%)
-                MockFluxionDEX->>MockFluxionDEX: Transfer mETH, send USDC
+                MockFluxionDEX->>MockFluxionDEX: Transfer stARB, send USDC
                 MockFluxionDEX-->>FluxionIntegration: USDC received
                 deactivate MockFluxionDEX
                 FluxionIntegration-->>LeverageVault: USDC amount
@@ -195,7 +195,7 @@ sequenceDiagram
                 HarvestKeeperService->>LeveragePositionService: recordHarvest(positionId, harvestData)
                 activate LeveragePositionService
                 LeveragePositionService->>MongoDB: Push to harvestHistory array
-                LeveragePositionService->>MongoDB: Update totalInterestPaid, totalMETHHarvested
+                LeveragePositionService->>MongoDB: Update totalInterestPaid, totalstARBHarvested
                 MongoDB-->>LeveragePositionService: Updated
                 LeveragePositionService-->>HarvestKeeperService: Success
                 deactivate LeveragePositionService
@@ -219,7 +219,7 @@ sequenceDiagram
 - Runs every 4 minutes in demo mode (360x acceleration)
 - Calculates accrued interest with time multiplier
 - Only harvests if DEX has 10x liquidity buffer
-- 5% slippage buffer added to mETH amount
+- 5% slippage buffer added to stARB amount
 - Tracks harvest history in MongoDB
 - Sends notifications to users
 
@@ -236,7 +236,7 @@ sequenceDiagram
     participant MongoDB
     participant LeverageVault
     participant FluxionDEXService
-    participant MockMETH
+    participant MockstARB
     participant SeniorPool
     participant NotificationService
 
@@ -256,12 +256,12 @@ sequenceDiagram
 
         LeverageBlockchainService->>LeverageVault: getHealthFactor(positionId)
         activate LeverageVault
-        LeverageVault->>LeverageVault: Get position mETH collateral & USDC debt
+        LeverageVault->>LeverageVault: Get position stARB collateral & USDC debt
 
-        LeverageVault->>FluxionDEXService: getMETHPrice()
-        FluxionDEXService->>MockMETH: getPrice()
-        MockMETH-->>FluxionDEXService: Current price
-        FluxionDEXService-->>LeverageVault: mETH price
+        LeverageVault->>FluxionDEXService: getstARBPrice()
+        FluxionDEXService->>MockstARB: getPrice()
+        MockstARB-->>FluxionDEXService: Current price
+        FluxionDEXService-->>LeverageVault: stARB price
 
         LeverageVault->>LeverageVault: Calculate: (collateralValue × 10000) / debt
         Note over LeverageVault: Health Factor in basis points<br/>15000 = 150%, 11000 = 110%
@@ -289,10 +289,10 @@ sequenceDiagram
             LeverageBlockchainService->>LeverageVault: liquidatePosition(positionId)
             activate LeverageVault
 
-            LeverageVault->>LeverageVault: Seize mETH collateral
+            LeverageVault->>LeverageVault: Seize stARB collateral
 
-            LeverageVault->>FluxionIntegration: swapMETHToUSDC(allCollateral)
-            FluxionIntegration->>MockFluxionDEX: Swap mETH for USDC
+            LeverageVault->>FluxionIntegration: swapstARBToUSDC(allCollateral)
+            FluxionIntegration->>MockFluxionDEX: Swap stARB for USDC
             MockFluxionDEX-->>FluxionIntegration: USDC recovered
             FluxionIntegration-->>LeverageVault: usdcReceived
 
@@ -349,7 +349,7 @@ sequenceDiagram
 
 **Key Points**:
 - Runs every 1 minute in demo mode
-- Calculates real-time health factor using current mETH price
+- Calculates real-time health factor using current stARB price
 - Progressive alerts: WARNING → CRITICAL → LIQUIDATION
 - Automatic liquidation at <110% health factor
 - Shortfalls covered by JuniorTranche (first-loss capital)
@@ -435,10 +435,10 @@ sequenceDiagram
                 Note over LeverageVault: All debt paid, surplus exists
 
                 LeverageVault->>LeverageVault: Burn RWA tokens
-                LeverageVault->>LeverageVault: Calculate mETH to return
+                LeverageVault->>LeverageVault: Calculate stARB to return
                 Note over LeverageVault: proportional to original collateral
 
-                LeverageVault->>LeverageVault: Transfer mETH + surplus USDC to user
+                LeverageVault->>LeverageVault: Transfer stARB + surplus USDC to user
 
                 LeverageVault->>LeverageVault: Mark position as SETTLED
             end
@@ -476,7 +476,7 @@ sequenceDiagram
   3. **User Yield** (residual after debt)
 - If insufficient funds at any tier, waterfall stops
 - User only receives yield if all debt is fully paid
-- mETH collateral returned to user after settlement
+- stARB collateral returned to user after settlement
 - Complete settlement breakdown tracked in MongoDB
 
 ---
@@ -484,7 +484,7 @@ sequenceDiagram
 ## Summary
 
 These diagrams illustrate:
-- **Leveraged mETH Purchase**: Complete position creation with 150% LTV validation
+- **Leveraged stARB Purchase**: Complete position creation with 150% LTV validation
 - **Automated Harvest**: Cron-based yield harvesting every 4 minutes (demo mode)
 - **Health Monitoring**: Progressive alerts and automatic liquidation at thresholds
 - **Settlement Waterfall**: 3-tier priority distribution (Principal → Interest → User)

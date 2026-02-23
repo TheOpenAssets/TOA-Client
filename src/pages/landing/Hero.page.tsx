@@ -31,7 +31,7 @@ const HeroSection = () => {
           </h1>
 
           <p className="font-inter text-base md:text-lg text-foreground/80 mb-12 max-w-2xl mx-auto">
-            Tokenize and invest in real-world assets, leverage m-ETH for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
+            Tokenize and invest in real-world assets, leverage stARB for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
             <span className="font-beau text-xl md:text-2xl font-semibold">Tokenize. Invest. Borrow. Earn.</span> All in one unified execution layer.          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

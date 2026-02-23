@@ -21,6 +21,13 @@ export const useWalletIntegrityMonitor = () => {
   const isLoggingOut = useRef(false);
 
   useEffect(() => {
+    // Verify we are on EVM network before enforcing EVM integrity
+    // This prevents false positives when switching to Stellar while having MetaMask connected
+    const segment = window.location.pathname.split('/')[1];
+    if (segment === 'stellar') {
+      return;
+    }
+
     // Skip if not authenticated or already logging out
     if (!isAuthenticated || !authenticatedWalletAddress || isLoggingOut.current) {
       return;

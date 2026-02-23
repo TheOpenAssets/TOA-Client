@@ -101,11 +101,11 @@ const FaqDetails = ({
             icon: <Zap className="h-auto w-4 shrink-0" />,
             label: "Leverage",
             content: {
-                badge: "mETH Buy",
-                title: "Buy RWAs using leveraged mETH",
+                badge: "stARB Buy",
+                title: "Buy RWAs using leveraged stARB",
                 description:
-                    "Use mETH as collateral to create leveraged exposure while yield services interest automatically.",
-                buttonText: "Use mETH",
+                    "Use stARB as collateral to create leveraged exposure while yield services interest automatically.",
+                buttonText: "Use stARB",
                 videoSrc: "https://youtu.be/c7CdBkcVZPQ",
             },
         },

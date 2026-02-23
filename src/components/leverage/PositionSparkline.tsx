@@ -5,7 +5,7 @@ import type { HarvestEvent, PositionTimelineData, HealthStatus } from '../../typ
 interface PortfolioPosition {
   positionId: number;
   createdAt: string;
-  mETHCollateral: string;
+  stARBCollateral: string;
   healthFactor?: number;
   lastHarvestTime?: string;
   harvestHistory?: HarvestEvent[];
@@ -32,7 +32,7 @@ const HarvestTooltip = (props: any) => {
 
   if (!harvestEvent) return null;
 
-  const mETHSwapped = (parseFloat(harvestEvent.mETHSwapped) / 1e18).toFixed(6);
+  const stARBSwapped = (parseFloat(harvestEvent.stARBSwapped) / 1e18).toFixed(6);
   const interestPaid = (parseFloat(harvestEvent.interestPaid) / 1e6).toFixed(4);
 
   return (
@@ -40,7 +40,7 @@ const HarvestTooltip = (props: any) => {
       <p className="font-semibold text-gray-900 mb-1 text-xs">🌾 Harvest</p>
       <div className="space-y-0.5">
         <p className="text-gray-700 text-xs">
-          <span className="font-medium">mETH:</span> {mETHSwapped}
+          <span className="font-medium">stARB:</span> {stARBSwapped}
         </p>
         <p className="text-gray-700 text-xs">
           <span className="font-medium">Interest:</span> ${interestPaid}
@@ -53,7 +53,7 @@ const HarvestTooltip = (props: any) => {
 /**
  * PositionSparkline Component
  * Displays a minimal sparkline chart in the table row
- * Shows mETH value trend with color-coded area fill
+ * Shows stARB value trend with color-coded area fill
  * Green for upward trend, red for downward trend
  */
 export const PositionSparkline = ({
@@ -67,8 +67,8 @@ export const PositionSparkline = ({
   let lineColor = '#10B981'; // Default green
 
   if (data.length > 2) {
-    const latestValue = data[data.length - 2].mETHSwapped || 0; // Second to last (last is current with 0)
-    const previousValue = data[data.length - 3].mETHSwapped || 0;
+    const latestValue = data[data.length - 2].stARBSwapped || 0; // Second to last (last is current with 0)
+    const previousValue = data[data.length - 3].stARBSwapped || 0;
 
     if (latestValue < previousValue) {
       lineColor = '#EF4444'; // Red for declining
@@ -94,7 +94,7 @@ export const PositionSparkline = ({
         />
         <Area
           type="monotone"
-          dataKey="mETHSwapped"
+          dataKey="stARBSwapped"
           stroke={lineColor}
           strokeWidth={2}
           fill={`url(#${gradientId})`}
@@ -109,7 +109,7 @@ export const PositionSparkline = ({
 
 /**
  * Build sparkline timeline from actual harvest history data
- * Shows mETH swapped amounts at each harvest point
+ * Shows stARB swapped amounts at each harvest point
  * Limits to latest 5 harvests for cleaner visualization
  */
 function buildSparklineFromHarvests(position: PortfolioPosition): PositionTimelineData[] {
@@ -120,12 +120,12 @@ function buildSparklineFromHarvests(position: PortfolioPosition): PositionTimeli
   if (!position.harvestHistory || position.harvestHistory.length === 0) {
     points.push({
       timestamp: position.createdAt,
-      mETHSwapped: 0,
+      stARBSwapped: 0,
       healthFactor: healthFactorValue / 100,
     });
     points.push({
       timestamp: new Date().toISOString(),
-      mETHSwapped: 0,
+      stARBSwapped: 0,
       healthFactor: healthFactorValue / 100,
     });
     return points;
@@ -142,16 +142,16 @@ function buildSparklineFromHarvests(position: PortfolioPosition): PositionTimeli
   // Add starting point at 0 for area fill
   points.push({
     timestamp: startTimestamp,
-    mETHSwapped: 0,
+    stARBSwapped: 0,
     healthFactor: recentHarvests[0].healthFactorBefore / 10000,
   });
 
-  // Add a point for each harvest showing the mETH swapped amount
+  // Add a point for each harvest showing the stARB swapped amount
   recentHarvests.forEach((harvest: HarvestEvent) => {
-    const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
+    const stARBSwapped = parseFloat(harvest.stARBSwapped) / 1e18;
     points.push({
       timestamp: harvest.timestamp,
-      mETHSwapped: mETHSwapped,
+      stARBSwapped: stARBSwapped,
       healthFactor: harvest.healthFactorAfter / 10000,
     });
   });
@@ -159,7 +159,7 @@ function buildSparklineFromHarvests(position: PortfolioPosition): PositionTimeli
   // // Add current point
   // points.push({
   //   timestamp: new Date().toISOString(),
-  //   mETHSwapped: 0,
+  //   stARBSwapped: 0,
   //   healthFactor: healthFactorValue / 100,
   // });
 

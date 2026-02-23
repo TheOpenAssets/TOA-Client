@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { useAccount, useBalance } from 'wagmi';
+import { useAccount, useBalance, useWriteContract } from 'wagmi';
 import { Button } from '../ui/button';
 import { useToast } from '../../hooks/useToast';
 import { Loader2, CheckCircle, ExternalLink } from 'lucide-react';
-import { faucetService } from '../../lib/api/faucet.service';
+import { USDC_ABI, STARB_ABI, CONTRACTS } from '../../lib/blockchain/auction.contract';
+import { parseUnits } from 'viem';
 import type { Address } from 'viem';
 
 interface TokenFaucetCardProps {
-  tokenName: 'USDC' | 'mETH';
-  tokenSymbol: 'USDC' | 'mETH';
+  tokenName: 'USDC' | 'stARB';
+  tokenSymbol: 'USDC' | 'stARB';
   tokenDecimals: number;
   tokenImage: string;
   tokenAddress: string;
@@ -43,6 +44,8 @@ export const TokenFaucetCard = ({
     token: tokenAddress as Address,
   });
 
+  const { writeContractAsync } = useWriteContract();
+
   const handleGetToken = async () => {
     if (!address) {
       toastError('Wallet not connected', 'Please connect your wallet to use the faucet.');
@@ -76,13 +79,41 @@ export const TokenFaucetCard = ({
         }
       }
 
-      info(`Requesting ${tokenName}...`, 'The faucet is processing your request.');
-      const response =
-        tokenName === 'USDC'
-          ? await faucetService.getUsdcFromFaucet(address)
-          : await faucetService.getMethFromFaucet(address);
-      success(`${tokenName} Received!`, `${response.amount} ${tokenName} sent to your wallet.`);
-      setFaucetResult({ ...response, symbol: tokenSymbol });
+      if (tokenName === 'USDC') {
+        // Call faucet() directly on the MockUSDC contract
+        info(`Requesting ${tokenName}...`, 'Please confirm the transaction in your wallet.');
+        const txHash = await writeContractAsync({
+          address: CONTRACTS.USDC as Address,
+          abi: USDC_ABI,
+          functionName: 'faucet',
+        });
+        success(`${tokenName} Received!`, `1000 ${tokenName} sent to your wallet.`);
+        setFaucetResult({
+          message: `Successfully received 1000 ${tokenName}`,
+          amount: '1000',
+          transactionHash: txHash,
+          explorerUrl: `https://sepolia.arbiscan.io/tx/${txHash}`,
+          symbol: tokenSymbol,
+        });
+      } else {
+        // Call mint(address, amount) directly on the MockStARB contract
+        info(`Requesting ${tokenName}...`, 'Please confirm the transaction in your wallet.');
+        const mintAmount = parseUnits(faucetAmount.toString(), 18); // stARB has 18 decimals
+        const txHash = await writeContractAsync({
+          address: CONTRACTS.stARB as Address,
+          abi: STARB_ABI,
+          functionName: 'mint',
+          args: [address, mintAmount],
+        });
+        success(`${tokenName} Received!`, `${faucetAmount} ${tokenName} sent to your wallet.`);
+        setFaucetResult({
+          message: `Successfully received ${faucetAmount} ${tokenName}`,
+          amount: faucetAmount.toString(),
+          transactionHash: txHash,
+          explorerUrl: `https://sepolia.arbiscan.io/tx/${txHash}`,
+          symbol: tokenSymbol,
+        });
+      }
     } catch (err: unknown) {
       const error = err as Error;
       toastError('Faucet Error', error.message);

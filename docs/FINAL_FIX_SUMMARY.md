@@ -137,7 +137,7 @@ onChainAssets: assets.filter(a =>
 
 #### 2. `src/pages/admin/operations/OperationsView.page.tsx`
 
-**Step 1: Register on Mantle**
+**Step 1: Register on arbitrum**
 ```typescript
 // ❌ OLD: asset.checkpoints.attested && !asset.checkpoints.registered
 // ✅ NEW: asset.status === 'ATTESTED'
@@ -173,12 +173,12 @@ onChainAssets: assets.filter(a =>
 
 ### Asset: `4105fe0d-5eca-41b6-a51e-cf0e1299e8d7`
 - Status: `"ATTESTED"` ✅
-- **Will appear in:** Step 1 (Register on Mantle) ✅✅✅
+- **Will appear in:** Step 1 (Register on arbitrum) ✅✅✅
 - **CORRECT!**
 
 ### Asset: `9d2dd6af-c0da-4e5e-a59d-bf41e7630932`
 - Status: `"ATTESTED"` ✅
-- **Will appear in:** Step 1 (Register on Mantle) ✅✅✅
+- **Will appear in:** Step 1 (Register on arbitrum) ✅✅✅
 - **CORRECT!**
 
 ### Asset: `fb518b56-863e-4e78-b01d-d5cbcfcdaded`
@@ -203,7 +203,7 @@ HASHED
   ↓
 MERKLED ────────────► Compliance View (Approve)
   ↓
-ATTESTED ───────────► Step 1: Register on Mantle
+ATTESTED ───────────► Step 1: Register on arbitrum
   ↓
 REGISTERED ─────────► Step 2: Deploy Token
   ↓
@@ -241,7 +241,7 @@ LISTED ─────────────► Settlement View
 
 ### Admin Dashboard - Step 1 (Register):
 - [x] Shows assets with status = ATTESTED
-- [x] Click "Register on Mantle" → Backend updates status to REGISTERED
+- [x] Click "Register on arbitrum" → Backend updates status to REGISTERED
 - [x] Asset DISAPPEARS from Step 1
 - [x] Asset APPEARS in Step 2
 

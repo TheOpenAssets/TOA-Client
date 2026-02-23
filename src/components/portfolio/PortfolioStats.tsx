@@ -2,7 +2,7 @@
 import { Plus } from 'lucide-react';
 import { MiniAreaChart } from './MiniAreaChart';
 import { generateAssetValueChart, generateYieldChart } from '../../lib/utils/portfolioChartGenerator';
-import type { PortfolioAsset } from '../../lib/api/portfolio.service';
+import type { PortfolioAsset } from '../../types/portfolio.types';
 import type { OAIDCreditLine } from '../../types/solvency.types';
 import { Button } from '../ui/button';
 import { formatUSD } from '../../utils/solvency/format-credit.util';

@@ -1,9 +1,7 @@
 // src/lib/api/faucet.service.ts
 import BaseService from './base.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-interface FaucetResponse {
+export interface FaucetResponse {
   success: boolean;
   message: string;
   transactionHash: string;
@@ -14,7 +12,7 @@ interface FaucetResponse {
 
 class FaucetService extends BaseService {
   constructor() {
-    super(API_BASE_URL);
+    super();
   }
 
   async getUsdcFromFaucet(receiverAddress: string): Promise<FaucetResponse> {
@@ -39,9 +37,9 @@ class FaucetService extends BaseService {
     }
   }
 
-  async getMethFromFaucet(receiverAddress: string): Promise<FaucetResponse> {
+  async getstARBFromFaucet(receiverAddress: string): Promise<FaucetResponse> {
     try {
-      const response = await fetch(`${this.baseURL}/faucet/meth`, {
+      const response = await fetch(`${this.baseURL}/faucet/stARB`, {
         method: 'POST',
         headers: this.getHeaders(), // Use non-authed headers
         body: JSON.stringify({ receiverAddress }),
@@ -50,14 +48,14 @@ class FaucetService extends BaseService {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to get mETH from faucet.');
+        throw new Error(data.message || 'Failed to get stARB from faucet.');
       }
 
       return data;
     } catch (error: unknown) {
-      console.error('Error getting mETH from faucet:', error);
+      console.error('Error getting stARB from faucet:', error);
       const e = error as Error;
-      throw new Error(`Failed to get mETH from faucet: ${e.message}`);
+      throw new Error(`Failed to get stARB from faucet: ${e.message}`);
     }
   }
 }

@@ -12,10 +12,21 @@ export interface TimeoutController {
 }
 
 class BaseService {
-  protected baseURL: string;
+  private _baseURL: string;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor(baseURL?: string) {
+    this._baseURL = baseURL ?? '';
+  }
+
+  protected get baseURL(): string {
+    if (this._baseURL) return this._baseURL;
+
+    // Dynamic resolution from current route
+    const segment = window.location.pathname.split('/')[1];
+    if (segment === 'stellar') {
+      return import.meta.env.VITE_STELLAR_API_URL ?? 'http://localhost:3001';
+    }
+    return import.meta.env.VITE_ARBITRUM_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
   }
 
   protected getHeaders = () => {
@@ -27,16 +38,27 @@ class BaseService {
     return headers;
   }
 
-  protected getAuthHeaders = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      // This will trigger the error handler which redirects to /verify-challenge
-      handleAPIError(new Error('Not a verified user, please solve the challenge'));
+  protected getAuthHeaders = (required: boolean = true) => {
+    const segment = window.location.pathname.split('/')[1];
+    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+
+    const token = localStorage.getItem(`${network}_access_token`)
+      ?? localStorage.getItem('access_token'); // legacy fallback
+
+    // Debug log to trace auth issues
+    // console.log(`[BaseService] getAuthHeaders: network=${network}, required=${required}, hasToken=${!!token}`);
+
+    if (!token && required) {
+      console.warn(`[BaseService] Missing token for required auth. Network: ${network}`);
+      handleAPIError(new Error('Not a verified user'));
     }
-    return {
+
+    const headers = {
       ...this.getHeaders(),
-      'Authorization': `Bearer ${token}`,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
+
+    return headers;
   }
 
   /**

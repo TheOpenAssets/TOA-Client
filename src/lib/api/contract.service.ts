@@ -70,6 +70,20 @@ export interface PurchaseResult {
 
 class ContractService {
   /**
+   * Get gas fee overrides with a buffer to prevent "max fee per gas less than block base fee" errors.
+   * Arbitrum Sepolia base fees can fluctuate between blocks, so we add a 50% buffer.
+   */
+  private async getGasOverrides(provider: ethers.BrowserProvider): Promise<{ maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }> {
+    const feeData = await provider.getFeeData();
+    const baseFee = feeData.maxFeePerGas ?? 0n;
+    const priorityFee = feeData.maxPriorityFeePerGas ?? 0n;
+    return {
+      maxFeePerGas: baseFee * 3n / 2n, // 1.5x buffer
+      maxPriorityFeePerGas: priorityFee > 0n ? priorityFee : 100000n,
+    };
+  }
+
+  /**
    * Convert UUID asset ID to bytes32 format required by smart contract
    * Example: "4d02feaa-7b32-4c35-980f-5710b73a982a" -> "0x4d02feaa7b324c35980f5710b73a982a00000000000000000000000000000000"
    */
@@ -128,9 +142,9 @@ class ContractService {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const network = await provider.getNetwork();
 
-      // Check if we're on Mantle Sepolia (chainId: 5003)
-      if (network.chainId !== 5003n) {
-        console.warn(`Wrong network: Connected to chainId ${network.chainId}, expected 5003 (Mantle Sepolia)`);
+      // Check if we're on Arbitrum Sepolia (chainId: 421614)
+      if (network.chainId !== 421614n) {
+        console.warn(`Wrong network: Connected to chainId ${network.chainId}, expected 421614 (Arbitrum Sepolia)`);
         return '0';
       }
 
@@ -239,7 +253,8 @@ class ContractService {
 
       if (allowance < payment) {
         // Approve USDC
-        const tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment);
+        const gasOverrides = await this.getGasOverrides(provider);
+        const tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment, gasOverrides);
         console.log('Approve TX:', tx.hash);
 
         const receipt = await this.waitForTransaction(tx.hash, provider);
@@ -614,7 +629,8 @@ class ContractService {
 
       // Buy tokens
       console.log('\n✅ Step 2: Buying tokens...');
-      const tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei);
+      const gasOverrides = await this.getGasOverrides(provider);
+      const tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei, gasOverrides);
       console.log('Buy TX:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
@@ -623,7 +639,7 @@ class ContractService {
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('\n✅ Purchase Complete!');
       console.log('━'.repeat(50));
-      console.log(`Explorer: https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log(`Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
 
       return {
         success: true,
@@ -927,7 +943,8 @@ class ContractService {
 
       // Approve YieldVault
       console.log('⏳ Approving YieldVault to spend tokens...');
-      const tx = await tokenContract.approve(YIELD_VAULT_ADDRESS, burnAmount);
+      const gasOverrides = await this.getGasOverrides(provider);
+      const tx = await tokenContract.approve(YIELD_VAULT_ADDRESS, burnAmount, gasOverrides);
       console.log('TX Hash:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
@@ -1006,7 +1023,8 @@ class ContractService {
 
       // Call claimYield(tokenAddress, tokenAmount)
       console.log('⏳ Submitting claimYield() transaction...');
-      const tx = await yieldVaultContract.claimYield(tokenAddress, burnAmountWei);
+      const gasOverrides = await this.getGasOverrides(provider);
+      const tx = await yieldVaultContract.claimYield(tokenAddress, burnAmountWei, gasOverrides);
       console.log('TX Hash:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 
@@ -1040,7 +1058,7 @@ class ContractService {
       console.log('✅ Yield claimed successfully!');
       console.log('TX Hash:', tx.hash);
       console.log('Block:', receipt.blockNumber);
-      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log('Explorer:', `https://sepolia.arbiscan.io/tx/${tx.hash}`);
       console.log();
 
       return {
@@ -1070,7 +1088,7 @@ class ContractService {
    * - Only approves if allowance is 0
    * - Uses MaxUint256 for unlimited approval
    *
-   * Contract Addresses (Mantle Testnet):
+   * Contract Addresses (arbitrum Testnet):
    * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
    *
    * @param tokenAddress - The RWA token address to approve
@@ -1088,7 +1106,7 @@ class ContractService {
       // This is done to match the behavior of the `approve-marketplace.js` script.
       // In a production environment, this should be handled by a secure backend service.
       const custodyPrivateKey = '0x1d12932a5c3a7aa8d4f50662caa679bb2e53321e11bc5df2af9298e2ace59305';
-      const provider = new ethers.JsonRpcProvider('https://rpc.sepolia.mantle.xyz');
+      const provider = new ethers.JsonRpcProvider('https://sepolia-rollup.arbitrum.io/rpc');
       const custodyWallet = new ethers.Wallet(custodyPrivateKey, provider);
 
       const RWA_TOKEN_ABI = [
@@ -1140,7 +1158,7 @@ class ContractService {
       const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('✅ Marketplace approved!');
-      console.log('Explorer:', `https://explorer.sepolia.mantle.xyz/tx/${tx.hash}`);
+      console.log('Explorer:', `https://sepolia.arbiscan.io/tx/${tx.hash}`);
       console.log();
       console.log('✅ Marketplace can now transfer tokens to buyers!');
 
@@ -1181,7 +1199,8 @@ class ContractService {
       console.log('Clearing Price (wei):', clearingPriceWei.toString());
 
       console.log('Submitting endAuction transaction...');
-      const tx = await marketplaceContract.endAuction(assetIdBytes32, clearingPriceWei);
+      const gasOverrides = await this.getGasOverrides(provider);
+      const tx = await marketplaceContract.endAuction(assetIdBytes32, clearingPriceWei, gasOverrides);
       console.log('TX Hash:', tx.hash);
       console.log('Waiting for confirmation...');
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertCircle, RefreshCw, AlertTriangle, TrendingDown, CheckCircle } from 'lucide-react';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import { Button } from '../../../components/ui/button';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 import type { AdminPosition } from '../../../types/admin.types';
 import { ethers } from 'ethers';
 
@@ -35,7 +36,7 @@ export function LoansView() {
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
     isDangerous: false,
   });
 
@@ -105,9 +106,29 @@ export function LoansView() {
     setFilteredPositions(filtered);
   };
 
+  const { networkType } = useNetwork();
+
   useEffect(() => {
-    fetchPositions();
-  }, []);
+    if (networkType !== 'stellar') {
+      fetchPositions();
+    }
+  }, [networkType]);
+
+  if (networkType === 'stellar') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+          <AlertCircle className="w-12 h-12 text-blue-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Loan Management</h1>
+        <h2 className="text-xl font-medium text-gray-600 mb-6">Coming Soon on Stellar</h2>
+        <p className="text-gray-500 max-w-md">
+          Loan functionalities are currently being developed for the Stellar network.
+          Please switch to arbitrum to manage loans.
+        </p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     applyFilter(positions, activeFilter);
@@ -429,95 +450,94 @@ export function LoansView() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredPositions.map((position) => (
                     position.borrowedAmountFormatted !== '$0.00' && position.outstandingDebtFormatted !== '$0.00' && (
-                    <tr key={position.positionId} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{position.positionId}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono" title={position.userAddress}>
-                        {position.userAddress.slice(0, 6)}...{position.userAddress.slice(-4)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <p className="font-medium">{position.collateralValueFormatted}</p>
-                          <p className="text-xs text-gray-500">{position.collateralTokenType}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {position.borrowedAmountFormatted}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
-                        {position.outstandingDebtFormatted}
-                      </td>
-                      
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          position.missedPayments > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {Math.min(position.missedPayments, 3)} / 3
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        {getStatusBadge(position.status)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <div className="flex flex-col gap-1">
-                          {/* Mark Missed Payment - Available for active positions */}
-                          {position.status === 'ACTIVE' && position.missedPayments < 3 && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMarkMissedPayment(position.positionId)}
-                              disabled={processingId === position.positionId}
-                              className="text-xs"
-                            >
-                              Mark Missed
-                            </Button>
-                          )}
+                      <tr key={position.positionId} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{position.positionId}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono" title={position.userAddress}>
+                          {position.userAddress.slice(0, 6)}...{position.userAddress.slice(-4)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <p className="font-medium">{position.collateralValueFormatted}</p>
+                            <p className="text-xs text-gray-500">{position.collateralTokenType}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          {position.borrowedAmountFormatted}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+                          {position.outstandingDebtFormatted}
+                        </td>
 
-                          {/* Mark Defaulted - Available after 3 missed payments */}
-                          {position.status === 'ACTIVE' && position.missedPayments >= 3 && !position.isDefaulted && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMarkDefaulted(position.positionId)}
-                              disabled={processingId === position.positionId}
-                              className="text-xs bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
-                            >
-                              Mark Defaulted
-                            </Button>
-                          )}
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${position.missedPayments > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                            {Math.min(position.missedPayments, 3)} / 3
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          {getStatusBadge(position.status)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <div className="flex flex-col gap-1">
+                            {/* Mark Missed Payment - Available for active positions */}
+                            {position.status === 'ACTIVE' && position.missedPayments < 3 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleMarkMissedPayment(position.positionId)}
+                                disabled={processingId === position.positionId}
+                                className="text-xs"
+                              >
+                                Mark Missed
+                              </Button>
+                            )}
 
-                          {/* Liquidate - Available for liquidatable positions */}
-                          {(
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleLiquidate(position.positionId)}
-                              disabled={processingId === position.positionId}
-                              className="text-xs bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
-                            >
-                              Liquidate
-                            </Button>
-                          )}
+                            {/* Mark Defaulted - Available after 3 missed payments */}
+                            {position.status === 'ACTIVE' && position.missedPayments >= 3 && !position.isDefaulted && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleMarkDefaulted(position.positionId)}
+                                disabled={processingId === position.positionId}
+                                className="text-xs bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
+                              >
+                                Mark Defaulted
+                              </Button>
+                            )}
 
-                          {/* Settle Liquidation - Available for liquidated positions after maturity */}
-                          {position.status === 'LIQUIDATED' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSettleLiquidation(position.positionId)}
-                              disabled={processingId === position.positionId}
-                              className="text-xs bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
-                            >
-                              Settle
-                            </Button>
-                          )}
+                            {/* Liquidate - Available for liquidatable positions */}
+                            {(
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleLiquidate(position.positionId)}
+                                disabled={processingId === position.positionId}
+                                className="text-xs bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+                              >
+                                Liquidate
+                              </Button>
+                            )}
 
-                          {/* Sync - Always available */}
-                          
-                        </div>
-                      </td>
-                    </tr>)
+                            {/* Settle Liquidation - Available for liquidated positions after maturity */}
+                            {position.status === 'LIQUIDATED' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSettleLiquidation(position.positionId)}
+                                disabled={processingId === position.positionId}
+                                className="text-xs bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                              >
+                                Settle
+                              </Button>
+                            )}
+
+                            {/* Sync - Always available */}
+
+                          </div>
+                        </td>
+                      </tr>)
                   ))}
                 </tbody>
               </table>
@@ -555,11 +575,10 @@ export function LoansView() {
               </button>
               <button
                 onClick={confirmModal.onConfirm}
-                className={`px-5 py-2.5 text-sm font-light text-white rounded-lg transition-all duration-200 shadow-lg ${
-                  confirmModal.isDangerous
-                    ? 'bg-red-600 hover:bg-red-700 shadow-red-500/50'
-                    : 'bg-gray-900 hover:bg-black shadow-gray-900/50'
-                }`}
+                className={`px-5 py-2.5 text-sm font-light text-white rounded-lg transition-all duration-200 shadow-lg ${confirmModal.isDangerous
+                  ? 'bg-red-600 hover:bg-red-700 shadow-red-500/50'
+                  : 'bg-gray-900 hover:bg-black shadow-gray-900/50'
+                  }`}
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
               >
                 Confirm

@@ -21,7 +21,7 @@ export function adaptCreditResponse(
   const availableCredit = parseInt(response.totalAvailableCredit) / 1_000_000;
 
   // Convert credit lines to collateral positions
-  const collateral: CollateralPosition[] = response.creditLines.map((line) => {
+  const collateral: CollateralPosition[] = response.creditLines.map((line: any) => {
     const amount = parseInt(line.collateralAmount);
     const valueUSD = parseInt(line.creditLimit) / 1_000_000; // Credit limit is based on collateral value
 

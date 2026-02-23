@@ -62,7 +62,7 @@ const ChangelogPage: React.FC = () => {
                 {/* Logo */}
                 <div className='flex flex-row items-center justify-center'>
                     <img
-                        src="./ALogo-removebg-preview.svg"
+                        src="/ALogo-removebg-preview.svg"
                         alt="Logo"
                         className="h-20 w-auto object-contain cursor-pointer"
                         onClick={() => navigate('/')}

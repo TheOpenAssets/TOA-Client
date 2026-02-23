@@ -34,7 +34,7 @@
 Contract addresses, ABIs, and helper functions.
 
 **Contains:**
-- Deployed contract addresses (Mantle Sepolia)
+- Deployed contract addresses (arbitrum Sepolia)
 - Contract ABIs: USDC, PrimaryMarketplace, IdentityRegistry
 - Helper functions: UUID → bytes32, wei conversions
 - Type definitions for contract interactions
@@ -314,11 +314,11 @@ useEffect(() => {
 
 ---
 
-## 🎯 Deployed Contracts (Mantle Sepolia)
+## 🎯 Deployed Contracts (arbitrum Sepolia)
 
 ```json
 {
-  "network": "mantleTestnet",
+  "network": "arbitrumTestnet",
   "contracts": {
     "IdentityRegistry": "0x2E310C62A225033055E88B690F8d054ece8bcbC4",
     "PrimaryMarketplace": "0x96183D507Bbb0dA7d78192dce7FBC8C1f209061C",
@@ -335,7 +335,7 @@ All addresses are hardcoded in `auction.contract.ts`.
 ## 🔧 Technical Details
 
 ### Wallet Integration
-- **RainbowKit** configured for Mantle Sepolia (rainbowkit.config.ts)
+- **RainbowKit** configured for arbitrum Sepolia (rainbowkit.config.ts)
 - **Wagmi hooks** used for all contract interactions
 - Existing wallet connection flow preserved
 

@@ -22,7 +22,7 @@ interface PortfolioLeveragePosition {
     riskTier?: string;
     positionType: 'Leveraged Position';
   };
-  mETHCollateral: string;
+  stARBCollateral: string;
   usdcBorrowed: string;
   healthFactor?: number;
   healthStatus?: string;
@@ -32,7 +32,7 @@ interface PortfolioLeveragePosition {
   liquidationTxHash?: string;
   leverageInfo: {
     type: 'ACTIVE' | 'SETTLED' | 'LIQUIDATED';
-    mETHCollateralFormatted: string;
+    stARBCollateralFormatted: string;
     usdcBorrowedFormatted: string;
     healthFactorFormatted?: string;
     healthStatus?: string;
@@ -41,8 +41,8 @@ interface PortfolioLeveragePosition {
     claimableYieldFormatted: string;
     userYield?: string;
     userYieldFormatted?: string;
-    mETHReturned?: string;
-    mETHReturnedFormatted?: string;
+    stARBReturned?: string;
+    stARBReturnedFormatted?: string;
     settlementTxHash?: string;
     settlementDate?: string;
     liquidationTxHash?: string;
@@ -127,13 +127,19 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
     return pos.userYieldDistributed ? formatUSDC(pos.userYieldDistributed) : undefined;
   };
 
-  const formatUSDC = (weiAmount: string): string => {
-    const usdc = parseFloat(weiAmount) / 1e6;
+  const formatUSDC = (amount: string): string => {
+    const val = parseFloat(amount || '0');
+    // If value contains a decimal or is small, it's already canonical
+    const usdc = amount.includes('.') || val < 1e5 ? val : val / 1e6;
     return usdc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const formatMETH = (weiAmount: string): string => {
-    return formatUnits(BigInt(weiAmount), 18);
+  const formatstARB = (amount: string): string => {
+    if (!amount) return '0';
+    const val = parseFloat(amount);
+    // If value contains a decimal or is small, it's already canonical
+    if (amount.includes('.') || val < 1e9) return val.toString();
+    return formatUnits(BigInt(amount), 18);
   };
 
   const getHealthColor = (health: number) => {
@@ -238,9 +244,9 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
           <tbody>
             {filteredPositions.map((pos, index) => {
               const health = getHealthFactor(pos);
-              const collateral = formatMETH(pos.mETHCollateral);
+              const collateral = formatstARB(pos.stARBCollateral);
               const invested = formatUSDC(pos.usdcBorrowed);
-              const totalAmount = isPortfolioPosition(pos) ? formatMETH(pos.totalAmount) : (parseFloat(formatMETH((pos as LeveragePosition).rwaTokenAmount || '0'))).toFixed(2);
+              const totalAmount = isPortfolioPosition(pos) ? formatstARB(pos.totalAmount) : (parseFloat(formatstARB((pos as LeveragePosition).rwaTokenAmount || '0'))).toFixed(2);
               const status = getStatus(pos);
               const positionStatusStyle = getPositionStatusStyle(status);
               const isActivePosition = status === 'ACTIVE';
@@ -284,7 +290,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
                   {/* Collateral */}
                   <td className="px-6 py-4 text-right">
                     <div className="font-gellix text-sm font-normal text-foreground">
-                      {parseFloat(collateral).toFixed(4)} mETH
+                      {parseFloat(collateral).toFixed(4)} stARB
                     </div>
                   </td>
 
@@ -315,7 +321,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
                       <div className="space-y-1">
                         {settlementTx ? (
                           <a
-                            href={`https://explorer.sepolia.mantle.xyz/tx/${settlementTx}`}
+                            href={`https://explorer.sepolia.arbitrum.xyz/tx/${settlementTx}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline font-gellix text-xs font-normal block"
@@ -325,7 +331,7 @@ export const PositionsTable = ({ positions, isLoading, onSelectPosition }: Posit
                           ) : (
                               liquidationTxHash ? (
                                 <a
-                                  href={`https://explorer.sepolia.mantle.xyz/tx/${liquidationTxHash}`}
+                                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${liquidationTxHash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline font-gellix text-xs font-normal block"

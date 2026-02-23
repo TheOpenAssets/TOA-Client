@@ -90,7 +90,7 @@ const confirmListing = async () => {
 ### 4. Updated OperationsView Layout
 
 **Phase 1**: Attested → Ready for Registry
-- Action: **Register on Mantle**
+- Action: **Register on arbitrum**
 
 **Phase 2**: Registered → Ready for Tokenization
 - Action: **Deploy Token**
@@ -165,7 +165,7 @@ const confirmListing = async () => {
 2. Operations Center - Phase 1 (/admin/operations)
    ↓
    Asset Status: ATTESTED
-   Action: Click "Register on Mantle"
+   Action: Click "Register on arbitrum"
    ↓
    API: POST /admin/assets/:id/register
    Result: Status → REGISTERED
@@ -263,7 +263,7 @@ POST /admin/assets/list-on-marketplace
   "price": "1000000",
   "minInvestment": "1000000000000000000000",
   "transactionHash": "0x71123ed678b2b4f8f21b3b0411412a12062c7a315dddb0e01b1abfa174bed034",
-  "explorerUrl": "https://explorer.sepolia.mantle.xyz/tx/0x71123..."
+  "explorerUrl": "https://explorer.sepolia.arbitrum.xyz/tx/0x71123..."
 }
 ```
 

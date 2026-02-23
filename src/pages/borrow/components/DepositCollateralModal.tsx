@@ -11,7 +11,8 @@ import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 import { useCallback } from 'react';
 import { X } from 'lucide-react';
-import { portfolioService, type PortfolioAsset } from '../../../lib/api/portfolio.service';
+import { portfolioService } from '../../../lib/api/portfolio.service';
+import type { PortfolioAsset } from '../../../types/portfolio.types';
 import { assetService } from '../../../lib/api/asset.service';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
@@ -535,7 +536,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
@@ -557,7 +558,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://explorer.sepolia.mantle.xyz/tx/${txHash}`}
+                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"

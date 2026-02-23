@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, ChevronDown, ChevronUp, Filter, XCircle } from 'lucide-react';
 import type { SecondaryOrder } from '../../types/marketplace.types';
-import type { PortfolioAsset } from './../../lib/api/portfolio.service';
+import type { PortfolioAsset } from '../../types/portfolio.types';
 import {
   Dialog,
   DialogContent,
@@ -86,7 +86,7 @@ export const TradesTable = ({
 
   const openTxHash = (hash: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://sepolia.mantlescan.xyz/tx/${hash}`, '_blank');
+    window.open(`https://sepolia.arbitrumscan.xyz/tx/${hash}`, '_blank');
   };
 
   const getStatusColor = (status: string): string => {

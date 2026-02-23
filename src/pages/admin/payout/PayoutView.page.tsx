@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { DollarSign, Check, Loader2, ExternalLink } from 'lucide-react';
 import { adminService } from '../../../lib/api/admin.service';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 interface PayoutAsset {
   assetId: string;
   invoiceNumber: string;
@@ -17,6 +18,7 @@ interface PayoutAsset {
 }
 
 const PayoutViewPage = () => {
+  const { network } = useNetwork();
   const [assets, setAssets] = useState<PayoutAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [payingOut, setPayingOut] = useState<string | null>(null);
@@ -66,9 +68,9 @@ const PayoutViewPage = () => {
 
       console.log('All assets:', allAssets);
 
-      // Filter for LISTED, ENDED, or AUCTION_DECLARED assets
-      const filteredAssets = allAssets.filter((asset: any) => 
-        ['LISTED', 'AUCTION_DECLARED'].includes(asset.status)
+      // Filter for LISTED, ENDED, PAYOUT_COMPLETE, or AUCTION_DECLARED assets
+      const filteredAssets = allAssets.filter((asset: any) =>
+        ['LISTED', 'AUCTION_DECLARED', 'ENDED', 'PAYOUT_COMPLETE'].includes(asset.status)
       );
 
       console.log('Filtered assets for payout:', filteredAssets);
@@ -77,31 +79,27 @@ const PayoutViewPage = () => {
       const payoutAssets: PayoutAsset[] = filteredAssets
         .map((asset: any) => {
           // Parse sold tokens
-          const soldRaw = asset.listing?.sold || '0';
-          const sold = typeof soldRaw === 'string'
-            ? (soldRaw.length >= 18 ? parseFloat(soldRaw) / 1e18 : parseFloat(soldRaw))
-            : soldRaw;
+          const getCanonical = (val: string | number) => {
+            if (!val) return 0;
+            const r = typeof val === 'string' ? parseFloat(val) : val;
+            return r > 1e9 ? r / 1e18 : r;
+          };
+          const sold = getCanonical(asset.listing?.sold || '0');
 
           // Parse total supply
-          const totalSupplyRaw = asset.tokenParams?.totalSupply || '0';
-          const totalSupply = typeof totalSupplyRaw === 'string'
-            ? (totalSupplyRaw.length > 18 ? parseFloat(totalSupplyRaw) / 1e18 : parseFloat(totalSupplyRaw))
-            : totalSupplyRaw;
+          const totalSupply = getCanonical(asset.tokenParams?.totalSupply || '0');
 
-          // Parse price (USDC with 6 decimals)
-          // For STATIC assets: use listing.price
-          // For AUCTION assets: use listing.reservePrice
-          // Backend stores prices in 6 decimals (e.g., 30000 = $0.03, 150000 = $0.15)
+          // Parse price (USDC)
+          // Heuristic: if > 1000, assume raw 6-decimal (e.g. 850000 = $0.85). 
+          // If < 1000, assume canonical (e.g. 0.85 = $0.85).
           const priceRaw = asset.assetType === 'AUCTION'
             ? (asset.listing?.clearingPrice || '0')
             : (asset.listing?.price || asset.tokenParams?.pricePerToken || '0');
 
-          // Always divide by 1e6 since backend stores in 6 decimals
-          const priceInUsdc = typeof priceRaw === 'string'
-            ? parseFloat(priceRaw) / 1e6
-            : priceRaw / 1e6;
+          const pVal = parseFloat(priceRaw as string);
+          const priceInUsdc = pVal > 1000 ? pVal / 1e6 : pVal;
 
-          // Calculate total raised (sold tokens * price per token in USDC)
+          // Calculate total raised
           const totalRaised = sold * priceInUsdc;
 
           console.log(`Asset ${asset.assetId}:`, {
@@ -143,7 +141,7 @@ const PayoutViewPage = () => {
 
       console.log(`Executing payout for asset: ${assetId}`);
 
-      if (assets.find(asset => asset.assetId === assetId)?.status && ['PAYOUT_COMPLETE', 'ENDED'].includes(assets.find(asset => asset.assetId === assetId)?.status || '')) {
+      if (assets.find(asset => asset.assetId === assetId)?.status && ['PAYOUT_COMPLETE'].includes(assets.find(asset => asset.assetId === assetId)?.status || '')) {
         console.log('Payout already executed for this asset.');
         return;
       }
@@ -200,7 +198,7 @@ const PayoutViewPage = () => {
                 <p className="font-gellix text-green-700 flex items-center gap-2">
                   Transaction:{' '}
                   <a
-                    href={`https://sepolia.mantlescan.xyz/tx/${successMessage.txHash}`}
+                    href={`${network.explorerUrl}/tx/${successMessage.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
@@ -276,9 +274,8 @@ const PayoutViewPage = () => {
               </thead>
               <tbody>
                 {assets.map((asset, index) => (
-                  <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                  }`}>
+                  <tr key={asset.assetId} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                    }`}>
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-gellix text-sm font-semibold text-foreground">

@@ -29,7 +29,7 @@ const HarvestDot = (props: any) => {
   const { cx, cy, payload, harvestHistory, fill = '#10B981' } = props;
 
   // Only show dots for actual harvest points (non-zero values)
-  const isHarvestPoint = payload.mETHSwapped > 0 || payload.interestPaid > 0 || payload.usdcReceived > 0;
+  const isHarvestPoint = payload.stARBSwapped > 0 || payload.interestPaid > 0 || payload.usdcReceived > 0;
 
   if (!isHarvestPoint) {
     return (
@@ -66,7 +66,7 @@ const HarvestDot = (props: any) => {
     e.stopPropagation();
     e.preventDefault();
     console.log('Clicking harvest point:', harvestEvent.transactionHash);
-    const explorerUrl = `https://explorer.sepolia.mantle.xyz/tx/${harvestEvent.transactionHash}`;
+    const explorerUrl = `https://explorer.sepolia.arbitrum.xyz/tx/${harvestEvent.transactionHash}`;
     window.open(explorerUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -96,9 +96,9 @@ const HarvestDot = (props: any) => {
 };
 
 /**
- * Custom Tooltip for mETH Chart
+ * Custom Tooltip for stARB Chart
  */
-const MethTooltip = (props: any) => {
+const StARBTooltip = (props: any) => {
   const { active, payload, harvestHistory } = props;
 
   if (!active || !payload || !payload.length) return null;
@@ -118,8 +118,8 @@ const MethTooltip = (props: any) => {
     minute: '2-digit',
   });
 
-  const mETHValue = parseFloat(harvestEvent.mETHSwapped) / 1e18;
-  const formattedMETH = mETHValue < 0.000001 ? mETHValue.toExponential(4) : mETHValue.toFixed(6);
+  const stARBValue = parseFloat(harvestEvent.stARBSwapped) / 1e18;
+  const formattedstARB = stARBValue < 0.000001 ? stARBValue.toExponential(4) : stARBValue.toFixed(6);
 
   return (
     <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
@@ -127,7 +127,7 @@ const MethTooltip = (props: any) => {
       <div className="flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-green-500"></div>
         <p className="text-xs text-gray-600">
-          <span className="font-medium">mETH:</span> {formattedMETH}
+          <span className="font-medium">stARB:</span> {formattedstARB}
         </p>
       </div>
     </div>
@@ -234,7 +234,7 @@ const HealthTooltip = (props: any) => {
 export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose }: PositionDetailChartProps) => {
   const [position, setPosition] = useState<LeveragePosition>(initialPosition);
   const [loading, setLoading] = useState(false);
-  const [activeChart, setActiveChart] = useState<'meth' | 'interest' | 'health'>('meth');
+  const [activeChart, setActiveChart] = useState<'stARB' | 'interest' | 'health'>('stARB');
   // Zoom/History Slider State
   // Value 0: Show all history (start from index 0)
   // Value 80: Show last 20% (start from index 80%)
@@ -274,7 +274,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
 
     if (harvestEvent) {
       console.log('Opening transaction:', harvestEvent.transactionHash);
-      const explorerUrl = `https://explorer.sepolia.mantle.xyz/tx/${harvestEvent.transactionHash}`;
+      const explorerUrl = `https://explorer.sepolia.arbitrum.xyz/tx/${harvestEvent.transactionHash}`;
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
     }
   };
@@ -366,10 +366,10 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
     interestMax + padding,
   ];
 
-  const collateral = formatUnits(BigInt(position.mETHCollateral), 18);
+  const collateral = formatUnits(BigInt(position.stARBCollateral), 18);
   const debt = formatUnits(BigInt(position.usdcBorrowed), 6);
   const health = position.currentHealthFactor / 10000;
-  const totalMETH = (parseFloat(position.totalMETHHarvested || '0') / 1e18).toFixed(8);
+  const totalstARB = (parseFloat(position.totalstARBHarvested || '0') / 1e18).toFixed(8);
   const totalInterest = (parseFloat(position.totalInterestPaid || '0') / 1e6).toFixed(4);
   const totalHarvests = position.harvestHistory?.length || 0;
 
@@ -432,7 +432,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
             </h2>
             <div className="flex items-center gap-6 text-sm text-gray-600">
               <span>
-                <span className="font-medium text-gray-700">Collateral:</span> {parseFloat(collateral).toFixed(4)} mETH
+                <span className="font-medium text-gray-700">Collateral:</span> {parseFloat(collateral).toFixed(4)} stARB
               </span>
               <span>
                 <span className="font-medium text-gray-700">Debt:</span> ${parseFloat(debt).toLocaleString()} USDC
@@ -447,7 +447,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                     <span className="font-medium text-gray-700">Harvests:</span> {totalHarvests}
                   </span>
                   <span>
-                    <span className="font-medium text-gray-700">mETH Swapped:</span> {totalMETH}
+                    <span className="font-medium text-gray-700">stARB Swapped:</span> {totalstARB}
                   </span>
                   <span>
                     <span className="font-medium text-gray-700">Interest Paid:</span> ${totalInterest}
@@ -469,13 +469,13 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
         <div className="flex items-center justify-between px-6 pt-3 border-b border-gray-100">
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setActiveChart('meth')}
-              className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'meth'
+              onClick={() => setActiveChart('stARB')}
+              className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${activeChart === 'stARB'
                 ? 'border-green-500 text-green-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
-              mETH Swapped
+              stARB Swapped
             </button>
             <button
               onClick={() => setActiveChart('interest')}
@@ -526,12 +526,12 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                 </div>
               )}
 
-              {/* mETH Swapped Chart */}
-              {activeChart === 'meth' && (
+              {/* stARB Swapped Chart */}
+              {activeChart === 'stARB' && (
                 <ResponsiveContainer width="100%" height={450}>
                   <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }} onClick={handleChartClick} className="outline-none focus:outline-none">
                     <defs>
-                      <linearGradient id="mETHGradient" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="stARBGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
@@ -554,21 +554,21 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       dy={10}
                     />
                     <YAxis
-                      label={{ value: 'mETH', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
+                      label={{ value: 'stARB', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#9ca3af' } }}
                       stroke="#e5e7eb"
                       tick={{ fill: '#9ca3af', fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
                     />
-                    <Tooltip content={<MethTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
+                    <Tooltip content={<StARBTooltip harvestHistory={position.harvestHistory} />} cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }} />
                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }} iconType="circle" />
                     <Area
                       type="monotone"
-                      dataKey="mETHSwapped"
-                      name="mETH Swapped"
+                      dataKey="stARBSwapped"
+                      name="stARB Swapped"
                       stroke="#10b981"
                       strokeWidth={2}
-                      fill="url(#mETHGradient)"
+                      fill="url(#stARBGradient)"
                       dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#10b981" />}
                       connectNulls
                       isAnimationActive={false}
@@ -709,7 +709,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
 
 /**
  * Build timeline from actual harvest history data
- * Creates data points for mETH swapped, interest paid, and health factor at each harvest
+ * Creates data points for stARB swapped, interest paid, and health factor at each harvest
  */
 function buildTimelineFromHarvests(position: LeveragePosition): PositionTimelineData[] {
   const points: PositionTimelineData[] = [];
@@ -717,7 +717,7 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
   // Add starting point at position creation (no harvest yet)
   points.push({
     timestamp: position.createdAt,
-    mETHSwapped: 0,
+    stARBSwapped: 0,
     interestPaid: 0,
     usdcReceived: 0,
     healthFactor: position.currentHealthFactor / 10000,
@@ -726,8 +726,8 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
   // Process each harvest event
   if (position.harvestHistory && position.harvestHistory.length > 0) {
     position.harvestHistory.forEach((harvest) => {
-      // Convert mETH swapped from WEI to ETH
-      const mETHSwapped = parseFloat(harvest.mETHSwapped) / 1e18;
+      // Convert stARB swapped from WEI to ETH
+      const stARBSwapped = parseFloat(harvest.stARBSwapped) / 1e18;
 
       // Convert interest paid from USDC WEI to USD
       const interestPaid = parseFloat(harvest.interestPaid);
@@ -741,7 +741,7 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
       // Add harvest point
       points.push({
         timestamp: harvest.timestamp,
-        mETHSwapped,
+        stARBSwapped,
         interestPaid,
         usdcReceived,
         healthFactor,
@@ -752,7 +752,7 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
   // Add current point (now)
   // points.push({
   //   timestamp: new Date().toISOString(),
-  //   mETHSwapped: 0, // No harvest at current time
+  //   stARBSwapped: 0, // No harvest at current time
   //   interestPaid: 0,
   //   usdcReceived: 0,
   //   healthFactor: position.currentHealthFactor / 10000,
@@ -763,7 +763,7 @@ function buildTimelineFromHarvests(position: LeveragePosition): PositionTimeline
     totalHarvests: position.harvestHistory?.length || 0,
     points: points.map(p => ({
       timestamp: new Date(p.timestamp).toLocaleString(),
-      mETHSwapped: p.mETHSwapped?.toFixed(6),
+      stARBSwapped: p.stARBSwapped?.toFixed(6),
       interestPaid: p.interestPaid?.toFixed(4),
       usdcReceived: p.usdcReceived?.toFixed(4),
       healthFactor: p.healthFactor?.toFixed(2),

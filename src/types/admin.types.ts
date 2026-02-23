@@ -56,7 +56,7 @@ export interface RegistryData {
   registryContract?: string;
   registeredAt?: string;
   registeredBy?: string;
-  mantleExplorerUrl?: string;
+  arbitrumExplorerUrl?: string;
 }
 
 /**

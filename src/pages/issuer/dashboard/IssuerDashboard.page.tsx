@@ -11,6 +11,7 @@ import { NotificationBell } from '../../../components/notifications/Notification
 import { assetService } from '../../../lib/api/asset.service';
 import { authService } from '../../../lib/api/auth.service';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 // Calculate stats from assets
 const calculateStats = (assets: any[]) => {
@@ -55,6 +56,7 @@ const calculateStats = (assets: any[]) => {
 
 const IssuerDashboardPage = () => {
   const navigate = useNavigate();
+  const { networkPath } = useNetwork();
   const [assets, setAssets] = useState<IssuerAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,7 @@ const IssuerDashboardPage = () => {
         // Check if access token exists
         if (!authService.isAuthenticated()) {
           console.warn('No access token found. Redirecting to login...');
-          navigate('/', { replace: true });
+          navigate(networkPath('/'), { replace: true });
           return;
         }
 
@@ -79,7 +81,7 @@ const IssuerDashboardPage = () => {
           console.warn(`Unauthorized role: ${user.role}. Issuer dashboard requires ORIGINATOR role.`);
           setError('Unauthorized access. You do not have permission to access the issuer dashboard.');
           setTimeout(() => {
-            navigate('/', { replace: true });
+            navigate(networkPath('/'), { replace: true });
           }, 2000);
           return;
         }
@@ -89,13 +91,13 @@ const IssuerDashboardPage = () => {
         console.error('Authentication verification failed:', err);
         setError(err.message || 'Authentication failed. Redirecting to login...');
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate(networkPath('/'), { replace: true });
         }, 2000);
       }
     };
 
     verifyAuth();
-  }, [navigate]);
+  }, [navigate, networkPath]);
 
   // Fetch assets on component mount
   useEffect(() => {
@@ -226,7 +228,7 @@ const IssuerDashboardPage = () => {
 
   // Navigate to asset details
   const handleViewAssetDetails = (assetId: string) => {
-    navigate(`/issuer/asset/${assetId}`);
+    navigate(networkPath(`/issuer/asset/${assetId}`));
   };
 
   return (
@@ -263,7 +265,7 @@ const IssuerDashboardPage = () => {
               <button
                 onClick={() => {
                   authService.logout();
-                  navigate('/');
+                  navigate(networkPath('/'));
                 }}
                 className="bg-black hover:bg-black/90 text-white font-geist rounded-xl px-6 py-2.5 font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
               >

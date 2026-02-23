@@ -30,7 +30,7 @@ export const PositionStats = () => {
       <StatCard 
         title="Total Collateral"
         value="$46,500"
-        subtext="15.5 mETH Locked"
+        subtext="15.5 stARB Locked"
         icon={Wallet}
         trend="+12%"
       />
