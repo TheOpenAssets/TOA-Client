@@ -801,7 +801,7 @@ const MarketplacePage = () => {
                   <div key={listing.assetId}>
                     <div
                       className=" hover:bg-gray-100 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/marketplace/asset/${listing.assetId}`)}
+                      onClick={() => navigate(networkPath(`/marketplace/asset/${listing.assetId}`))}
                     >
                       <div className="flex items-center justify-between p-3">
                         {/* Left: Asset Info */}
