@@ -8,6 +8,7 @@ import { UserRole } from '../../types/issuer.types';
 import type { AdminAsset, AdminStats, AdminActivity } from '../../stores/admin.store';
 import type { AuctionClearingPriceInfo } from '../../types/admin.types';
 import BaseService from './base.service';
+import { getNetworkFromPath } from '../network/network.config';
 
 class AdminService extends BaseService {
 
@@ -16,8 +17,7 @@ class AdminService extends BaseService {
   }
 
   private getNetwork(): string {
-    const segment = window.location.pathname.split('/')[1];
-    return ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    return getNetworkFromPath();
   }
 
   async getChallenge(walletAddress: string): Promise<ChallengeResponse> {
