@@ -1,6 +1,7 @@
 // src/lib/api/notification.service.ts
 
 import BaseService from './base.service';
+import { getNetworkFromPath } from '../network/network.config';
 import type {
   BackendNotification,
   NotificationsResponse,
@@ -27,8 +28,7 @@ class NotificationService extends BaseService {
   }
 
   private getNetwork(): string {
-    const segment = window.location.pathname.split('/')[1];
-    return ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    return getNetworkFromPath();
   }
 
   /**
