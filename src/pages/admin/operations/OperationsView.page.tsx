@@ -18,9 +18,9 @@ import { PageLoader } from '../../../components/ui/page-loader';
 import { useNetwork } from '../../../lib/network/NetworkContext';
 
 const OperationsViewPage = () => {
-  const { networkType } = useNetwork();
-  const networkName = networkType === 'stellar' ? 'Stellar' : 'arbitrum';
-  const tokenStandard = networkType === 'stellar' ? 'Stellar Asset' : 'ERC-3643';
+  const { networkType, network } = useNetwork();
+  const networkName = network.displayName;
+  const tokenStandard = network.walletType === 'stellar' ? 'Stellar Asset' : 'ERC-3643';
   const {
     assetsForOperations,
     fetchAdminDashboardData,
