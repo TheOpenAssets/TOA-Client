@@ -11,14 +11,14 @@ import { EvmAuthProvider } from '../../components/auth/EvmAuthProvider';
 import { StellarAuthProvider } from '../../components/auth/StellarAuthProvider';
 
 export const NetworkLayout: React.FC = () => {
-  const { networkType } = useNetwork();
+  const { network } = useNetwork();
 
-  console.log('🏗️ NetworkLayout mounting for network:', networkType);
+  console.log('🏗️ NetworkLayout mounting for network:', network.type);
 
   return (
     <WagmiProvider config={rainbowKitConfig}>
       <QueryClientProvider client={queryClient}>
-        {networkType === 'stellar' ? (
+        {network.walletType === 'stellar' ? (
           // Stellar Branch
           // Note: StellarWalletProvider was just a QueryClientProvider wrapper, which is now hoisted.
           // We can skip it or keep it if it does other things. 
