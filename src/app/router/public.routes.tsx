@@ -1,5 +1,6 @@
 // src/app/router/public.routes.tsx
 import { type RouteObject, Navigate } from 'react-router-dom';
+import { DEFAULT_NETWORK } from '../../lib/network/network.config';
 import HomePage from '../../pages/landing/Home.page';
 import AuthPage from '../../pages/public/auth/Auth.page';
 import AdminAuthPage from '../../pages/public/auth/adminAuth.page';
@@ -45,7 +46,7 @@ import { FeatureGuard } from '../../components/common/FeatureGuard';
 export const publicRoutes: RouteObject[] = [
   {
     path: '/',
-    element: <Navigate to="/arbitrum" replace />,
+    element: <Navigate to={`/${DEFAULT_NETWORK}`} replace />,
   },
   {
     path: '/:network',
@@ -173,13 +174,13 @@ export const publicRoutes: RouteObject[] = [
     ],
   },
   // Legacy Redirects
-  { path: '/marketplace', element: <Navigate to="/arbitrum/marketplace" replace /> },
-  { path: '/auth', element: <Navigate to="/arbitrum/auth" replace /> },
-  { path: '/portfolio', element: <Navigate to="/arbitrum/portfolio" replace /> },
-  { path: '/admin', element: <Navigate to="/arbitrum/admin" replace /> },
-  { path: '/trade/*', element: <Navigate to="/arbitrum/trade" replace /> },
-  { path: '/faucet', element: <Navigate to="/arbitrum/faucet" replace /> },
-  { path: '/borrow', element: <Navigate to="/arbitrum/borrow" replace /> },
+  { path: '/marketplace', element: <Navigate to={`/${DEFAULT_NETWORK}/marketplace`} replace /> },
+  { path: '/auth', element: <Navigate to={`/${DEFAULT_NETWORK}/auth`} replace /> },
+  { path: '/portfolio', element: <Navigate to={`/${DEFAULT_NETWORK}/portfolio`} replace /> },
+  { path: '/admin', element: <Navigate to={`/${DEFAULT_NETWORK}/admin`} replace /> },
+  { path: '/trade/*', element: <Navigate to={`/${DEFAULT_NETWORK}/trade`} replace /> },
+  { path: '/faucet', element: <Navigate to={`/${DEFAULT_NETWORK}/faucet`} replace /> },
+  { path: '/borrow', element: <Navigate to={`/${DEFAULT_NETWORK}/borrow`} replace /> },
 
   // 404 - Catch all unmatched routes
   {
