@@ -40,8 +40,8 @@ const USDC_ABI = [
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const { address } = useAuthStrategy();
-  const { networkType, networkPath } = useNetwork();
-  const isEvm = networkType === 'arbitrum';
+  const { networkType, networkPath, network } = useNetwork();
+  const isEvm = network.walletType === 'evm';
   // Only pass address to wagmi hooks if on EVM network
   const evmAddress = (isEvm && address) ? address as `0x${string}` : undefined;
 
