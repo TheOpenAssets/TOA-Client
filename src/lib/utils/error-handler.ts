@@ -2,6 +2,7 @@
  * Global error handler for API errors
  * Handles specific error cases like verification errors and 401 Unauthorized
  */
+import { getNetworkFromPath, SUPPORTED_NETWORKS } from '../network/network.config';
 
 export class APIError extends Error {
   statusCode?: number;
@@ -25,11 +26,10 @@ export class APIError extends Error {
 export const handle401Unauthorized = (): void => {
   console.log('🔒 401 Unauthorized detected - Logging out user');
 
-  const segment = window.location.pathname.split('/')[1];
-  const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+  const network = getNetworkFromPath();
 
   // Clear all auth-related data from localStorage
-  ['arbitrum', 'stellar'].forEach(n => {
+  SUPPORTED_NETWORKS.forEach(n => {
     localStorage.removeItem(`${n}_access_token`);
     localStorage.removeItem(`${n}_refresh_token`);
     localStorage.removeItem(`${n}_authenticated_wallet_address`);
@@ -70,8 +70,7 @@ export const handleAPIError = (error: any): never => {
     localStorage.removeItem('user');
     localStorage.removeItem('redirect_after_verification');
 
-    const segment = window.location.pathname.split('/')[1];
-    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    const network = getNetworkFromPath();
 
     // Redirect to auth page on current network
     window.location.href = `/${network}`;
