@@ -20,8 +20,8 @@ const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const navigate = useNavigate();
   const { address } = useAuthStrategy();
-  const { networkType, networkPath } = useNetwork();
-  const isEvm = networkType === 'arbitrum';
+  const { networkType, networkPath, network } = useNetwork();
+  const isEvm = network.walletType === 'evm';
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
 
   const [bidAmount, setBidAmount] = useState('');
