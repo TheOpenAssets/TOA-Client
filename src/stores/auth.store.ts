@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { User } from '../types/auth.types';
+import { getNetworkFromPath, SUPPORTED_NETWORKS } from '../lib/network/network.config';
 
 interface AuthState {
   user: User | null;
@@ -26,8 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
   authenticatedWalletAddress: (() => {
-    const segment = window.location.pathname.split('/')[1];
-    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    const network = getNetworkFromPath();
     return localStorage.getItem(`${network}_authenticated_wallet_address`) || localStorage.getItem('authenticated_wallet_address');
   })(),
 
@@ -49,8 +49,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: loading }),
 
   setAuthenticatedWallet: (address: string) => {
-    const segment = window.location.pathname.split('/')[1];
-    const network = ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    const network = getNetworkFromPath();
 
     localStorage.setItem(`${network}_authenticated_wallet_address`, address.toLowerCase());
     localStorage.setItem('authenticated_wallet_address', address.toLowerCase()); // legacy fallback
@@ -58,7 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    ['arbitrum', 'stellar'].forEach(n => {
+    SUPPORTED_NETWORKS.forEach(n => {
       localStorage.removeItem(`${n}_access_token`);
       localStorage.removeItem(`${n}_refresh_token`);
       localStorage.removeItem(`${n}_authenticated_wallet_address`);
