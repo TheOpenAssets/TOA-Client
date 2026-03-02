@@ -8,6 +8,7 @@ import type {
 } from '../../types/auth.types';
 import { UserRole } from '../../types/issuer.types';
 import BaseService from './base.service';
+import { getNetworkFromPath } from '../network/network.config';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
@@ -26,8 +27,7 @@ class AuthService extends BaseService {
   }
 
   private getNetwork(): string {
-    const segment = window.location.pathname.split('/')[1];
-    return ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    return getNetworkFromPath();
   }
 
   async checkWalletStatus(walletAddress: string): Promise<WalletStatusResponse> {
