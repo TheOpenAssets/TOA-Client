@@ -2,6 +2,7 @@
 import type { KYCSubmitResponse } from '../../types/auth.types';
 import BaseService from './base.service';
 import { handleAPIError } from '../utils/error-handler';
+import { getNetworkFromPath } from '../network/network.config';
 
 // ============================================================================
 // MOCK MODE CONFIGURATION
@@ -17,8 +18,7 @@ class KYCService extends BaseService {
   }
 
   private getNetwork(): string {
-    const segment = window.location.pathname.split('/')[1];
-    return ['arbitrum', 'stellar'].includes(segment) ? segment : 'arbitrum';
+    return getNetworkFromPath();
   }
 
   /**
