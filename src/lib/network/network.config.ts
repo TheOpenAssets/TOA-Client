@@ -26,6 +26,15 @@ const SHARED_API_URL =
 // ─── Network Registry ─────────────────────────────────────────────────────────
 // To add a new chain: add one entry here. Zero other code changes needed.
 export const NETWORK_CONFIGS = {
+  creditcoin: {
+    type: 'creditcoin',
+    displayName: 'Creditcoin Testnet',
+    apiUrl: SHARED_API_URL,
+    // Blockscout EVM explorer — ChainId 102031
+    explorerUrl: 'https://creditcoin-testnet.blockscout.com',
+    features: { leverage: false, faucet: true, solvency: true, secondaryMarket: true, borrow: true },
+    walletType: 'evm' as const,
+  },
   mantle: {
     type: 'mantle',
     displayName: 'Mantle',
@@ -50,15 +59,7 @@ export const NETWORK_CONFIGS = {
     features: { leverage: false, faucet: false, solvency: true, secondaryMarket: true, borrow: true },
     walletType: 'stellar' as const,
   },
-  creditcoin: {
-    type: 'creditcoin',
-    displayName: 'Creditcoin Testnet',
-    apiUrl: SHARED_API_URL,
-    // Blockscout EVM explorer — ChainId 102031
-    explorerUrl: 'https://creditcoin-testnet.blockscout.com',
-    features: { leverage: false, faucet: true, solvency: true, secondaryMarket: true, borrow: true },
-    walletType: 'evm' as const,
-  },
+
 } satisfies Record<string, NetworkConfig>;
 
 // ─── Derived types ────────────────────────────────────────────────────────────

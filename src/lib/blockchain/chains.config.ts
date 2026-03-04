@@ -42,10 +42,11 @@ export const creditcoinTestnet = {
 // By deriving this map from NetworkType we avoid any hardcoding in the config.
 
 export const NETWORK_CHAIN_MAP: Record<NetworkType, Chain> = {
+    creditcoin: creditcoinTestnet,     // ChainId 102031
+
     mantle: mantleSepoliaTestnet,   // ChainId 5003
     arbitrum: arbitrumSepolia,        // ChainId 421614
     stellar: arbitrumSepolia,        // Stellar uses its own signing, EVM fallback not used
-    creditcoin: creditcoinTestnet,     // ChainId 102031
 };
 
 // All unique chains we ever need to register so switching networks works.

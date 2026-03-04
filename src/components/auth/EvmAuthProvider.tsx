@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
+import { useAccount, useSignMessage, useDisconnect, useSwitchChain } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { authService } from '../../lib/api/auth.service';
 import { issuerService } from '../../lib/api/issuer.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useNavigate } from 'react-router-dom';
 import { useNetwork } from '../../lib/network/NetworkContext';
+import { NETWORK_CHAIN_MAP } from '../../lib/blockchain/chains.config';
 import { AuthStrategyProvider } from '../../lib/auth/AuthStrategyContext';
 import type { AuthStrategy } from '../../lib/auth/AuthStrategyContext';
 
 export const EvmAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
-    const { networkPath } = useNetwork();
+    const { networkType, networkPath } = useNetwork();
     const { openConnectModal } = useConnectModal();
     const { address, isConnected } = useAccount();
     const { signMessageAsync } = useSignMessage();
+    const { switchChainAsync } = useSwitchChain();
     const { disconnect } = useDisconnect();
     const { setUser, setLoading, setAuthenticatedWallet, logout: storeLogout } = useAuthStore();
 
@@ -35,6 +37,7 @@ export const EvmAuthProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setError(null);
 
             const challenge = await authService.getChallenge(address);
+            await switchChainAsync({ chainId: NETWORK_CHAIN_MAP[networkType].id });
             const signature = await signMessageAsync({
                 message: challenge.message,
             });
@@ -79,6 +82,7 @@ export const EvmAuthProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setError(null);
 
             const challenge = await issuerService.getChallenge(address);
+            await switchChainAsync({ chainId: NETWORK_CHAIN_MAP[networkType].id });
             const signature = await signMessageAsync({
                 message: challenge.message,
             });
