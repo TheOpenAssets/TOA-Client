@@ -7,15 +7,18 @@ import { setupFetchInterceptor } from './lib/utils/fetch-interceptor'
 // Setup global fetch interceptor to handle 401 Unauthorized errors
 setupFetchInterceptor();
 
-// Clear stale wagmi state if it contains the old Mantle Sepolia chain (5003).
-// This forces wagmi to default to Arbitrum Sepolia on the next load.
+// Clear stale wagmi state if it contains a chain that no longer matches the
+// active default network.  This forces wagmi to re-default to the correct chain
+// on the next load instead of silently signing on the old one.
+// Chains that were previously used as defaults: 5003 (Mantle Sepolia), 421614 (Arbitrum Sepolia).
+const STALE_CHAIN_IDS = new Set([5003, 421614]);
 try {
   const wagmiStore = localStorage.getItem('wagmi.store');
   if (wagmiStore) {
     const parsed = JSON.parse(wagmiStore);
-    if (parsed?.state?.chainId === 5003) {
+    if (STALE_CHAIN_IDS.has(parsed?.state?.chainId)) {
       localStorage.removeItem('wagmi.store');
-      console.log('🧹 Cleared stale Mantle wagmi chain state');
+      console.log('🧹 Cleared stale wagmi chain state (chainId:', parsed.state.chainId, ')');
     }
   }
 } catch {
