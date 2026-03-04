@@ -50,6 +50,15 @@ export const NETWORK_CONFIGS = {
     features: { leverage: false, faucet: false, solvency: true, secondaryMarket: true, borrow: true },
     walletType: 'stellar' as const,
   },
+  creditcoin: {
+    type: 'creditcoin',
+    displayName: 'Creditcoin Testnet',
+    apiUrl: SHARED_API_URL,
+    // Blockscout EVM explorer — ChainId 102031
+    explorerUrl: 'https://creditcoin-testnet.blockscout.com',
+    features: { leverage: false, faucet: true, solvency: true, secondaryMarket: true, borrow: true },
+    walletType: 'evm' as const,
+  },
 } satisfies Record<string, NetworkConfig>;
 
 // ─── Derived types ────────────────────────────────────────────────────────────
@@ -65,9 +74,9 @@ export const SUPPORTED_NETWORKS = Object.keys(NETWORK_CONFIGS) as NetworkType[];
 // Change the env var — no code changes needed.
 export const DEFAULT_NETWORK: NetworkType =
   (import.meta.env.VITE_DEFAULT_NETWORK as NetworkType | undefined) &&
-  (import.meta.env.VITE_DEFAULT_NETWORK in NETWORK_CONFIGS)
+    (import.meta.env.VITE_DEFAULT_NETWORK in NETWORK_CONFIGS)
     ? (import.meta.env.VITE_DEFAULT_NETWORK as NetworkType)
-    : 'mantle';
+    : 'creditcoin';
 
 // ─── Path utility ─────────────────────────────────────────────────────────────
 // Used by services that need the current network outside of React context.
