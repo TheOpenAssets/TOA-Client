@@ -17,6 +17,7 @@ import { marketplaceService } from '../../lib/api/marketplace.service';
 import { getYieldService } from '../../lib/api/yield.service.factory';
 import { parseTokenAmount } from '../../lib/utils/formatters';
 import { solvencyService } from '../../lib/api/solvency.service';
+import { partnerService } from '../../lib/api/partner.service';
 import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
@@ -138,9 +139,21 @@ const PortfolioPage = () => {
     if (!address) return;
     setIsLoadingMyLoans(true);
     try {
-      const response = await solvencyService.getMyPositions();
-      console.log("loans find", response);
-      setMyLoans(response.positions);
+      const [positionsResponse, partnerLoansResponse] = await Promise.all([
+        solvencyService.getMyPositions(),
+        partnerService.getMyPartnerLoans().catch(() => ({ loans: [] })),
+      ]);
+
+      // Merge partner loans into their parent positions by solvencyPositionId
+      const merged = positionsResponse.positions.map(pos => ({
+        ...pos,
+        partnerLoans: partnerLoansResponse.loans.filter(
+          pl => pl.solvencyPositionId === pos.positionId
+        ),
+      }));
+
+      console.log("loans find", merged);
+      setMyLoans(merged);
     } catch (err) {
       console.error("Error fetching solvency loans:", err);
       showError("Failed to fetch loans", "Could not retrieve your loan positions.");

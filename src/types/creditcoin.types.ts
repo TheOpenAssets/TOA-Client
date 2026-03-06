@@ -80,7 +80,9 @@ export interface PartnerBorrowResponse {
 export interface PartnerLoan {
   internalLoanId: string;
   partnerLoanId: string;
+  partnerId: string;
   partnerName: string;
+  solvencyPositionId: number;
   principalAmount: string;
   remainingDebt: string;
   totalRepaid: string;

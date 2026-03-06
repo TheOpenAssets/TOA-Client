@@ -22,9 +22,11 @@ import { solvencyService } from '../../lib/api/solvency.service';
 import { solvencyContractService } from '../../lib/api/solvency-contract.service';
 import { format } from 'date-fns';
 import { RepayLoanModal } from './RepayLoanModal';
+import { PartnerRepayModal } from '../../pages/borrow/components/PartnerRepayModal';
 import { PageLoader } from '../ui/page-loader';
 import { portfolioService } from '../../lib/api/portfolio.service';
 import type { PortfolioAsset } from '../../types/portfolio.types';
+import type { PartnerLoan } from '../../types/creditcoin.types';
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { ToastContainer } from '../ui/toast';
 import { useToast } from '../../hooks/useToast';
@@ -62,12 +64,13 @@ const getTokenSymbol = (address: string) => {
   return `TKN-${shortAddr}`;
 };
 
-// Calculate outstanding debt from usdcBorrowed and totalPartnerDebt
+// Calculate outstanding debt: platform USDC (6 decimals) + active partner loans (6 decimals)
 const getOutstandingDebt = (position: Position): string => {
-  const borrowed = parseFloat(position.usdcBorrowed || '0');
-  const partnerDebt = parseFloat(position.totalPartnerDebt || '0');
-  // console.log('Calculating outstanding debt:', (borrowed + partnerDebt).toString() ,{ borrowed, partnerDebt });
-  return (borrowed + partnerDebt).toString();
+  const platformDebt = parseFloat(position.usdcBorrowed || '0');
+  const partnerDebt = (position.partnerLoans || [])
+    .filter(pl => pl.status === 'ACTIVE')
+    .reduce((sum, pl) => sum + parseFloat(pl.remainingDebt || '0'), 0);
+  return (platformDebt + partnerDebt).toString();
 };
 
 const getHealthBadgeColor = (healthStatus: string) => {
@@ -130,6 +133,8 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
   const [loadingSchedule, setLoadingSchedule] = useState<Record<number, boolean>>({});
   const [showRepayModal, setShowRepayModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showPartnerRepayModal, setShowPartnerRepayModal] = useState(false);
+  const [selectedPartnerLoan, setSelectedPartnerLoan] = useState<PartnerLoan | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [withdrawingPositionId, setWithdrawingPositionId] = useState<number | null>(null);
   const [withdrawnPositions, setWithdrawnPositions] = useState<Set<number>>(new Set());
@@ -420,14 +425,15 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                 <th className="px-6 py-3 text-left font-gellix text-xs font-medium text-black uppercase tracking-wider">
                   Position
                 </th>
-                <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
-                  Collateral Type
-                </th>
+               
                 <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
                   Collateral Amount
                 </th>
                 <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
                   USDC Borrowed
+                </th>
+                <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
+                  Loan Source
                 </th>
 
                 <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
@@ -452,10 +458,17 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                 const isLoadingSchedule = loadingSchedule[position.positionId];
                 const isOverdue = isPaymentOverdue(position.nextPaymentDueDate);
                 const outstandingDebt = parseFloat(getOutstandingDebt(position));
-                const hasDebt = outstandingDebt > 0;
+                const platformDebt = parseFloat(position.usdcBorrowed || '0');
+                const activePartnerLoans = (position.partnerLoans || []).filter(
+                  pl => pl.status === 'ACTIVE' && parseFloat(pl.remainingDebt) > 0
+                );
+                const hasPartnerDebt = activePartnerLoans.length > 0;
+                const hasDebt = platformDebt > 0;
+                const hasAnyDebt = outstandingDebt > 0;
                 const hasCollateral = parseFloat(position.collateralAmount) > 0;
                 const wasWithdrawn = withdrawnPositions.has(position.positionId);
-                const canWithdraw = hasCollateral && !position.oaidCreditIssued && !position.isDefaulted && !wasWithdrawn;
+                // Can only withdraw when there is truly zero outstanding debt (platform + partner)
+                const canWithdraw = hasCollateral && !hasAnyDebt && !position.isDefaulted && !wasWithdrawn;
 
                 // Use schedule from position if available, otherwise from fetched data
                 const displaySchedule = pos.repaymentSchedule || schedule?.installments;
@@ -504,16 +517,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       </td>
 
                       {/* Collateral Type */}
-                      <td className="px-4 py-4 text-center">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${position.collateralTokenType === 'RWA'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-purple-100 text-purple-700'
-                            }`}
-                        >
-                          {position.collateralTokenType}
-                        </span>
-                      </td>
+                     
 
                       {/* Collateral Amount */}
                       <td className="px-4 py-4 text-center">
@@ -534,6 +538,23 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                             <span className="text-gray-400">No Debt</span>
                           )}
                         </div>
+                      </td>
+
+                      {/* Loan Source */}
+                      <td className="px-4 py-4 text-center">
+                        {position.partnerLoans && position.partnerLoans.length > 0 ? (
+                          <div className="flex flex-col items-center gap-1">
+                            {position.partnerLoans.map((pl, i) => (
+                              <span key={i} className="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                                {pl.partnerName}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                            Platform
+                          </span>
+                        )}
                       </td>
 
                       {/* Status */}
@@ -580,20 +601,32 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                       {/* Actions */}
                       <td className="px-4 py-4 text-center">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          {/* Repay Button - Only show when loan was issued (oaidCreditIssued = true) */}
+                          {/* Platform repay — only when OAID loan was issued */}
                           {!position.isDefaulted && position.oaidCreditIssued && hasDebt && (
                             <button
                               onClick={(e) => handleRepayClick(position, e)}
-                              className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border ${isOverdue
-                                ? 'border-2  bg-black text-white'
-                                : 'border-2  bg-black text-white'
-                                }`}
+                              className={`px-4 py-1.5 rounded-xl text-xs font-medium transition-colors border-2 bg-black text-white`}
                             >
                               {isOverdue ? 'Overdue - Repay' : 'Repay'}
                             </button>
                           )}
 
-                          {/* Withdraw Button - Show when no loan issued yet and collateral exists */}
+                          {/* Partner repay — one button per active partner loan */}
+                          {!position.isDefaulted && activePartnerLoans.map(pl => (
+                            <button
+                              key={pl.internalLoanId}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPartnerLoan(pl);
+                                setShowPartnerRepayModal(true);
+                              }}
+                              className="px-4 py-1.5 rounded-xl text-xs font-medium border-2 bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                            >
+                              Repay {pl.partnerName}
+                            </button>
+                          ))}
+
+                          {/* Withdraw — only when zero total debt */}
                           {canWithdraw && (
                             <button
                               onClick={(e) => handleWithdrawClick(position, e)}
@@ -604,13 +637,19 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                             </button>
                           )}
 
-                          {/* No Action State */}
-                          {!position.oaidCreditIssued && !canWithdraw && !position.isDefaulted && (
-                            <span className="text-xs text-gray-400">No Actions</span>
+                          {/* Blocked withdraw hint — has debt but has collateral */}
+                          {hasCollateral && hasAnyDebt && !position.isDefaulted && (
+                            <span className="text-xs text-gray-400 text-center leading-tight">
+                              Repay debt to<br />withdraw
+                            </span>
                           )}
 
                           {position.isDefaulted && (
                             <span className="text-xs text-gray-400">Defaulted</span>
+                          )}
+
+                          {!hasCollateral && !hasAnyDebt && !position.isDefaulted && !wasWithdrawn && (
+                            <span className="text-xs text-gray-400">No Actions</span>
                           )}
                         </div>
                       </td>
@@ -619,7 +658,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                     {/* Expanded Detail Row */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={9} className="px-0 py-0">
+                        <td colSpan={10} className="px-0 py-0">
                           <div className="bg-transparent border-b border-gray-200">
                             {isLoadingSchedule && !displaySchedule ? (
                               <div className="flex items-center justify-center py-8">
@@ -695,6 +734,42 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Partner Loans */}
+                                {pos.partnerLoans && pos.partnerLoans.length > 0 && (
+                                  <div className="pt-4 border-t border-gray-200">
+                                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                      <Layers className="w-4 h-4" /> Partner Loans
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {pos.partnerLoans.map((pl: any) => (
+                                        <div key={pl.internalLoanId} className="flex items-center justify-between p-3 rounded-lg border border-orange-200 bg-orange-50">
+                                          <div className="flex flex-col gap-0.5">
+                                            <span className="text-xs font-semibold text-orange-800">{pl.partnerName}</span>
+                                            <span className="text-xs text-gray-500 font-mono">{pl.partnerLoanId}</span>
+                                          </div>
+                                          <div className="flex items-center gap-6">
+                                            <div className="text-center">
+                                              <p className="text-xs text-gray-500">Principal</p>
+                                              <p className="text-sm font-semibold text-foreground">{formatUSD(pl.principalAmount)}</p>
+                                            </div>
+                                            <div className="text-center">
+                                              <p className="text-xs text-gray-500">Remaining</p>
+                                              <p className="text-sm font-semibold text-foreground">{formatUSD(pl.remainingDebt)}</p>
+                                            </div>
+                                            <div className="text-center">
+                                              <p className="text-xs text-gray-500">Repaid</p>
+                                              <p className="text-sm font-semibold text-foreground">{formatUSD(pl.totalRepaid)}</p>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${pl.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                              {pl.status}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* Repayment Schedule */}
                                 <div>
@@ -791,7 +866,7 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           </table>
         )}
 
-        {/* Repay Modal - Rendered at document body level using Portal */}
+        {/* Platform Repay Modal */}
         {selectedPosition && createPortal(
           <RepayLoanModal
             isOpen={showRepayModal}
@@ -805,6 +880,23 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
           document.body
         )}
 
+        {/* Partner Repay Modal */}
+        {selectedPartnerLoan && createPortal(
+          <PartnerRepayModal
+            isOpen={showPartnerRepayModal}
+            loan={selectedPartnerLoan}
+            onClose={() => {
+              setShowPartnerRepayModal(false);
+              setSelectedPartnerLoan(null);
+            }}
+            onSuccess={() => {
+              setShowPartnerRepayModal(false);
+              setSelectedPartnerLoan(null);
+              if (onRefresh) onRefresh();
+            }}
+          />,
+          document.body
+        )}
 
         {/* Withdraw Confirmation Modal */}
         {selectedPosition && showWithdrawModal && createPortal(
@@ -835,27 +927,63 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
               {/* Content */}
               <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {/* Withdrawal Details */}
-                  <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-5">
-                    <div>
-                      <p className="font-inter text-xs text-gray-500 mb-1.5">Token</p>
-                      <p className="font-gellix text-lg font-semibold text-foreground">
+                  {/* Collateral summary */}
+                  <div className="bg-gray-100/50 border border-neutral-200 shadow-lg rounded-xl p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="font-inter text-xs text-gray-500">Token</p>
+                      <p className="font-gellix text-sm font-semibold text-foreground">
                         {getTokenSymbol(selectedPosition.collateralTokenAddress)}
                       </p>
                     </div>
-                    <div className="pt-4 border-t border-gray-300">
-                      <p className="font-inter text-xs text-gray-500 mb-1.5">Amount to Withdraw</p>
-                      <p className="font-gellix text-2xl font-semibold text-foreground">
+                    <div className="flex items-center justify-between border-t border-gray-300 pt-3">
+                      <p className="font-inter text-xs text-gray-500">Collateral Deposited</p>
+                      <p className="font-gellix text-sm font-semibold text-foreground">
                         {formatCollateralAmount(selectedPosition.collateralAmount, 18)} tokens
                       </p>
                     </div>
-                    <div className="pt-4 border-t border-gray-300">
-                      <p className="font-inter text-xs text-gray-500 mb-1.5">Value</p>
-                      <p className="font-gellix text-xl font-semibold text-foreground">
+                    <div className="flex items-center justify-between border-t border-gray-300 pt-3">
+                      <p className="font-inter text-xs text-gray-500">Collateral Value</p>
+                      <p className="font-gellix text-sm font-semibold text-foreground">
                         {formatUSD(selectedPosition.tokenValueUSD)}
                       </p>
                     </div>
                   </div>
+
+                  {/* Debt breakdown — shown when debt exists */}
+                  {(() => {
+                    const selPlatformDebt = parseFloat(selectedPosition.usdcBorrowed || '0');
+                    const selPartnerLoans = (selectedPosition.partnerLoans || []).filter(
+                      pl => pl.status === 'ACTIVE' && parseFloat(pl.remainingDebt) > 0
+                    );
+                    const selTotalDebt = selPlatformDebt + selPartnerLoans.reduce(
+                      (s, pl) => s + parseFloat(pl.remainingDebt), 0
+                    );
+                    if (selTotalDebt === 0) return null;
+                    return (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-5 space-y-3">
+                        <p className="font-gellix text-sm font-semibold text-red-700">Outstanding Debt</p>
+                        {selPlatformDebt > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600 font-inter">Platform loan</span>
+                            <span className="font-semibold text-foreground">{formatUSD(selectedPosition.usdcBorrowed)}</span>
+                          </div>
+                        )}
+                        {selPartnerLoans.map(pl => (
+                          <div key={pl.internalLoanId} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600 font-inter">{pl.partnerName}</span>
+                            <span className="font-semibold text-foreground">{formatUSD(pl.remainingDebt)}</span>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-between border-t border-red-200 pt-2">
+                          <span className="font-gellix text-sm font-semibold text-red-700">Total to Repay</span>
+                          <span className="font-gellix text-base font-bold text-red-700">{formatUSD(selTotalDebt.toString())}</span>
+                        </div>
+                        <p className="font-inter text-xs text-red-600">
+                          You must repay all outstanding debt before withdrawing collateral.
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   {/* Warning */}
                   <div className="bg-gray-100/90 border border-neutral-200 shadow-lg rounded-xl p-4">

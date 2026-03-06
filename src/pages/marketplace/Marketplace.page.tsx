@@ -202,14 +202,18 @@ const MarketplacePage = () => {
           });
         }
 
-        // Parse sold and totalSupply from wei (18 decimals)
-        // Helper to safely parse BigInt from string that might have decimals (e.g. "0.0000")
-        const safeBigInt = (val: string |  number | undefined) => {
-          if (!val) return BigInt(0);
+        // Parse a numeric field that may arrive as either:
+        //   • a human-readable decimal string from /marketplace/listings  (e.g. "23.0000", "0.0850")
+        //   • a large-integer wei string from the full asset-detail endpoint
+        // If the string contains a "." it is already human-readable → use parseFloat directly.
+        // If it is a large integer (> 1e10) it is wei → divide by the given decimals.
+        const parseField = (val: string | number | undefined, weiDecimals: number): number => {
+          if (val === undefined || val === null || val === '') return 0;
           const str = val.toString();
-          // Remove decimals if present (truncate)
-          const integerPart = str.split('.')[0];
-          return BigInt(integerPart || '0');
+          if (str.includes('.')) return parseFloat(str);  // already decimal
+          const n = Number(str);
+          if (isNaN(n)) return 0;
+          return n > 1e10 ? n / Math.pow(10, weiDecimals) : n;
         };
 
         // Read from nested API shape; fall back to flat fields for compatibility
@@ -222,17 +226,13 @@ const MarketplacePage = () => {
           listing.listing?.reservePrice ??
           listing.pricePerToken;
 
-        const soldWei = safeBigInt(soldStr);
-        const totalSupplyWei = safeBigInt(totalSupplyStr);
-        const sold = Number(soldWei) / 1e18;
-        const totalSupply = Number(totalSupplyWei) / 1e18;
+        const sold = parseField(soldStr, 18);
+        const totalSupply = parseField(totalSupplyStr, 18);
 
         // Calculate funding progress (sold percentage)
         const fundingProgress = totalSupply > 0 ? (sold / totalSupply) * 100 : 0;
 
-        // Parse price per token (USDC 6 decimals)
-        const pricePerTokenWei = safeBigInt(priceStr);
-        const pricePerToken = Number(pricePerTokenWei) / 1e6;
+        const pricePerToken = parseField(priceStr, 6);
 
         // Calculate total raised (sold * price per token)
         const totalRaised = sold * pricePerToken;
@@ -844,7 +844,7 @@ const MarketplacePage = () => {
                         <div className="text-right">
                           <div className="font-gellix text-lg text-foreground">
                             {/* @ts-ignore */}
-                            ${formatLargeNumber(parseFloat(listing.pricePerToken || '0') / 1e6)}
+                            ${formatLargeNumber(parseFloat(listing.pricePerToken || '0'))}
                           </div>
                           <div className="font-gellix text-xs text-gray-600">
                             per token

@@ -3,6 +3,8 @@
  * Comprehensive type definitions for the borrowing/lending system
  */
 
+import type { PartnerLoan } from './creditcoin.types';
+
 // ============================================
 // CORE DOMAIN TYPES
 // ============================================
@@ -273,6 +275,7 @@ export interface Position {
   collateralAmount: string;        // e.g., "90000000000000000000" (18 decimals)
   tokenValueUSD: string;           // e.g., "76500000000" (6 decimals)
   usdcBorrowed: string;            // e.g., "50000000000" (6 decimals)
+  partnerLoans: PartnerLoan[];     // Partner loans (e.g., Aave). Empty = platform-only loan.
   totalPartnerDebt: string;        // e.g., "0" (6 decimals)
   totalRepaid: string;             // e.g., "0" (6 decimals)
   initialLTV: number;              // e.g., 6000 (representing 60.00%)
