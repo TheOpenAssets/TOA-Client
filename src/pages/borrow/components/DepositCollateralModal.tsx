@@ -17,7 +17,6 @@ import { assetService } from '../../../lib/api/asset.service';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
 import { solvencyService } from '../../../lib/api/solvency.service';
 import type { IssuerAsset } from '../../../types/issuer.types';
-import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { PageLoader } from '../../../components/ui/page-loader';
 
 interface DepositCollateralModalProps {
@@ -153,10 +152,11 @@ export const DepositCollateralModal = ({
 
     try {
       const amountWei = ethers.parseUnits(depositAmount, 18);
-      const pricePerToken = BigInt(assetDetails.listing.price); // 6 decimals
+      // listing.price is a decimal string e.g. "0.0850" — scale to 6-decimal USDC bigint
+      const pricePerToken = BigInt(Math.round(parseFloat(assetDetails.listing.price) * 1_000_000));
       const valueUSD = (amountWei * pricePerToken) / ethers.parseEther('1');
 
-      return ethers.formatUnits(valueUSD, 6); // Returns string like "76500.00"
+      return ethers.formatUnits(valueUSD, 6);
     } catch {
       return '0';
     }
@@ -212,7 +212,7 @@ export const DepositCollateralModal = ({
     try {
       // Parse amounts
       const amountWei = ethers.parseUnits(depositAmount, 18);
-      const pricePerToken = BigInt(details.listing.price);
+      const pricePerToken = BigInt(Math.round(parseFloat(details.listing.price) * 1_000_000));
       const tokenValueUSD = (amountWei * pricePerToken) / ethers.parseEther('1');
 
       console.log('💰 Starting deposit process:', {
@@ -264,23 +264,16 @@ export const DepositCollateralModal = ({
 
       console.log('✅ Deposit successful, Position ID:', depositResult.positionId);
 
-      // STEP 3: Sync with backend (MANDATORY)
+      // STEP 3: Record deposit with backend (reads PositionCreated event from chain)
       setStep('syncing');
-      console.log('🔄 Step 3/3: Syncing with platform...');
+      console.log('🔄 Step 3/3: Recording deposit on platform...');
 
-      // Sync portfolio (notify purchase)
-      await marketplaceService.notifyPurchase({
-        assetId: asset.assetId,
-        txHash: depositResult.txHash!,
-        amount: `-${depositAmount}`,
-        blockNumber: depositResult.blockNumber!.toString(),
-      });
-
-      // Sync position with solvency system
-      await solvencyService.syncPosition({
-        positionId: depositResult.positionId!.toString(),
-        txHash: depositResult.txHash!,
-        blockNumber: depositResult.blockNumber!,
+      await solvencyService.recordDeposit({
+        txHash:                 depositResult.txHash!,
+        positionId:             depositResult.positionId!.toString(),
+        collateralTokenAddress: asset.tokenAddress,
+        collateralAmount:       amountWei.toString(),
+        tokenValueUSD:          tokenValueUSD.toString(),
       });
 
       console.log('✅ Position synced with backend');
@@ -401,7 +394,7 @@ export const DepositCollateralModal = ({
                                 </td>
                                 <td className="px-4 py-4 text-right">
                                   <span className="font-gellix text-sm font-semibold text-foreground">
-                                    {parseFloat(ethers.formatUnits(asset.totalAmount, 18)).toFixed(2)}
+                                    {parseFloat(asset.totalAmount).toFixed(2)}
                                   </span>
                                   <span className="font-inter text-xs text-gray-500 ml-1">
                                     tokens
@@ -430,7 +423,7 @@ export const DepositCollateralModal = ({
                           {selectedAsset.metadata.assetName}
                         </p>
                         <p className="font-inter text-xs text-gray-500">
-                          {parseFloat(ethers.formatUnits(selectedAsset.totalAmount, 18)).toFixed(2)} tokens available
+                          {parseFloat(selectedAsset.totalAmount).toFixed(2)} tokens available
                         </p>
                       </div>
                     </div>
@@ -462,7 +455,7 @@ export const DepositCollateralModal = ({
                     <div className="flex justify-between items-center pt-3 border-t border-gray-300">
                       <span className="font-inter text-xs text-gray-500">Token Price</span>
                       <span className="font-gellix text-sm font-semibold text-foreground">
-                        ${(parseFloat(assetDetails.listing.price) / 1e6).toFixed(6)} per token
+                        ${(parseFloat(assetDetails.listing.price) ).toFixed(6)} per token
                       </span>
                     </div>
                   </div>
@@ -536,7 +529,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
+                  href={`https://creditcoin-testnet.blockscout.com/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
@@ -558,7 +551,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://explorer.sepolia.arbitrum.xyz/tx/${txHash}`}
+                  href={`https://creditcoin-testnet.blockscout.com/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"

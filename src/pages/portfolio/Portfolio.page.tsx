@@ -24,6 +24,8 @@ import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
 import { TradesTable } from '../../components/portfolio/TradesTable';
 import { useCancelOrder } from '../../hooks/useSecondaryMarket';
 import { MyLoansTable } from '../../components/portfolio/MyLoansTable';
+import { CreditScoreDashboard } from '../../components/creditcoin/CreditScoreDashboard';
+import { USCProofModal } from '../../components/creditcoin/USCProofModal';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
 import type { Position as SolvencyPosition } from '../../types/solvency.types';
@@ -31,18 +33,59 @@ import { PageLoader } from '../../components/ui/page-loader';
 import { Button } from '../../components/ui/button';
 import { ShaderAnimation } from '../../components/ui/shimmer-lines';
 import { useCreditData } from '../borrow/hooks/useCreditData';
+import { useCreditScore } from '../borrow/hooks/useCreditScore';
 import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
 import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
 // import { Wavy } from '../../components/ui/wavy';
 import HeroBackground from '../landing/HeroBackground';
 
+/**
+ * Isolated wrapper that owns the useCreditScore hook so the refetch callback
+ * can be passed directly into USCProofModal.onProofSubmitted.
+ * Without this wrapper the "Refreshing your score..." flow in USCProofModal
+ * would fire the callback but nothing would actually re-fetch the score.
+ */
+interface CreditScoreTabContentProps {
+  address: string;
+  showUSCModal: boolean;
+  onVerifyClick: () => void;
+  onUSCModalClose: () => void;
+}
+
+const CreditScoreTabContent = ({
+  address,
+  showUSCModal,
+  onVerifyClick,
+  onUSCModalClose,
+}: CreditScoreTabContentProps) => {
+  const { refetch: refetchScore } = useCreditScore(address);
+
+  return (
+    <>
+      <CreditScoreDashboard
+        walletAddress={address}
+        onVerifyClick={onVerifyClick}
+      />
+      <USCProofModal
+        isOpen={showUSCModal}
+        onClose={onUSCModalClose}
+        walletAddress={address}
+        onProofSubmitted={() => {
+          onUSCModalClose();
+          // Force-refresh the score after the 5-second delay built into USCProofModal
+          refetchScore(true);
+        }}
+      />
+    </>
+  );
+};
 
 const PortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { address, logout } = useAuthStrategy();
   const { networkType, networkPath } = useNetwork();
-  const isEvm = networkType === 'arbitrum';
+  const isEvm = networkType !== 'stellar';
 
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
   const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
@@ -56,7 +99,7 @@ const PortfolioPage = () => {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   // Tab state for portfolio sections
-  type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades' | 'loans';
+  type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades' | 'loans' | 'credit';
 
   const initialTab = searchParams.get('tab') as PortfolioTab | null;
   const [activeTab, setActiveTab] = useState<PortfolioTab>(initialTab || 'assets');
@@ -65,6 +108,7 @@ const PortfolioPage = () => {
   // Modal states
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showNoAssetsModal, setShowNoAssetsModal] = useState(false);
+  const [showUSCModal, setShowUSCModal] = useState(false);
 
   // Leverage position detail chart state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
@@ -648,6 +692,17 @@ const PortfolioPage = () => {
                       >
                         Trades
                       </button>
+                      {isEvm && (
+                        <button
+                          onClick={() => setActiveTab('credit')}
+                          className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'credit'
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                          Credit Score
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -749,6 +804,16 @@ const PortfolioPage = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Credit Score Tab */}
+                    {activeTab === 'credit' && isEvm && address && (
+                      <CreditScoreTabContent
+                        address={address}
+                        showUSCModal={showUSCModal}
+                        onVerifyClick={() => setShowUSCModal(true)}
+                        onUSCModalClose={() => setShowUSCModal(false)}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

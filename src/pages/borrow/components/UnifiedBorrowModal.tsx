@@ -16,7 +16,7 @@ interface BorrowOnlyModalProps {
   creditData: OAIDCreditLine | null;
 }
 
-export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyModalProps) => {
+export const UnifiedBorrowModal = ({ isOpen, onClose, onSuccess, creditData}: BorrowOnlyModalProps) => {
   const [borrowAmount, setBorrowAmount] = useState('');
   const [selectedPosition, setSelectedPosition] = useState<CollateralPosition | null>(null);
   const [showPositionSelector, setShowPositionSelector] = useState(false);
@@ -27,6 +27,7 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
   const [selectedAsset, setSelectedAsset] = useState<IssuerAsset | null>(null);
   const [assetDetailsMap, setAssetDetailsMap] = useState<Record<string, IssuerAsset>>({});
   const [positionValidation, setPositionValidation] = useState<Record<number, { valid: boolean; reason?: string }>>({});
+  const [borrowSuccess, setBorrowSuccess] = useState<{ creditBoost?: { score: number; tier: string; appliedLTV: number; standardLTV: number } } | null>(null);
 
   const availableCredit = creditData?.availableCredit ?? 0;
   const positions = creditData?.collateral ?? [];
@@ -216,8 +217,12 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
     return isNaN(amount) ? 0 : amount;
   }, [borrowAmount]);
 
+  const selectedPositionValid = selectedPosition
+    ? positionValidation[selectedPosition.positionId ?? 0]?.valid !== false
+    : false;
+
   const handleBorrow = async () => {
-    if (!selectedPosition || isAmountInvalid || !borrowAmount || installmentError) return;
+    if (!selectedPosition || isAmountInvalid || !borrowAmount || installmentError || loanDuration === 0 || !selectedPositionValid) return;
 
     setIsBorrowing(true);
     setError(null);
@@ -234,17 +239,29 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
         throw new Error(borrowResult.error || 'Borrow transaction failed');
       }
 
-      await solvencyService.notifyLoanBorrow({
-        txHash: borrowResult.txHash!,
-        positionId: String(selectedPosition.positionId),
-        borrowAmount: amountWei.toString(),
-        loanDuration: loanDuration.toString(),
-        numberOfInstallments: installments.toString(),
-        blockNumber: borrowResult.blockNumber?.toString(),
-      });
+      // On-chain borrow succeeded — notify backend to sync DB.
+      // This must never block the success flow: if it fails, the USDC is already in the user's wallet.
+      let creditBoost: { score: number; tier: string; appliedLTV: number; standardLTV: number } | undefined;
+      try {
+        const notifyResult = await solvencyService.notifyLoanBorrow({
+          txHash: borrowResult.txHash!,
+          positionId: String(selectedPosition.positionId),
+          borrowAmount: amountWei.toString(),
+          loanDuration: loanDuration.toString(),
+          numberOfInstallments: installments.toString(),
+          blockNumber: borrowResult.blockNumber?.toString(),
+        });
+        creditBoost = notifyResult?.position?.creditBoost;
+      } catch (notifyErr) {
+        console.error('Backend sync failed (borrow already confirmed on-chain):', notifyErr);
+      }
 
-      onSuccess();
       setBorrowAmount('');
+      if (creditBoost) {
+        setBorrowSuccess({ creditBoost });
+      } else {
+        onSuccess();
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred while borrowing.');
     } finally {
@@ -263,7 +280,25 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
   return (
     <>
       {/* Main Borrow Interface - Clean Swap Style */}
-      <div className="w-full max-w-[500px] mx-auto bg-white/30 rounded-3xl shadow-2xl p-6 relative z-50">
+      <div className="relative w-full max-w-[500px] mx-auto bg-white/30 rounded-3xl shadow-2xl p-6 z-50">
+        {/* Success overlay */}
+        {borrowSuccess && (
+          <div className="absolute inset-0 bg-white rounded-3xl flex flex-col items-center justify-center p-8 z-10">
+            <p className="text-2xl font-semibold text-gray-900 mb-2">Borrow Successful!</p>
+            {borrowSuccess.creditBoost && borrowSuccess.creditBoost.appliedLTV !== borrowSuccess.creditBoost.standardLTV && (
+              <p className="text-sm text-gray-600 text-center">
+                Loan executed at {borrowSuccess.creditBoost.appliedLTV / 100}% LTV based on your credit score of {borrowSuccess.creditBoost.score}.
+              </p>
+            )}
+            <button
+              className="mt-6 px-6 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium"
+              onClick={() => { setBorrowSuccess(null); onSuccess(); }}
+            >
+              Continue
+            </button>
+          </div>
+        )}
+
         {/* Close Button */}
        
 
@@ -407,7 +442,7 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
         {/* Borrow Button - Clean Pink Design */}
         <button
           onClick={handleBorrow}
-          disabled={isBorrowing || isAmountInvalid || !selectedPosition || !borrowAmount || !!installmentError}
+          disabled={isBorrowing || isAmountInvalid || !selectedPosition || !borrowAmount || !!installmentError || loanDuration === 0 || !selectedPositionValid}
           className="w-full bg-gradient-to-r from-pink-100 to-pink-50 hover:from-pink-200 hover:to-pink-100 disabled:from-gray-100 disabled:to-gray-50 text-pink-600 disabled:text-gray-400 font-semibold text-lg py-4 rounded-3xl transition-all disabled:cursor-not-allowed"
         >
           {isBorrowing ? (

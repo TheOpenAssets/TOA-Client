@@ -245,14 +245,14 @@ const OperationsViewPage = () => {
     try {
       // Step 1: List asset on marketplace (Backend API call)
       console.log('🔨 Step 1: Listing asset on marketplace...');
-      await adminService.listOnMarketplace(
+      const listingResult = await adminService.listOnMarketplace(
         selectedAsset.assetId,
         listingType,
         price,
         minInvestment,
         duration
       );
-      console.log('✅ Asset listed on marketplace successfully');
+      console.log('✅ Asset listed on marketplace successfully', listingResult);
 
       // For Stellar, we don't need the separate "Approve Marketplace" step
       if (networkType === 'stellar') {
@@ -276,9 +276,11 @@ const OperationsViewPage = () => {
 
           console.log('✅ Marketplace approval successful');
           console.log('Transaction Hash:', approvalResult.transactionHash);
+          const txHash = listingResult.transactionHash || approvalResult.transactionHash;
+          const explorerUrl = listingResult.explorerUrl || approvalResult.explorerUrl;
           success(
             'Listed & Approved!',
-            `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash ? `${approvalResult.transactionHash.slice(0, 6)}...${approvalResult.transactionHash.slice(-4)}` : 'N/A'}\n\nView on explorer:\n${approvalResult.explorerUrl}`,
+            `Asset is now available on the marketplace.\n\nApproval confirmed!\nTx: ${txHash ? `${txHash.slice(0, 6)}...${txHash.slice(-4)}` : 'N/A'}${explorerUrl ? `\n\nView on explorer:\n${explorerUrl}` : ''}`,
             10000
           );
         } catch (approvalError: any) {
@@ -334,9 +336,11 @@ const OperationsViewPage = () => {
 
         console.log('✅ Marketplace approval successful');
         console.log('Transaction Hash:', approvalResult.transactionHash);
+        const txHash = response.transactionHash || approvalResult.transactionHash;
+        const explorerUrl = response.explorerUrl || approvalResult.explorerUrl;
         success(
           'Auction Scheduled & Approved!',
-          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nApproval confirmed!\nTx: ${approvalResult.transactionHash?.slice(0, 10)}...\n\nView on explorer:\n${approvalResult.explorerUrl}`,
+          `${response.message}\n\nScheduled Start: ${new Date(response.scheduledStartTime).toLocaleString()}\n\nApproval confirmed!\nTx: ${txHash ? `${txHash.slice(0, 6)}...${txHash.slice(-4)}` : 'N/A'}${explorerUrl ? `\n\nView on explorer:\n${explorerUrl}` : ''}`,
           12000
         );
 
@@ -926,13 +930,13 @@ const OperationsViewPage = () => {
                   <div>
                     <span className="text-foreground/60">Total Supply:</span>
                     <p className="text-foreground font-semibold mt-1">
-                      {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                      {(parseFloat(selectedAsset.tokenParams.totalSupply) ).toLocaleString()} tokens
                     </p>
                   </div>
                   <div>
                     <span className="text-foreground/60">Reserve Price:</span>
                     <p className="text-foreground font-semibold mt-1">
-                      ${(parseFloat(selectedAsset.listing?.reservePrice || '800000') / 1e6).toFixed(2)} USDC
+                      ${(parseFloat(selectedAsset.listing?.reservePrice || '800000') ).toFixed(2)} USDC
                     </p>
                   </div>
                 </div>
@@ -1039,7 +1043,7 @@ const OperationsViewPage = () => {
                   <div>
                     <span className="text-foreground/60">Total Supply:</span>
                     <p className="text-foreground font-semibold mt-1">
-                      {(parseFloat(selectedAsset.tokenParams.totalSupply) / 1e18).toLocaleString()} tokens
+                      {(parseFloat(selectedAsset.tokenParams.totalSupply) ).toLocaleString()} tokens
                     </p>
                   </div>
                   <div>

@@ -73,7 +73,7 @@ const TradingEngineProductionPage = () => {
     const { assetId } = useParams<{ assetId: string }>();
     const { address, isAuthenticated } = useAuthStrategy();
     const { networkType, networkPath } = useNetwork();
-    const isEvm = networkType === 'arbitrum';
+    const isEvm = networkType !== 'stellar';
     // Only pass address to wagmi hooks if on EVM network
     const evmAddress = (isEvm && address) ? address as `0x${string}` : undefined;
 

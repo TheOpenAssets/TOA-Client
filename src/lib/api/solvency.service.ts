@@ -847,6 +847,42 @@ class SolvencyService extends BaseService {
   }
 
 
+  /**
+   * Record a deposit after the on-chain tx confirms
+   *
+   * POST /solvency/record-deposit
+   * Reads the PositionCreated event from chain, verifies it belongs to the
+   * authenticated user, and saves the position in the DB.
+   */
+  async recordDeposit(request: {
+    txHash: string;
+    positionId: string;
+    collateralTokenAddress: string;
+    collateralAmount: string;  // 18-decimal wei string
+    tokenValueUSD: string;     // 18-decimal USD value string (as passed to contract)
+  }): Promise<{
+    success: boolean;
+    positionId: number;
+    position: any;
+  }> {
+    const response = await this.fetchWithTimeout(
+      `${this.baseURL}/solvency/record-deposit`,
+      {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(request),
+      },
+      60000
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to record deposit');
+    }
+
+    return response.json();
+  }
+
   async notifyCollateralWithdrawal(request: {
     positionId: string;
     amount: string;

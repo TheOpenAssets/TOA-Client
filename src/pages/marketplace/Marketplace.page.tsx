@@ -150,15 +150,20 @@ const MarketplacePage = () => {
    * Otherwise calculates based on purchase price vs face value and time to maturity
    */
   const calculateAPY = (listing: any): number => {
-    const sold = parseFloat(listing.sold || '0') / 1e18;
+    // Read from nested API shape; fall back to flat fields for compatibility
+    const soldStr = listing.listing?.sold || listing.sold || '0';
+    const sold = parseFloat(soldStr) / 1e18;
 
     // When no tokens are sold yet, show fixed 5% APY
     if (sold === 0) {
       return 5.00;
     }
 
-    const totalSupply = parseFloat(listing.totalSupply) / 1e18;
-    const faceValue = parseFloat(listing.faceValue) / 1e6;
+    const totalSupplyStr = listing.tokenParams?.totalSupply || listing.totalSupply || '0';
+    const totalSupply = parseFloat(totalSupplyStr) / 1e18;
+
+    const faceValueStr = listing.metadata?.faceValue || listing.faceValue || '0';
+    const faceValue = parseFloat(faceValueStr) / 1e6;
 
     if (sold > totalSupply) {
       return 0;
@@ -199,7 +204,7 @@ const MarketplacePage = () => {
 
         // Parse sold and totalSupply from wei (18 decimals)
         // Helper to safely parse BigInt from string that might have decimals (e.g. "0.0000")
-        const safeBigInt = (val: string | number | undefined) => {
+        const safeBigInt = (val: string |  number | undefined) => {
           if (!val) return BigInt(0);
           const str = val.toString();
           // Remove decimals if present (truncate)
@@ -207,8 +212,18 @@ const MarketplacePage = () => {
           return BigInt(integerPart || '0');
         };
 
-        const soldWei = safeBigInt(listing.sold);
-        const totalSupplyWei = safeBigInt(listing.totalSupply);
+        // Read from nested API shape; fall back to flat fields for compatibility
+        const soldStr = listing.listing?.sold ?? listing.sold;
+        const totalSupplyStr = listing.tokenParams?.totalSupply ?? listing.totalSupply;
+        // STATIC: tokenParams.pricePerToken or listing.price; AUCTION: listing.reservePrice
+        const priceStr =
+          listing.tokenParams?.pricePerToken ??
+          listing.listing?.price ??
+          listing.listing?.reservePrice ??
+          listing.pricePerToken;
+
+        const soldWei = safeBigInt(soldStr);
+        const totalSupplyWei = safeBigInt(totalSupplyStr);
         const sold = Number(soldWei) / 1e18;
         const totalSupply = Number(totalSupplyWei) / 1e18;
 
@@ -216,35 +231,39 @@ const MarketplacePage = () => {
         const fundingProgress = totalSupply > 0 ? (sold / totalSupply) * 100 : 0;
 
         // Parse price per token (USDC 6 decimals)
-        const pricePerTokenWei = safeBigInt(listing.pricePerToken);
+        const pricePerTokenWei = safeBigInt(priceStr);
         const pricePerToken = Number(pricePerTokenWei) / 1e6;
 
         // Calculate total raised (sold * price per token)
         const totalRaised = sold * pricePerToken;
 
-        // Target amount is face value
-        // @ts-ignore
+        // Target amount: total supply * price per token
         const targetAmount = totalSupply * pricePerToken;
-        // const targetAmount = parseFloat(listing.metadata?.faceValue || listing.faceValue || '0');
+
+        // Pull display fields from nested metadata / listing
+        const industryDisplay = listing.metadata?.industry ?? listing.industry ?? 'Invoice';
+        const riskTierDisplay = listing.metadata?.riskTier ?? listing.riskTier ?? 'Standard';
+        const invoiceNumber = listing.metadata?.invoiceNumber ?? listing.name ?? listing.assetId;
+        const listedAt = listing.listing?.listedAt ?? listing.listedAt ?? new Date().toISOString();
 
         return {
           id: listing.assetId,
-          assetId: listing.name || listing.assetId, // Use name as display ID (e.g., "INV-2025-637514 - Tech Solutions Inc")
-          name: listing.industry || 'Invoice', // Use industry as category name
-          description: `${listing.industry || 'Invoice'} · Invoice · ${listing.riskTier || 'Standard'} Risk`,
+          assetId: invoiceNumber, // e.g. "INV-2025-637514"
+          name: industryDisplay,  // e.g. "Technology"
+          description: `${industryDisplay} · Invoice · ${riskTierDisplay} Risk`,
           category: 'invoice' as const,
           icon: '📄',
           tokenPrice: pricePerToken,
-          yieldAPY: calculateAPY(listing), // Dynamically calculated APY
-          maturityDays: maturityDays || "Matured", // Already validated with fallback to "Matured" above
+          yieldAPY: calculateAPY(listing),
+          maturityDays: maturityDays || "Matured",
           totalRaised: totalRaised,
           targetAmount: targetAmount,
           fundingProgress: fundingProgress,
           status: listing.status,
           verified: listing.status === 'TOKENIZED',
-          listedDate: listing.listedAt || new Date().toISOString(),
+          listedDate: listedAt,
           listingType: listing.listingType,
-          totalSupply: totalSupply, // Add total supply for chart scaling
+          totalSupply: totalSupply,
         } as MarketplaceAsset & { totalSupply: number };
       });
     })()

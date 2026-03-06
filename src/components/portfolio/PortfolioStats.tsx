@@ -127,7 +127,7 @@ export const PortfolioStats = ({
         <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
           OAID Credit Limit
         </h3>
-        <p className="font-gellix text-3xl font-semibold text-foreground">
+        <p className="font-gellix stext-3xl font-semibold text-foreground">
           {formatUSD(creditData?.creditLimit ?? 0)}
         </p>
         <p className="font-gellix text-xs text-gray-500 mt-2">

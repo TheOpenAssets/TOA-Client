@@ -1,20 +1,47 @@
 // src/lib/api/contract.service.ts
 
 import { ethers } from 'ethers';
+import { getNetworkFromPath } from '../network/network.config';
 
 /**
  * Contract Service - Handles smart contract interactions for token purchase
- *
- * Smart Contracts (Updated: 2025-12-25):
- * - USDC: 0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238
- * - PrimaryMarketplace: 0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504
+ * Network-aware: resolves addresses from the active URL network segment.
+ * Evaluated once at module init — safe because the page reloads on network switch.
  */
 
-// Contract addresses - Updated to match deployed_contracts.json (2025-12-25)
-// These should be defined in your .env file (e.g., VITE_USDC_ADDRESS)
-const USDC_ADDRESS = import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238';
-const PRIMARY_MARKETPLACE_ADDRESS = import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504';
-const YIELD_VAULT_ADDRESS = import.meta.env.VITE_YIELD_VAULT_ADDRESS || '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7';
+// ─── Per-network contract registry ───────────────────────────────────────────
+const NETWORK_CONTRACTS: Record<string, {
+  usdc: string;
+  primaryMarket: string;
+  yieldVault: string;
+  chainId: bigint;
+}> = {
+  creditcoin: {
+    usdc:          '0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1',
+    primaryMarket: '0x2E310C62A225033055E88B690F8d054ece8bcbC4',
+    yieldVault:    '0x03FE7d3736402D140659e7bD92B64808E31C3f51',
+    chainId:       102031n,
+  },
+  arbitrum: {
+    usdc:          import.meta.env.VITE_USDC_ADDRESS                || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238',
+    primaryMarket: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504',
+    yieldVault:    import.meta.env.VITE_YIELD_VAULT_ADDRESS         || '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7',
+    chainId:       421614n,
+  },
+  mantle: {
+    usdc:          import.meta.env.VITE_USDC_ADDRESS                || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238',
+    primaryMarket: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x034Ca27695555CEeB44CB62d59c4E3f95F4Ef504',
+    yieldVault:    import.meta.env.VITE_YIELD_VAULT_ADDRESS         || '0xa05bDf67483EB6ba5CcA0dc81543DeD5Ed845Da7',
+    chainId:       5003n,
+  },
+};
+
+// Resolved once at module load — correct for the active network URL segment
+const _networkContracts = NETWORK_CONTRACTS[getNetworkFromPath()] ?? NETWORK_CONTRACTS.arbitrum;
+const USDC_ADDRESS                = _networkContracts.usdc;
+const PRIMARY_MARKETPLACE_ADDRESS = _networkContracts.primaryMarket;
+const YIELD_VAULT_ADDRESS         = _networkContracts.yieldVault;
+const EXPECTED_CHAIN_ID           = _networkContracts.chainId;
 
 // USDC ABI - Only the functions we need
 const USDC_ABI = [
@@ -142,9 +169,9 @@ class ContractService {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const network = await provider.getNetwork();
 
-      // Check if we're on Arbitrum Sepolia (chainId: 421614)
-      if (network.chainId !== 421614n) {
-        console.warn(`Wrong network: Connected to chainId ${network.chainId}, expected 421614 (Arbitrum Sepolia)`);
+      // Verify wallet is on the expected chain for the active network
+      if (network.chainId !== EXPECTED_CHAIN_ID) {
+        console.warn(`Wrong network: Connected to chainId ${network.chainId}, expected ${EXPECTED_CHAIN_ID}`);
         return '0';
       }
 
@@ -469,8 +496,14 @@ class ContractService {
                 return { isValid: false, error: 'Listing is not active' };
               }
 
-              const availableSupply = altTotalSupply - altSold;
-              if (Number(availableSupply) === 0) {
+              let effectiveAltSupply = altTotalSupply;
+              if (altTotalSupply === 0n) {
+                const tokenContract = new ethers.Contract(altTokenAddress, ERC20_ABI, provider);
+                effectiveAltSupply = await tokenContract.totalSupply();
+              }
+
+              const availableSupply = effectiveAltSupply - altSold;
+              if (effectiveAltSupply > 0n && Number(availableSupply) === 0) {
                 return { isValid: false, error: 'No tokens available for purchase' };
               }
 
@@ -483,7 +516,9 @@ class ContractService {
                 details: {
                   tokenAddress: altTokenAddress,
                   currentPrice: currentPrice.toString(),
-                  availableSupply: ethers.formatUnits(availableSupply, 18),
+                  availableSupply: effectiveAltSupply > 0n
+                    ? ethers.formatUnits(availableSupply, 18)
+                    : 'unknown',
                   isActive: altActive,
                 },
               };
@@ -502,8 +537,19 @@ class ContractService {
           return { isValid: false, error: 'Listing is not active' };
         }
 
-        const availableSupply = totalSupply - sold;
-        if (Number(availableSupply) === 0) {
+        // If listing struct has totalSupply=0 (can happen when listed without explicit supply),
+        // fall back to the ERC20 token's totalSupply() as the real available supply.
+        let effectiveTotalSupply = totalSupply;
+        if (totalSupply === 0n && tokenAddress !== ethers.ZeroAddress) {
+          console.log('⚠️ Listing totalSupply is 0, falling back to ERC20.totalSupply()...');
+          const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+          const erc20Supply = await tokenContract.totalSupply();
+          console.log('ERC20 totalSupply():', erc20Supply.toString());
+          effectiveTotalSupply = erc20Supply;
+        }
+
+        const availableSupply = effectiveTotalSupply - sold;
+        if (effectiveTotalSupply > 0n && Number(availableSupply) === 0) {
           return { isValid: false, error: 'No tokens available for purchase' };
         }
 
@@ -517,7 +563,9 @@ class ContractService {
           details: {
             tokenAddress,
             currentPrice: currentPrice.toString(),
-            availableSupply: ethers.formatUnits(availableSupply, 18),
+            availableSupply: effectiveTotalSupply > 0n
+              ? ethers.formatUnits(availableSupply, 18)
+              : 'unknown',
             isActive: active,
           },
         };

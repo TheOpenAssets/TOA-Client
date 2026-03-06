@@ -92,7 +92,7 @@ export const TokenFaucetCard = ({
           message: `Successfully received 1000 ${tokenName}`,
           amount: '1000',
           transactionHash: txHash,
-          explorerUrl: `https://sepolia.arbiscan.io/tx/${txHash}`,
+          explorerUrl: `https://creditcoin.blockscout.com/tx/${txHash}`,
           symbol: tokenSymbol,
         });
       } else {

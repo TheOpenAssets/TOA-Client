@@ -38,7 +38,7 @@ const FaucetPage = () => {
               tokenSymbol="USDC"
               tokenDecimals={6}
               tokenImage="https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
-              tokenAddress="0xa6887882e7430862150F7C4FF5AE192966c6e1d2"
+              tokenAddress="0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1"
               faucetAmount={1000}
               description="Receive 1,000 testnet USDC to your connected wallet."
             />

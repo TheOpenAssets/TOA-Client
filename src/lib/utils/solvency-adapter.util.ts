@@ -22,13 +22,17 @@ export function adaptCreditResponse(
 
   // Convert credit lines to collateral positions
   const collateral: CollateralPosition[] = response.creditLines.map((line: any) => {
-    const amount = parseInt(line.collateralAmount);
-    const valueUSD = parseInt(line.creditLimit) / 1_000_000; // Credit limit is based on collateral value
+    // collateralAmount is in 18-decimal token units — keep as raw number for formatCollateralAmount()
+    const amount = Number(BigInt(line.collateralAmount) / BigInt(1e12)) / 1e6; // scale 18→6 decimals safely
+    // creditLimit is tokenValueUSD × LTV (70% for RWA). Reverse-calculate actual collateral value.
+    // We use 7000 basis-points (70%) as the default LTV for RWA tokens.
+    const creditLimitUSD = parseInt(line.creditLimit) / 1_000_000;
+    const valueUSD = creditLimitUSD / 0.7; // reverse LTV to get actual deposit value
 
     return {
-      positionId: line.solvencyPositionId, // Include the position ID for selection
+      positionId: line.solvencyPositionId,
       tokenAddress: line.collateralToken,
-      tokenSymbol: 'UNKNOWN', // Backend doesn't return this, need to fetch from assets
+      tokenSymbol: 'UNKNOWN', // fetched later by assetService.getAssetByTokenAddress
       tokenName: 'UNKNOWN',
       amount,
       valueUSD,

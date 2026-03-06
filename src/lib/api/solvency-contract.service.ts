@@ -7,10 +7,31 @@
  */
 
 import { ethers } from 'ethers';
+import { getNetworkFromPath } from '../network/network.config';
 
-// Contract addresses from environment
-const VAULT_CONTRACT_ADDRESS = import.meta.env.VITE_SOLVENCY_VAULT || '';
-const USDC_CONTRACT_ADDRESS = import.meta.env.VITE_USDC_CONTRACT_ADDRESS || '';
+// Per-network contract registry — resolved once at module load
+const NETWORK_CONTRACTS: Record<string, { vault: string; usdc: string; chainId: bigint }> = {
+  creditcoin: {
+    vault:   '0x77bB1944E2a2FC0e5D0F587699041ee09900ADA8',
+    usdc:    '0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1',
+    chainId: 102031n,
+  },
+  arbitrum: {
+    vault:   import.meta.env.VITE_SOLVENCY_VAULT               || '',
+    usdc:    import.meta.env.VITE_USDC_CONTRACT_ADDRESS        || '',
+    chainId: 421614n,
+  },
+  mantle: {
+    vault:   import.meta.env.VITE_SOLVENCY_VAULT               || '',
+    usdc:    import.meta.env.VITE_USDC_CONTRACT_ADDRESS        || '',
+    chainId: 5003n,
+  },
+};
+
+const _net = NETWORK_CONTRACTS[getNetworkFromPath()] ?? NETWORK_CONTRACTS.arbitrum;
+const VAULT_CONTRACT_ADDRESS = _net.vault;
+const USDC_CONTRACT_ADDRESS  = _net.usdc;
+const EXPECTED_CHAIN_ID      = _net.chainId;
 
 // Solvency Vault ABI - ✅ VERIFIED from deposit-to-vaultsolvency.js lines 115-121
 // Updated borrowUSDC to include loanDuration and numberOfInstallments per COMPLETE_LOAN.md
@@ -107,10 +128,9 @@ class SolvencyContractService {
     const network = await provider.getNetwork();
     console.log(`   Connected to network: chainId ${network.chainId}`);
 
-    // Check if on Arbitrum Sepolia (chainId: 421614)
-    if (network.chainId !== 421614n) {
+    if (network.chainId !== EXPECTED_CHAIN_ID) {
       throw new Error(
-        `Wrong network. Please switch to Arbitrum Sepolia (chainId: 421614). Currently on chainId: ${network.chainId}`
+        `Wrong network. Expected chainId ${EXPECTED_CHAIN_ID} but connected to chainId: ${network.chainId}`
       );
     }
 
