@@ -93,6 +93,28 @@ Key properties:
 * Unified health factor and liquidation monitoring
 * Verifiable solvency readable by any application on-chain
 
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    actor User
+    participant SV as SolvencyVault
+    participant OAID as OAID Registry
+    participant CS as Credit Score Engine
+    participant PP as Partner Protocol
+
+    User->>SV: Deposit RWA Tokens as Collateral
+    SV->>OAID: Request Credit Line Activation
+    OAID->>CS: Compute Composite Score (L1 + L2)
+    CS-->>OAID: Score Assigned · LTV Tier Determined
+    OAID-->>User: Credit Line Active
+
+    User->>OAID: Borrow USDC (Platform Loan)
+    User->>PP: Borrow via Partner Gateway (e.g. Aave)
+    PP-->>OAID: Repayment verified via USC STARK Proof
+    OAID->>CS: Update Score — Repayment Recorded
+    CS-->>User: Credit Tier Recalculated
+```
+
 ---
 
 ## 5. Two-Layer Credit Score — The Creditcoin Advantage
@@ -120,6 +142,36 @@ For users with no Substrate history, Layer 1 carries full weight. For first-time
 | POOR | Below 400 | 55% |
 
 Two users depositing identical collateral will receive different borrowing terms based on their verified credit history. The difference is transparent, on-chain, and attributable to real financial behavior.
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph L1["  Layer 1 — Platform Score  ·  60% Weight  "]
+        direction LR
+        A1[Repayment Rate] ~~~ A2[Total USDC Repaid]
+        A3[Missed Payments] ~~~ A4[Default History]
+    end
+
+    subgraph L2["  Layer 2 — Creditcoin Protocol Score  ·  40% Weight  "]
+        direction LR
+        B1["4.27M On-Chain Transactions"] ~~~ B2["Cross-Platform Lending History"]
+        B3["Substrate RPC  ·  @polkadot/api"]
+    end
+
+    L1 -->|"60%"| CS["Composite Score\n───────────────────\n(L1 × 60%)  +  (L2 × 40%)"]
+    L2 -->|"40%"| CS
+
+    CS --> T1["  EXCELLENT   ≥ 800   →   75% LTV  "]
+    CS --> T2["  GOOD   600 – 799   →   70% LTV  "]
+    CS --> T3["  FAIR   400 – 599   →   65% LTV  "]
+    CS --> T4["  POOR   < 400   →   55% LTV  "]
+
+    style CS fill:#1e1b4b,stroke:#818cf8,color:#e0e7ff
+    style T1 fill:#064e3b,stroke:#34d399,color:#d1fae5
+    style T2 fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    style T3 fill:#3d2a00,stroke:#fbbf24,color:#fef3c7
+    style T4 fill:#450a0a,stroke:#f87171,color:#fee2e2
+```
 
 ---
 
@@ -168,7 +220,29 @@ Yield from settled RWA assets is distributed based on duration of ownership. The
 
 # System Lifecycle
 
-Issuance &nbsp; → &nbsp; Discovery &nbsp; → &nbsp; Acquisition &nbsp; → &nbsp; Collateral Deposit &nbsp; → &nbsp; OAID Credit &nbsp; → &nbsp; Borrowing &nbsp; → &nbsp; Cross-Chain Verification &nbsp; → &nbsp; Repayment &nbsp; → &nbsp; Settlement &nbsp; → &nbsp; Yield Distribution
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e1b4b', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#818cf8', 'lineColor': '#6366f1', 'edgeLabelBackground': '#0f172a'}}}%%
+flowchart LR
+    A(Issuance) --> B(Discovery)
+    B --> C(Acquisition)
+    C --> D(Collateral\nDeposit)
+    D --> E(OAID\nCredit)
+    E --> F(Borrowing)
+    F --> G(Cross-Chain\nVerification)
+    G --> H(Repayment)
+    H --> I(Settlement)
+    I --> J(Yield\nDistribution)
+
+    classDef market fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    classDef credit fill:#1e1b4b,stroke:#818cf8,color:#e0e7ff
+    classDef chain fill:#064e3b,stroke:#34d399,color:#d1fae5
+    classDef settle fill:#451a03,stroke:#fb923c,color:#ffedd5
+
+    class A,B,C market
+    class D,E,F credit
+    class G,H chain
+    class I,J settle
+```
 
 ---
 
@@ -219,6 +293,38 @@ Capabilities:
 * Settlement USDC deposit by issuer
 * Token burn and pro-rata yield distribution
 * Position lifecycle closure and collateral release
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    subgraph ISS["  ISSUER FLOW  "]
+        I1[Register Asset] --> I2[Compliance\nValidation]
+        I2 --> I3[Mint RWA Tokens]
+        I3 --> I4{List on Market}
+        I4 -->|Fixed Price| I5[Static Listing]
+        I4 -->|Price Discovery| I6[Uniform-Price\nAuction]
+        I5 & I6 --> I7[Settlement\nDeposit]
+        I7 --> I8[Yield Distribution\nto Holders]
+    end
+
+    subgraph INV["  INVESTOR FLOW  "]
+        V1[Discover Assets] --> V2{Acquire}
+        V2 -->|Primary Market| V3[Buy / Bid]
+        V2 -->|Secondary Market| V4[P2P Order]
+        V3 & V4 --> V5[Hold RWA Tokens]
+        V5 --> V6[Claim Yield\non Settlement]
+    end
+
+    subgraph CRD["  CREDIT FLOW  "]
+        C1[Deposit RWA\nCollateral] --> C2[OAID Credit\nLine Activated]
+        C2 --> C3{Borrow}
+        C3 -->|Platform| C4[USDC Loan]
+        C3 -->|External| C5[Partner Protocol\ne.g. Aave]
+        C4 & C5 --> C6[Installment\nRepayment]
+        C6 --> C7[USC Cross-Chain\nProof Submitted]
+        C7 --> C8[Credit Score\nUpdated]
+    end
+```
 
 ---
 
