@@ -174,13 +174,22 @@ export const CreditScoreDashboard = ({
             <div className="h-px bg-gray-100" />
 
             {/* Section 4: Applied LTV */}
-            <p className="font-gellix text-xs text-gray-500">
-              Your credit tier qualifies you for{' '}
-              <span className="font-semibold text-gray-700">
-                {creditScore.effectiveLTV / 100}%
-              </span>{' '}
-              LTV
-            </p>
+            {(() => {
+              // effectiveLTV is in basis points (e.g. 7000 = 70%, 7500 = 75%)
+              // Guard against undefined, null, or string values from the API
+              const rawLTV = Number(creditScore.effectiveLTV);
+              const ltvBps = isFinite(rawLTV) && rawLTV > 0 ? rawLTV : 7000;
+              const ltvPercent = (ltvBps / 100).toFixed(0);
+              return (
+                <p className="font-gellix text-xs text-gray-500">
+                  Your credit tier qualifies you for{' '}
+                  <span className="font-semibold text-gray-700">
+                    {ltvPercent}%
+                  </span>{' '}
+                  LTV
+                </p>
+              );
+            })()}
           </div>
         )}
       </div>

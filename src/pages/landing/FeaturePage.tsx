@@ -7,6 +7,7 @@ import {
   IconRouteAltLeft,
   IconTerminal2,
   IconCoin,
+  IconShieldCheck,
 } from "@tabler/icons-react";
 
 
@@ -15,19 +16,19 @@ const FeaturePage = () => {
     {
       title: "Canonical RWA Tokenization",
       description:
-        "Real-world assets are verified, structured, and minted on-chain as compliant RWA tokens. The protocol currently focuses on invoices, with extensibility to additional asset classes over time.",
+        "Real-world assets — invoices, trade finance instruments, property deeds — are verified, structured, and minted on Creditcoin EVM as compliant RWA tokens, permanently recorded on-chain.",
       icon: <IconTerminal2 />,
     },
     {
-      title: "Leveraged RWA Buying (stARB)",
+      title: "Credit-Aware Borrowing",
       description:
-        "Users acquire RWA tokens using stARB deposited into a leveraged vault. USDC is sourced from the protocol’s lending pool, while stARB yield is programmatically applied toward loan repayment.",
+        "Deposit RWA tokens as collateral and borrow USDC with terms shaped by your composite credit score. Better credit history earns better LTV — up to 75% for Excellent-tier borrowers vs. the standard 70%.",
       icon: <IconEaseInOut />,
     },
     {
-      title: "Automated Leverage Repayment Engine",
+      title: "Composite Credit Score Engine",
       description:
-        "Interest earned on stARB is routed through Fluxion or protocol-native swaps to service senior pool obligations, reducing user debt without manual intervention.",
+        "Your score combines two layers: platform-level repayment history (Layer 1) and your verified on-chain lending record from the Creditcoin Substrate chain (Layer 2) — 4.27M real loan records.",
       icon: <IconCurrencyDollar />,
     },
     {
@@ -37,10 +38,10 @@ const FeaturePage = () => {
       icon: <IconCloud />,
     },
     {
-      title: "Cross-Protocol Borrowing Access",
+      title: "USC: Trustless Cross-Chain Proof",
       description:
-        "Collateralized positions can source liquidity from multiple partner protocols and the native lending pool, enabling flexible credit routing without breaking solvency guarantees.",
-      icon: <IconRouteAltLeft />,
+        "Creditcoin's Universal Smart Contract (USC) lets our contract verify repayments on Ethereum, BSC, and Bitcoin using STARK proofs via the 0x0FD2 precompile — no oracle, no bridge, no middleman.",
+      icon: <IconShieldCheck />,
     },
     {
       title: "Deterministic Yield Distribution",
@@ -55,10 +56,10 @@ const FeaturePage = () => {
       icon: <IconCoin />,
     },
     {
-      title: "OAID - Universal Credit Identity",
+      title: "OAID — Universal Credit Identity",
       description:
-        "OAID is a wallet-bound credit identity that aggregates collateral, credit limits, and active loans into a single source of truth, enabling users to borrow across multiple protocols without moving or re-posting collateral.",
-      icon: <IconAdjustmentsBolt />,
+        "OAID is a wallet-bound credit identity that aggregates collateral, credit limits, and active loans into a single on-chain profile — carrying your Creditcoin credit score across every partner protocol.",
+      icon: <IconRouteAltLeft />,
     },
 
   ];

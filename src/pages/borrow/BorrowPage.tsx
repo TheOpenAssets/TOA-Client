@@ -148,21 +148,19 @@ const BorrowPage = () => {
                 <div className="flex items-center justify-center gap-1 mb-6 bg-gray-100 rounded-2xl p-1 w-fit mx-auto">
                   <button
                     onClick={() => setActiveTab('direct')}
-                    className={`px-5 py-2 rounded-xl text-sm font-semibold font-gellix transition-all ${
-                      activeTab === 'direct'
+                    className={`px-5 py-2 rounded-xl text-sm font-semibold font-gellix transition-all ${activeTab === 'direct'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     Direct Borrow
                   </button>
                   <button
                     onClick={() => setActiveTab('partner')}
-                    className={`px-5 py-2 rounded-xl text-sm font-semibold font-gellix transition-all ${
-                      activeTab === 'partner'
+                    className={`px-5 py-2 rounded-xl text-sm font-semibold font-gellix transition-all ${activeTab === 'partner'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     Partner Borrow
                   </button>
@@ -177,9 +175,13 @@ const BorrowPage = () => {
                           <p className="text-sm text-gray-700 font-medium mb-2">Your borrow terms</p>
                           <div className="text-sm text-gray-700 space-y-1">
                             <p>Your credit score: {borrowTerms.compositeScore} ({borrowTerms.tier})</p>
-                            <p>Applied LTV: {borrowTerms.effectiveLTV / 100}%</p>
+                            <p>Applied LTV: {(() => {
+                              const rawLTV = Number(borrowTerms.effectiveLTV);
+                              const ltvBps = isFinite(rawLTV) && rawLTV > 0 ? rawLTV : 7000;
+                              return (ltvBps / 100).toFixed(0);
+                            })()}%</p>
                             <p>
-                              {borrowTerms.effectiveLTV !== 7000
+                              {Number(borrowTerms.effectiveLTV) !== 7000
                                 ? '— you qualify for an enhanced rate'
                                 : 'Standard terms apply'}
                             </p>

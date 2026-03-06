@@ -182,7 +182,7 @@ export default function AboutPage() {
           timelineRef={heroRef}
           className="text-gray-600 text-center sm:text-lg text-sm mb-8 leading-relaxed"
         >
-          From day one, our mission has been to build high-impact Web3 infrastructure focused on real-world adoption. With experience spanning leading AI research labs, major Web3 ecosystems such as Binance and Stellar, and the successful launch of a DeFi startup, our team is focused on redefining how real-world assets are tokenized, starting with the Asian corridor and scaling globally.
+          From day one, our mission has been to build high-impact Web3 infrastructure focused on real-world adoption. Built on Creditcoin — the only Layer 1 blockchain with 4.27 million real loan records on-chain — our platform brings credit-aware RWA tokenization, trustless cross-chain credit verification via USC, and identity-portable borrowing to emerging markets starting in Africa and Southeast Asia, scaling globally.
         </TimelineContent>
       </div>
       <div className={`max-w-6xl mx-auto grid gap-4 pt-20 lg:h-[26rem] md:h-[22rem] sm:h-[16rem] h-[14rem]`} style={{ gridTemplateColumns: `repeat(${contributors.length || 4}, minmax(0, 1fr))` }}>

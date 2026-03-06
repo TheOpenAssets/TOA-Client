@@ -90,42 +90,39 @@ const mermaidCode = `flowchart TB
     AEND -->|Failed| REFUND
 
     %% =========================
-    %% BUY & LEVERAGE
+    %% BUY
     %% =========================
     BM[Buy Module | Configure purchase settings and payment type.]
-    U[USDC Buy | Direct purchase using stablecoin collateral.]
-    L[stARB Buy | Leveraged purchase using protocol liquidity.]
-    LC[Collateral Locked | stARB is held in escrow to secure the position.]
-    LP[Leverage Position | Active position with health factor tracking.]
+    U[USDC Buy | Direct purchase using USDC stablecoin.]
 
     AD --> BM
     BM --> U
-    BM --> L
-    L --> LC
-    LC --> LP
 
     %% =========================
-    %% MAINTENANCE & LIQUIDATION
+    %% CREDIT SCORE & IDENTITY
     %% =========================
-    MAINT[Maintenance Loop | Continuous monitoring of collateral health.]
-    HEALTH[Health Check | Automated oracle check for liquidation risk.]
-    LIQ[Liquidation | Position closed to protect senior pool liquidity.]
-    REPAY1[Senior Pool Repaid | Debt settled using liquidated collateral.]
-    RELEASE1[RWA Released | Remaining assets returned to the user.]
+    CS[Credit Score Dashboard | View composite score from two layers.]
+    L1[Layer 1 - Platform Score | Based on repayment history on this platform.]
+    L2[Layer 2 - Protocol Score | Based on Creditcoin Substrate chain loan records.]
+    BT[Borrow Terms Preview | See personalised LTV before committing to a borrow.]
+    USC[USC Proof Submission | Submit a STARK proof of an off-chain repayment event.]
+    VERIFY[0x0FD2 Precompile Verifies | Creditcoin EVM verifies the cross-chain proof on-chain.]
+    UPDATE[Score Updated | User credit score updated, better LTV unlocked.]
 
-    LP --> MAINT
-    MAINT --> HEALTH
-    HEALTH -->|Healthy| MAINT
-    HEALTH -->|Breach| LIQ
-    LIQ --> REPAY1
-    REPAY1 --> RELEASE1
+    U --> CS
+    CS --> L1
+    CS --> L2
+    CS --> BT
+    CS --> USC
+    USC --> VERIFY
+    VERIFY --> UPDATE
+    UPDATE --> BT
 
     %% =========================
     %% PORTFOLIO DETAILS
     %% =========================
     PA[Owned RWA | View your fractional real estate or credit tokens.]
     PB[Auction Bids | Monitor pending asset acquisitions.]
-    PL[Leveraged Positions | Manage health and collateral for active buys.]
     LO[Active Loans | View borrowed amounts and repayment schedules.]
     PY[Yield & History | Track accrued earnings from asset performance.]
     CLAIM[Claim Yield | Withdraw earned USDC to your wallet.]
@@ -133,7 +130,6 @@ const mermaidCode = `flowchart TB
 
     P --> PA
     P --> PB
-    P --> PL
     P --> LO
     P --> PY
     PY --> CLAIM
@@ -190,10 +186,9 @@ const mermaidCode = `flowchart TB
     RECORD --> DIST
     DIST --> PY
 
-    MAINT --> NOTIF
     AEND --> NOTIF
     DIST --> NOTIF
-    LIQ --> NOTIF
+    UPDATE --> NOTIF
     RESTORE --> NOTIF
 
     %% =========================
@@ -206,9 +201,10 @@ const mermaidCode = `flowchart TB
 
     class A,F,M,G,I entry;
     class MP,H,D,P,T,B,SM hub;
-    class AU,RS,INV,ISS,IP,AS,TK,LIST,BID,AEND,MAINT,HEALTH,NOTIF action;
-    class AD,BM,U,L,LC,LP,LIQ,REPAY1,RELEASE1,PA,PB,PL,LO,PY,CLAIM,WALLET,BUY,SELL,YP finance;
+    class AU,RS,INV,ISS,IP,AS,TK,LIST,BID,AEND,NOTIF action;
+    class AD,BM,U,PA,PB,LO,PY,CLAIM,WALLET,BUY,SELL,YP finance;
     class OA,CR,AL,BN,PC,LOAN,RESTORE,ENFORCE,REPAY2,EXCESS,SETTLE,RECORD,DIST finance;
+    class CS,L1,L2,BT,USC,VERIFY,UPDATE finance;
 `;
 
 const FAQSection = () => {

@@ -3,7 +3,7 @@ import { useAccount, useBalance, useWriteContract } from 'wagmi';
 import { Button } from '../ui/button';
 import { useToast } from '../../hooks/useToast';
 import { Loader2, CheckCircle, ExternalLink } from 'lucide-react';
-import { USDC_ABI, STARB_ABI, CONTRACTS } from '../../lib/blockchain/auction.contract';
+import { USDC_ABI, STARB_ABI } from '../../lib/blockchain/auction.contract';
 import { parseUnits } from 'viem';
 import type { Address } from 'viem';
 
@@ -83,7 +83,7 @@ export const TokenFaucetCard = ({
         // Call faucet() directly on the MockUSDC contract
         info(`Requesting ${tokenName}...`, 'Please confirm the transaction in your wallet.');
         const txHash = await writeContractAsync({
-          address: CONTRACTS.USDC as Address,
+          address: tokenAddress as Address,
           abi: USDC_ABI,
           functionName: 'faucet',
         });
@@ -100,7 +100,7 @@ export const TokenFaucetCard = ({
         info(`Requesting ${tokenName}...`, 'Please confirm the transaction in your wallet.');
         const mintAmount = parseUnits(faucetAmount.toString(), 18); // stARB has 18 decimals
         const txHash = await writeContractAsync({
-          address: CONTRACTS.stARB as Address,
+          address: tokenAddress as Address,
           abi: STARB_ABI,
           functionName: 'mint',
           args: [address, mintAmount],
@@ -127,7 +127,16 @@ export const TokenFaucetCard = ({
       {/* Card Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
-          <img src={tokenImage} alt={tokenName} className="w-10 h-10 rounded-full" />
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+            <img
+              src={tokenImage}
+              alt={tokenName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png';
+              }}
+            />
+          </div>
           <h2 className="font-geist text-2xl font-medium text-[#111111]">{tokenName} Faucet</h2>
         </div>
         <p className="font-geist text-sm text-[#6B7280]">{description}</p>

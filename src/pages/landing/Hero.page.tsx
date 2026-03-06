@@ -1,10 +1,8 @@
 import { useEffect } from "react";
-// import { ShimmerButton } from "../../components/ui/shimmer-button";
 import { useAuthActions } from "../../hooks/useAuthActions";
 import { useToast } from "../../hooks/useToast";
 import { Button } from "../../components/ui/button";
 import { Landmark, User } from "lucide-react";
-// import { ShaderAnimation } from "../../components/ui/shader-animation";
 
 const HeroSection = () => {
   const { error, isAuthenticating, handleGetStarted, handleIssuerGetStarted } = useAuthActions();
@@ -24,21 +22,21 @@ const HeroSection = () => {
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
             RWA Tokenization,
           </h1>
-          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Settlement
+          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Credit-Aware Borrowing
           </h1>
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
-            & Cross Protocol Credit
+            & Cross-Chain Identity
           </h1>
 
           <p className="font-inter text-base md:text-lg text-foreground/80 mb-12 max-w-2xl mx-auto">
-            Tokenize and invest in real-world assets, leverage stARB for smart purchases, issue private or RWA-backed credit, and earn credible on-chain yields.<br />
-            <span className="font-beau text-xl md:text-2xl font-semibold">Tokenize. Invest. Borrow. Earn.</span> All in one unified execution layer.          </p>
+            Tokenize real-world assets and unlock credit-aware borrowing across chains. <br />
+            <span className="font-beau text-xl md:text-2xl font-semibold">Real assets. Real credit. Oracle-free.</span>
+          </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
 
             <Button
               className="hover:scale-[1.02] transition-transform rounded-3xl border-2 border-neutral-500 bg-neutral-200/80"
-
               onClick={handleGetStarted}
               disabled={isAuthenticating}
             >
@@ -49,7 +47,6 @@ const HeroSection = () => {
               onClick={handleIssuerGetStarted}
               disabled={isAuthenticating}
               className="flex hover:scale-[1.02] items-center gap-2 px-4 py-2 bg-[#111111] text-white rounded-2xl text-sm font-medium hover:bg-[#000000] transition-colors shadow-sm"
-
             >
               <Landmark className="w-4 h-4" />
               Become an Issuer

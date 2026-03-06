@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
-import { Layout, Pointer, Zap , DollarSign} from "lucide-react";
+import { Layout, Pointer, Zap, DollarSign } from "lucide-react";
 import VideoPlayer from "./video-player";
 import { useRef, useEffect, useState } from "react";
 
@@ -97,15 +97,15 @@ const FaqDetails = ({
             },
         },
         {
-            value: "leverage",
+            value: "credit-score",
             icon: <Zap className="h-auto w-4 shrink-0" />,
-            label: "Leverage",
+            label: "Credit Score",
             content: {
-                badge: "stARB Buy",
-                title: "Buy RWAs using leveraged stARB",
+                badge: "Credit Identity",
+                title: "See your composite credit score",
                 description:
-                    "Use stARB as collateral to create leveraged exposure while yield services interest automatically.",
-                buttonText: "Use stARB",
+                    "View your Creditcoin credit score built from two layers: your on-platform repayment history and your verified lending track record from the Creditcoin Substrate chain — covering 4.27M real loan records.",
+                buttonText: "View Score",
                 videoSrc: "https://youtu.be/c7CdBkcVZPQ",
             },
         },

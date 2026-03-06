@@ -14,10 +14,10 @@ const FaucetPage = () => {
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-      
+
       </div>
       {/* Main Content */}
-      <div className= " absolute top-0 left-0 w-full mx-auto z-100 flex flex-col items-center ">
+      <div className=" absolute top-0 left-0 w-full mx-auto z-100 flex flex-col items-center ">
         {/* Page Header */}
         <div className="text-center mb-12 max-w-2xl mt-20">
           <h1 className="font-geist text-4xl font-medium text-[#111111] mb-3">Testnet Faucet</h1>
@@ -37,20 +37,14 @@ const FaucetPage = () => {
               tokenName="USDC"
               tokenSymbol="USDC"
               tokenDecimals={6}
-              tokenImage="https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
+              tokenImage="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
               tokenAddress="0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1"
               faucetAmount={1000}
               description="Receive 1,000 testnet USDC to your connected wallet."
             />
-            <TokenFaucetCard
-              tokenName="stARB"
-              tokenSymbol="stARB"
-              tokenDecimals={18}
-              tokenImage="/stARB-crystal.svg"
-              tokenAddress="0x3172772883A4CfD4013280CA95370017f4a863f9"
-              faucetAmount={10}
-              description="Receive 10 testnet stARB for leveraged buy."
-            />
+
+
+
           </div>
         )}
       </div>

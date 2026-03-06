@@ -6,8 +6,23 @@ import { MyPartnerLoans } from './MyPartnerLoans';
 import type { Partner, PartnerBorrowTerms } from '../../../types/creditcoin.types';
 import type { CollateralPosition } from '../../../types/solvency.types';
 
-const usdcToDisplay = (raw: string) =>
-  (parseInt(raw) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// maxBorrowableUsdc comes from the backend as a 6-decimal string (e.g. "8000000000" = 8000 USDC)
+// Guard against undefined, null, empty string, or non-numeric values
+// Auto-detects format: if value >= 1_000_000 assume micro-USDC (6 decimals), else treat as plain USDC
+const usdcToDisplay = (raw: string | undefined | null): string => {
+  const parsed = parseFloat(raw ?? '');
+  if (!isFinite(parsed) || isNaN(parsed) || parsed === 0) return '0.00';
+  // If >= 1,000,000 it is in micro-USDC (6 decimal places from the contract)
+  // Otherwise the backend already returned a plain USDC amount
+  const usdc = parsed >= 1_000_000 ? parsed / 1_000_000 : parsed;
+  return usdc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+// Safely convert basis-point LTV to a display percentage string
+const ltvToDisplay = (bps: number | undefined | null, fallback = 70): string => {
+  const n = Number(bps);
+  return isFinite(n) && n > 0 ? (n / 100).toFixed(0) : fallback.toFixed(0);
+};
 
 interface Props {
   walletAddress: string;
@@ -31,6 +46,7 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
           partnerService.getPartners(),
           partnerService.getPartnerBorrowTerms(walletAddress),
         ]);
+        console.log('🔍 [PartnerBorrowSection] Raw borrowTerms from API:', JSON.stringify(termsData, null, 2));
         setPartners(partnersData);
         setBorrowTerms(termsData);
       } catch (err: any) {
@@ -82,9 +98,9 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
                 {usdcToDisplay(borrowTerms.maxBorrowableUsdc)} USDC
               </p>
               <p className="text-xs text-gray-400 font-gellix mt-0.5">
-                {borrowTerms.effectiveLtv / 100}% LTV
+                {ltvToDisplay(borrowTerms.effectiveLtv)}% LTV
                 {borrowTerms.hasBoost && (
-                  <span className="text-gray-300"> (standard {borrowTerms.standardLtv / 100}%)</span>
+                  <span className="text-gray-300"> (standard {ltvToDisplay(borrowTerms.standardLtv)}%)</span>
                 )}
               </p>
             </div>
@@ -148,7 +164,7 @@ interface PartnerCardProps {
 const PartnerCard = ({ partner, borrowTerms, onBorrow }: PartnerCardProps) => {
   const initial = partner.partnerName.charAt(0);
   const maxDisplay = borrowTerms ? usdcToDisplay(borrowTerms.maxBorrowableUsdc) : '—';
-  const ltv = borrowTerms ? `${borrowTerms.effectiveLtv / 100}%` : '—';
+  const ltv = borrowTerms ? `${ltvToDisplay(borrowTerms.effectiveLtv)}%` : '—';
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex items-center justify-between gap-4">
