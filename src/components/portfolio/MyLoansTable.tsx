@@ -462,7 +462,6 @@ export const MyLoansTable = ({ positions, isLoading, onRefresh }: MyLoansTablePr
                 const activePartnerLoans = (position.partnerLoans || []).filter(
                   pl => pl.status === 'ACTIVE' && parseFloat(pl.remainingDebt) > 0
                 );
-                const hasPartnerDebt = activePartnerLoans.length > 0;
                 const hasDebt = platformDebt > 0;
                 const hasAnyDebt = outstandingDebt > 0;
                 const hasCollateral = parseFloat(position.collateralAmount) > 0;

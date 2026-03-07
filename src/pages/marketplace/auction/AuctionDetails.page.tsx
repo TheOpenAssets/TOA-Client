@@ -20,7 +20,7 @@ const AuctionDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const navigate = useNavigate();
   const { address } = useAuthStrategy();
-  const { networkType, networkPath, network } = useNetwork();
+  const {  networkPath, network } = useNetwork();
   const isEvm = network.walletType === 'evm';
   const { currentAsset: asset, isLoadingAsset, error, fetchAssetDetails } = useMarketplaceStore();
 

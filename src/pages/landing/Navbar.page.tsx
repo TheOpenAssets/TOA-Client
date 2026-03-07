@@ -5,7 +5,6 @@ import { useAuthActions } from "../../hooks/useAuthActions";
 import { Button } from "../../components/ui/button";
 import { Layout, Droplet } from "lucide-react";
 import { useNetwork } from "../../lib/network/NetworkContext";
-import { NetworkSwitcher } from "../../components/common/NetworkSwitcher";
 
 
 

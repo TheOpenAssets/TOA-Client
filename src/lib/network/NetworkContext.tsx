@@ -28,7 +28,7 @@ export const NetworkProviderInternal: React.FC<{ network: NetworkConfig; childre
 
   const value: NetworkContextValue = {
     network,
-    networkType: network.type,
+    networkType: network.type as NetworkType,
     isFeatureAvailable,
     networkPath,
   };
