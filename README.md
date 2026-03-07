@@ -21,6 +21,10 @@
 
 **OpenAssets is the unified gateway for Real-World Assets built natively on the Creditcoin blockchain. Tokenize and invest in real-world financial instruments, borrow USDC against RWA collateral with credit-aware terms, access cross-chain credit identity through the Creditcoin protocol, and trade freely in verifiable real value — all from a single execution layer.**
 
+<p align="center">
+  <img src="public/OpenAssets — The Unified RWA Execution Layer on Creditcoin - visual selection.png" alt="OpenAssets Ecosystem — Tokenize · Invest · Trade · Borrow · Earn" width="720" />
+</p>
+
 ---
 
 # Why Creditcoin
@@ -143,35 +147,9 @@ For users with no Substrate history, Layer 1 carries full weight. For first-time
 
 Two users depositing identical collateral will receive different borrowing terms based on their verified credit history. The difference is transparent, on-chain, and attributable to real financial behavior.
 
-```mermaid
-%%{init: {'theme': 'dark'}}%%
-flowchart TB
-    subgraph L1["  Layer 1 — Platform Score  ·  60% Weight  "]
-        direction LR
-        A1[Repayment Rate] ~~~ A2[Total USDC Repaid]
-        A3[Missed Payments] ~~~ A4[Default History]
-    end
-
-    subgraph L2["  Layer 2 — Creditcoin Protocol Score  ·  40% Weight  "]
-        direction LR
-        B1["4.27M On-Chain Transactions"] ~~~ B2["Cross-Platform Lending History"]
-        B3["Substrate RPC  ·  @polkadot/api"]
-    end
-
-    L1 -->|"60%"| CS["Composite Score\n───────────────────\n(L1 × 60%)  +  (L2 × 40%)"]
-    L2 -->|"40%"| CS
-
-    CS --> T1["  EXCELLENT   ≥ 800   →   75% LTV  "]
-    CS --> T2["  GOOD   600 – 799   →   70% LTV  "]
-    CS --> T3["  FAIR   400 – 599   →   65% LTV  "]
-    CS --> T4["  POOR   < 400   →   55% LTV  "]
-
-    style CS fill:#1e1b4b,stroke:#818cf8,color:#e0e7ff
-    style T1 fill:#064e3b,stroke:#34d399,color:#d1fae5
-    style T2 fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
-    style T3 fill:#3d2a00,stroke:#fbbf24,color:#fef3c7
-    style T4 fill:#450a0a,stroke:#f87171,color:#fee2e2
-```
+<p align="center">
+  <img src="public/Two-Layer Credit Score — The Creditcoin Advantage - visual selection.png" alt="Two-Layer Credit Score — Platform Score vs Creditcoin Protocol Score" width="680" />
+</p>
 
 ---
 
@@ -197,6 +175,10 @@ The Universal Smart Contract (USC) is Creditcoin's system for mathematically ver
 | Long borrow history on Compound | Proves repayment track record | New user treated as experienced borrower |
 
 The on-chain proof is the report. At no point does OpenAssets rely on a partner protocol to self-report anything.
+
+<p align="center">
+  <img src="public/USC — Trustless Cross-Chain Credit Verification - visual selection.png" alt="USC — Trustless Cross-Chain Credit Verification: External Blockchain Networks · Creditcoin EVM · USC Infrastructure" width="680" />
+</p>
 
 ---
 
@@ -257,6 +239,39 @@ Capabilities:
 * Deterministic RWA asset lifecycle management from tokenization to settlement
 * Credit score computation across on-platform history and Creditcoin protocol history
 * Role-based access for issuers, investors, and administrators
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph FE["  OpenAssets Frontend  "]
+        UI["React dApp\nViem · WalletConnect"]
+    end
+
+    subgraph CC["  Creditcoin Network — chainId 102031  "]
+        EVM["EVM Layer\nSolvencyVault · OAID Registry\nMarketplace · YieldVault"]
+        PRE["0x0FD2\nUSC STARK Verifier"]
+        SUB["Substrate Layer\nOrders · Offers · Deals\n4.27M Credit Records"]
+        EVM --- PRE
+        EVM <-->|"@polkadot/api WebSocket"| SUB
+    end
+
+    subgraph USC["  USC Infrastructure  "]
+        ATT["Attestors\nFingerprint Builders"]
+        PRV["Provers\nSTARK Proof Generators"]
+        ATT --> PRV
+    end
+
+    subgraph EXT["  External Chains  "]
+        ETH[Ethereum]
+        BSC[BSC]
+        BTC[Bitcoin]
+    end
+
+    UI <-->|EVM RPC| EVM
+    UI <-->|WebSocket RPC| SUB
+    EXT -->|Chain Monitoring| ATT
+    PRV -->|STARK Proof| PRE
+```
 
 ---
 
