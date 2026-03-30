@@ -18,6 +18,7 @@ import { solvencyContractService } from '../../../lib/api/solvency-contract.serv
 import { solvencyService } from '../../../lib/api/solvency.service';
 import type { IssuerAsset } from '../../../types/issuer.types';
 import { PageLoader } from '../../../components/ui/page-loader';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 interface DepositCollateralModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const DepositCollateralModal = ({
   onSuccess,
   initialAsset = null,
 }: DepositCollateralModalProps) => {
+  const { network } = useNetwork();
   const { address, isConnected } = useAccount();
 
   // State
@@ -529,7 +531,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://creditcoin-testnet.blockscout.com/tx/${txHash}`}
+                  href={`${network.explorerUrl}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"
@@ -551,7 +553,7 @@ export const DepositCollateralModal = ({
               </div>
               {txHash && (
                 <a
-                  href={`https://creditcoin-testnet.blockscout.com/tx/${txHash}`}
+                  href={`${network.explorerUrl}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-inter text-xs text-gray-500 hover:text-gray-700 hover:underline"

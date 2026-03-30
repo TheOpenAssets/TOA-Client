@@ -62,7 +62,7 @@ const PortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { address, logout } = useAuthStrategy();
-  const { networkType, networkPath } = useNetwork();
+  const { network, networkType, networkPath } = useNetwork();
   const isEvm = networkType !== 'stellar';
 
   const { portfolio, isLoading, error, fetchPortfolio } = usePortfolioStore();
@@ -480,7 +480,7 @@ const PortfolioPage = () => {
 
       success(
         'Yield Claimed Successfully! 🎉',
-        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: https://sepolia.arbiscan.io/tx/${claimResult.transactionHash}`,
+        `Tokens Burned: ${tokensBurned} ${tokenSymbol} 🔥\nUSDC Received: ${usdcReceived} USDC\nTX: ${claimResult.transactionHash?.slice(0, 10)}...\n\nYour USDC has been transferred to your wallet!\n\nView on explorer: ${network.explorerUrl}/tx/${claimResult.transactionHash}`,
         12000
       );
 

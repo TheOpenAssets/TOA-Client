@@ -4,6 +4,7 @@ import { usePartnerLoans } from '../hooks/usePartnerLoans';
 import { getPartnerLogo } from '../../../lib/partnerLogos';
 import { PartnerRepayModal } from './PartnerRepayModal';
 import type { PartnerLoan } from '../../../types/creditcoin.types';
+import { useNetwork } from '../../../lib/network/NetworkContext';
 
 const usdcToDisplay = (raw: string) =>
   (parseInt(raw) / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -12,6 +13,7 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 export const MyPartnerLoans = () => {
+  const { network } = useNetwork();
   const { loans, isLoading, error, refetch } = usePartnerLoans();
   const [repayingLoan, setRepayingLoan] = useState<PartnerLoan | null>(null);
 
@@ -89,7 +91,7 @@ export const MyPartnerLoans = () => {
 
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <a
-                  href={`https://creditcoin-testnet.blockscout.com/tx/${loan.borrowTxHash}`}
+                  href={`${network.explorerUrl}/tx/${loan.borrowTxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-gellix"
@@ -100,7 +102,7 @@ export const MyPartnerLoans = () => {
                 {isRepaid ? (
                   loan.repayTxHash && (
                     <a
-                      href={`https://creditcoin-testnet.blockscout.com/tx/${loan.repayTxHash}`}
+                      href={`${network.explorerUrl}/tx/${loan.repayTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-gellix"

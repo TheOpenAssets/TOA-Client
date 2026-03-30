@@ -4,16 +4,16 @@ import { ParticleTextEffect } from '../../components/ui/particle-text-effect';
 const Footer: React.FC = () => {
   return (
     <footer className="bg-black text-gray-300 relative h-screen" >
-      {/* Layer 1: Powered by Creditcoin Badge - Top Left */}
+      {/* Layer 1: Powered by BNB Chain Badge - Top Left */}
       <div className="absolute top-0 left-0 z-20 p-4">
         <a
-          href="https://creditcoin-testnet.blockscout.com"
+          href="https://testnet.bscscan.com"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
         >
           Powered by{' '}
-          <span className="font-semibold text-white tracking-wide">Creditcoin</span>
+          <span className="font-semibold text-white tracking-wide">BNB Chain</span>
           <span className="text-xs text-gray-500 border border-gray-700 rounded-full px-2 py-0.5">Testnet</span>
         </a>
       </div>

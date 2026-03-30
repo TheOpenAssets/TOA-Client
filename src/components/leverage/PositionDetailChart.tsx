@@ -14,6 +14,7 @@ import type { HarvestEvent, PositionTimelineData, LeveragePosition } from '../..
 import { formatUnits } from 'viem';
 import { leverageService } from '../../lib/api/leverage.service';
 import { PageLoader } from '../ui/page-loader';
+import { useNetwork } from '../../lib/network/NetworkContext';
 
 interface PositionDetailChartProps {
   position: LeveragePosition;
@@ -66,7 +67,7 @@ const HarvestDot = (props: any) => {
     e.stopPropagation();
     e.preventDefault();
     console.log('Clicking harvest point:', harvestEvent.transactionHash);
-    const explorerUrl = `https://explorer.sepolia.arbitrum.xyz/tx/${harvestEvent.transactionHash}`;
+    const explorerUrl = `${network.explorerUrl}/tx/${harvestEvent.transactionHash}`;
     window.open(explorerUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -232,6 +233,7 @@ const HealthTooltip = (props: any) => {
  * Three separate charts with tabs for different metrics
  */
 export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose }: PositionDetailChartProps) => {
+  const { network } = useNetwork();
   const [position, setPosition] = useState<LeveragePosition>(initialPosition);
   const [loading, setLoading] = useState(false);
   const [activeChart, setActiveChart] = useState<'stARB' | 'interest' | 'health'>('stARB');
@@ -274,7 +276,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
 
     if (harvestEvent) {
       console.log('Opening transaction:', harvestEvent.transactionHash);
-      const explorerUrl = `https://explorer.sepolia.arbitrum.xyz/tx/${harvestEvent.transactionHash}`;
+      const explorerUrl = `${network.explorerUrl}/tx/${harvestEvent.transactionHash}`;
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
     }
   };

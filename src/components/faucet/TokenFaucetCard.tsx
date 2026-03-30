@@ -6,6 +6,7 @@ import { Loader2, CheckCircle, ExternalLink } from 'lucide-react';
 import { USDC_ABI, STARB_ABI } from '../../lib/blockchain/auction.contract';
 import { parseUnits } from 'viem';
 import type { Address } from 'viem';
+import { useNetwork } from '../../lib/network/NetworkContext';
 
 interface TokenFaucetCardProps {
   tokenName: 'USDC' | 'stARB';
@@ -34,6 +35,7 @@ export const TokenFaucetCard = ({
   faucetAmount,
   description,
 }: TokenFaucetCardProps) => {
+  const { network } = useNetwork();
   const { address } = useAccount();
   const { success, error: toastError, info } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +94,7 @@ export const TokenFaucetCard = ({
           message: `Successfully received 1000 ${tokenName}`,
           amount: '1000',
           transactionHash: txHash,
-          explorerUrl: `https://creditcoin.blockscout.com/tx/${txHash}`,
+          explorerUrl: `${network.explorerUrl}/tx/${txHash}`,
           symbol: tokenSymbol,
         });
       } else {
@@ -110,7 +112,7 @@ export const TokenFaucetCard = ({
           message: `Successfully received ${faucetAmount} ${tokenName}`,
           amount: faucetAmount.toString(),
           transactionHash: txHash,
-          explorerUrl: `https://sepolia.arbiscan.io/tx/${txHash}`,
+          explorerUrl: `${network.explorerUrl}/tx/${txHash}`,
           symbol: tokenSymbol,
         });
       }
