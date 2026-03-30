@@ -6,7 +6,6 @@ import { solvencyService } from '../../../lib/api/solvency.service';
 import { assetService } from '../../../lib/api/asset.service';
 import { type OAIDCreditLine, type CollateralPosition } from '../../../types/solvency.types';
 import type { IssuerAsset } from '../../../types/issuer.types';
-import { formatCollateralAmount } from '../../../utils/solvency/formatters';
 
 interface BorrowOnlyModalProps {
   isOpen: boolean;
@@ -334,7 +333,7 @@ export const UnifiedBorrowModal = ({ isOpen, onSuccess, creditData}: BorrowOnlyM
           {/* Large Amount Display */}
           <div className="mb-1">
             <div className="text-5xl font-light text-gray-900">
-              {selectedPosition ? formatCollateralAmount(selectedPosition.amount, 18).toFixed(2) : '0'}
+              {selectedPosition ? selectedPosition.amount.toFixed(2) : '0'}
             </div>
           </div>
 

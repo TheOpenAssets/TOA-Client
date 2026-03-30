@@ -11,7 +11,7 @@ import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { leverageService } from '../../../lib/api/leverage.service';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Tabs, TabsContent, TabsList } from '../../../components/ui/tabs';
 import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
@@ -1033,8 +1033,6 @@ const AssetDetailsPage = () => {
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-semibold text-[#111111]">Buy Tokens</h2>
                     <TabsList className="bg-gray-100 p-1 rounded-lg">
-                      <TabsTrigger value="standard" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">USDC</TabsTrigger>
-                      <TabsTrigger value="leverage" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm">Leverage</TabsTrigger>
                     </TabsList>
                   </div>
 

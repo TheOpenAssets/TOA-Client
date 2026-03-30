@@ -130,7 +130,7 @@ export const CreditScoreDashboard = ({
                   onClick={onVerifyClick}
                   className="text-sm py-4 px-5 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
                 >
-                  Verify Cross-Chain Activity
+                  Submit Cross-Chain Activity
                 </Button>
               </div>
             </div>

@@ -37,6 +37,10 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [loansKey, setLoansKey] = useState(0);
 
+  // Derive a stable value from positions so we re-fetch borrowTerms whenever
+  // the user deposits new collateral (total collateral value changes).
+  const positionsTotalValue = positions.reduce((sum, p) => sum + p.valueUSD, 0);
+
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
@@ -56,7 +60,7 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
       }
     };
     load();
-  }, [walletAddress]);
+  }, [walletAddress, positionsTotalValue]);
 
   if (isLoading) {
     return (
@@ -73,6 +77,15 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
       </div>
     );
   }
+
+  // Compute max borrowable from positions + effectiveLtv (backend doesn't return this field)
+  const computedMaxBorrowableUsdc = borrowTerms
+    ? Math.floor(
+      positions.reduce((sum, p) => sum + p.valueUSD, 0)
+      * (borrowTerms.effectiveLtv / 10000)
+      * 1_000_000
+    ).toString()
+    : '0';
 
   return (
     <div className="space-y-6 text-left">
@@ -95,7 +108,7 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
             <div className="text-right">
               <p className="text-xs text-gray-400 font-gellix uppercase tracking-wider mb-1">Max Borrowable</p>
               <p className="text-xl font-semibold text-gray-900 font-gellix">
-                {usdcToDisplay(borrowTerms.maxBorrowableUsdc)} USDC
+                {usdcToDisplay(computedMaxBorrowableUsdc)} USDC
               </p>
               <p className="text-xs text-gray-400 font-gellix mt-0.5">
                 {ltvToDisplay(borrowTerms.effectiveLtv)}% LTV
@@ -122,6 +135,7 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
                 key={partner.partnerId}
                 partner={partner}
                 borrowTerms={borrowTerms}
+                maxBorrowableUsdc={computedMaxBorrowableUsdc}
                 onBorrow={() => setSelectedPartner(partner)}
               />
             ))}
@@ -145,7 +159,7 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
             setLoansKey(k => k + 1); // re-mount MyPartnerLoans to refresh
           }}
           partner={selectedPartner}
-          borrowTerms={borrowTerms}
+          borrowTerms={{ ...borrowTerms, maxBorrowableUsdc: computedMaxBorrowableUsdc }}
           positions={positions}
         />
       )}
@@ -158,20 +172,22 @@ export const PartnerBorrowSection = ({ walletAddress, positions = [] }: Props) =
 interface PartnerCardProps {
   partner: Partner;
   borrowTerms: PartnerBorrowTerms | null;
+  maxBorrowableUsdc: string;
   onBorrow: () => void;
 }
 
-const PartnerCard = ({ partner, borrowTerms, onBorrow }: PartnerCardProps) => {
-  const initial = partner.partnerName.charAt(0);
-  const maxDisplay = borrowTerms ? usdcToDisplay(borrowTerms.maxBorrowableUsdc) : '—';
+const PartnerCard = ({ partner, borrowTerms, maxBorrowableUsdc, onBorrow }: PartnerCardProps) => {
+  const maxDisplay = usdcToDisplay(maxBorrowableUsdc);
   const ltv = borrowTerms ? `${ltvToDisplay(borrowTerms.effectiveLtv)}%` : '—';
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-          {initial}
+        <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center">
+          {(
+            <img src="https://imgs.search.brave.com/pFPVewX6EPaA9cqyHiIwKWNoh2RifQawztq9l8PIb30/rs:fit:32:32:1:0/g:ce/aHR0cDovL2Zhdmlj/b25zLnNlYXJjaC5i/cmF2ZS5jb20vaWNv/bnMvMTBhMzc0YTEy/ZGE4NTAxMzIyYjA5/NjVkNjdhNTZmZTQ1/MzkxZjdjNGU0NjNj/YmNjOTViYTZhNzVh/NWM2NjVhMi93d3cu/YWF2ZS5jb20v" alt={partner.partnerName} className="w-full h-full object-cover" />
+          )}
         </div>
         <div>
           <div className="flex items-center gap-2 mb-0.5">

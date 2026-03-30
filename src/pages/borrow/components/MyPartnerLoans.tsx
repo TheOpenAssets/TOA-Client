@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, ExternalLink } from 'lucide-react';
 import { usePartnerLoans } from '../hooks/usePartnerLoans';
+import { getPartnerLogo } from '../../../lib/partnerLogos';
 import { PartnerRepayModal } from './PartnerRepayModal';
 import type { PartnerLoan } from '../../../types/creditcoin.types';
 
@@ -53,9 +54,14 @@ export const MyPartnerLoans = () => {
               className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm"
             >
               <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 font-gellix">{loan.partnerName}</p>
-                  <p className="text-xs text-gray-400 font-gellix mt-0.5">{formatDate(loan.borrowedAt)}</p>
+                <div className="flex items-center gap-2">
+                  {getPartnerLogo(loan.partnerName) && (
+                    <img src={getPartnerLogo(loan.partnerName)!} alt={loan.partnerName} className="w-7 h-7 rounded-full flex-shrink-0" />
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 font-gellix">{loan.partnerName}</p>
+                    <p className="text-xs text-gray-400 font-gellix mt-0.5">{formatDate(loan.borrowedAt)}</p>
+                  </div>
                 </div>
                 <span
                   className={`text-xs font-semibold px-2.5 py-1 rounded-full font-gellix ${

@@ -16,7 +16,7 @@ export const CONTRACTS = {
   TokenFactory: import.meta.env.VITE_TOKEN_FACTORY || '',
   PrimaryMarketplace: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '',
   USDC: import.meta.env.VITE_USDC_ADDRESS || '',
-  stARB: import.meta.env.VITE_STARB_ADDRESS || '0x3172772883A4CfD4013280CA95370017f4a863f9',
+  stARB: import.meta.env.VITE_STARB_ADDRESS || '0x1A600404AE282CF1A0c4Ec3320Df2055017CDE93',
   Faucet: import.meta.env.VITE_FAUCET || '',
 } as const;
 

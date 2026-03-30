@@ -22,7 +22,7 @@ import HeroBackground from '../landing/HeroBackground';
 // import { Wavy } from '../../components/ui/wavy';
 
 // Contract addresses from environment
-const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0x23f5c5893333199B3E166aCB8D48479D5E5B32CA') as `0x${string}`;
+const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD') as `0x${string}`;
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
 
 // Minimal ERC20 ABI
@@ -380,9 +380,9 @@ const TradingEngineProductionPage = () => {
             const txData = await marketplaceService.getCreateOrderTxData({
                 tokenAddress,
                 amount: parseUnits(amount, 18).toString(),
-                // SEND CANONICAL PRICE TO BACKEND (4 decimals)
-                // Backend adapter will convert to chain precision (6 decimals for USDC)
-                pricePerToken: parseFloat(price).toFixed(4),
+                // Backend expects pricePerToken as a 6-decimal integer string (micro-USDC)
+                // e.g. 0.0850 USDC → "85000"
+                pricePerToken: Math.round(parseFloat(price) * 1_000_000).toString(),
                 isBuy: orderType === 'buy',
             });
 

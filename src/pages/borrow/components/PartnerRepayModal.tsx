@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Loader2, ExternalLink, CheckCircle } from 'lucide-react';
 import { partnerService } from '../../../lib/api/partner.service';
+import { getPartnerLogo } from '../../../lib/partnerLogos';
 import type { PartnerLoan, PartnerRepayResponse } from '../../../types/creditcoin.types';
 
 const usdcToDisplay = (raw: string) =>
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export const PartnerRepayModal = ({ isOpen, onClose, onSuccess, loan }: Props) => {
+  const partnerLogo = getPartnerLogo(loan.partnerName);
   const [isRepaying, setIsRepaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PartnerRepayResponse | null>(null);
@@ -56,9 +58,14 @@ export const PartnerRepayModal = ({ isOpen, onClose, onSuccess, loan }: Props) =
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 font-gellix">Repay Loan</h3>
-            <p className="text-sm text-gray-500 mt-0.5 font-gellix">{loan.partnerName}</p>
+          <div className="flex items-center gap-3">
+            {partnerLogo && (
+              <img src={partnerLogo} alt={loan.partnerName} className="w-9 h-9 rounded-full flex-shrink-0" />
+            )}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 font-gellix">Repay Loan</h3>
+              <p className="text-sm text-gray-500 mt-0.5 font-gellix">{loan.partnerName}</p>
+            </div>
           </div>
           <button
             onClick={handleClose}
@@ -105,7 +112,12 @@ export const PartnerRepayModal = ({ isOpen, onClose, onSuccess, loan }: Props) =
             <div className="bg-gray-50 rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500 font-gellix">Partner</span>
-                <span className="text-sm font-semibold text-gray-900 font-gellix">{loan.partnerName}</span>
+                <div className="flex items-center gap-2">
+                  {partnerLogo && (
+                    <img src={partnerLogo} alt={loan.partnerName} className="w-5 h-5 rounded-full" />
+                  )}
+                  <span className="text-sm font-semibold text-gray-900 font-gellix">{loan.partnerName}</span>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500 font-gellix">Principal</span>

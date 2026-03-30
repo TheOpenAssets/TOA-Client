@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Loader2, ExternalLink, CheckCircle, ChevronDown } from 'lucide-react';
 import { partnerService } from '../../../lib/api/partner.service';
+import { getPartnerLogo } from '../../../lib/partnerLogos';
 import { solvencyContractService } from '../../../lib/api/solvency-contract.service';
+import { assetService } from '../../../lib/api/asset.service';
 import type { Partner, PartnerBorrowTerms, PartnerBorrowResponse } from '../../../types/creditcoin.types';
 import type { CollateralPosition } from '../../../types/solvency.types';
+import type { IssuerAsset } from '../../../types/issuer.types';
 
 const LOAN_DURATION = 2592000; // 30 days in seconds
 const PARTNER_INSTALLMENTS = 1; // Single installment for partner loans
@@ -21,6 +24,7 @@ interface Props {
 }
 
 export const PartnerBorrowModal = ({ isOpen, onClose, onSuccess, partner, borrowTerms, positions }: Props) => {
+  const partnerLogo = getPartnerLogo(partner.partnerName);
   const [amount, setAmount] = useState('');
   const [isBorrowing, setIsBorrowing] = useState(false);
   const [borrowStep, setBorrowStep] = useState<'vault' | 'partner' | null>(null);
@@ -28,6 +32,25 @@ export const PartnerBorrowModal = ({ isOpen, onClose, onSuccess, partner, borrow
   const [result, setResult] = useState<PartnerBorrowResponse | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<CollateralPosition | null>(positions[0] ?? null);
   const [showPositionSelector, setShowPositionSelector] = useState(false);
+  const [assetDetailsMap, setAssetDetailsMap] = useState<Record<string, IssuerAsset>>({});
+
+  // Fetch asset details for all positions (same as UnifiedBorrowModal)
+  useEffect(() => {
+    if (!isOpen || positions.length === 0) return;
+    const fetchAll = async () => {
+      const map: Record<string, IssuerAsset> = {};
+      await Promise.all(positions.map(async (p) => {
+        try {
+          const asset = await assetService.getAssetByTokenAddress(p.tokenAddress);
+          if (asset) map[p.tokenAddress] = asset;
+        } catch {
+          // silently skip — will fall back to tokenSymbol
+        }
+      }));
+      setAssetDetailsMap(map);
+    };
+    fetchAll();
+  }, [isOpen, positions]);
 
   const maxUsdc = parseInt(borrowTerms.maxBorrowableUsdc) / 1_000_000;
   const amountNum = parseFloat(amount);
@@ -105,9 +128,14 @@ export const PartnerBorrowModal = ({ isOpen, onClose, onSuccess, partner, borrow
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 font-gellix">Borrow via {partner.partnerName}</h3>
-            <p className="text-sm text-gray-500 mt-0.5 font-gellix">USDC will be sent on-chain automatically</p>
+          <div className="flex items-center gap-3">
+            {partnerLogo && (
+              <img src={partnerLogo} alt={partner.partnerName} className="w-9 h-9 rounded-full flex-shrink-0" />
+            )}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 font-gellix">Borrow via {partner.partnerName}</h3>
+              <p className="text-sm text-gray-500 mt-0.5 font-gellix">USDC will be sent on-chain automatically</p>
+            </div>
           </div>
           <button
             onClick={handleClose}
@@ -180,37 +208,54 @@ export const PartnerBorrowModal = ({ isOpen, onClose, onSuccess, partner, borrow
             </div>
 
             {/* Position selector */}
-            {positions.length > 1 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowPositionSelector(v => !v)}
-                  disabled={isBorrowing}
-                  className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-gellix"
-                >
+            <div className="relative">
+              {positions.length > 1 ? (
+                <>
+                  <button
+                    onClick={() => setShowPositionSelector(v => !v)}
+                    disabled={isBorrowing}
+                    className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-gellix"
+                  >
+                    <span className="text-gray-500">Collateral Position</span>
+                    <div className="flex items-center gap-2">
+                      {selectedPosition ? (
+                        <span className="font-semibold text-gray-900">
+                          {assetDetailsMap[selectedPosition.tokenAddress]?.metadata.invoiceNumber || selectedPosition.tokenSymbol}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">Select position</span>
+                      )}
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </button>
+                  {showPositionSelector && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
+                      {positions.map(p => {
+                        const asset = assetDetailsMap[p.tokenAddress];
+                        const name = asset?.metadata.invoiceNumber || p.tokenSymbol;
+                        return (
+                          <button
+                            key={p.positionId ?? p.tokenAddress}
+                            onClick={() => { setSelectedPosition(p); setShowPositionSelector(false); }}
+                            className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 font-gellix ${selectedPosition?.positionId === p.positionId ? 'bg-blue-50 text-blue-700' : 'text-gray-900'}`}
+                          >
+                            <span className="font-semibold">{name}</span>
+                            <span className="text-gray-500">${p.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : selectedPosition ? (
+                <div className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-gellix">
                   <span className="text-gray-500">Collateral Position</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">
-                      {selectedPosition ? (selectedPosition.tokenSymbol) : 'Select position'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                  </div>
-                </button>
-                {showPositionSelector && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
-                    {positions.map(p => (
-                      <button
-                        key={p.positionId ?? p.tokenAddress}
-                        onClick={() => { setSelectedPosition(p); setShowPositionSelector(false); }}
-                        className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 font-gellix ${selectedPosition?.positionId === p.positionId ? 'bg-blue-50 text-blue-700' : 'text-gray-900'}`}
-                      >
-                        <span className="font-semibold">{p.tokenSymbol}</span>
-                        <span className="text-gray-500">${p.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                  <span className="font-semibold text-gray-900">
+                    {assetDetailsMap[selectedPosition.tokenAddress]?.metadata.invoiceNumber || selectedPosition.tokenSymbol} · ${selectedPosition.valueUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              ) : null}
+            </div>
 
             {/* Amount input */}
             <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm">

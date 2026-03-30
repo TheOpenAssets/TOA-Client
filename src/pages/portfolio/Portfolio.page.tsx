@@ -18,7 +18,6 @@ import { getYieldService } from '../../lib/api/yield.service.factory';
 import { parseTokenAmount } from '../../lib/utils/formatters';
 import { solvencyService } from '../../lib/api/solvency.service';
 import { partnerService } from '../../lib/api/partner.service';
-import { PositionsTable } from '../../components/leverage/PositionsTable';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
@@ -182,11 +181,6 @@ const PortfolioPage = () => {
     false
   ) || [];
 
-  const filteredPositions = leveragePositions.filter((position: any) =>
-    position.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    position.metadata?.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    false
-  );
 
   const filteredOrders = myOrders.filter(order =>
     (filteredAssets.find((asset: any) => asset.assetId === order.assetId)?.metadata?.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -687,15 +681,7 @@ const PortfolioPage = () => {
                       >
                         My Loans
                       </button>
-                      <button
-                        onClick={() => setActiveTab('positions')}
-                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'positions'
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                      >
-                        Leveraged Positions
-                      </button>
+
                       <button
                         onClick={() => setActiveTab('trades')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'trades'
@@ -791,13 +777,7 @@ const PortfolioPage = () => {
                         : 'opacity-0 -translate-x-4 pointer-events-none z-0'
                         }`}
                     >
-                      <div className="h-full flex flex-col overflow-y-auto p-6">
-                        <PositionsTable
-                          positions={filteredPositions as any}
-                          isLoading={isLoading}
-                          onSelectPosition={setSelectedPosition}
-                        />
-                      </div>
+
                     </div>
 
                     {/* Trades Tab */}
