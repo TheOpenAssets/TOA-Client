@@ -26,6 +26,14 @@ const SHARED_API_URL =
 // ─── Network Registry ─────────────────────────────────────────────────────────
 // To add a new chain: add one entry here. Zero other code changes needed.
 export const NETWORK_CONFIGS = {
+  bnb: {
+    type: 'bnb',
+    displayName: 'BNB Testnet',
+    apiUrl: SHARED_API_URL,
+    explorerUrl: 'https://testnet.bscscan.com',
+    features: { leverage: true, faucet: true, solvency: true, secondaryMarket: true, borrow: true },
+    walletType: 'evm' as const,
+  },
   creditcoin: {
     type: 'creditcoin',
     displayName: 'Creditcoin Testnet',
@@ -77,7 +85,7 @@ export const DEFAULT_NETWORK: NetworkType =
   (import.meta.env.VITE_DEFAULT_NETWORK as NetworkType | undefined) &&
     (import.meta.env.VITE_DEFAULT_NETWORK in NETWORK_CONFIGS)
     ? (import.meta.env.VITE_DEFAULT_NETWORK as NetworkType)
-    : 'creditcoin';
+    : 'bnb';
 
 // ─── Path utility ─────────────────────────────────────────────────────────────
 // Used by services that need the current network outside of React context.

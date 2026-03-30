@@ -4,6 +4,7 @@
 // Defines custom chains that are not in the wagmi/chains package.
 
 import {
+    bscTestnet,
     arbitrumSepolia,
     sepolia,
     mantleSepoliaTestnet,
@@ -42,6 +43,7 @@ export const creditcoinTestnet = {
 // By deriving this map from NetworkType we avoid any hardcoding in the config.
 
 export const NETWORK_CHAIN_MAP: Record<NetworkType, Chain> = {
+    bnb: bscTestnet,                   // ChainId 97
     creditcoin: creditcoinTestnet,     // ChainId 102031
 
     mantle: mantleSepoliaTestnet,   // ChainId 5003
@@ -51,6 +53,7 @@ export const NETWORK_CHAIN_MAP: Record<NetworkType, Chain> = {
 
 // All unique chains we ever need to register so switching networks works.
 export const ALL_SUPPORTED_CHAINS = [
+    bscTestnet,
     creditcoinTestnet,
     mantleSepoliaTestnet,
     arbitrumSepolia,
