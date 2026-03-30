@@ -2,12 +2,11 @@
 
 import { useCreditScore } from '../../pages/borrow/hooks/useCreditScore';
 import { Button } from '../ui/button';
-import { CrossChainEventHistory } from './CrossChainEventHistory';
 import type { CreditScoreResponse } from '../../types/creditcoin.types';
 
 interface CreditScoreDashboardProps {
   walletAddress: string;
-  onVerifyClick: () => void;
+  onVerifyClick?: () => void;
 }
 
 // Tier configuration — colors and labels
@@ -128,9 +127,10 @@ export const CreditScoreDashboard = ({
               <div className="shrink-0 mt-1">
                 <Button
                   onClick={onVerifyClick}
+                  disabled={!onVerifyClick}
                   className="text-sm py-4 px-5 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
                 >
-                  Submit Cross-Chain Activity
+                  {onVerifyClick ? 'Submit Cross-Chain Activity' : 'Cross-Chain Proof Disabled'}
                 </Button>
               </div>
             </div>
@@ -159,7 +159,7 @@ export const CreditScoreDashboard = ({
               </h4>
               {creditScore.layer2Score === 0 ? (
                 <p className="font-gellix text-sm text-gray-400 italic mt-1">
-                  No Creditcoin protocol history found
+                  No protocol history found
                 </p>
               ) : (
                 <p className="font-gellix text-2xl font-semibold text-foreground">
@@ -167,7 +167,7 @@ export const CreditScoreDashboard = ({
                 </p>
               )}
               <p className="font-gellix text-xs text-gray-400 mt-1">
-                Based on your verified on-chain lending history across the Creditcoin network.
+                Based on your verified on-chain lending history.
               </p>
             </div>
 
@@ -194,8 +194,6 @@ export const CreditScoreDashboard = ({
         )}
       </div>
 
-      {/* Cross-chain event history below the score card */}
-      <CrossChainEventHistory walletAddress={walletAddress} />
     </div>
   );
 };

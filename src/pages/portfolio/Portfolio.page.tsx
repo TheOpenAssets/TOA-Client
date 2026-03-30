@@ -25,7 +25,6 @@ import { TradesTable } from '../../components/portfolio/TradesTable';
 import { useCancelOrder } from '../../hooks/useSecondaryMarket';
 import { MyLoansTable } from '../../components/portfolio/MyLoansTable';
 import { CreditScoreDashboard } from '../../components/creditcoin/CreditScoreDashboard';
-import { USCProofModal } from '../../components/creditcoin/USCProofModal';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
 import type { Position as SolvencyPosition } from '../../types/solvency.types';
@@ -47,36 +46,15 @@ import HeroBackground from '../landing/HeroBackground';
  */
 interface CreditScoreTabContentProps {
   address: string;
-  showUSCModal: boolean;
-  onVerifyClick: () => void;
-  onUSCModalClose: () => void;
 }
 
 const CreditScoreTabContent = ({
   address,
-  showUSCModal,
-  onVerifyClick,
-  onUSCModalClose,
 }: CreditScoreTabContentProps) => {
-  const { refetch: refetchScore } = useCreditScore(address);
+  useCreditScore(address);
 
   return (
-    <>
-      <CreditScoreDashboard
-        walletAddress={address}
-        onVerifyClick={onVerifyClick}
-      />
-      <USCProofModal
-        isOpen={showUSCModal}
-        onClose={onUSCModalClose}
-        walletAddress={address}
-        onProofSubmitted={() => {
-          onUSCModalClose();
-          // Force-refresh the score after the 5-second delay built into USCProofModal
-          refetchScore(true);
-        }}
-      />
-    </>
+    <CreditScoreDashboard walletAddress={address} />
   );
 };
 
@@ -108,7 +86,6 @@ const PortfolioPage = () => {
   // Modal states
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showNoAssetsModal, setShowNoAssetsModal] = useState(false);
-  const [showUSCModal, setShowUSCModal] = useState(false);
 
   // Leverage position detail chart state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
@@ -802,9 +779,6 @@ const PortfolioPage = () => {
                     {activeTab === 'credit' && isEvm && address && (
                       <CreditScoreTabContent
                         address={address}
-                        showUSCModal={showUSCModal}
-                        onVerifyClick={() => setShowUSCModal(true)}
-                        onUSCModalClose={() => setShowUSCModal(false)}
                       />
                     )}
                   </div>
