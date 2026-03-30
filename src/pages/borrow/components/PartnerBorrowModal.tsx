@@ -315,7 +315,7 @@ export const PartnerBorrowModal = ({ isOpen, onClose, onSuccess, partner, borrow
                 {borrowStep === 'partner' && (
                   <>
                     <p className="text-sm text-gray-600 font-gellix">Step 2/2: Registering with partner protocol...</p>
-                    <p className="text-xs text-gray-400 font-gellix">Recording loan on Creditcoin testnet</p>
+                    <p className="text-xs text-gray-400 font-gellix">Recording loan on active network</p>
                   </>
                 )}
               </div>

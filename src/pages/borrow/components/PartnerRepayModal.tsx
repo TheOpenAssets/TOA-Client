@@ -145,7 +145,7 @@ export const PartnerRepayModal = ({ isOpen, onClose, onSuccess, loan }: Props) =
             {isRepaying && (
               <div className="bg-gray-50 rounded-2xl p-4 text-center space-y-1">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-500 mx-auto" />
-                <p className="text-sm text-gray-600 font-gellix">Processing on Creditcoin testnet...</p>
+                <p className="text-sm text-gray-600 font-gellix">Processing on active network...</p>
                 <p className="text-xs text-gray-400 font-gellix">This takes a few seconds — confirming on-chain</p>
               </div>
             )}
