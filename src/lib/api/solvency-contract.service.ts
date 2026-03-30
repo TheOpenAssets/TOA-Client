@@ -11,6 +11,11 @@ import { getNetworkFromPath } from '../network/network.config';
 
 // Per-network contract registry — resolved once at module load
 const NETWORK_CONTRACTS: Record<string, { vault: string; usdc: string; chainId: bigint }> = {
+  bnb: {
+    vault:   import.meta.env.VITE_SOLVENCY_VAULT               || '',
+    usdc:    import.meta.env.VITE_USDC_CONTRACT_ADDRESS        || import.meta.env.VITE_USDC_ADDRESS || '',
+    chainId: 97n,
+  },
   creditcoin: {
     vault:   '0x77bB1944E2a2FC0e5D0F587699041ee09900ADA8',
     usdc:    '0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1',
@@ -28,7 +33,15 @@ const NETWORK_CONTRACTS: Record<string, { vault: string; usdc: string; chainId: 
   },
 };
 
-const _net = NETWORK_CONTRACTS[getNetworkFromPath()] ?? NETWORK_CONTRACTS.arbitrum;
+const EXPLORER_BY_NETWORK: Record<string, string> = {
+  bnb: 'https://testnet.bscscan.com',
+  mantle: 'https://explorer.testnet.mantle.xyz',
+  arbitrum: 'https://sepolia.arbiscan.io',
+  creditcoin: 'https://creditcoin-testnet.blockscout.com',
+};
+
+const _net = NETWORK_CONTRACTS[getNetworkFromPath()] ?? NETWORK_CONTRACTS.bnb;
+const EXPLORER_BASE = EXPLORER_BY_NETWORK[getNetworkFromPath()] ?? EXPLORER_BY_NETWORK.bnb;
 const VAULT_CONTRACT_ADDRESS = _net.vault;
 const USDC_CONTRACT_ADDRESS  = _net.usdc;
 const EXPECTED_CHAIN_ID      = _net.chainId;
@@ -481,7 +494,7 @@ class SolvencyContractService {
         throw new Error('Could not parse position ID from transaction');
       }
 
-      console.log(`   Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
+      console.log(`   Explorer: ${EXPLORER_BASE}/tx/${tx.hash}`);
 
       return {
         success: true,
@@ -576,7 +589,7 @@ class SolvencyContractService {
         }
       }
 
-      console.log(`🔗 Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
+      console.log(`🔗 Explorer: ${EXPLORER_BASE}/tx/${tx.hash}`);
       console.log('✅ Step 8: Borrow completed successfully!');
 
       return {
@@ -836,7 +849,7 @@ class SolvencyContractService {
         }
       }
 
-      console.log(`   Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
+      console.log(`   Explorer: ${EXPLORER_BASE}/tx/${tx.hash}`);
 
       return {
         success: true,

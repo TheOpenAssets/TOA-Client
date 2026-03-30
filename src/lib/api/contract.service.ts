@@ -16,6 +16,12 @@ const NETWORK_CONTRACTS: Record<string, {
   yieldVault: string;
   chainId: bigint;
 }> = {
+  bnb: {
+    usdc:          import.meta.env.VITE_USDC_ADDRESS                || '',
+    primaryMarket: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '',
+    yieldVault:    import.meta.env.VITE_YIELD_VAULT_ADDRESS         || '',
+    chainId:       97n,
+  },
   creditcoin: {
     usdc:          '0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1',
     primaryMarket: '0x2E310C62A225033055E88B690F8d054ece8bcbC4',
@@ -36,8 +42,16 @@ const NETWORK_CONTRACTS: Record<string, {
   },
 };
 
+const EXPLORER_BY_NETWORK: Record<string, string> = {
+  bnb: 'https://testnet.bscscan.com',
+  mantle: 'https://explorer.testnet.mantle.xyz',
+  arbitrum: 'https://sepolia.arbiscan.io',
+  creditcoin: 'https://creditcoin-testnet.blockscout.com',
+};
+
 // Resolved once at module load — correct for the active network URL segment
-const _networkContracts = NETWORK_CONTRACTS[getNetworkFromPath()] ?? NETWORK_CONTRACTS.arbitrum;
+const _networkContracts = NETWORK_CONTRACTS[getNetworkFromPath()] ?? NETWORK_CONTRACTS.bnb;
+const EXPLORER_BASE = EXPLORER_BY_NETWORK[getNetworkFromPath()] ?? EXPLORER_BY_NETWORK.bnb;
 const USDC_ADDRESS                = _networkContracts.usdc;
 const PRIMARY_MARKETPLACE_ADDRESS = _networkContracts.primaryMarket;
 const YIELD_VAULT_ADDRESS         = _networkContracts.yieldVault;
@@ -687,7 +701,7 @@ class ContractService {
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('\n✅ Purchase Complete!');
       console.log('━'.repeat(50));
-      console.log(`Explorer: https://sepolia.arbiscan.io/tx/${tx.hash}`);
+      console.log(`Explorer: ${EXPLORER_BASE}/tx/${tx.hash}`);
 
       return {
         success: true,
@@ -1106,7 +1120,7 @@ class ContractService {
       console.log('✅ Yield claimed successfully!');
       console.log('TX Hash:', tx.hash);
       console.log('Block:', receipt.blockNumber);
-      console.log('Explorer:', `https://sepolia.arbiscan.io/tx/${tx.hash}`);
+      console.log('Explorer:', `${EXPLORER_BASE}/tx/${tx.hash}`);
       console.log();
 
       return {
@@ -1206,7 +1220,7 @@ class ContractService {
       const receipt = await this.waitForTransaction(tx.hash, provider);
       console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
       console.log('✅ Marketplace approved!');
-      console.log('Explorer:', `https://sepolia.arbiscan.io/tx/${tx.hash}`);
+      console.log('Explorer:', `${EXPLORER_BASE}/tx/${tx.hash}`);
       console.log();
       console.log('✅ Marketplace can now transfer tokens to buyers!');
 
