@@ -11,7 +11,7 @@ import { marketplaceService } from '../../../lib/api/marketplace.service';
 import { leverageService } from '../../../lib/api/leverage.service';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { Tabs, TabsContent, TabsList } from '../../../components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts';
 import { useLeverageStore } from '../../../stores/leverage.store';
 import { parseUnits } from 'viem';
@@ -24,7 +24,7 @@ import { stellarService } from '../../../lib/api/stellar.service';
 import { trustlineService } from '../../../lib/api/trustline.service';
 
 // USDC Contract Address
-const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
+const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x38113dFC4958CEF3aa53d057A562635bCE022F61') as `0x${string}`;
 
 // Minimal USDC ABI - just what we need
 const USDC_ABI = [
@@ -36,6 +36,8 @@ const USDC_ABI = [
     type: 'function',
   },
 ] as const;
+
+const COLLATERAL_SYMBOL = 'ankrBNB';
 
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -70,8 +72,8 @@ const AssetDetailsPage = () => {
   const [isAddingTrust, setIsAddingTrust] = useState(false);
   const [trustlineError, setTrustlineError] = useState<string | null>(null);
 
-  // Calculate required stARB based on token input
-  // Formula: Required stARB = (Tokens * TokenPrice * 1.5) / stARBPrice
+  // Calculate required ankrBNB based on token input
+  // Formula: Required ankrBNB = (Tokens * TokenPrice * 1.5) / stARBPrice
   // 1.5 (150%) is the required collateralization ratio (backend validation)
   const calculatedstARBAmount = (() => {
     if (!leverageTokenInput || !asset?.tokenParams?.pricePerToken) return 0;
@@ -82,11 +84,11 @@ const AssetDetailsPage = () => {
     const tokenPrice = parseFloat(asset.tokenParams.pricePerToken);
     const stARBPriceVal = stARBPrice;
 
-    console.log('DEBUG stARB calc:', { tokens, tokenPrice, stARBPriceVal, leverageTokenInput });
+    console.log(`DEBUG ${COLLATERAL_SYMBOL} calc:`, { tokens, tokenPrice, stARBPriceVal, leverageTokenInput });
 
     if (!stARBPriceVal || stARBPriceVal <= 0) return 0;
 
-    // Required stARB = (Tokens * TokenPrice * 1.5) / stARBPrice
+    // Required ankrBNB = (Tokens * TokenPrice * 1.5) / stARBPrice
     const stARB = (tokens * tokenPrice * 1.5) / stARBPriceVal;
 
     // Add 1 USDC buffer to prevent "insufficient collateral" due to micro-rounding errors
@@ -134,9 +136,9 @@ const AssetDetailsPage = () => {
     ? stellarUsdcBalance
     : (usdcBalanceRaw ? formatUnits(usdcBalanceRaw, 6) : '0');
 
-  // Wagmi Hooks for stARB Balance and Approval
+  // Wagmi Hooks for collateral balance and approval
   const { data: stARBBalanceRaw, refetch: refetchstARBBalance } = useReadContract({
-    address: LEVERAGE_CONTRACTS.MockstARB,
+    address: LEVERAGE_CONTRACTS.CollateralToken,
     abi: stARB_ABI,
     functionName: 'balanceOf',
     args: evmAddress ? [evmAddress] : undefined,
@@ -146,7 +148,7 @@ const AssetDetailsPage = () => {
   });
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: LEVERAGE_CONTRACTS.MockstARB,
+    address: LEVERAGE_CONTRACTS.CollateralToken,
     abi: stARB_ABI,
     functionName: 'allowance',
     args: evmAddress ? [evmAddress, LEVERAGE_CONTRACTS.LeverageVault] : undefined,
@@ -155,8 +157,33 @@ const AssetDetailsPage = () => {
   const { writeContractAsync: approvestARB } = useWriteContract();
   const publicClient = usePublicClient();
 
-  // Format stARB balance (18 decimals)
+  // Format collateral balance (18 decimals)
   const stARBBalance = stARBBalanceRaw ? formatUnits(stARBBalanceRaw, 18) : '0';
+
+  const getLeverageGasOverrides = useCallback(async () => {
+    if (!publicClient) return {};
+
+    const chainId = publicClient.chain?.id;
+
+    // BNB chains prefer legacy gas pricing and may reject malformed EIP-1559 fields.
+    if (chainId === 97 || chainId === 56) {
+      const gasPrice = await publicClient.getGasPrice();
+      return { gasPrice: (gasPrice * 12n) / 10n };
+    }
+
+    const fees = await publicClient.estimateFeesPerGas();
+    if (fees.maxFeePerGas && fees.maxPriorityFeePerGas) {
+      const safePriority = fees.maxPriorityFeePerGas;
+      const safeMaxFee = fees.maxFeePerGas >= safePriority ? fees.maxFeePerGas : safePriority;
+      return {
+        maxFeePerGas: (safeMaxFee * 12n) / 10n,
+        maxPriorityFeePerGas: safePriority,
+      };
+    }
+
+    const gasPrice = await publicClient.getGasPrice();
+    return { gasPrice: (gasPrice * 12n) / 10n };
+  }, [publicClient]);
 
   // Load wallet data (refetch balances and allowances)
   const loadWalletData = useCallback(async () => {
@@ -362,8 +389,8 @@ const AssetDetailsPage = () => {
   /**
    * Handle Leverage Token Purchase
    * Follows the script flow exactly:
-   * 1. Check stARB balance (redirect to faucet if insufficient)
-   * 2. Approve stARB spending
+  * 1. Check ankrBNB balance (redirect to faucet if insufficient)
+  * 2. Approve ankrBNB spending
    * 3. Initiate leveraged purchase via backend API
    * 4. Monitor position health
    */
@@ -381,39 +408,39 @@ const AssetDetailsPage = () => {
 
     try {
       // ============================================================
-      // STEP 1: Fetch latest stARB price
+      // STEP 1: Fetch latest ankrBNB price
       // ============================================================
-      console.log('📊 Step 1: Fetching latest stARB price...');
+      console.log(`📊 Step 1: Fetching latest ${COLLATERAL_SYMBOL} price...`);
       await fetchstARBPrice();
-      console.log(`✅ Current stARB price: $${stARBPrice.toFixed(2)}`);
+      console.log(`✅ Current ${COLLATERAL_SYMBOL} price: $${stARBPrice.toFixed(2)}`);
 
       // ============================================================
-      // STEP 2: Calculate required stARB collateral (150% LTV)
+      // STEP 2: Calculate required ankrBNB collateral (150% LTV)
       // ============================================================
-      console.log('\n💰 Step 2: Calculating required stARB collateral...');
+      console.log(`\n💰 Step 2: Calculating required ${COLLATERAL_SYMBOL} collateral...`);
       const stARBCollateral = parseUnits(calculatedstARBString, 18);
       const pricePerToken = asset.tokenParams.pricePerToken || '0';
 
       console.log(`  Token Amount: ${leverageTokenInput} tokens`);
       console.log(`  Price per Token: ${pricePerToken} USDC`);
-      console.log(`  Required stARB Collateral: ${calculatedstARBString} stARB`);
+      console.log(`  Required ${COLLATERAL_SYMBOL} Collateral: ${calculatedstARBString} ${COLLATERAL_SYMBOL}`);
       console.log(`  Total Cost: ${(parseFloat(leverageTokenInput) * parseFloat(pricePerToken)).toFixed(4)} USDC`);
 
       // ============================================================
-      // STEP 3: Check stARB Balance
+      // STEP 3: Check ankrBNB Balance
       // ============================================================
-      console.log('\n💼 Step 3: Checking stARB balance...');
+      console.log(`\n💼 Step 3: Checking ${COLLATERAL_SYMBOL} balance...`);
       await refetchstARBBalance();
       const currentstARBBalance = parseFloat(stARBBalance);
       const requiredstARB = parseFloat(calculatedstARBString);
 
-      console.log(`  Current stARB Balance: ${currentstARBBalance.toFixed(6)} stARB`);
-      console.log(`  Required stARB: ${requiredstARB.toFixed(6)} stARB`);
+      console.log(`  Current ${COLLATERAL_SYMBOL} Balance: ${currentstARBBalance.toFixed(6)} ${COLLATERAL_SYMBOL}`);
+      console.log(`  Required ${COLLATERAL_SYMBOL}: ${requiredstARB.toFixed(6)} ${COLLATERAL_SYMBOL}`);
 
       if (currentstARBBalance < requiredstARB) {
         const shortfall = requiredstARB - currentstARBBalance;
-        console.error(`❌ Insufficient stARB balance. Need ${shortfall.toFixed(6)} more stARB`);
-        setLeveragePurchaseStatus(`Insufficient stARB balance. Need ${shortfall.toFixed(6)} more stARB. Redirecting to faucet...`);
+        console.error(`❌ Insufficient ${COLLATERAL_SYMBOL} balance. Need ${shortfall.toFixed(6)} more ${COLLATERAL_SYMBOL}`);
+        setLeveragePurchaseStatus(`Insufficient ${COLLATERAL_SYMBOL} balance. Need ${shortfall.toFixed(6)} more ${COLLATERAL_SYMBOL}. Redirecting to faucet...`);
 
         // Redirect to faucet page after 2 seconds
         setTimeout(() => {
@@ -421,41 +448,33 @@ const AssetDetailsPage = () => {
         }, 2000);
         return;
       }
-      console.log('✅ Sufficient stARB balance');
+      console.log(`✅ Sufficient ${COLLATERAL_SYMBOL} balance`);
 
       // ============================================================
-      // STEP 4: Check Allowance and Approve stARB Spending
+      // STEP 4: Check Allowance and Approve ankrBNB Spending
       // ============================================================
-      console.log('\n🔐 Step 4: Checking stARB allowance...');
+      console.log(`\n🔐 Step 4: Checking ${COLLATERAL_SYMBOL} allowance...`);
       await refetchAllowance();
       const currentAllowance = allowance || BigInt(0);
 
-      console.log(`  Current Allowance: ${formatUnits(currentAllowance, 18)} stARB`);
-      console.log(`  Required Allowance: ${calculatedstARBString} stARB`);
+      console.log(`  Current Allowance: ${formatUnits(currentAllowance, 18)} ${COLLATERAL_SYMBOL}`);
+      console.log(`  Required Allowance: ${calculatedstARBString} ${COLLATERAL_SYMBOL}`);
 
       if (currentAllowance < stARBCollateral) {
         setIsApproving(true);
-        setLeveragePurchaseStatus('Approving stARB usage...');
-        console.log(`⏳ Approving ${calculatedstARBString} stARB for LeverageVault...`);
+        setLeveragePurchaseStatus(`Approving ${COLLATERAL_SYMBOL} usage...`);
+        console.log(`⏳ Approving ${calculatedstARBString} ${COLLATERAL_SYMBOL} for LeverageVault...`);
 
         try {
-          // Get gas overrides to prevent "max fee per gas less than block base fee" errors
           let gasOverrides = {};
-          if (publicClient) {
-            try {
-              const block = await publicClient.getBlock();
-              const baseFee = block.baseFeePerGas ?? 0n;
-              gasOverrides = {
-                maxFeePerGas: baseFee * 2n,
-                maxPriorityFeePerGas: baseFee > 0n ? baseFee / 10n : 100000n,
-              };
-            } catch (e) {
-              console.warn('Failed to get gas overrides, proceeding without:', e);
-            }
+          try {
+            gasOverrides = await getLeverageGasOverrides();
+          } catch (e) {
+            console.warn('Failed to get gas overrides, proceeding without:', e);
           }
 
           const txHash = await approvestARB({
-            address: LEVERAGE_CONTRACTS.MockstARB,
+            address: LEVERAGE_CONTRACTS.CollateralToken,
             abi: stARB_ABI,
             functionName: 'approve',
             args: [LEVERAGE_CONTRACTS.LeverageVault, stARBCollateral],
@@ -469,8 +488,8 @@ const AssetDetailsPage = () => {
 
           // Refetch allowance to verify
           const { data: newAllowance } = await refetchAllowance();
-          console.log('✅ stARB approved successfully');
-          console.log(`  New Allowance: ${newAllowance ? formatUnits(newAllowance, 18) : '0'} stARB`);
+          console.log(`✅ ${COLLATERAL_SYMBOL} approved successfully`);
+          console.log(`  New Allowance: ${newAllowance ? formatUnits(newAllowance, 18) : '0'} ${COLLATERAL_SYMBOL}`);
 
           setLeveragePurchaseStatus('Approval confirmed! Proceeding to open position...');
           setIsApproving(false);
@@ -575,7 +594,7 @@ const AssetDetailsPage = () => {
         console.log(`  Status: ${positionDetails.status}`);
         console.log(`  Health Factor: ${(positionDetails.currentHealthFactor / 100).toFixed(2)}%`);
         console.log(`  Health Status: ${positionDetails.healthStatus}`);
-        console.log(`  stARB Collateral: ${positionDetails.stARBCollateral} stARB`);
+        console.log(`  ${COLLATERAL_SYMBOL} Collateral: ${positionDetails.stARBCollateral} ${COLLATERAL_SYMBOL}`);
         console.log(`  USDC Borrowed: ${positionDetails.usdcBorrowed} USDC`);
 
         setLeveragePurchaseStatus(
@@ -1031,8 +1050,10 @@ const AssetDetailsPage = () => {
               <div className="bg-transparent rounded-3xl p-6 shadow-md border border-gray-100">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-[#111111]">Buy Tokens</h2>
+                    <h2 className="text-2xl font-semibold text-[#111111]">Deposit into Firm Vault</h2>
                     <TabsList className="bg-gray-100 p-1 rounded-lg">
+                      <TabsTrigger value="standard" className="text-xs">Direct Deposit</TabsTrigger>
+                      {isEvm && <TabsTrigger value="leverage" className="text-xs">LST Leverage</TabsTrigger>}
                     </TabsList>
                   </div>
 
@@ -1040,7 +1061,7 @@ const AssetDetailsPage = () => {
                     <div className="space-y-6">
                       <div className="bg-[#F3F4F6] rounded-2xl p-4">
                         <label htmlFor="tokens-to-buy" className="text-xs text-[#6B7280]">
-                          Tokens to buy
+                          Vault units to deposit
                         </label>
                         <Input
                           id="tokens-to-buy"
@@ -1170,13 +1191,13 @@ const AssetDetailsPage = () => {
                             const minInvestment = getCanonical(asset.tokenParams.minInvestment);
                             const enteredAmount = parseFloat(tokensToBuy || '0');
 
-                            if (availableTokens <= 0) return 'Sold Out';
+                            if (availableTokens <= 0) return 'Vault Fully Subscribed';
                             if (isPurchasing) return 'Processing...';
                             if (!address) return 'Connect Wallet';
                             if (parseFloat(usdcBalance) < parseFloat(estimatedTotalPrice)) return 'Insufficient USDC';
                             if (enteredAmount > availableTokens) return `Max Available: ${availableTokens.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
                             if (availableTokens >= minInvestment && enteredAmount < minInvestment && enteredAmount > 0) return `Min Investment: ${minInvestment.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
-                            return 'Buy Tokens';
+                            return 'Deposit Now';
                           })()}
                         </Button>
                       )}
@@ -1194,7 +1215,7 @@ const AssetDetailsPage = () => {
                       <div className="space-y-6">
                         <div className="bg-[#F3F4F6] rounded-2xl p-4">
                           <label className="text-xs text-[#6B7280]">
-                            Tokens to buy
+                            Vault units to deposit
                           </label>
                           <div className="relative">
                             <Input
@@ -1214,11 +1235,11 @@ const AssetDetailsPage = () => {
                             <div className="flex items-center gap-2">
                               <img
                                 src="/stARB-crystal.svg"
-                                alt="stARB"
+                                alt={COLLATERAL_SYMBOL}
                                 className="w-6 h-6 rounded-full"
                               />
                               <p className="text-2xl font-medium text-[#111111]">
-                                {calculatedstARBString || '0.00'} stARB
+                                {calculatedstARBString || '0.00'} {COLLATERAL_SYMBOL}
                               </p>
                             </div>
                           </div>
@@ -1234,7 +1255,7 @@ const AssetDetailsPage = () => {
                               </span>
                             </div>
                             <div className="flex justify-between items-center mt-1">
-                              <span className="text-xs text-[#6B7280]">stARB Price</span>
+                              <span className="text-xs text-[#6B7280]">{COLLATERAL_SYMBOL} Price</span>
                               <span className="text-sm font-medium text-[#111111]">
                                 ${stARBPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                               </span>
@@ -1285,11 +1306,11 @@ const AssetDetailsPage = () => {
                             const showLoader = isApproving || isLeverageLoading || isWaiting || isOpening;
 
                             const label = (() => {
-                              if (isApproving) return 'Approving stARB...';
+                              if (isApproving) return `Approving ${COLLATERAL_SYMBOL}...`;
                               if (isWaiting) return 'Waiting for confirmation...';
                               if (isOpening) return 'Opening position...';
                               if (isLeverageLoading) return leveragePurchaseStatus || 'Processing...';
-                              return needsApproval ? 'Approve stARB' : 'Open Leveraged Position';
+                              return needsApproval ? `Approve ${COLLATERAL_SYMBOL}` : 'Open Leveraged Position';
                             })();
 
                             return (

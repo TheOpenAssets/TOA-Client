@@ -20,17 +20,17 @@ const HeroSection = () => {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
-            RWA Tokenization,
+            BNB-Native,
           </h1>
-          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Credit-Aware Borrowing
+          <h1 className="font-beau text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">Firm Vault Deposits
           </h1>
           <h1 className="font-antic text-5xl md:text-6xl lg:text-[64px] font-normal text-foreground mb-6 leading-tight tracking-tight">
-            & Cross-Chain Identity
+            & LST Leverage
           </h1>
 
           <p className="font-inter text-base md:text-lg text-foreground/80 mb-12 max-w-2xl mx-auto">
-            Tokenize real-world assets and unlock credit-aware borrowing across chains. <br />
-            <span className="font-beau text-xl md:text-2xl font-semibold">Real assets. Real credit. Oracle-free.</span>
+            Discover verified BNB listings, deposit into firm vaults, and track on-chain yield distribution. <br />
+            <span className="font-beau text-xl md:text-2xl font-semibold">Real vaults. Real settlement. BNB-first execution.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

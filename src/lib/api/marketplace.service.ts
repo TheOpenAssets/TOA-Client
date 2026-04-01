@@ -776,6 +776,30 @@ class MarketplaceService extends BaseService {
   }
 
   /**
+   * Manual fallback sync for OrderCreated when indexer polling is delayed/rate-limited
+   * POST /marketplace/secondary/sync/order-created
+   */
+  async syncSecondaryOrderCreated(txHash: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/marketplace/secondary/sync/order-created`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ txHash }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to sync order from transaction');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error syncing order from transaction:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get chart data for the secondary market (execution and sentiment)
    * GET /marketplace/secondary/:assetId/chart
    */

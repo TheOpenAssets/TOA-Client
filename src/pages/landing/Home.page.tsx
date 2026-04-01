@@ -26,7 +26,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* SECTION 2: AUTO REPAYING */}
+      {/* SECTION 2: PLATFORM FEATURES */}
       <div className="snap-start h-screen flex items-center justify-center">
         {/* We use w-full to ensure the fade wrapper takes full width */}
         <FadeIn className="w-full">

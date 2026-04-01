@@ -14,51 +14,51 @@ import {
 const FeaturePage = () => {
   const features = [
     {
-      title: "Canonical RWA Tokenization",
+      title: "BNB Primary Firm Vaults",
       description:
-        "Real-world assets — invoices, trade finance instruments, property deeds — are verified, structured, and minted on Creditcoin EVM as compliant RWA tokens, permanently recorded on-chain.",
+        "Investors deposit directly into issuer-backed vault listings on BNB Testnet with transparent on-chain settlement and position tracking.",
       icon: <IconTerminal2 />,
     },
     {
-      title: "Credit-Aware Borrowing",
+      title: "Deposit-First Investor UX",
       description:
-        "Deposit RWA tokens as collateral and borrow USDC with terms shaped by your composite credit score. Better credit history earns better LTV — up to 75% for Excellent-tier borrowers vs. the standard 70%.",
+        "The investor journey is focused on vault participation, allocation, and payout visibility without retail borrow complexity.",
       icon: <IconEaseInOut />,
     },
     {
-      title: "Composite Credit Score Engine",
+      title: "ankrBNB Collateral Leverage",
       description:
-        "Your score combines two layers: platform-level repayment history (Layer 1) and your verified on-chain lending record from the Creditcoin Substrate chain (Layer 2) — 4.27M real loan records.",
+        "Advanced participants can use ankrBNB collateral to open leveraged vault exposure through the latest BNB leverage vault contracts.",
       icon: <IconCurrencyDollar />,
     },
     {
-      title: "RWA & Private Asset–Backed Credit",
+      title: "On-Chain Compliance Rails",
       description:
-        "Issue on-chain credit using tokenized RWAs or privately documented assets held in a solvency vault, without fractionalizing ownership or exposing sensitive asset data.",
+        "Identity Registry, Trusted Issuer checks, and attestation-aware listing flow enforce policy at contract level before capital deployment.",
       icon: <IconCloud />,
-    },
-    {
-      title: "USC: Trustless Cross-Chain Proof",
-      description:
-        "Creditcoin's Universal Smart Contract (USC) lets our contract verify repayments on Ethereum, BSC, and Bitcoin using STARK proofs via the 0x0FD2 precompile — no oracle, no bridge, no middleman.",
-      icon: <IconShieldCheck />,
     },
     {
       title: "Deterministic Yield Distribution",
       description:
-        "Real-world cash flows are settled on-chain and distributed pro-rata to RWA token holders using deterministic, index-based accounting.",
+        "YieldVault accounting distributes settlement proceeds and claimable investor yield with auditable on-chain math.",
+      icon: <IconShieldCheck />,
+    },
+    {
+      title: "Primary + Secondary Liquidity",
+      description:
+        "Participate in primary vault deposits, then use the secondary market for position rebalancing and transfer liquidity.",
       icon: <IconAdjustmentsBolt />,
     },
     {
-      title: "Secondary & OTC RWA Marketplace",
+      title: "Integrated Faucet Flow",
       description:
-        "Trade RWA tokens via a native peer-to-peer and OTC marketplace, with on-chain buy and sell orders that counterparties can directly satisfy.",
+        "One-click test token minting for USDC and ankrBNB keeps onboarding fast for vault deposits and leverage testing on BNB.",
       icon: <IconCoin />,
     },
     {
-      title: "OAID — Universal Credit Identity",
+      title: "Issuer-to-Investor Execution Loop",
       description:
-        "OAID is a wallet-bound credit identity that aggregates collateral, credit limits, and active loans into a single on-chain profile — carrying your Creditcoin credit score across every partner protocol.",
+        "From issuer listing approval to investor allocation and settlement claims, the full lifecycle is handled in one BNB-native platform.",
       icon: <IconRouteAltLeft />,
     },
 

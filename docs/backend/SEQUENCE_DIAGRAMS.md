@@ -112,7 +112,7 @@ sequenceDiagram
     participant LeverageBlockchainService
     participant FluxionDEXService
     participant LeverageVault
-    participant MockstARB
+    participant AnkrBNB
     participant FluxionIntegration
     participant MockFluxionDEX
     participant SeniorPool
@@ -165,8 +165,8 @@ sequenceDiagram
                 activate LeverageVault
 
                 LeverageVault->>LeverageVault: Get position stARB appreciation
-                LeverageVault->>MockstARB: getValueInUSD(stARB change)
-                MockstARB-->>LeverageVault: USD value of appreciation
+                LeverageVault->>AnkrBNB: getValueInUSD(stARB change)
+                AnkrBNB-->>LeverageVault: USD value of appreciation
 
                 LeverageVault->>FluxionIntegration: swapstARBToUSDC(stARBAmount)
                 activate FluxionIntegration
@@ -236,7 +236,7 @@ sequenceDiagram
     participant MongoDB
     participant LeverageVault
     participant FluxionDEXService
-    participant MockstARB
+    participant AnkrBNB
     participant SeniorPool
     participant NotificationService
 
@@ -259,8 +259,8 @@ sequenceDiagram
         LeverageVault->>LeverageVault: Get position stARB collateral & USDC debt
 
         LeverageVault->>FluxionDEXService: getstARBPrice()
-        FluxionDEXService->>MockstARB: getPrice()
-        MockstARB-->>FluxionDEXService: Current price
+        FluxionDEXService->>AnkrBNB: getPrice()
+        AnkrBNB-->>FluxionDEXService: Current price
         FluxionDEXService-->>LeverageVault: stARB price
 
         LeverageVault->>LeverageVault: Calculate: (collateralValue × 10000) / debt

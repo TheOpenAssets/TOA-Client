@@ -17,9 +17,10 @@ const NETWORK_CONTRACTS: Record<string, {
   chainId: bigint;
 }> = {
   bnb: {
-    usdc:          import.meta.env.VITE_USDC_ADDRESS                || '',
-    primaryMarket: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '',
-    yieldVault:    import.meta.env.VITE_YIELD_VAULT_ADDRESS         || '',
+    // Synced with TOA-Server-Mantle/packages/bnb-contracts/deployed_contracts_bnb.json
+    usdc:          import.meta.env.VITE_USDC_ADDRESS                || '0x38113dFC4958CEF3aa53d057A562635bCE022F61',
+    primaryMarket: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '0x9df429D1358AE346F16d4238b1E436008001D890',
+    yieldVault:    import.meta.env.VITE_YIELD_VAULT_ADDRESS         || '0xaaD379B3dE8dFa235813a68b24c9ab9E9B302BEB',
     chainId:       97n,
   },
   creditcoin: {
@@ -114,13 +115,49 @@ class ContractService {
    * Get gas fee overrides with a buffer to prevent "max fee per gas less than block base fee" errors.
    * Arbitrum Sepolia base fees can fluctuate between blocks, so we add a 50% buffer.
    */
-  private async getGasOverrides(provider: ethers.BrowserProvider): Promise<{ maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }> {
+  private async getGasOverrides(provider: ethers.BrowserProvider): Promise<Record<string, bigint>> {
+    const network = await provider.getNetwork();
+
+    // BNB (mainnet/testnet): use legacy gasPrice path to avoid eth_maxPriorityFeePerGas RPC warnings.
+    if (network.chainId === 97n || network.chainId === 56n) {
+      try {
+        const gasPriceHex = await provider.send('eth_gasPrice', []);
+        const gasPrice = BigInt(gasPriceHex);
+        if (gasPrice > 0n) {
+          return { gasPrice: gasPrice * 3n / 2n };
+        }
+      } catch {
+        // Fall through to generic fee detection
+      }
+    }
+
     const feeData = await provider.getFeeData();
-    const baseFee = feeData.maxFeePerGas ?? 0n;
-    const priorityFee = feeData.maxPriorityFeePerGas ?? 0n;
+
+    // Legacy networks (like BNB testnet) often do not support eth_maxPriorityFeePerGas.
+    // In that case, prefer legacy gasPrice and avoid sending EIP-1559 fields.
+    if (!feeData.maxFeePerGas && feeData.gasPrice) {
+      return {
+        gasPrice: feeData.gasPrice * 3n / 2n, // 1.5x buffer
+      };
+    }
+
+    const maxFeePerGas = feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n;
+    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? 0n;
+
+    if (maxFeePerGas === 0n) {
+      // Last-resort fallback: let wallet/provider decide.
+      return {};
+    }
+
+    // Ensure maxFeePerGas >= maxPriorityFeePerGas
+    const bufferedMaxFee = maxFeePerGas * 3n / 2n;
+    const safePriorityFee = maxPriorityFeePerGas > 0n
+      ? maxPriorityFeePerGas
+      : (bufferedMaxFee > 1_000_000n ? 1_000_000n : bufferedMaxFee);
+
     return {
-      maxFeePerGas: baseFee * 3n / 2n, // 1.5x buffer
-      maxPriorityFeePerGas: priorityFee > 0n ? priorityFee : 100000n,
+      maxFeePerGas: bufferedMaxFee >= safePriorityFee ? bufferedMaxFee : safePriorityFee,
+      maxPriorityFeePerGas: safePriorityFee,
     };
   }
 
@@ -295,7 +332,15 @@ class ContractService {
       if (allowance < payment) {
         // Approve USDC
         const gasOverrides = await this.getGasOverrides(provider);
-        const tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment, gasOverrides);
+        let tx;
+
+        try {
+          tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment, gasOverrides);
+        } catch (gasError) {
+          console.warn('Approve with gas overrides failed, retrying without overrides...', gasError);
+          tx = await usdcContract.approve(PRIMARY_MARKETPLACE_ADDRESS, payment);
+        }
+
         console.log('Approve TX:', tx.hash);
 
         const receipt = await this.waitForTransaction(tx.hash, provider);
@@ -692,7 +737,15 @@ class ContractService {
       // Buy tokens
       console.log('\n✅ Step 2: Buying tokens...');
       const gasOverrides = await this.getGasOverrides(provider);
-      const tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei, gasOverrides);
+      let tx;
+
+      try {
+        tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei, gasOverrides);
+      } catch (gasError) {
+        console.warn('Buy with gas overrides failed, retrying without overrides...', gasError);
+        tx = await marketplaceContract.buyTokens(assetIdBytes32, tokenAmountWei);
+      }
+
       console.log('Buy TX:', tx.hash);
       console.log('⏳ Waiting for confirmation...');
 

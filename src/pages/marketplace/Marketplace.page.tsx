@@ -360,7 +360,7 @@ const MarketplacePage = () => {
     });
 
   const filters: { value: FilterCategory; label: string }[] = [
-    { value: 'all', label: 'All Assets' },
+    { value: 'all', label: 'All Vaults' },
     { value: 'invoices', label: 'Invoices' },
     { value: 'high-yield', label: 'High Yield (>10%)' },
     { value: 'short-term', label: 'Short Term (<6mo)' },
@@ -486,13 +486,6 @@ const MarketplacePage = () => {
             >
               Portfolio
             </button>
-            <button
-              onClick={() => navigate(networkPath('/borrow'))}
-              className="font-gellix border border-gray-200  text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl"
-            >
-              Borrow
-            </button>
-
           </nav>
 
           {/* Right: Auth / Wallet Display */}
@@ -687,10 +680,10 @@ const MarketplacePage = () => {
       <div className="w-full mx-auto z-4 mt-10" >
         {/* Three Feature Sections */}
         <div className="grid grid-cols-3 gap-8 rounded-2xl "  >
-          {/* Section 1: Active Auctions (Replaced Featured Issuances) */}
+          {/* Section 1: Active Firm Vaults (Auctions) */}
           <div className="bg-transparent flex flex-col gap-3">
             <h2 className="font-gellix text-[22px] text-foreground">
-              Active Auctions
+              Active Firm Vaults
             </h2>
             <div className="w-full h-full border-t border-gray-300 justify-center flex flex-col">
               {isLoadingAuctions ? (
@@ -744,10 +737,10 @@ const MarketplacePage = () => {
             </div>
           </div>
 
-          {/* Section 2: Trending Assets (Highest Sold %) - Real Data from GET /marketplace/top-grossing */}
+          {/* Section 2: Trending Firm Vaults (Highest Sold %) - Real Data from GET /marketplace/top-grossing */}
           <div className="bg-transparent flex flex-col gap-3">
             <h2 className="font-gellix text-[22px]  text-foreground">
-              Trending Assets
+              Trending Firm Vaults
             </h2>
 
             <div className="w-full h-full border-t border-gray-300 justify-center flex flex-col">
@@ -801,10 +794,10 @@ const MarketplacePage = () => {
             </div>
           </div>
 
-          {/* Section 3: Recently Verified Assets - Real Data from GET /marketplace/listings (Top 3, sorted by newest) */}
+          {/* Section 3: Newly Listed Vaults - Real Data from GET /marketplace/listings (Top 3, sorted by newest) */}
           <div className="bg-transparent flex flex-col gap-3">
             <h2 className="font-gellix text-[22px] text-foreground">
-              Recently Verified
+              Newly Listed Vaults
             </h2>
             <div className="w-full h-full border-t border-gray-300 justify-center flex flex-col">
               {isLoading ? (

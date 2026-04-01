@@ -214,7 +214,7 @@ Claim test USDC, stARB, and RWA tokens for use on arbitrum Sepolia testnet.
 | Solvency Vault | RWA collateral for credit | `VITE_SOLVENCY_VAULT` |
 | Senior Pool | USDC lending pool | `VITE_SENIOR_POOL` |
 | OAID Registry | Universal credit identity | `VITE_OAID` |
-| Mock stARB | Test stARB token | `VITE_MOCK_stARB` |
+| ankrBNB | Test collateral token | `VITE_ANKRBNB_ADDRESS` |
 | USDC | Test USDC | `VITE_USDC_ADDRESS` |
 | Faucet | Token distribution | `VITE_FAUCET` |
 
@@ -332,7 +332,7 @@ VITE_SECONDARY_MARKET
 VITE_YIELD_VAULT_ADDRESS
 VITE_TOKEN_FACTORY
 VITE_IDENTITY_REGISTRY
-VITE_MOCK_stARB
+VITE_ANKRBNB_ADDRESS
 VITE_LEVERAGE_VAULT
 VITE_OAID
 VITE_SOLVENCY_VAULT

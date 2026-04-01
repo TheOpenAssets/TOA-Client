@@ -5,206 +5,72 @@ import Navbar from "./Navbar.page";
 import FaqDetails from "../../components/ui/faq-details";
 
 const mermaidCode = `flowchart TB
-    %% =========================
-    %% ENTRY POINT
-    %% =========================
-    A[Landing Page | The main entry point for all protocol users.]
-    F[Faucet | Request test tokens to interact with the platform.]
-    M[Explore Marketplace | Browse available Real World Asset (RWA) listings.]
-    G[Get Started | Begin the onboarding and wallet connection process.]
-    I[Become an Issuer | Apply to tokenize and list your own assets.]
+  %% BNB-SPECIFIC PLATFORM FLOW
+  A[Landing Page | BNB-native firm vault platform]
+  F[Faucet | Mint USDC + ankrBNB test tokens]
+  M[Marketplace | Browse active firm vault listings]
+  I[Issuer Onboarding | Submit and manage vault-backed assets]
 
-    A --> F
-    A --> M
-    A --> G
-    A --> I
+  A --> F
+  A --> M
+  A --> I
 
-    %% =========================
-    %% AUTH & ROLE GATING
-    %% =========================
-    AU[Wallet Authentication | Securely connect your Web3 wallet to the protocol.]
-    RS[Role Selection | Choose between Investor or Issuer permissions.]
-    
-    G --> AU
-    M --> AU
+  W[Wallet Connect | Authenticate with EVM wallet]
+  M --> W
+  F --> W
 
-    AU -->|New Wallet| RS
-    AU -->|Returning Wallet| MP[Marketplace | Access the primary RWA listing directory.]
+  %% INVESTOR FLOW
+  D[Vault Details | Review terms, allocation, min investment]
+  S[Standard Deposit | Deposit USDC into firm vault listing]
+  L[Leverage Deposit | Use ankrBNB collateral via leverage vault]
+  P[Portfolio | Track allocations, balances, and status]
+  Y[Yield Claims | Claim distributable USDC from YieldVault]
 
-    RS --> INV[Register as Investor | Complete registration to browse and buy assets.]
-    RS --> ISS[Register as Issuer | Complete registration to manage and list assets.]
+  W --> D
+  D --> S
+  D --> L
+  S --> P
+  L --> P
+  P --> Y
 
-    %% Role immutability logic
-    ISS -->|Check| BLOCK1[Role Switch Blocked | Users cannot change roles once registered.]
-    INV -->|Check| BLOCK2[Role Switch Blocked | Users cannot change roles once registered.]
+  %% ISSUER FLOW
+  IP[Issuer Profile | Compliance + identity verified]
+  AL[Asset Listing | Create and submit vault listing]
+  AP[Admin Approval | Listing reviewed and activated]
+  PM[Primary Market | Investors allocate capital]
 
-    %% =========================
-    %% ISSUER FLOW
-    %% =========================
-    I --> ISS
-    IP[Issuer Profile Created | Your business identity is verified on-chain.]
-    AS[Submit Assets | Provide documentation for asset tokenization.]
-    TK[Tokenization | Assets are minted into fractional RWA tokens.]
-    LIST[Asset Listed | Tokens are now live for trade on the Marketplace.]
+  I --> IP
+  IP --> AL
+  AL --> AP
+  AP --> PM
+  PM --> D
 
-    ISS --> IP
-    IP --> AS
-    AS --> TK
-    TK --> LIST
+  %% SECONDARY FLOW
+  SM[Secondary Market | Trade existing tokenized positions]
+  B1[Buy Orders | Acquire positions from other users]
+  S1[Sell Orders | Exit or rebalance positions]
 
-    %% =========================
-    %% INVESTOR FLOW
-    %% =========================
-    INV --> MP
+  P --> SM
+  SM --> B1
+  SM --> S1
 
-    %% =========================
-    %% MARKETPLACE HUB
-    %% =========================
-    H[Marketplace Hub | Central dashboard for discovery, trading, and borrowing.]
-    MP --> H
+  %% SETTLEMENT FEEDBACK
+  ST[Settlement Recorded | On-chain lifecycle updates]
+  N[Notifications | Real-time execution and settlement updates]
 
-    D[Asset Discovery | Explore asset classes and filtered listings.]
-    P[Portfolio | Track your holdings, yield, and active positions.]
-    T[Trade | Buy and sell RWA tokens on the secondary market.]
-    B[Borrow | Use your RWA holdings as collateral for credit.]
+  PM --> ST
+  Y --> ST
+  ST --> N
 
-    H --> D
-    H --> P
-    H --> T
-    H --> B
+  classDef entry fill:#f5f5f5,stroke:#555;
+  classDef hub fill:#e3f2fd,stroke:#1565c0;
+  classDef action fill:#e8f5e9,stroke:#2e7d32;
+  classDef finance fill:#fff8e1,stroke:#f9a825;
 
-    %% =========================
-    %% ASSET DISCOVERY & AUCTION
-    %% =========================
-    AD[Asset Detail Page | View financials, legal docs, and buy modules.]
-    AUCTION[Auction Listing | Participate in competitive bidding for new assets.]
-    BID[Place Bid | Submit a USDC bid for the desired RWA amount.]
-    AEND[Auction Ends | Finalize the price and distribute tokens.]
-    REFUND[Bid Refunded | Capital returned if the bid was unsuccessful.]
-
-    D -->|Fixed Price| AD
-    D -->|Auction| AUCTION
-    AUCTION --> BID
-    BID --> AEND
-    AEND -->|Successful| AD
-    AEND -->|Failed| REFUND
-
-    %% =========================
-    %% BUY
-    %% =========================
-    BM[Buy Module | Configure purchase settings and payment type.]
-    U[USDC Buy | Direct purchase using USDC stablecoin.]
-
-    AD --> BM
-    BM --> U
-
-    %% =========================
-    %% CREDIT SCORE & IDENTITY
-    %% =========================
-    CS[Credit Score Dashboard | View composite score from two layers.]
-    L1[Layer 1 - Platform Score | Based on repayment history on this platform.]
-    L2[Layer 2 - Protocol Score | Based on Creditcoin Substrate chain loan records.]
-    BT[Borrow Terms Preview | See personalised LTV before committing to a borrow.]
-    USC[USC Proof Submission | Submit a STARK proof of an off-chain repayment event.]
-    VERIFY[0x0FD2 Precompile Verifies | Creditcoin EVM verifies the cross-chain proof on-chain.]
-    UPDATE[Score Updated | User credit score updated, better LTV unlocked.]
-
-    U --> CS
-    CS --> L1
-    CS --> L2
-    CS --> BT
-    CS --> USC
-    USC --> VERIFY
-    VERIFY --> UPDATE
-    UPDATE --> BT
-
-    %% =========================
-    %% PORTFOLIO DETAILS
-    %% =========================
-    PA[Owned RWA | View your fractional real estate or credit tokens.]
-    PB[Auction Bids | Monitor pending asset acquisitions.]
-    LO[Active Loans | View borrowed amounts and repayment schedules.]
-    PY[Yield & History | Track accrued earnings from asset performance.]
-    CLAIM[Claim Yield | Withdraw earned USDC to your wallet.]
-    WALLET[USDC Received | Yield successfully transferred to personal wallet.]
-
-    P --> PA
-    P --> PB
-    P --> LO
-    P --> PY
-    PY --> CLAIM
-    CLAIM --> WALLET
-
-    %% =========================
-    %% SECONDARY MARKET
-    %% =========================
-    SM[Secondary Marketplace | peer-to-peer trading for existing RWAs.]
-    BUY[Buy Tokens | Acquire existing tokens from other users.]
-    SELL[Sell Tokens | List your holdings for exit liquidity.]
-    YP[Yield Preserved | Yield accrual remains seamless during transfers.]
-
-    T --> SM
-    SM --> BUY
-    SM --> SELL
-    BUY --> YP
-    SELL --> YP
-
-    %% =========================
-    %% BORROW & CREDIT
-    %% =========================
-    OA[OAID Activated | On-chain identity linked to credit scoring.]
-    CR[Available Credit | View borrowing capacity based on RWA collateral.]
-    AL[Active Loans | Track current debt and interest accrual.]
-    BN[Native Borrow | Access capital via partner liquidity protocols.]
-    PC[Private Credit | Peer-to-peer borrowing against specific assets.]
-    LOAN[Loan Active | Funds deployed to user wallet with interest.]
-    RESTORE[Credit Restored | Repayment completes and limit is refreshed.]
-    ENFORCE[Enforcement | Settlement logic applied to defaulted loans.]
-    REPAY2[Lender Paid | Capital returned to the senior pool.]
-    EXCESS[Excess Returned | Remaining collateral sent back to user.]
-
-    B --> OA
-    OA --> CR
-    OA --> AL
-    CR --> BN
-    CR --> PC
-    BN --> LOAN
-    LOAN -->|Repays| RESTORE
-    LOAN -->|Default| ENFORCE
-    ENFORCE --> REPAY2
-    REPAY2 --> EXCESS
-
-    %% =========================
-    %% SYSTEM FEEDBACK
-    %% =========================
-    SETTLE[Matures | Asset lifecycle reaches the repayment phase.]
-    RECORD[Recorded | Blockchain confirmation of asset settlement.]
-    DIST[Yield Sent | Profits shared proportionally to token holders.]
-    NOTIF[Notifications | Real-time alerts sent to user dashboard.]
-
-    SETTLE --> RECORD
-    RECORD --> DIST
-    DIST --> PY
-
-    AEND --> NOTIF
-    DIST --> NOTIF
-    UPDATE --> NOTIF
-    RESTORE --> NOTIF
-
-    %% =========================
-    %% CLASS ASSIGNMENTS
-    %% =========================
-    classDef entry fill:#f5f5f5,stroke:#555;
-    classDef hub fill:#e3f2fd,stroke:#1565c0;
-    classDef action fill:#e8f5e9,stroke:#2e7d32;
-    classDef finance fill:#fff8e1,stroke:#f9a825;
-
-    class A,F,M,G,I entry;
-    class MP,H,D,P,T,B,SM hub;
-    class AU,RS,INV,ISS,IP,AS,TK,LIST,BID,AEND,NOTIF action;
-    class AD,BM,U,PA,PB,LO,PY,CLAIM,WALLET,BUY,SELL,YP finance;
-    class OA,CR,AL,BN,PC,LOAN,RESTORE,ENFORCE,REPAY2,EXCESS,SETTLE,RECORD,DIST finance;
-    class CS,L1,L2,BT,USC,VERIFY,UPDATE finance;
+  class A,F,M,I entry;
+  class W,D,P,SM hub;
+  class IP,AL,AP,PM,S,L,ST,N action;
+  class Y,B1,S1 finance;
 `;
 
 const FAQSection = () => {

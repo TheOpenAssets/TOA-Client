@@ -6,7 +6,7 @@
  */
 export const LEVERAGE_CONTRACTS = {
   LeverageVault: import.meta.env.VITE_LEVERAGE_VAULT,
-  MockstARB: import.meta.env.VITE_MOCK_stARB,
+  CollateralToken: import.meta.env.VITE_ANKRBNB_ADDRESS ,
   MockFluxionDEX: import.meta.env.VITE_MOCK_FLUXION_DEX,
   SeniorPool: import.meta.env.VITE_SENIOR_POOL,
 } as const;

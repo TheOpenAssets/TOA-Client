@@ -16,7 +16,10 @@ export const CONTRACTS = {
   TokenFactory: import.meta.env.VITE_TOKEN_FACTORY || '',
   PrimaryMarketplace: import.meta.env.VITE_PRIMARY_MARKETPLACE_ADDRESS || '',
   USDC: import.meta.env.VITE_USDC_ADDRESS || '',
-  stARB: import.meta.env.VITE_STARB_ADDRESS || '0x1A600404AE282CF1A0c4Ec3320Df2055017CDE93',
+  stARB:
+    import.meta.env.VITE_ANKRBNB_ADDRESS ||
+   
+    '',
   Faucet: import.meta.env.VITE_FAUCET || '',
 } as const;
 
@@ -64,8 +67,8 @@ export const USDC_ABI = [
   },
 ] as const;
 
-// MockStARB ABI - mint function for faucet
-export const STARB_ABI = [
+// Collateral token ABI - mint function for faucet
+export const COLLATERAL_TOKEN_ABI = [
   {
     name: 'mint',
     type: 'function',

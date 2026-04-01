@@ -1,5 +1,5 @@
 // src/pages/portfolio/Portfolio.page.tsx
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { usePortfolioStore } from '../../stores/portfolio.store';
 import { useMarketplaceStore } from '../../stores/marketplace.store';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -16,25 +16,18 @@ import { NotificationBell } from '../../components/notifications/NotificationBel
 import { marketplaceService } from '../../lib/api/marketplace.service';
 import { getYieldService } from '../../lib/api/yield.service.factory';
 import { parseTokenAmount } from '../../lib/utils/formatters';
-import { solvencyService } from '../../lib/api/solvency.service';
-import { partnerService } from '../../lib/api/partner.service';
 import { PortfolioStats } from '../../components/portfolio/PortfolioStats';
 import { MyAssetsTable } from '../../components/portfolio/MyAssetsTable';
 import { ActiveBidsTable } from '../../components/portfolio/ActiveBidsTable';
 import { TradesTable } from '../../components/portfolio/TradesTable';
 import { useCancelOrder } from '../../hooks/useSecondaryMarket';
-import { MyLoansTable } from '../../components/portfolio/MyLoansTable';
 import { CreditScoreDashboard } from '../../components/creditcoin/CreditScoreDashboard';
 import { PositionDetailChart } from '../../components/leverage/PositionDetailChart';
 import type { LeveragePosition } from '../../types/leverage.types';
-import type { Position as SolvencyPosition } from '../../types/solvency.types';
 import { PageLoader } from '../../components/ui/page-loader';
 import { Button } from '../../components/ui/button';
 import { ShaderAnimation } from '../../components/ui/shimmer-lines';
-import { useCreditData } from '../borrow/hooks/useCreditData';
 import { useCreditScore } from '../borrow/hooks/useCreditScore';
-import { DepositCollateralModal } from '../borrow/components/DepositCollateralModal';
-import { NoAssetsModal } from '../../components/portfolio/NoAssetsModal';
 // import { Wavy } from '../../components/ui/wavy';
 import HeroBackground from '../landing/HeroBackground';
 
@@ -69,31 +62,21 @@ const PortfolioPage = () => {
   const { userBids, isLoadingBids, fetchUserBids, myOrders, isLoadingMyOrders, fetchMyOrders } = useMarketplaceStore();
   const { toasts, success, error: showError, warning, removeToast } = useToast();
   // const { disconnect } = useDisconnect(); // handled by logout
-  const { creditData, refetch: refetchCredit } = useCreditData(isEvm ? address : undefined);
-
 
   // Cancel order hook
   const { cancelOrder, isSuccess: isCancelSuccess, reset: resetCancel } = useCancelOrder();
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   // Tab state for portfolio sections
-  type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades' | 'loans' | 'credit';
+  type PortfolioTab = 'assets' | 'bids' | 'positions' | 'trades' | 'credit';
 
   const initialTab = searchParams.get('tab') as PortfolioTab | null;
   const [activeTab, setActiveTab] = useState<PortfolioTab>(initialTab || 'assets');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modal states
-  const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showNoAssetsModal, setShowNoAssetsModal] = useState(false);
-
   // Leverage position detail chart state
   const [selectedPosition, setSelectedPosition] = useState<LeveragePosition | null>(null);
 
-
-  // Solvency loans state
-  const [myLoans, setMyLoans] = useState<SolvencyPosition[]>([]);
-  const [isLoadingMyLoans, setIsLoadingMyLoans] = useState(true);
   const { settleBid, status: settleStatus, error: settleError, isLoading: isSettling, isSuccess } = useSettleBid();
   const [settlingBidId, setSettlingBidId] = useState<string | null>(null);
 
@@ -109,36 +92,6 @@ const PortfolioPage = () => {
     expectedUsdc: string;
     allowance: string;
   } | null>(null);
-  // Fetch solvency loans
-
-  const fetchMyLoans = useCallback(async () => {
-    if (!address) return;
-    setIsLoadingMyLoans(true);
-    try {
-      const [positionsResponse, partnerLoansResponse] = await Promise.all([
-        solvencyService.getMyPositions(),
-        partnerService.getMyPartnerLoans().catch(() => ({ loans: [] })),
-      ]);
-
-      // Merge partner loans into their parent positions by solvencyPositionId
-      const merged = positionsResponse.positions.map(pos => ({
-        ...pos,
-        partnerLoans: partnerLoansResponse.loans.filter(
-          pl => pl.solvencyPositionId === pos.positionId
-        ),
-      }));
-
-      console.log("loans find", merged);
-      setMyLoans(merged);
-    } catch (err) {
-      console.error("Error fetching solvency loans:", err);
-      showError("Failed to fetch loans", "Could not retrieve your loan positions.");
-    } finally {
-      setIsLoadingMyLoans(false);
-    }
-  }, []);
-
-
   // Filtered data based on search term
   // Get all portfolio items (both STATIC and LEVERAGE)
   const allPortfolioItems = portfolio?.portfolio || [];
@@ -166,12 +119,6 @@ const PortfolioPage = () => {
     false
   );
 
-  const filteredLoans = myLoans.filter(loan =>
-    loan.positionId.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-    false
-  );
-
-
   // Calculate total asset value (STATIC purchases only)
   const totalAssetValue = staticAssets.reduce(
     (sum: number, asset: any) => sum + parseTokenAmount(asset.totalInvested || '0', 6),
@@ -183,7 +130,6 @@ const PortfolioPage = () => {
     fetchPortfolio();
     fetchUserBids();
     fetchMyOrders();
-    fetchMyLoans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -226,20 +172,6 @@ const PortfolioPage = () => {
       fetchMyOrders(); // Refresh orders
     }
   }, [isCancelSuccess]);
-
-  const handleIncreaseCreditLimit = () => {
-    const validAssets = staticAssets.filter((asset: any) => asset.yieldInfo?.settlementDistributed === false);
-    if (validAssets.length > 0) {
-      setShowDepositModal(true);
-    } else {
-      setShowNoAssetsModal(true);
-    }
-  };
-
-  // Refresh credit data after successful operations
-  const handleRefreshCredit = useCallback(() => {
-    refetchCredit(true); // Force refresh
-  }, [refetchCredit]);
 
   // Helper functions
   const handlelogout = () => {
@@ -578,11 +510,6 @@ const PortfolioPage = () => {
                   >
                     Marketplace
                   </button>
-                  <button
-                    onClick={() => navigate(networkPath('/borrow'))}
-                    className="font-geist border border-gray-300 text-sm font-medium text-foreground/70 hover:text-blue-600 pl-3 pr-3 hover:bg-gray-100 transition-colors p-1.5 rounded-xl">
-                    Borrow
-                  </button>
                 </nav>
                 {address && (
                   <>
@@ -612,8 +539,7 @@ const PortfolioPage = () => {
                 <PortfolioStats
                   totalAssetValue={totalAssetValue}
                   portfolioAssets={filteredAssets}
-                  creditData={creditData}
-                  onIncreaseLimit={handleIncreaseCreditLimit}
+                  showCreditLimitCard={false}
                 />
               </div>
 
@@ -649,16 +575,6 @@ const PortfolioPage = () => {
                       >
                         My Bids
                       </button>
-                      <button
-                        onClick={() => setActiveTab('loans')}
-                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'loans'
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                      >
-                        My Loans
-                      </button>
-
                       <button
                         onClick={() => setActiveTab('trades')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'trades'
@@ -731,22 +647,6 @@ const PortfolioPage = () => {
                       </div>
                     </div>
 
-                    {/* My Loans Tab */}
-                    <div
-                      className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'loans'
-                        ? 'opacity-100 translate-x-0 z-10'
-                        : 'opacity-0 -translate-x-4 pointer-events-none z-0'
-                        }`}
-                    >
-                      <div className="h-full flex flex-col overflow-y-auto">
-                        <MyLoansTable
-                          positions={filteredLoans}
-                          isLoading={isLoadingMyLoans}
-                          onRefresh={fetchMyLoans}
-                        />
-                      </div>
-                    </div>
-
                     {/* Leveraged Positions Tab */}
                     <div
                       className={`absolute inset-0 transition-all duration-300 ease-in-out ${activeTab === 'positions'
@@ -796,22 +696,6 @@ const PortfolioPage = () => {
             onClose={() => setSelectedPosition(null)}
           />
         )}
-
-        <DepositCollateralModal
-          isOpen={showDepositModal}
-          onClose={() => setShowDepositModal(false)}
-          onSuccess={() => {
-            setShowDepositModal(false);
-            fetchPortfolio();
-            fetchMyLoans();
-            handleRefreshCredit();
-          }}
-        />
-
-        <NoAssetsModal
-          isOpen={showNoAssetsModal}
-          onClose={() => setShowNoAssetsModal(false)}
-        />
 
         {/* Yield Claim Confirmation Modal - Burn-to-Claim Model */}
         {

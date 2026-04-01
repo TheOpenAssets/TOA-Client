@@ -10,8 +10,9 @@ import { formatUSD } from '../../utils/solvency/format-credit.util';
 interface PortfolioStatsProps {
   totalAssetValue: number;
   portfolioAssets: PortfolioAsset[];
-  creditData: OAIDCreditLine | null;
-  onIncreaseLimit: () => void;
+  creditData?: OAIDCreditLine | null;
+  onIncreaseLimit?: () => void;
+  showCreditLimitCard?: boolean;
 }
 
 export const PortfolioStats = ({
@@ -19,6 +20,7 @@ export const PortfolioStats = ({
   portfolioAssets,
   creditData,
   onIncreaseLimit,
+  showCreditLimitCard = true,
 }: PortfolioStatsProps) => {
   const formatCurrency = (value: number): string => {
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -112,37 +114,38 @@ export const PortfolioStats = ({
         />
       </div>
 
-      {/* OAID Credit Limit Card */}
-      <div
-        className="bg-transparent rounded-2xl border border-gray-300 p-6 flex-1 flex flex-col relative overflow-hidden"
-        style={{
-          boxShadow: `
+      {showCreditLimitCard && (
+        <div
+          className="bg-transparent rounded-2xl border border-gray-300 p-6 flex-1 flex flex-col relative overflow-hidden"
+          style={{
+            boxShadow: `
             4px 4px 12px rgba(243, 244, 245, 0.08),
             8px 8px 24px rgba(150, 151, 151, 0.06),
             12px 12px 36px rgba(92, 92, 93, 0.04),
             16px 16px 48px rgba(45, 46, 47, 0.02)
           `,
-        }}
-      >
-        <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
-          OAID Credit Limit
-        </h3>
-        <p className="font-gellix stext-3xl font-semibold text-foreground">
-          {formatUSD(creditData?.creditLimit ?? 0)}
-        </p>
-        <p className="font-gellix text-xs text-gray-500 mt-2">
-          Available: {formatUSD(creditData?.availableCredit ?? 0)}
-        </p>
-        <div className="mt-auto pt-4">
-          <Button
-            onClick={onIncreaseLimit}
-            className=" mx-auto items-center flex text-center text-md py-4 px-6 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Increase Limit
-          </Button>
+          }}
+        >
+          <h3 className="font-gellix text-xs font-medium text-gray-500 mb-2">
+            OAID Credit Limit
+          </h3>
+          <p className="font-gellix stext-3xl font-semibold text-foreground">
+            {formatUSD(creditData?.creditLimit ?? 0)}
+          </p>
+          <p className="font-gellix text-xs text-gray-500 mt-2">
+            Available: {formatUSD(creditData?.availableCredit ?? 0)}
+          </p>
+          <div className="mt-auto pt-4">
+            <Button
+              onClick={onIncreaseLimit}
+              className=" mx-auto items-center flex text-center text-md py-4 px-6 rounded-[16px] bg-black text-white hover:bg-gray-900 transition-colors hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Increase Limit
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

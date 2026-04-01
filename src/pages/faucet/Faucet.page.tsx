@@ -44,6 +44,16 @@ const FaucetPage = () => {
               description="Receive 1,000 testnet USDC to your connected wallet."
             />
 
+            <TokenFaucetCard
+              tokenName="ankrBNB"
+              tokenSymbol="ankrBNB"
+              tokenDecimals={18}
+              tokenImage="https://assets.coingecko.com/coins/images/4324/large/U85xTl2.png"
+              tokenAddress={CONTRACTS.stARB}
+              faucetAmount={100}
+              description="Receive 100 testnet ankrBNB collateral tokens for leverage positions."
+            />
+
 
 
           </div>

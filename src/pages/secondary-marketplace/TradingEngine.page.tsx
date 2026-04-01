@@ -22,8 +22,8 @@ import HeroBackground from '../landing/HeroBackground';
 // import { Wavy } from '../../components/ui/wavy';
 
 // Contract addresses from environment
-const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0xb9BfaEDe01f0f2b2162072b73e2b2038Fb42b5cD') as `0x${string}`;
-const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x9A54Bad93a00Bf1232D4e636f5e53055Dc0b8238') as `0x${string}`;
+const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0x08BaC34bb8BfDe92BC2ceF30631fF026DE08bd6e') as `0x${string}`;
+const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x38113dFC4958CEF3aa53d057A562635bCE022F61') as `0x${string}`;
 
 // Minimal ERC20 ABI
 const ERC20_ABI = [
@@ -142,6 +142,13 @@ const TradingEngineProductionPage = () => {
 
         try {
             const res = await marketplaceService.getSecondaryMarketChartData(assetId, '1m');
+            console.log('[Secondary Chart API] /marketplace/secondary/:assetId/chart', {
+                assetId,
+                orderBookCandles: res?.orderBookCandles?.length || 0,
+                tradeCandles: res?.tradeCandles?.length || 0,
+                firstOrderBookCandle: res?.orderBookCandles?.[0] || null,
+                firstTradeCandle: res?.tradeCandles?.[0] || null,
+            });
             setSentimentData(formatEChartsData(res.orderBookCandles));
             setTradeData(formatEChartsData(res.tradeCandles));
         } catch (error) {
@@ -209,10 +216,21 @@ const TradingEngineProductionPage = () => {
         const fetchPurchaseData = async () => {
             try {
                 const history = await marketplaceService.getPurchaseHistory(assetId);
+                console.log('[Purchase History API] /assets/:assetId/purchase-history', {
+                    assetId,
+                    totalTransactions: history?.totalTransactions || 0,
+                    chartDataLength: history?.chartData?.length || 0,
+                    firstChartPoint: history?.chartData?.[0] || null,
+                });
                 setPurchaseHistory(history);
 
                 if (history.chartData && history.chartData.length > 0) {
                     const aggregatedData = aggregateIntoTimeBlocks(history.chartData, 0.05);
+                    console.log('[Purchase Activity Chart] aggregated points', {
+                        assetId,
+                        aggregatedLength: aggregatedData.length,
+                        firstAggregatedPoint: aggregatedData[0] || null,
+                    });
                     setFormattedChartData(aggregatedData);
                 }
             } catch (err) {
@@ -235,6 +253,18 @@ const TradingEngineProductionPage = () => {
     const aggregateIntoTimeBlocks = (chartData: any[], intervalMinutes: number = 0.05) => {
         if (!chartData || chartData.length === 0) return [];
 
+        const normalizeTokenAmount = (value: any): number => {
+            const raw = typeof value === 'string' || typeof value === 'number'
+                ? Number(value)
+                : Number(value ?? 0);
+
+            if (!Number.isFinite(raw) || raw <= 0) return 0;
+
+            // Backend now sends canonical token amounts for purchase history.
+            // Keep compatibility with older wei-style payloads.
+            return raw > 1e9 ? raw / 1e18 : raw;
+        };
+
         const intervalMs = intervalMinutes * 60 * 1000;
         const blocks: Map<number, { timestamp: number; tokensPurchased: number; count: number; purchaseMethod?: string }> = new Map();
 
@@ -243,8 +273,9 @@ const TradingEngineProductionPage = () => {
             const blockTime = Math.floor(purchaseTime / intervalMs) * intervalMs;
 
             const block = blocks.get(blockTime);
+            const tokensPurchased = normalizeTokenAmount(purchase.tokensPurchased);
+
             if (block) {
-                const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
                 block.tokensPurchased += tokensPurchased;
                 block.count += 1;
                 // Keep the method of the most recent purchase in the block
@@ -252,7 +283,6 @@ const TradingEngineProductionPage = () => {
                     block.purchaseMethod = purchase.purchaseMethod;
                 }
             } else {
-                const tokensPurchased = parseFloat(purchase.tokensPurchased) / 1e18;
                 blocks.set(blockTime, {
                     timestamp: blockTime,
                     tokensPurchased: tokensPurchased,
@@ -276,6 +306,7 @@ const TradingEngineProductionPage = () => {
     // 2. Transaction Success Handler
     useEffect(() => {
         if (isTxConfirmed && assetId) {
+            const completedAction = currentAction;
             success('Transaction Confirmed', 'Your transaction has been successfully confirmed.');
             setTransactionStep('confirmed');
             setCurrentAction(null);
@@ -283,8 +314,19 @@ const TradingEngineProductionPage = () => {
             setPrice('');
             setSelectedOrder(null);
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (assetId) {
+                    // Fallback sync: if indexer polling is delayed/rate-limited,
+                    // persist OrderCreated directly from this confirmed tx receipt.
+                    if (completedAction === 'create' && txHash) {
+                        try {
+                            const syncRes = await marketplaceService.syncSecondaryOrderCreated(txHash);
+                            console.log('[P2P Manual Sync] order-created result', syncRes);
+                        } catch (syncError) {
+                            console.warn('[P2P Manual Sync] failed, relying on poller', syncError);
+                        }
+                    }
+
                     fetchOrderbook(assetId);
                     fetchTradeHistory(assetId);
                     fetchMyOrders(assetId);
@@ -297,7 +339,7 @@ const TradingEngineProductionPage = () => {
                 setTransactionStep('idle');
             }, 2000);
         }
-    }, [isTxConfirmed, assetId]);
+    }, [isTxConfirmed, assetId, currentAction, txHash]);
 
     // 3. Error Handler
     useEffect(() => {

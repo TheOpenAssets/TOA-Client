@@ -3,14 +3,14 @@ import { useAccount, useBalance, useWriteContract } from 'wagmi';
 import { Button } from '../ui/button';
 import { useToast } from '../../hooks/useToast';
 import { Loader2, CheckCircle, ExternalLink } from 'lucide-react';
-import { USDC_ABI, STARB_ABI } from '../../lib/blockchain/auction.contract';
+import { USDC_ABI, COLLATERAL_TOKEN_ABI } from '../../lib/blockchain/auction.contract';
 import { parseUnits } from 'viem';
 import type { Address } from 'viem';
 import { useNetwork } from '../../lib/network/NetworkContext';
 
 interface TokenFaucetCardProps {
-  tokenName: 'USDC' | 'stARB';
-  tokenSymbol: 'USDC' | 'stARB';
+  tokenName: 'USDC' | 'ankrBNB';
+  tokenSymbol: 'USDC' | 'ankrBNB';
   tokenDecimals: number;
   tokenImage: string;
   tokenAddress: string;
@@ -99,12 +99,12 @@ export const TokenFaucetCard = ({
           symbol: tokenSymbol,
         });
       } else {
-        // Call mint(address, amount) directly on the MockStARB contract
+        // Call mint(address, amount) directly on the collateral token contract
         info(`Requesting ${tokenName}...`, 'Please confirm the transaction in your wallet.');
-        const mintAmount = parseUnits(faucetAmount.toString(), 18); // stARB has 18 decimals
+        const mintAmount = parseUnits(faucetAmount.toString(), 18); // ankrBNB has 18 decimals
         const txHash = await writeContractAsync({
           address: tokenAddress as Address,
-          abi: STARB_ABI,
+          abi: COLLATERAL_TOKEN_ABI,
           functionName: 'mint',
           args: [address, mintAmount],
           gas: 500000n,
