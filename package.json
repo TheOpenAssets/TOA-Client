@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-pages-asset-size.mjs && tsc -b && vite build",
+    "build": "node --input-type=module -e \"import { existsSync } from 'node:fs'; if (existsSync('scripts/check-pages-asset-size.mjs')) { await import('./scripts/check-pages-asset-size.mjs'); } else { console.warn('⚠️ scripts/check-pages-asset-size.mjs not found; skipping Cloudflare file-size precheck.'); }\" && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

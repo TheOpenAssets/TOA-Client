@@ -30,7 +30,7 @@ node_modules
 /node_modules
 
 /scripts/*
-./scripts/
+!/scripts/check-pages-asset-size.mjs
 
 # production
 /build
