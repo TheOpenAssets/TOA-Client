@@ -290,10 +290,10 @@ export const MyAssetsTable = ({
               Status
             </th>
             <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
-              Tokens / Collateral
+              Tokens 
             </th>
             <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
-              Invested / Borrowed
+              Invested 
             </th>
             <th className="px-4 py-3 text-center font-gellix text-xs font-medium text-black uppercase tracking-wider">
               Health
@@ -380,8 +380,8 @@ export const MyAssetsTable = ({
                     <div className="font-gellix text-sm font-normal text-foreground">
                       {isLeverage && asset.leverageInfo ? (
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500">stARB</span>
-                          <span>{asset.leverageInfo.stARBCollateralFormatted}</span>
+                          <span className="text-xs text-gray-500">ankrBNB</span>
+                          <span>{formatTokenAmount(asset.totalAmount)}</span>
                         </div>
                       ) : (
                         <div className="flex flex-col">
@@ -596,7 +596,7 @@ export const MyAssetsTable = ({
                           asset.leverageInfo?.type === 'SETTLED' &&
                           asset.leverageInfo.stARBReturnedFormatted && (
                             <div>
-                              <div className="text-xs text-gray-500 mb-1">stARB Returned</div>
+                              <div className="text-xs text-gray-500 mb-1">ankrBNB Returned</div>
                               <div className="font-medium">
                                 {asset.leverageInfo.stARBReturnedFormatted}
                               </div>

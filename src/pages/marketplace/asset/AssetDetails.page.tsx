@@ -483,8 +483,18 @@ const AssetDetailsPage = () => {
           console.log(`✅ Approval transaction submitted: ${txHash}`);
           setLeveragePurchaseStatus('Approval submitted! Waiting for confirmation...');
 
-          // Wait for transaction confirmation (3 seconds)
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          // Wait for on-chain confirmation to avoid allowance race with backend initiate call
+          if (publicClient) {
+            await publicClient.waitForTransactionReceipt({
+              hash: txHash,
+              confirmations: 1,
+              timeout: 120000,
+              pollingInterval: 2000,
+            });
+          } else {
+            // Fallback if client is temporarily unavailable
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
 
           // Refetch allowance to verify
           const { data: newAllowance } = await refetchAllowance();
@@ -528,7 +538,8 @@ const AssetDetailsPage = () => {
         tokenAddress: asset.token?.address || '',
         tokenAmount: parseFloat(leverageTokenInput).toFixed(4),
         pricePerToken: parseFloat(pricePerToken).toFixed(4),
-        stARBCollateral: parseFloat(calculatedstARBString).toFixed(4),
+        // Use full calculated precision so payload exactly matches approval basis
+        stARBCollateral: calculatedstARBString,
       };
 
       console.log('📤 Purchase Data:');

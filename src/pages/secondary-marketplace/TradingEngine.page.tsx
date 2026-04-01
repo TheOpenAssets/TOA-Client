@@ -403,6 +403,23 @@ const TradingEngineProductionPage = () => {
             return;
         }
 
+        // Ensure allowance reads are loaded before proceeding.
+        // If allowance is undefined, approval checks can be skipped accidentally,
+        // which may lead to wallet gas estimation failures ("network fee unavailable").
+        if (!skipApprovalCheck) {
+            if (orderType === 'sell' && tokenAllowance === undefined) {
+                await refetchTokenAllowance();
+                warning('Allowance Loading', 'Token allowance is still loading. Please try again.');
+                return;
+            }
+
+            if (orderType === 'buy' && usdcAllowance === undefined) {
+                await refetchUsdcAllowance();
+                warning('Allowance Loading', 'USDC allowance is still loading. Please try again.');
+                return;
+            }
+        }
+
         if (!skipApprovalCheck) {
             setCurrentAction('create');
             setTransactionStep('approving');

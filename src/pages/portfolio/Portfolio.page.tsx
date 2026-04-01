@@ -566,15 +566,7 @@ const PortfolioPage = () => {
                       >
                         My Assets
                       </button>
-                      <button
-                        onClick={() => setActiveTab('bids')}
-                        className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'bids'
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                      >
-                        My Bids
-                      </button>
+                     
                       <button
                         onClick={() => setActiveTab('trades')}
                         className={`px-4 py-2 rounded-lg font-gellix text-sm font-medium transition-all duration-200 ${activeTab === 'trades'

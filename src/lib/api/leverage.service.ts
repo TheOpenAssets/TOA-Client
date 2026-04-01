@@ -74,7 +74,8 @@ class LeverageService extends BaseService {
           method: 'POST',
           headers: this.getAuthHeaders(),
           body: JSON.stringify(payload),
-        }
+        },
+        180000
       );
 
       if (!response.ok) {
