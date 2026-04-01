@@ -88,6 +88,7 @@ export const TokenFaucetCard = ({
           address: tokenAddress as Address,
           abi: USDC_ABI,
           functionName: 'faucet',
+          gas: 300000n,
         });
         success(`${tokenName} Received!`, `1000 ${tokenName} sent to your wallet.`);
         setFaucetResult({
@@ -106,6 +107,7 @@ export const TokenFaucetCard = ({
           abi: STARB_ABI,
           functionName: 'mint',
           args: [address, mintAmount],
+          gas: 500000n,
         });
         success(`${tokenName} Received!`, `${faucetAmount} ${tokenName} sent to your wallet.`);
         setFaucetResult({

@@ -2,6 +2,7 @@ import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { TokenFaucetCard } from '../../components/faucet/TokenFaucetCard';
 import { Wavy } from '../../components/ui/wavy';
+import { CONTRACTS } from '../../lib/blockchain/auction.contract';
 
 const FaucetPage = () => {
   const { address } = useAccount();
@@ -38,7 +39,7 @@ const FaucetPage = () => {
               tokenSymbol="USDC"
               tokenDecimals={6}
               tokenImage="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
-              tokenAddress="0x32223cA0BDDb1c1fD68f21de3FF64C147F2B2fC1"
+              tokenAddress={CONTRACTS.USDC}
               faucetAmount={1000}
               description="Receive 1,000 testnet USDC to your connected wallet."
             />

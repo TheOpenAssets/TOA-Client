@@ -27,7 +27,7 @@ interface PositionDetailChartProps {
  * Renders circular markers at harvest events with click navigation
  */
 const HarvestDot = (props: any) => {
-  const { cx, cy, payload, harvestHistory, fill = '#10B981' } = props;
+  const { cx, cy, payload, harvestHistory, fill = '#10B981', explorerUrlBase } = props;
 
   // Only show dots for actual harvest points (non-zero values)
   const isHarvestPoint = payload.stARBSwapped > 0 || payload.interestPaid > 0 || payload.usdcReceived > 0;
@@ -67,7 +67,7 @@ const HarvestDot = (props: any) => {
     e.stopPropagation();
     e.preventDefault();
     console.log('Clicking harvest point:', harvestEvent.transactionHash);
-    const explorerUrl = `${network.explorerUrl}/tx/${harvestEvent.transactionHash}`;
+    const explorerUrl = `${explorerUrlBase}/tx/${harvestEvent.transactionHash}`;
     window.open(explorerUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -571,7 +571,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       stroke="#10b981"
                       strokeWidth={2}
                       fill="url(#stARBGradient)"
-                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#10b981" />}
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#10b981" explorerUrlBase={network.explorerUrl} />}
                       connectNulls
                       isAnimationActive={false}
                       fillOpacity={1}
@@ -629,7 +629,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       stroke="#f97316"
                       strokeWidth={2}
                       fill="url(#usdcGradient)"
-                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#f97316" />}
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#f97316" explorerUrlBase={network.explorerUrl} />}
                       connectNulls
                       isAnimationActive={false}
                       fillOpacity={1}
@@ -641,7 +641,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       stroke="#ef4444"
                       strokeWidth={2}
                       fill="url(#interestGradient)"
-                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#ef4444" />}
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#ef4444" explorerUrlBase={network.explorerUrl} />}
                       connectNulls
                       isAnimationActive={false}
                       fillOpacity={1}
@@ -693,7 +693,7 @@ export const PositionDetailChart = ({ position: initialPosition, isOpen, onClose
                       stroke="#3b82f6"
                       strokeWidth={2}
                       fill="url(#healthGradient)"
-                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#3b82f6" />}
+                      dot={(props) => <HarvestDot {...props} harvestHistory={position.harvestHistory} fill="#3b82f6" explorerUrlBase={network.explorerUrl} />}
                       connectNulls
                       isAnimationActive={false}
                       fillOpacity={1}
