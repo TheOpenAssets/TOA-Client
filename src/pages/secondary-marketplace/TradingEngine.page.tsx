@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useAuthStrategy } from '../../lib/auth/AuthStrategyContext';
@@ -115,6 +115,7 @@ const TradingEngineProductionPage = () => {
     const [sentimentData, setSentimentData] = useState<any[]>([]);
     const [tradeData, setTradeData] = useState<any[]>([]);
     const [isChartLoading, setIsChartLoading] = useState(false);
+    const syncedTxHashesRef = useRef<Set<string>>(new Set());
 
     const truncateAddress = (address: string): string => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -306,7 +307,6 @@ const TradingEngineProductionPage = () => {
     // 2. Transaction Success Handler
     useEffect(() => {
         if (isTxConfirmed && assetId) {
-            const completedAction = currentAction;
             success('Transaction Confirmed', 'Your transaction has been successfully confirmed.');
             setTransactionStep('confirmed');
             setCurrentAction(null);
@@ -314,19 +314,8 @@ const TradingEngineProductionPage = () => {
             setPrice('');
             setSelectedOrder(null);
 
-            setTimeout(async () => {
+            setTimeout(() => {
                 if (assetId) {
-                    // Fallback sync: if indexer polling is delayed/rate-limited,
-                    // persist OrderCreated directly from this confirmed tx receipt.
-                    if (completedAction === 'create' && txHash) {
-                        try {
-                            const syncRes = await marketplaceService.syncSecondaryOrderCreated(txHash);
-                            console.log('[P2P Manual Sync] order-created result', syncRes);
-                        } catch (syncError) {
-                            console.warn('[P2P Manual Sync] failed, relying on poller', syncError);
-                        }
-                    }
-
                     fetchOrderbook(assetId);
                     fetchTradeHistory(assetId);
                     fetchMyOrders(assetId);
@@ -339,7 +328,30 @@ const TradingEngineProductionPage = () => {
                 setTransactionStep('idle');
             }, 2000);
         }
-    }, [isTxConfirmed, assetId, currentAction, txHash]);
+    }, [isTxConfirmed, assetId]);
+
+    // Direct ingestion fallback: submit tx hash to backend immediately after
+    // create-order contract call is broadcast. Backend waits for confirmation,
+    // decodes OrderCreated from receipt, and writes to DB.
+    useEffect(() => {
+        if (!assetId || !txHash) return;
+        if (currentAction !== 'create' || transactionStep !== 'executing') return;
+        if (syncedTxHashesRef.current.has(txHash)) return;
+
+        syncedTxHashesRef.current.add(txHash);
+
+        (async () => {
+            try {
+                const syncRes = await marketplaceService.syncSecondaryOrderCreated(txHash);
+                console.log('[P2P Direct Ingestion] order-created result', syncRes);
+                fetchOrderbook(assetId);
+                fetchMyOrders(assetId);
+                fetchTradeHistory(assetId);
+            } catch (syncError) {
+                console.warn('[P2P Direct Ingestion] failed, relying on poller', syncError);
+            }
+        })();
+    }, [txHash, currentAction, transactionStep, assetId, fetchOrderbook, fetchMyOrders, fetchTradeHistory]);
 
     // 3. Error Handler
     useEffect(() => {
