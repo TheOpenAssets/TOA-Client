@@ -11,7 +11,6 @@ import { useNetwork } from "../../lib/network/NetworkContext";
 const Navbar = () => {
 
   const navigate = useNavigate();
-  const { isAuthenticating, handleGetStarted } = useAuthActions();
   const { networkPath } = useNetwork();
 
   const handleGetUsdcClick = async () => {
@@ -56,14 +55,7 @@ const Navbar = () => {
 
             {'Faucet'}
           </Button>
-          <Button
-            onClick={handleGetStarted}
-            disabled={isAuthenticating}
-            className="flex hover:scale-[1.02] items-center gap-2 px-4 py-2 bg-[#111111] text-white rounded-2xl text-sm font-medium hover:bg-[#000000] transition-colors shadow-sm"
-          >
-            <Layout className="w-4 h-4" />
-            {isAuthenticating ? "Authenticating..." : "Explore Marketplace"}
-          </Button>
+         
         </div>
       </div>
     </header>

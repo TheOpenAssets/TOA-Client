@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, FileText, Building2, Settings, CheckCircle, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { X, FileText, Building2, Settings, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { assetService } from '../../lib/api/asset.service';
 import { Label } from '../ui/label';
@@ -64,7 +64,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const totalSteps = formData.assetType === 'AUCTION' ? 4 : 3;
+  const totalSteps = 3;
 
   if (!isOpen) return null;
 
@@ -90,27 +90,6 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
     setError(null);
   };
 
-  const calculateTotalSeconds = (days: string, hours: string, minutes: string, seconds: string): string => {
-    const d = parseInt(days) || 0;
-    const h = parseInt(hours) || 0;
-    const m = parseInt(minutes) || 0;
-    const s = parseInt(seconds) || 0;
-    return ((d * 86400) + (h * 3600) + (m * 60) + s).toString();
-  };
-
-  const updateDurationField = (field: 'auctionDays' | 'auctionHours' | 'auctionMinutes' | 'auctionSeconds', value: string) => {
-    const numValue = parseInt(value) || 0;
-    const clampedValue = Math.max(0, numValue).toString();
-    const newFormData = { ...formData, [field]: value === '' ? '0' : clampedValue };
-    newFormData.auctionDuration = calculateTotalSeconds(
-      field === 'auctionDays' ? newFormData.auctionDays : formData.auctionDays,
-      field === 'auctionHours' ? newFormData.auctionHours : formData.auctionHours,
-      field === 'auctionMinutes' ? newFormData.auctionMinutes : formData.auctionMinutes,
-      field === 'auctionSeconds' ? newFormData.auctionSeconds : formData.auctionSeconds
-    );
-    setFormData(newFormData);
-  };
-
   const validateStep = (): boolean => {
     setError(null);
     if (currentStep === 1) {
@@ -129,8 +108,6 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       if (minRaise < 0 || minRaise > 100 || maxRaise < 0 || maxRaise > 100 || minRaise > maxRaise) {
         setError('Please enter valid raise percentages (Min cannot exceed Max)'); return false;
       }
-    } else if (currentStep === 4 && formData.assetType === 'AUCTION') {
-      if (parseInt(formData.auctionDuration) <= 0) { setError('Auction duration must be at least 1 second'); return false; }
     }
     return true;
   };
@@ -161,7 +138,7 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       data.append('buyerName', formData.buyerName);
       data.append('industry', formData.industry);
       data.append('riskTier', formData.riskTier);
-      data.append('assetType', formData.assetType);
+      data.append('assetType', 'STATIC');
 
       // Numeric fields requiring canonical format
       data.append('faceValue', toCanonical(formData.faceValue));
@@ -169,8 +146,6 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       data.append('maxRaisePercentage', toCanonical(formData.maxRaisePercentage));
       data.append('totalSupply', toCanonical(formData.totalSupply));
       data.append('minInvestment', toCanonical(formData.minInvestment));
-
-      if (formData.assetType === 'AUCTION') data.append('auctionDuration', formData.auctionDuration);
 
       await assetService.uploadAsset(data);
       setShowSuccess(true);
@@ -193,7 +168,6 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
       { n: 1, t: 'File', i: FileText },
       { n: 2, t: 'Risk', i: Building2 },
       { n: 3, t: 'Config', i: Settings },
-      ...(formData.assetType === 'AUCTION' ? [{ n: 4, t: 'Auction', i: Clock }] : [])
     ];
 
     return (
@@ -332,29 +306,15 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
 
           {currentStep === 3 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="grid grid-cols-2 gap-4">
-                {['STATIC', 'AUCTION'].map((type) => (
-                  <button
-                    key={type} onClick={() => updateField('assetType', type as any)}
-                    className={cn(
-                      "p-6 rounded-[24px] border-2 text-left transition-all relative overflow-hidden",
-                      formData.assetType === type
-                        ? "border-slate-900 bg-slate-900 text-white shadow-xl"
-                        : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
-                    )}
-                  >
-                    <span className="text-2xl mb-3 block">{type === 'STATIC' ? '🏷️' : '⚖️'}</span>
-                    <span className="block font-bold text-sm tracking-tight mb-1">{type === 'STATIC' ? 'Fixed Price' : 'Dutch Auction'}</span>
-                    <span className={cn("text-[10px] uppercase font-bold tracking-tighter opacity-60")}>
-                      {type === 'STATIC' ? 'Immediate Listing' : 'Competitive Bidding'}
-                    </span>
-                    {formData.assetType === type && (
-                      <div className="absolute top-4 right-4">
-                        <CheckCircle className="w-5 h-5 text-white/30" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+              <div className="p-6 rounded-[24px] border-2 border-slate-900 bg-slate-900 text-white shadow-xl">
+                <span className="text-2xl mb-3 block">🏷️</span>
+                <span className="block font-bold text-sm tracking-tight mb-1">Fixed Price</span>
+                <span className="text-[10px] uppercase font-bold tracking-tighter opacity-60">
+                  Immediate Listing
+                </span>
+                <div className="absolute top-4 right-4">
+                  <CheckCircle className="w-5 h-5 text-white/30" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <MinimalInput label="Total Supply" id="totalSupply" type="number" value={formData.totalSupply} onChange={(v: any) => updateField('totalSupply', v)} placeholder="e.g. 10000" />
@@ -392,38 +352,6 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
                     placeholder="Max 95"
                   />
                 </div>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 4 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Duration Settings</h4>
-                  <Clock className="w-4 h-4 text-slate-300" />
-                </div>
-                <div className="grid grid-cols-4 gap-4">
-                  {['Days', 'Hours', 'Minutes', 'Seconds'].map((unit) => {
-                    const field = `auction${unit}` as any;
-                    return (
-                      <div key={unit} className="space-y-2">
-                        <Label className="text-[10px] font-bold text-black uppercase tracking-tighter text-center block">{unit}</Label>
-                        <Input
-                          type="number" value={formData[field as keyof FormData] as string}
-                          onChange={(e) => updateDurationField(field, e.target.value)}
-                          className="bg-white border border-slate-200 rounded-xl text-center font-bold font-geist text-slate-900 h-12 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-300 transition-all"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-[32px] bg-slate-50/50">
-                <p className="text-slate-400 text-xs uppercase font-bold tracking-widest mb-2">Total Estimated Runtime</p>
-                <p className="text-4xl font-bold text-slate-900 font-geist">
-                  {formData.auctionDays}d {formData.auctionHours}h {formData.auctionMinutes}m
-                </p>
               </div>
             </div>
           )}

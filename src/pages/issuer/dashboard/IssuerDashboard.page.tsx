@@ -150,7 +150,7 @@ const IssuerDashboardPage = () => {
     if (amount >= 1000) {
       return `$${(amount / 1000).toFixed(0)}K`;
     }
-    return `$${amount}`;
+    return `$${amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   };
 
   // Get status badge styling
@@ -304,7 +304,7 @@ const IssuerDashboardPage = () => {
                 <p className="font-geist text-sm text-[#6B7280] font-medium">Funds Raised</p>
               </div>
               <p className="font-geist text-3xl font-semibold text-[#111111]">
-                {loading ? '...' : formatCurrency(stats.fundsRaised / 1000000)}
+                {loading ? '...' : formatCurrency(stats.fundsRaised)}
               </p>
             </div>
           </div>

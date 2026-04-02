@@ -178,6 +178,18 @@ export const MyAssetsTable = ({
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  const formatLeverageBorrowedUSDC = (amount: string): string => {
+    // Handles backend values like "189423000.00 USDC"
+    const numericValue = parseFloat(amount.replace(/[^0-9.-]/g, ''));
+    if (Number.isNaN(numericValue)) return '0.00';
+
+    const usdcValue = numericValue / 1e6;
+    return usdcValue.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6,
+    });
+  };
+
   const getStatusColor = (status: string): string => {
     const statusColors: Record<string, string> = {
       ACTIVE: 'bg-green-100 text-green-700',
@@ -399,7 +411,7 @@ export const MyAssetsTable = ({
                         <div className="flex flex-col">
                           <span className="text-xs text-gray-500">Borrowed</span>
                           <span className="font-medium">
-                            {asset.leverageInfo.usdcBorrowedFormatted}
+                            {formatLeverageBorrowedUSDC(asset.leverageInfo.usdcBorrowedFormatted)}
                           </span>
                         </div>
                       ) : (

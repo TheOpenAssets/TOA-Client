@@ -24,6 +24,8 @@ import HeroBackground from '../landing/HeroBackground';
 // Contract addresses from environment
 const SECONDARY_MARKET = (import.meta.env.VITE_SECONDARY_MARKETPLACE_ADDRESS || '0x08BaC34bb8BfDe92BC2ceF30631fF026DE08bd6e') as `0x${string}`;
 const USDC_ADDRESS = (import.meta.env.VITE_USDC_ADDRESS || '0x38113dFC4958CEF3aa53d057A562635bCE022F61') as `0x${string}`;
+const TX_GAS_CAP = BigInt(import.meta.env.VITE_TX_GAS_CAP || '16000000');
+const CREATE_ORDER_GAS_LIMIT = BigInt(import.meta.env.VITE_CREATE_ORDER_GAS_LIMIT || '8000000');
 
 // Minimal ERC20 ABI
 const ERC20_ABI = [
@@ -97,7 +99,7 @@ const TradingEngineProductionPage = () => {
     } = useMarketplaceStore();
 
     // Wagmi
-    const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
+    const { writeContract, writeContractAsync, data: txHash, isPending: isTxPending } = useWriteContract();
     const { isLoading: isTxConfirming, isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
 
     // const { disconnect } = useDisconnect();
@@ -116,6 +118,8 @@ const TradingEngineProductionPage = () => {
     const [tradeData, setTradeData] = useState<any[]>([]);
     const [isChartLoading, setIsChartLoading] = useState(false);
     const syncedTxHashesRef = useRef<Set<string>>(new Set());
+    const syncingTxHashesRef = useRef<Set<string>>(new Set());
+    const lastCreateTxHashRef = useRef<`0x${string}` | null>(null);
 
     const truncateAddress = (address: string): string => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -304,9 +308,72 @@ const TradingEngineProductionPage = () => {
             }));
     };
 
+    const syncOrderCreatedWithRetry = useCallback(async (hash: `0x${string}`) => {
+        if (!assetId || syncedTxHashesRef.current.has(hash) || syncingTxHashesRef.current.has(hash)) return;
+        syncingTxHashesRef.current.add(hash);
+
+        const maxAttempts = 4;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                const syncRes = await marketplaceService.syncSecondaryOrderCreated(hash);
+                console.log('[P2P Direct Ingestion] sync result', { hash, attempt, syncRes });
+
+                const createdOrders = Number(syncRes?.createdOrders || 0);
+                const skippedOrders = Number(syncRes?.skippedOrders || 0);
+                const didPersistOrExist = createdOrders > 0 || skippedOrders > 0;
+
+                if (!didPersistOrExist) {
+                    if (attempt === maxAttempts) {
+                        syncingTxHashesRef.current.delete(hash);
+                        console.warn('[P2P Direct Ingestion] empty sync result after retries', { hash, syncRes });
+                        return;
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+                    continue;
+                }
+
+                syncedTxHashesRef.current.add(hash);
+                syncingTxHashesRef.current.delete(hash);
+                fetchOrderbook(assetId);
+                fetchMyOrders(assetId);
+                fetchTradeHistory(assetId);
+                return;
+            } catch (syncError) {
+                if (attempt === maxAttempts) {
+                    syncingTxHashesRef.current.delete(hash);
+                    console.warn('[P2P Direct Ingestion] failed after retries, relying on poller', { hash, syncError });
+                    return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+            }
+        }
+    }, [assetId, fetchOrderbook, fetchMyOrders, fetchTradeHistory]);
+
     // 2. Transaction Success Handler
     useEffect(() => {
-        if (isTxConfirmed && assetId) {
+        if (!isTxConfirmed || !assetId) return;
+
+        // Ignore approval confirmation here; dedicated effect below
+        // auto-continues to actual create-order execution.
+        if (transactionStep === 'approving' && currentAction === 'create') return;
+
+        // Only finalize UX for actual action execution txs.
+        if (transactionStep !== 'executing') return;
+
+        // For create flow with prior approval, `isTxConfirmed` can still reflect
+        // the approval tx momentarily. Ensure we only proceed when the create tx
+        // itself is the confirmed hash.
+        if (currentAction === 'create' && lastCreateTxHashRef.current && txHash !== lastCreateTxHashRef.current) {
+            return;
+        }
+
+        const wasCreate = currentAction === 'create';
+        const confirmedTxHash = (lastCreateTxHashRef.current || txHash) as `0x${string}` | undefined;
+
+        if (wasCreate && confirmedTxHash) {
+            syncOrderCreatedWithRetry(confirmedTxHash);
+        }
+
             success('Transaction Confirmed', 'Your transaction has been successfully confirmed.');
             setTransactionStep('confirmed');
             setCurrentAction(null);
@@ -327,8 +394,7 @@ const TradingEngineProductionPage = () => {
                 }
                 setTransactionStep('idle');
             }, 2000);
-        }
-    }, [isTxConfirmed, assetId]);
+    }, [isTxConfirmed, assetId, transactionStep, currentAction, txHash, syncOrderCreatedWithRetry]);
 
     // Direct ingestion fallback: submit tx hash to backend immediately after
     // create-order contract call is broadcast. Backend waits for confirmation,
@@ -336,22 +402,8 @@ const TradingEngineProductionPage = () => {
     useEffect(() => {
         if (!assetId || !txHash) return;
         if (currentAction !== 'create' || transactionStep !== 'executing') return;
-        if (syncedTxHashesRef.current.has(txHash)) return;
-
-        syncedTxHashesRef.current.add(txHash);
-
-        (async () => {
-            try {
-                const syncRes = await marketplaceService.syncSecondaryOrderCreated(txHash);
-                console.log('[P2P Direct Ingestion] order-created result', syncRes);
-                fetchOrderbook(assetId);
-                fetchMyOrders(assetId);
-                fetchTradeHistory(assetId);
-            } catch (syncError) {
-                console.warn('[P2P Direct Ingestion] failed, relying on poller', syncError);
-            }
-        })();
-    }, [txHash, currentAction, transactionStep, assetId, fetchOrderbook, fetchMyOrders, fetchTradeHistory]);
+        syncOrderCreatedWithRetry(txHash);
+    }, [txHash, currentAction, transactionStep, assetId, syncOrderCreatedWithRetry]);
 
     // 3. Error Handler
     useEffect(() => {
@@ -457,14 +509,23 @@ const TradingEngineProductionPage = () => {
                 isBuy: orderType === 'buy',
             });
 
-            writeContract({
+            const submittedHash = await writeContractAsync({
                 address: txData.to,
                 abi: txData.abi,
                 functionName: txData.functionName,
                 args: txData.args,
+                gas: CREATE_ORDER_GAS_LIMIT > TX_GAS_CAP ? TX_GAS_CAP : CREATE_ORDER_GAS_LIMIT,
             });
+            lastCreateTxHashRef.current = submittedHash;
+
+            // Immediate backend ingestion (faster than indexer polling).
+            await syncOrderCreatedWithRetry(submittedHash);
         } catch (error: any) {
-            showError('Order Creation Failed', error.message || 'Failed to create order');
+            const rawMessage = error?.message || 'Failed to create order';
+            const friendlyMessage = rawMessage.includes('transaction gas limit too high')
+                ? 'Order failed because wallet/provider proposed a gas limit above chain cap. Please retry; gas cap has been applied.'
+                : rawMessage;
+            showError('Order Creation Failed', friendlyMessage);
             setTransactionStep('idle');
             setCurrentAction(null);
         }
@@ -970,7 +1031,7 @@ const TradingEngineProductionPage = () => {
                                             </button>
 
                                             <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] pt-2">
-                                                <ShieldCheck size={14} /> Secured by arbitrum Network
+                                                <ShieldCheck size={14} /> Secured by BNB Network
                                             </div>
                                         </div>
                                     </div>
@@ -1106,7 +1167,7 @@ const TradingEngineProductionPage = () => {
                                         )}
 
                                         <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF] mt-6 pt-4 border-t border-gray-100">
-                                            <ShieldCheck size={14} /> Secured by arbitrum Network
+                                            <ShieldCheck size={14} /> Secured by BNB Network
                                         </div>
                                     </div>
                                 )}

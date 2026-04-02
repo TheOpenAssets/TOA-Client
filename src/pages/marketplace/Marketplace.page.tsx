@@ -1145,7 +1145,7 @@ const MarketplacePage = () => {
                                   onClick={() => handleTableNavigate(asset)}
                                   className="px-4 py-2 text-blue-600 rounded-lg font-inter text-sm font-medium hover:text-blue-700 hover:scale-[1.07] transition-colors"
                                 >
-                                  Buy
+                                  Deposit
                                 </button>
                               );
                             })()}
