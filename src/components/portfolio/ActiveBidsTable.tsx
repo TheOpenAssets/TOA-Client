@@ -222,7 +222,7 @@ export const ActiveBidsTable = ({
                 <td className="px-6 py-4 text-center">
                   {bid.txHash ? (
                     <a
-                      href={`https://sepolia.arbitrumscan.xyz/tx/${bid.txHash}`}
+                      href={`https://testnet.bscscan.com/tx/${bid.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -235,7 +235,7 @@ export const ActiveBidsTable = ({
                   )}
                   <br />
                   {bid.settlementTxHash && bid.settlementTxHash !== undefined && (<a
-                    href={`https://sepolia.arbitrumscan.xyz/tx/${bid.settlementTxHash}`}
+                    href={`https://testnet.bscscan.com/tx/${bid.settlementTxHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}

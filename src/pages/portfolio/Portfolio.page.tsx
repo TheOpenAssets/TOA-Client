@@ -713,7 +713,7 @@ const PortfolioPage = () => {
                     <div>
                       <p className="font-inter text-xs text-gray-500 mb-1.5">Tokens to Burn</p>
                       <p className="font-gellix text-xl font-semibold text-foreground">
-                        {parseFloat(selectedAssetForClaim.investorBalance).toFixed(2)} {selectedAssetForClaim.tokenSymbol}
+                        {(parseFloat(selectedAssetForClaim.investorBalance).toFixed(2))/1e6} {selectedAssetForClaim.tokenSymbol}
                       </p>
                     </div>
                     <div className="pt-4 border-t border-gray-300">

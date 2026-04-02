@@ -229,14 +229,14 @@ export const AssetUploadModal = ({ isOpen, onClose, onSuccess }: AssetUploadModa
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="group">
-                <Label className="text-black font-bold mb-3 block text-xs uppercase tracking-widest">Invoice Document</Label>
+                <Label className="text-black font-bold mb-3 block text-xs uppercase tracking-widest">Register Firm</Label>
                 <div className="rounded-2xl p-1 transition-colors bg-slate-50/50">
-                  <FileUpload onChange={(f) => handleFileChange(f[0])} text="Upload your Invoice here" accept="application/pdf" />
+                  <FileUpload onChange={(f) => handleFileChange(f[0])} text="Upload your Firm Docs here" accept="application/pdf" />
                 </div>
                 <p className="text-[10px] text-slate-400 mt-2 font-geist text-center uppercase tracking-wider">PDF format supported • Max 10MB</p>
               </div>
               <div className="grid grid-cols-2 gap-6">
-                <MinimalInput label="Invoice Number" id="invoiceNumber" value={formData.invoiceNumber} onChange={(v: any) => updateField('invoiceNumber', v)} placeholder="e.g. INV-2024-001" />
+                <MinimalInput label="Firm Number" id="invoiceNumber" value={formData.invoiceNumber} onChange={(v: any) => updateField('invoiceNumber', v)} placeholder="e.g. INV-2024-001" />
                 <MinimalInput label="Face Value" id="faceValue" type="number" value={formData.faceValue} onChange={(v: any) => updateField('faceValue', v)} placeholder="e.g. 50000.00" />
                 <div className="space-y-2">
                   <Label className="text-black font-bold text-xs uppercase tracking-widest">Currency</Label>

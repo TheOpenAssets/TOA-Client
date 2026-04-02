@@ -155,10 +155,10 @@ const AssetDetailsPage = ({ asset }: AssetDetailsPageProps) => {
 
             {/* Invoice Details */}
             <div className="bg-white rounded-3xl p-6">
-              <h2 className="font-geist text-2xl font-medium text-[#111111] mb-6">Invoice Details</h2>
+              <h2 className="font-geist text-2xl font-medium text-[#111111] mb-6">Firm Details</h2>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <p className="font-geist text-xs text-[#6B7280]">Invoice Number</p>
+                  <p className="font-geist text-xs text-[#6B7280]">Firm Number</p>
                   <p className="font-geist text-sm font-medium text-[#111111]">
                     {asset.metadata?.invoiceNumber || 'N/A'}
                   </p>

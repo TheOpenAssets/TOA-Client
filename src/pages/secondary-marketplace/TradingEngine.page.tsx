@@ -1157,7 +1157,7 @@ const TradingEngineProductionPage = () => {
 
                                         {(isTxPending || isTxConfirming) && txHash && (
                                             <a
-                                                href={`https://sepolia.arbitrumscan.xyz/tx/${txHash}`}
+                                                href={`https://testnet.bscscan.com/tx/${txHash}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="block mt-4 text-center text-xs text-[#0071C5] hover:underline font-medium"

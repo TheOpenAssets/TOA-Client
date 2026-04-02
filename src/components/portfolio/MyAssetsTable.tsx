@@ -215,7 +215,7 @@ export const MyAssetsTable = ({
 
   const openTxHash = (hash: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://sepolia.arbitrumscan.xyz/tx/${hash}`, '_blank');
+    window.open(`https://testnet.bscscan.com/tx/${hash}`, '_blank');
   };
 
 
@@ -489,9 +489,7 @@ export const MyAssetsTable = ({
                   {/* Actions */}
                   <td className="px-4 py-4 text-center">
                     <div className="flex flex-col gap-2 items-center">
-                      {!isLeverage &&
-                        parseFloat(asset.yieldInfo?.claimableYield || '0') > 0 &&
-                        asset.status !== 'CLAIMED' && (
+                      {(
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

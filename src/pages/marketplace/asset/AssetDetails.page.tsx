@@ -878,10 +878,7 @@ const AssetDetailsPage = () => {
                     <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Direct Buys</p>
                     <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.metadata?.directPurchases || 0}</p>
                   </div>
-                  <div className=" flex flex-row items-center gap-1 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Leveraged</p>
-                    <p className="text-xl font-medium text-[#111111]">{purchaseHistory?.metadata?.leveragePurchases || 0}</p>
-                  </div>
+                 
                 </div>
               </div>
               {isLoadingHistory ? (
@@ -981,7 +978,7 @@ const AssetDetailsPage = () => {
 
             {/* Invoice Details */}
             <div className="bg-white rounded-3xl p-6">
-              <h2 className="text-2xl font-semibold text-[#111111] mb-4">Invoice Details</h2>
+              <h2 className="text-2xl font-semibold text-[#111111] mb-4">Firm Details</h2>
               <div className="grid grid-cols-2 gap-6 text-sm">
                 <div className="space-y-1">
                   <p className="text-[#6B7280]">Face Value</p>
@@ -1061,10 +1058,9 @@ const AssetDetailsPage = () => {
               <div className="bg-transparent rounded-3xl p-6 shadow-md border border-gray-100">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-[#111111]">Deposit into Firm Vault</h2>
+                    <h2 className="text-2xl font-semibold text-[#111111]">Deposit </h2>
                     <TabsList className="bg-gray-100 p-1 rounded-lg">
                       <TabsTrigger value="standard" className="text-xs">Direct Deposit</TabsTrigger>
-                      {isEvm && <TabsTrigger value="leverage" className="text-xs">LST Leverage</TabsTrigger>}
                     </TabsList>
                   </div>
 
