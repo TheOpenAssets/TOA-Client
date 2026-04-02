@@ -1,9 +1,8 @@
 import { useNavigate, Link } from "react-router-dom";
 import "../../styles/Navbar.css";
-import { useAuthActions } from "../../hooks/useAuthActions";
 // import { ShimmerButton } from "../../components/ui/shimmer-button";
 import { Button } from "../../components/ui/button";
-import { Layout, Droplet } from "lucide-react";
+import {  Droplet } from "lucide-react";
 import { useNetwork } from "../../lib/network/NetworkContext";
 
 
